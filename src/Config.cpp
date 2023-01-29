@@ -35,7 +35,6 @@
 #include "messages.h"
 #include "ESPectrum.h"
 
-
 #ifdef USE_INT_FLASH
 // using internal storage (spi flash)
 #include "esp_spiffs.h"
