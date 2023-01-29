@@ -1,6 +1,7 @@
 !.keep
 .pio
 .vscode
+.vscode/**
 data/sna/**
 !data/sna/sppong.sna
 !data/sna/sppong.txt
