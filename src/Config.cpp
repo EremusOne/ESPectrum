@@ -76,6 +76,7 @@ void Config::load() {
     while(fgets(buf, sizeof(buf), f) != NULL)
     {
         string line = buf;
+        // printf(line.c_str());
         if (line.find("ram:") != string::npos) {
             ram_file = line.substr(line.find(':') + 1);
             ram_file.pop_back();
@@ -98,19 +99,58 @@ void Config::load() {
     fclose(f);
 }
 
-// void Config::loadSnapshotLists()
-// {
-//     KB_INT_STOP;
-//     sna_file_list = (String)MENU_SNA_TITLE + "\n" + FileUtils::getSortedFileList(DISK_SNA_DIR);
-//     sna_name_list = String(sna_file_list);
-//     sna_name_list.replace(".SNA", "");
-//     sna_name_list.replace(".sna", "");
-//     sna_name_list.replace(".Z80", "");
-//     sna_name_list.replace(".z80", "");
-//     sna_name_list.replace("_", " ");
-//     sna_name_list.replace("-", " ");
-//     KB_INT_START;
-// }
+void Config::loadSnapshotLists()
+{
+    
+    sna_file_list = (string) MENU_SNA_TITLE + "\n" + FileUtils::getSortedFileList(DISK_SNA_DIR);
+
+    sna_name_list = sna_file_list;
+    
+//    printf((sna_name_list + "\n").c_str());
+
+    std::string::size_type n = 0;
+    while ( ( n = sna_name_list.find( ".sna", n ) ) != std::string::npos )
+    {
+        sna_name_list.replace( n, 4, "" );
+        n++;
+    }
+
+    n = 0;
+    while ( ( n = sna_name_list.find( ".SNA", n ) ) != std::string::npos )
+    {
+        sna_name_list.replace( n, 4, "" );
+        n++;
+    }
+
+    n = 0;
+    while ( ( n = sna_name_list.find( ".z80", n ) ) != std::string::npos )
+    {
+        sna_name_list.replace( n, 4, "" );
+        n++;
+    }
+
+    n = 0;
+    while ( ( n = sna_name_list.find( ".Z80", n ) ) != std::string::npos )
+    {
+        sna_name_list.replace( n, 4, "" );
+        n++;
+    }
+
+    n = 0;
+    while ( ( n = sna_name_list.find( "_", n ) ) != std::string::npos )
+    {
+        sna_name_list.replace( n, 1, "" );
+        n++;
+    }
+
+    n = 0;
+    while ( ( n = sna_name_list.find( "-", n ) ) != std::string::npos )
+    {
+        sna_name_list.replace( n, 1, "" );
+        n++;
+    }
+    
+}
 
 // void Config::loadTapLists()
 // {
@@ -122,38 +162,52 @@ void Config::load() {
 //     KB_INT_START;
 // }
 
-// // Dump actual config to FS
-// void Config::save() {
-//     KB_INT_STOP;
-//     Serial.printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
-//     File f = THE_FS.open(DISK_BOOT_FILENAME, FILE_WRITE);
-//     // Architecture
-//     Serial.printf("  + arch:%s\n", arch.c_str());
-//     f.printf("arch:%s\n", arch.c_str());
-//     // ROM set
-//     Serial.printf("  + romset:%s\n", romSet.c_str());
-//     f.printf("romset:%s\n", romSet.c_str());
-//     // RAM SNA
-// #ifdef SNAPSHOT_LOAD_LAST    
-//     Serial.printf("  + ram:%s\n", ram_file.c_str());
-//     f.printf("ram:%s\n", ram_file.c_str());
-// #endif // SNAPSHOT_LOAD_LAST
-//     // Serial logging
-//     Serial.printf("  + slog:%s\n", (slog_on ? "true" : "false"));
-//     f.printf("slog:%s\n", (slog_on ? "true" : "false"));
-//     // Serial logging
-//     Serial.printf("  + asp169:%s\n", (aspect_16_9 ? "true" : "false"));
-//     f.printf("asp169:%s\n", (aspect_16_9 ? "true" : "false"));
+// Dump actual config to FS
+void Config::save() {
 
-//     f.close();
-//     vTaskDelay(5);
-//     Serial.println("Config saved OK");
-//     KB_INT_START;
+    // Stop keyboard input
+    ESPectrum::PS2Controller.keyboard()->suspendPort();
 
-//     // do not reload after saving
-//     // load();
-//     // loadSnapshotLists();
-// }
+    printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
+
+    FILE *f = fopen(DISK_BOOT_FILENAME, "w");
+    if (f==NULL)
+    {
+        printf("Error opening %s",DISK_BOOT_FILENAME);
+        return;
+    }
+
+    // Architecture
+    printf(("arch:" + arch + "\n").c_str());
+    fputs(("arch:" + arch + "\n").c_str(),f);
+
+    // ROM set
+    printf(("romset:" + romSet + "\n").c_str());
+    fputs(("romset:" + romSet + "\n").c_str(),f);
+
+    // RAM SNA
+    #ifdef SNAPSHOT_LOAD_LAST    
+    printf(("ram:" + ram_file + "\n").c_str());
+    fputs(("ram:" + ram_file + "\n").c_str(),f);
+    #endif // SNAPSHOT_LOAD_LAST
+
+    // Serial logging
+    printf(slog_on ? "slog:true\n" : "slog:false\n");
+    fputs(slog_on ? "slog:true\n" : "slog:false\n",f);
+
+    // Aspect ratio
+    printf(aspect_16_9 ? "asp169:true\n" : "asp169:false\n");
+    fputs(aspect_16_9 ? "asp169:true\n" : "asp169:false\n",f);
+
+    fclose(f);
+    vTaskDelay(5);
+
+    printf("Config saved OK\n");
+
+    // Resume keyboard input
+    ESPectrum::PS2Controller.keyboard()->resumePort();
+
+}
 
 void Config::requestMachine(string newArch, string newRomSet, bool force)
 {

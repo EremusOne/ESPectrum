@@ -59,7 +59,7 @@
 #define OSD_NORMAL false
 
 #define OSD_W 248
-#define OSD_H 152
+#define OSD_H 168
 #define OSD_MARGIN 4
 
 extern Font Font6x8;
@@ -77,6 +77,16 @@ uint8_t OSD::osdMaxRows() { return (OSD_H - (OSD_MARGIN * 2)) / OSD_FONT_H; }
 uint8_t OSD::osdMaxCols() { return (OSD_W - (OSD_MARGIN * 2)) / OSD_FONT_W; }
 unsigned short OSD::osdInsideX() { return scrAlignCenterX(OSD_W) + OSD_MARGIN; }
 unsigned short OSD::osdInsideY() { return scrAlignCenterY(OSD_H) + OSD_MARGIN; }
+
+void esp_hard_reset() {
+    // RESTART ESP32 (This is the most similar way to hard resetting it)
+    rtc_wdt_protect_off();   
+    rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
+    rtc_wdt_set_time(RTC_WDT_STAGE0, 100);
+    rtc_wdt_enable();
+    rtc_wdt_protect_on();
+    while (true);
+}
 
 // // Cursor to OSD first row,col
 void OSD::osdHome() { CPU::vga.setCursor(osdInsideX(), osdInsideY()); }
@@ -103,7 +113,7 @@ void OSD::drawOSD() {
     vga.setFont(Font6x8);
     osdHome();
     vga.print(OSD_TITLE);
-    osdAt(17, 0);
+    osdAt(19, 0);
     vga.print(OSD_BOTTOM);
     osdHome();
 }
@@ -192,7 +202,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         //AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F2) {        
-        FileSNA::load("/data/sna/ManicMiner.sna");
+        changeSnapshot("ManicMiner.sna");
     }
     else if (KeytoESP == fabgl::VK_F3) {
         FileSNA::load("/data/sna/Dreamwalker.sna");
@@ -276,17 +286,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
         chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
 
-        if (chg_ota == ESP_OK ) {
-            
-            // RESTART ESP32 (This is the most similar way to hard resetting it)
-            rtc_wdt_protect_off();   
-            rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
-            rtc_wdt_set_time(RTC_WDT_STAGE0, 100);
-            rtc_wdt_enable();
-            rtc_wdt_protect_on();
-            while (true);
-
-        }
+        if (chg_ota == ESP_OK ) esp_hard_reset();
 
     }
     else if (KeytoESP == fabgl::VK_F12) {
@@ -299,18 +299,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
         chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
 
-        if (chg_ota == ESP_OK ) {
+        if (chg_ota == ESP_OK ) esp_hard_reset();
             
-            // RESTART ESP32 (This is the most similar way to hard resetting it)
-            rtc_wdt_protect_off();   
-            rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
-            rtc_wdt_set_time(RTC_WDT_STAGE0, 100);
-            rtc_wdt_enable();
-            rtc_wdt_protect_on();
-            while (true);
-
-        }
-
     }
     else if (KeytoESP == fabgl::VK_F1) {
 //        AySound::disable();
@@ -375,93 +365,93 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         //         persistLoad(opt2);
         //     }
         // }
-        // else if (opt == 8) {
-        //     // aspect ratio
-        //     uint8_t opt2;
-        //     if (Config::aspect_16_9)
-        //         opt2 = menuRun(MENU_ASPECT_169);
-        //     else
-        //         opt2 = menuRun(MENU_ASPECT_43);
-        //     if (opt2 == 2)
-        //     {
-        //         Config::aspect_16_9 = !Config::aspect_16_9;
-        //         Config::save();
-        //         ESP.restart();
-        //     }
-        // }
-        // else if (opt == 9) {
-        //     // Reset
-        //     uint8_t opt2 = menuRun(MENU_RESET);
-        //     if (opt2 == 1) {
-        //         // Soft
-        //         ESPectrum::reset();
-        //         if (Config::ram_file != (String)NO_RAM_FILE)
-        //             FileSNA::load("/sna/" + Config::ram_file); // TO DO: fix error if ram_file is .z80 
-        //     }
-        //     else if (opt2 == 2) {
-        //         // Hard
-        //         Config::ram_file = (String)NO_RAM_FILE;
-        //         Config::save();
-        //         ESPectrum::reset();
-        //         ESP.restart();
-        //     }
-        //     else if (opt2 == 3) {
-        //         // ESP host reset
-        //         ESP.restart();
-        //     }
-        // }
+        else if (opt == 8) {
+            // aspect ratio
+            uint8_t opt2;
+            if (Config::aspect_16_9)
+                opt2 = menuRun(MENU_ASPECT_169);
+            else
+                opt2 = menuRun(MENU_ASPECT_43);
+            if (opt2 == 2)
+            {
+                Config::aspect_16_9 = !Config::aspect_16_9;
+                Config::save();
+                esp_hard_reset();
+            }
+        }
+        else if (opt == 9) {
+            // Reset
+            uint8_t opt2 = menuRun(MENU_RESET);
+            if (opt2 == 1) {
+                // Soft
+                ESPectrum::reset();
+                if (Config::ram_file != NO_RAM_FILE)
+                    FileSNA::load("/data/sna/" + Config::ram_file); // TO DO: fix error if ram_file is .z80 
+            }
+            else if (opt2 == 2) {
+                // Hard
+                Config::ram_file = (string)NO_RAM_FILE;
+                Config::save();
+                ESPectrum::reset();
+                //esp_hard_reset();
+            }
+            else if (opt2 == 3) {
+                // ESP host reset
+                esp_hard_reset();
+            }
+        }
         else if (opt == 10) {
             // Help
             drawOSD();
             osdAt(2, 0);
             vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             vga.print(OSD_HELP);
-            // while (!PS2Keyboard::checkAndCleanKey(KEY_F1) &&
-            //        !PS2Keyboard::checkAndCleanKey(KEY_ESC) &&
-            //        !PS2Keyboard::checkAndCleanKey(KEY_ENTER)) {
-            //     vTaskDelay(5);
-            //     updateWiimote2KeysOSD();
-            // }
+            while (1) {
+                // updateWiimote2KeysOSD();
+                KeytoESP = kbd->getNextVirtualKey(&Kdown);
+                if(!Kdown) continue;
+                if ((KeytoESP == fabgl::VK_F1) || (KeytoESP == fabgl::VK_ESCAPE) || (KeytoESP == fabgl::VK_RETURN)) break;
+                vTaskDelay(5 / portTICK_PERIOD_MS);
+            }
         }
         
         // AySound::enable();
     }
 }
 
-// // Shows a red panel with error text
-// void OSD::errorPanel(String errormsg) {
-//     unsigned short x = scrAlignCenterX(OSD_W);
-//     unsigned short y = scrAlignCenterY(OSD_H);
+// Shows a red panel with error text
+void OSD::errorPanel(string errormsg) {
+    unsigned short x = scrAlignCenterX(OSD_W);
+    unsigned short y = scrAlignCenterY(OSD_H);
 
-//     if (Config::slog_on)
-//         Serial.println(errormsg);
+    if (Config::slog_on)
+        printf((errormsg + "\n").c_str());
 
-//     VGA& vga = ESPectrum::vga;
+    VGA6Bit& vga = CPU::vga;
 
-//     vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
-//     vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(7, 0));
-//     vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(2, 1));
-//     vga.setFont(Font6x8);
-//     osdHome();
-//     vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
-//     vga.print(ERROR_TITLE);
-//     osdAt(2, 0);
-//     vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
-//     vga.println(errormsg.c_str());
-//     osdAt(17, 0);
-//     vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
-//     vga.print(ERROR_BOTTOM);
-// }
+    vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
+    vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(7, 0));
+    vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(2, 1));
+    vga.setFont(Font6x8);
+    osdHome();
+    vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
+    vga.print(ERROR_TITLE);
+    osdAt(2, 0);
+    vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
+    vga.println(errormsg.c_str());
+    osdAt(17, 0);
+    vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
+    vga.print(ERROR_BOTTOM);
+}
 
-// // Error panel and infinite loop
-// void OSD::errorHalt(String errormsg) {
-//     errorPanel(errormsg);
-//     while (1) {
-//         ESPectrum::processKeyboard();
-//         do_OSD();
-//         delay(5);
-//     }
-// }
+// Error panel and infinite loop
+void OSD::errorHalt(string errormsg) {
+    errorPanel(errormsg);
+    while (1) {
+        ESPectrum::processKeyboard();
+        vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
+}
 
 // Centered message
 void OSD::osdCenteredMsg(string msg, uint8_t warn_level) {
@@ -532,15 +522,16 @@ void OSD::changeSnapshot(string filename)
 {
     string dir = DISK_SNA_DIR;
 
-    // if (FileUtils::hasSNAextension(filename))
-    // {
-    //     osdCenteredMsg((String)MSG_LOADING_SNA + ": " + filename, LEVEL_INFO);
+    if (FileUtils::hasSNAextension(filename))
+    {
+    
+        osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO);
 
         ESPectrum::reset();
-        printf("Loading SNA: %s\n", filename.c_str());
-        FileSNA::load(dir + filename);
+        // printf("Loading SNA: %s\n", filename.c_str());
+        FileSNA::load(dir + "/" + filename);
 
-    // }
+    }
     // else if (FileUtils::hasZ80extension(filename))
     // {
     //     osdCenteredMsg((String)MSG_LOADING_Z80 + ": " + filename, LEVEL_INFO);
@@ -548,10 +539,11 @@ void OSD::changeSnapshot(string filename)
     //     Serial.printf("Loading Z80: %s\n", filename.c_str());
     //     FileZ80::load((String)DISK_SNA_DIR + "/" + filename);
     // }
+
     // osdCenteredMsg(MSG_SAVE_CONFIG, LEVEL_WARN);
     
     Config::ram_file = filename;
-    // Config::save();
+    Config::save();
 
     // if (Config::getArch() == "48K") AySound::reset();
     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;    

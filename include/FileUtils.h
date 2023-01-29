@@ -43,10 +43,6 @@ using namespace std;
 #define ON true
 #define OFF false
 
-// Headers
-// #include <Arduino.h>
-// #include <FS.h>
-
 class FileUtils
 {
 public:
@@ -55,12 +51,12 @@ public:
     // static void           listAllFiles();
     // static void           sanitizeFilename(String filename); // in-place
     // static File IRAM_ATTR safeOpenFileRead(String filename);
-    // static String         getFileEntriesFromDir(String path);
+    static string         getFileEntriesFromDir(string path);
     // static uint16_t       countFileEntriesFromDir(String path);
-    // static String         getSortedFileList(String fileDir);
+    static string         getSortedFileList(string fileDir);
 
-    // static bool           hasSNAextension(String filename);
-    // static bool           hasZ80extension(String filename);
+    static bool           hasSNAextension(string filename);
+    static bool           hasZ80extension(string filename);
 
 private:
     friend class          Config;
@@ -68,9 +64,9 @@ private:
 };
 
 #define DISK_BOOT_FILENAME "/data/boot.cfg"
-#define DISK_ROM_DIR "/data/rom/"
-#define DISK_SNA_DIR "/data/sna/"
-#define DISK_TAP_DIR "/data/tap/"
+#define DISK_ROM_DIR "/data/rom"
+#define DISK_SNA_DIR "/data/sna"
+#define DISK_TAP_DIR "/data/tap"
 #define DISK_PSNA_FILE "/data/persist/persist"
 #define NO_RAM_FILE "none"
 #define SNA_48K_SIZE 49179
@@ -190,7 +186,5 @@ static inline size_t readBlockFile(FILE *f, uint8_t* dstBuffer, size_t size)
 //     dstBuffer += size;
 //     return size;
 // }
-
-
 
 #endif // FileUtils_h

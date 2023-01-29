@@ -54,14 +54,14 @@ public:
 
     // config persistence
     static void           load();
-    //static void IRAM_ATTR save();
+    static void IRAM_ATTR save();
 
     // list of snapshot file names
     static string   sna_file_list;
     // list of snapshot display names
     static string   sna_name_list;
     // load lists of snapshots
-    //static void loadSnapshotLists();
+    static void loadSnapshotLists();
 
     // list of TAP file names
     static string   tap_file_list;

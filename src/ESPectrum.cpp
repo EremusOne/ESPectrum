@@ -127,11 +127,11 @@ void ESPectrum::setup()
     //=======================================================================================
     FileUtils::initFileSystem();
     Config::load();
-    // Config::loadSnapshotLists();
+    Config::loadSnapshotLists();
     // Config::loadTapLists();
     
     // TESTING
-    Config::aspect_16_9=false;
+    // Config::aspect_16_9=false;
 
     // Print chip information
     esp_chip_info_t chip_info;
