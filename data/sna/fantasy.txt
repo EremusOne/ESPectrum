@@ -1,0 +1,36 @@
+s1------AQPO----
+0123456789ABCDEF
+
+Only first 16 characters of this file are used, the remaining are a comment.
+
+The position (index) of the character represents the wiimote key assigned.
+idx  value  key
+ 0 - 0001 - (2)
+ 1 - 0002 - (1)
+ 2 - 0004 - trigger
+ 3 - 0008 - (A)
+ 4 - 0010 - (-)
+ 5 - 0020 - N/C
+ 6 - 0040 - N/C
+ 7 - 0080 - home
+ 8 - 0100 - pad left
+ 9 - 0200 - pad right
+ A - 0400 - pad down
+ B - 0800 - pad up
+ C - 1000 - (+)
+ D - 2000 - N/C
+ E - 4000 - N/C
+ F - 8000 - N/C
+
+The character itself represents the Spectrum key assigned to the wiimote key.
+
+Legal values for Spectrum keys (Spectrum has 40 keys):
+1234567890
+QWERTYUIOP
+ASDFGHJKLe
+hZXCVBNMys
+
+e = enter
+h = caps shift
+y = symbol shift
+s = space
