@@ -160,58 +160,76 @@ void FileUtils::initFileSystem() {
 //     return f;
 // }
 
-// String FileUtils::getFileEntriesFromDir(String path) {
-//     KB_INT_STOP;
-//     Serial.printf("Getting entries from: '%s'\n", path.c_str());
-//     String filelist;
-//     File root = THE_FS.open(path.c_str());
-//     if (!root || !root.isDirectory()) {
-//         OSD::errorHalt((String)ERR_DIR_OPEN + "\n" + root);
-//     }
-//     File file = root.openNextFile();
-//     if (!file)
-//         Serial.println("No entries found!");
-//     while (file) {
-//         Serial.printf("Found %s: %s...%ub...", (file.isDirectory() ? "DIR" : "FILE"), file.name(), file.size());
-//         String filename = file.name();
-//         byte start = filename.indexOf("/", path.length()) + 1;
-//         byte end = filename.indexOf("/", start);
-//         filename = filename.substring(start, end);
-//         Serial.printf("%s...", filename.c_str());
-//         if (filename.startsWith(".")) {
-//             Serial.println("HIDDEN");
-//         } else if (filename.endsWith(".txt")) {
-//             Serial.println("IGNORING TXT");
-// //        } else if (Config::arch == "48K" & file.size() > SNA_48K_SIZE) {
-// //            Serial.println("128K SKIP");
-//         } else {
-//             if (filelist.indexOf(filename) < 0) {
-//                 Serial.println("ADDING");
-//                 filelist += filename + "\n";
-//             } else {
-//                 Serial.println("EXISTS");
-//             }
-//         }
-//         file = root.openNextFile();
-//     }
-//     KB_INT_START;
-//     return filelist;
-// }
+#include "esp_vfs.h"
 
-// bool FileUtils::hasSNAextension(String filename)
-// {
-//     if (filename.endsWith(".sna")) return true;
-//     if (filename.endsWith(".SNA")) return true;
-//     return false;
-// }
+string FileUtils::getFileEntriesFromDir(string path) {
 
-// bool FileUtils::hasZ80extension(String filename)
-// {
-//     if (filename.endsWith(".z80")) return true;
-//     if (filename.endsWith(".Z80")) return true;
-//     return false;
-// }
+    string filelist;
 
+    // printf("Getting entries from: '%s'\n", path.c_str());
+
+    DIR* dir = opendir(path.c_str());
+    if (dir == NULL) {
+        // OSD::errorHalt(ERR_DIR_OPEN + "\n" + path).cstr());
+    }
+
+    struct dirent* de = readdir(dir);
+    
+    if (!de) {
+
+        printf("No entries found!\n");
+
+    } else {
+
+        while (true) {
+            
+        //    printf("Found file: %s\n", de->d_name);
+            
+            string filename = de->d_name;
+
+            if (filename.compare(0,1,".") == 0) {
+        //        printf("HIDDEN\n");
+            } else if (filename.substr(filename.size()-4) == ".txt") {
+        //        printf("IGNORING TXT\n");
+            } else {
+        //        printf("ADDING\n");
+                filelist += filename + "\n";
+            }
+            
+            de = readdir(dir);
+            if (!de) break;
+        
+        }
+
+    }
+
+    // printf(filelist.c_str());
+
+    closedir(dir);
+
+    return filelist;
+
+}
+
+bool FileUtils::hasSNAextension(string filename)
+{
+    
+    if (filename.substr(filename.size()-4,4) == ".sna") return true;
+    if (filename.substr(filename.size()-4,4) == ".SNA") return true;
+
+    return false;
+
+}
+
+bool FileUtils::hasZ80extension(string filename)
+{
+
+    if (filename.substr(filename.size()-4,4) == ".z80") return true;
+    if (filename.substr(filename.size()-4,4) == ".Z80") return true;
+
+    return false;
+
+}
 
 // uint16_t FileUtils::countFileEntriesFromDir(String path) {
 //     String entries = getFileEntriesFromDir(path);
@@ -247,45 +265,49 @@ void FileUtils::loadRom(string arch, string romset) {
 
 }
 
-// // Get all sna files sorted alphabetically
-// String FileUtils::getSortedFileList(String fileDir)
-// {
-//     // get string of unsorted filenames, separated by newlines
-//     String entries = getFileEntriesFromDir(fileDir);
+// Get all sna files sorted alphabetically
+string FileUtils::getSortedFileList(string fileDir)
+{
 
-//     // count filenames (they always end at newline)
-//     unsigned short count = 0;
-//     for (unsigned short i = 0; i < entries.length(); i++) {
-//         if (entries.charAt(i) == ASCII_NL) {
-//             count++;
-//         }
-//     }
+    
+    return getFileEntriesFromDir(fileDir);
+    
+    // // get string of unsorted filenames, separated by newlines
+    // string entries = getFileEntriesFromDir(fileDir);
 
-//     // array of filenames
-//     String* filenames = (String*)malloc(count * sizeof(String));
-//     // memory must be initialized to avoid crash on assign
-//     memset(filenames, 0, count * sizeof(String));
+    // // count filenames (they always end at newline)
+    // unsigned short count = 0;
+    // for (unsigned short i = 0; i < entries.length(); i++) {
+    //     if (entries.at(i) == ASCII_NL) {
+    //         count++;
+    //     }
+    // }
 
-//     // copy filenames from string to array
-//     unsigned short ich = 0;
-//     unsigned short ifn = 0;
-//     for (unsigned short i = 0; i < entries.length(); i++) {
-//         if (entries.charAt(i) == ASCII_NL) {
-//             filenames[ifn++] = entries.substring(ich, i);
-//             ich = i + 1;
-//         }
-//     }
+    // // array of filenames
+    // String* filenames = (String*)malloc(count * sizeof(String));
+    // // memory must be initialized to avoid crash on assign
+    // memset(filenames, 0, count * sizeof(String));
 
-//     // sort array
-//     sortArray(filenames, count);
+    // // copy filenames from string to array
+    // unsigned short ich = 0;
+    // unsigned short ifn = 0;
+    // for (unsigned short i = 0; i < entries.length(); i++) {
+    //     if (entries.charAt(i) == ASCII_NL) {
+    //         filenames[ifn++] = entries.substring(ich, i);
+    //         ich = i + 1;
+    //     }
+    // }
 
-//     // string of sorted filenames
-//     String sortedEntries = "";
+    // // sort array
+    // sortArray(filenames, count);
 
-//     // copy filenames from array to string
-//     for (unsigned short i = 0; i < count; i++) {
-//         sortedEntries += filenames[i] + '\n';
-//     }
+    // // string of sorted filenames
+    // String sortedEntries = "";
 
-//     return sortedEntries;
-// }
+    // // copy filenames from array to string
+    // for (unsigned short i = 0; i < count; i++) {
+    //     sortedEntries += filenames[i] + '\n';
+    // }
+
+    // return sortedEntries;
+}
