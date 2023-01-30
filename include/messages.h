@@ -94,14 +94,14 @@
     "or F7 to stop.\n"
 #define MENU_MAIN \
     "Main Menu\n"\
-    "Load Snapshot to RAM\n"\
+    "Load SNA or Z80\n"\
     "Select TAP file\n"\
     "Select ROM\n"\
-    "Save snapshot(F2)\n"\
-    "Load snapshot(F3)\n"\
+    "Load state (F2)\n"\
+    "Save state (F3)\n"\
     "Aspect Ratio...\n"\
     "Reset\n"\
-    "About...\n"
+    "About\n"
 #define MENU_ASPECT_169 \
     "Aspect Ratio\n"\
     "16:9 (current)\n"\

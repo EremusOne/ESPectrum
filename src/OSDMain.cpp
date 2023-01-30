@@ -36,7 +36,7 @@
 #include "Config.h"
 #include "FileSNA.h"
 #include "FileZ80.h"
-//#include "AySound.h"
+#include "AySound.h"
 #include "MemESP.h"
 //#include "Tape.h"
 #include "pwm_audio.h"
@@ -192,14 +192,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     bool Kdown;
 
     if (KeytoESP == fabgl::VK_PAUSE) {
-        //AySound::disable();
+        AySound::disable();
         osdCenteredMsg(OSD_PAUSE, LEVEL_INFO);
         while (1) {
             KeytoESP = kbd->getNextVirtualKey(&Kdown);
             if ((Kdown) && (KeytoESP == fabgl::VK_PAUSE)) break;
             vTaskDelay(5 / portTICK_PERIOD_MS);
         }
-        //AySound::enable();
+        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F2) {        
         changeSnapshot("ManicMiner.sna");
@@ -303,7 +303,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             
     }
     else if (KeytoESP == fabgl::VK_F1) {
-//        AySound::disable();
+        AySound::disable();
 
         // Main menu
         uint8_t opt = menuRun(MENU_MAIN);
@@ -337,8 +337,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     string arch = rowGet(arch_menu, arch_num);
                     string romSet = rowGet(romset_menu, romset_num);
                     Config::requestMachine(arch, romSet, true);
+                    Config::ram_file = "none";
                     vTaskDelay(2);
-
                     Config::save();
                     vTaskDelay(2);
                     ESPectrum::reset();
@@ -390,7 +390,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
             else if (opt2 == 2) {
                 // Hard
-                Config::ram_file = (string)NO_RAM_FILE;
+                Config::ram_file = NO_RAM_FILE;
                 Config::save();
                 ESPectrum::reset();
                 //esp_hard_reset();
@@ -415,7 +415,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         }
         
-        // AySound::enable();
+        AySound::enable();
     }
 }
 
@@ -545,7 +545,7 @@ void OSD::changeSnapshot(string filename)
     Config::ram_file = filename;
     Config::save();
 
-    // if (Config::getArch() == "48K") AySound::reset();
+    if (Config::getArch() == "48K") AySound::reset();
     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;    
 
 }

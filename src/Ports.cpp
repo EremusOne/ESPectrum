@@ -29,7 +29,7 @@
 #include "hardconfig.h"
 #include "Ports.h"
 #include "MemESP.h"
-//#include "AySound.h"
+#include "AySound.h"
 #include "ESPectrum.h"
 //#include "Tape.h"
 #include "CPU.h"

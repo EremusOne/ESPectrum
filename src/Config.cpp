@@ -27,6 +27,9 @@
 // DEALINGS IN THE SOFTWARE.
 //
 
+#include <cctype>
+#include <algorithm>
+#include <locale>
 #include "hardconfig.h"
 #include "Config.h"
 // #include <FS.h>
@@ -61,6 +64,34 @@ bool     Config::slog_on = true;
 bool     Config::aspect_16_9 = false;
 uint8_t  Config::esp32rev = 0;
 
+// erase control characters (in place)
+static inline void erase_cntrl(std::string &s) {
+    s.erase(std::remove_if(s.begin(), s.end(), 
+            [&](char ch) 
+            { return std::iscntrl(static_cast<unsigned char>(ch));}), 
+            s.end());
+}
+
+// trim from start (in place)
+static inline void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
+// trim from both ends (in place)
+static inline void trim(std::string &s) {
+    rtrim(s);
+    ltrim(s);
+}
+
 // Read config from FS
 void Config::load() {
     
@@ -79,20 +110,25 @@ void Config::load() {
         // printf(line.c_str());
         if (line.find("ram:") != string::npos) {
             ram_file = line.substr(line.find(':') + 1);
-            ram_file.pop_back();
+            erase_cntrl(ram_file);
+            trim(ram_file);
         } else if (line.find("arch:") != string::npos) {
             arch = line.substr(line.find(':') + 1);
-            arch.pop_back();
+            erase_cntrl(arch);
+            trim(arch);
         } else if (line.find("romset:") != string::npos) {
             romSet = line.substr(line.find(':') + 1);
-            romSet.pop_back();
+            erase_cntrl(romSet);
+            trim(romSet);
         } else if (line.find("slog:") != string::npos) {
             line = line.substr(line.find(':') + 1);
-            line.pop_back();
+            erase_cntrl(line);
+            trim(line);
             slog_on = (line == "true");
         } else if (line.find("asp169:") != string::npos) {
             line = line.substr(line.find(':') + 1);
-            line.pop_back();
+            erase_cntrl(line);
+            trim(line);
             aspect_16_9 = (line == "true");
         }
     }
