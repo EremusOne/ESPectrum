@@ -38,7 +38,7 @@
 #include "FileZ80.h"
 #include "AySound.h"
 #include "MemESP.h"
-//#include "Tape.h"
+#include "Tape.h"
 #include "pwm_audio.h"
 
 #include "esp_system.h"
@@ -149,39 +149,39 @@ void OSD::drawOSD() {
 //     delay(200);
 // }
 
-// static void persistSave(uint8_t slotnumber)
-// {
-//     char persistfname[strlen(DISK_PSNA_FILE) + 6];
-//     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
-//     OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO);
-//     if (!FileSNA::save(persistfname)) {
-//         OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
-//         delay(1000);
-//         return;
-//     }
-//     OSD::osdCenteredMsg(OSD_PSNA_SAVED, LEVEL_INFO);
-//     delay(400);
-// }
+static void persistSave(uint8_t slotnumber)
+{
+    char persistfname[strlen(DISK_PSNA_FILE) + 6];
+    sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
+    OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO);
+    if (!FileSNA::save(persistfname)) {
+        OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        return;
+    }
+    OSD::osdCenteredMsg(OSD_PSNA_SAVED, LEVEL_INFO);
+    vTaskDelay(400/portTICK_PERIOD_MS);
+}
 
-// static void persistLoad(uint8_t slotnumber)
-// {
-//     char persistfname[strlen(DISK_PSNA_FILE) + 6];
-//     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
-//     if (!FileSNA::isPersistAvailable(persistfname)) {
-//         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
-//         delay(1000);
-//         return;
-//     }
-//     OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
-//     if (!FileSNA::load(persistfname)) {
-//          OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
-//          delay(1000);
-//     }
-//     if (Config::getArch() == "48K") AySound::reset();
-//     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;
-//     OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
-//     delay(400);
-// }
+static void persistLoad(uint8_t slotnumber)
+{
+    char persistfname[strlen(DISK_PSNA_FILE) + 6];
+    sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
+    if (!FileSNA::isPersistAvailable(persistfname)) {
+        OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        return;
+    }
+    OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
+    if (!FileSNA::load(persistfname)) {
+         OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+         vTaskDelay(1000/portTICK_PERIOD_MS);
+    }
+    if (Config::getArch() == "48K") AySound::reset();
+    if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;
+    OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
+    vTaskDelay(400/portTICK_PERIOD_MS);
+}
 
 // OSD Main Loop
 void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
@@ -201,62 +201,37 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         AySound::enable();
     }
-    else if (KeytoESP == fabgl::VK_F2) {        
-        changeSnapshot("ManicMiner.sna");
+    else if (KeytoESP == fabgl::VK_F2) {
+        AySound::disable();
+        // Persist Load
+        uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
+        if (opt2 > 0 && opt2<6) {
+            persistLoad(opt2);
+        }
+        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F3) {
-        FileSNA::load("/data/sna/Dreamwalker.sna");
-    }
-    else if (KeytoESP == fabgl::VK_F4) {
-        FileSNA::load("/data/sna/Timing_Tests-48k_v1.0.sna");        
-    }
-    else if (KeytoESP == fabgl::VK_F5) {
-        FileSNA::load("/data/sna/Snake.sna");        
+        AySound::disable();
+        // Persist Save
+        uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
+        if (opt2 > 0 && opt2<6) {
+            persistSave(opt2);
+        }
+        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F6) {
-        FileSNA::load("/data/sna/Sentinel.sna");        
+        // Start .tap reproduction
+        if (Tape::tapeFileName=="none") {
+            OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
+            vTaskDelay(1000/portTICK_PERIOD_MS);                
+        } else {
+            Tape::TAP_Play();
+        }
     }
-    // else if (PS2Keyboard::checkAndCleanKey(KEY_F2)) {
-    //     AySound::disable();
-    //     quickSave();
-    //     AySound::enable();
-    // }
-    // else if (PS2Keyboard::checkAndCleanKey(KEY_F3)) {
-    //     AySound::disable();
-    //     quickLoad();
-    //     AySound::enable();
-    // }
-    // else if (PS2Keyboard::checkAndCleanKey(KEY_F4)) {
-    //     AySound::disable();
-    //     // Persist Save
-    //     uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
-    //     if (opt2 > 0 && opt2<6) {
-    //         persistSave(opt2);
-    //     }
-    //     AySound::enable();
-    // }
-    // else if (PS2Keyboard::checkAndCleanKey(KEY_F5)) {
-    //     AySound::disable();
-    //     // Persist Load
-    //     uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
-    //     if (opt2 > 0 && opt2<6) {
-    //         persistLoad(opt2);
-    //     }
-    //     AySound::enable();
-    // }
-    // else if (PS2Keyboard::checkAndCleanKey(KEY_F6)) {
-    //     // Start .tap reproduction
-    //     if (Tape::tapeFileName=="none") {
-    //         OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
-    //         delay(1000);                
-    //     } else {
-    //         Tape::TAP_Play();
-    //     }
-    // }
-    // else if (PS2Keyboard::checkAndCleanKey(KEY_F7)) {
-    //     // Stop .tap reproduction
-    //     Tape::tapeStatus=TAPE_STOPPED;
-    // }
+    else if (KeytoESP == fabgl::VK_F7) {
+        // Stop .tap reproduction
+        Tape::TAP_Stop();
+    }
     else if (KeytoESP == fabgl::VK_F9) {
         if (ESPectrum::aud_volume>-16) {
                 ESPectrum::aud_volume--;
@@ -317,14 +292,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         else if (opt == 2) {
             // Change TAP
             unsigned short tapnum = menuRun(Config::tap_name_list);
-            // if (tapnum > 0) {
-            //     Tape::tapeFileName=DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
-            //     if (!Tape::TAP_Load()) {
-            //         Tape::tapeFileName="none";
-            //         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_WARN);
-            //         delay(1000);
-            //     } else menuRun(MENU_TAP_SELECTED);
-            // }
+            if (tapnum > 0) {
+                Tape::tapeFileName=DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
+                if (!Tape::TAP_Load()) {
+                    Tape::tapeFileName="none";
+                    OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_WARN);
+                    vTaskDelay(1000/portTICK_PERIOD_MS);
+                } else menuRun(MENU_TAP_SELECTED);
+            }
         }
         else if (opt == 3) {
             // Change ROM
@@ -345,24 +320,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 }
             }
         }
-        // else if (opt == 4) {
-        //     quickSave();
-        // }
-        // else if (opt == 5) {
-        //     quickLoad();
-        // }
         else if (opt == 4) {
-            // Persist Save
-            uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
-            if (opt2 > 0 && opt2<6) {
-//                persistSave(opt2);
-            }
-        }
-        else if (opt == 5) {
             // Persist Load
             uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
             if (opt2 > 0 && opt2<6) {
-//                persistLoad(opt2);
+                persistLoad(opt2);
+            }
+        }
+        else if (opt == 5) {
+            // Persist Save
+            uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
+            if (opt2 > 0 && opt2<6) {
+                persistSave(opt2);
             }
         }
         else if (opt == 6) {
@@ -545,7 +514,10 @@ void OSD::changeSnapshot(string filename)
     Config::ram_file = filename;
     Config::save();
 
+    #ifdef USE_AY_SOUND
     if (Config::getArch() == "48K") AySound::reset();
+    #endif
+
     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;    
 
 }

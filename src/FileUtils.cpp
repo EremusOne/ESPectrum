@@ -39,6 +39,7 @@
 #include "FileUtils.h"
 #include "Config.h"
 #include "roms.h"
+#include "esp_vfs.h"
 
 #ifdef USE_INT_FLASH
 #include "esp_spiffs.h"
@@ -159,8 +160,6 @@ void FileUtils::initFileSystem() {
 
 //     return f;
 // }
-
-#include "esp_vfs.h"
 
 string FileUtils::getFileEntriesFromDir(string path) {
 

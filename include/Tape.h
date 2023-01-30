@@ -42,6 +42,7 @@ class Tape
 public:
 
     // Tape
+    static FILE *tape;
     static string tapeFileName;
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
@@ -50,6 +51,7 @@ public:
     static void Init();
     static bool TAP_Load();
     static void TAP_Play();
+    static void TAP_Stop();    
     static uint8_t TAP_Read();
 
 };

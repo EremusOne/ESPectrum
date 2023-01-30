@@ -40,7 +40,7 @@
 #include "CPU.h"
 #include "Config.h"
 #include "OSDMain.h"
-// #include "Tape.h"
+#include "Tape.h"
 
 #pragma GCC optimize ("O3")
 

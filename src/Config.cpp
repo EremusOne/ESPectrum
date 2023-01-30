@@ -37,6 +37,7 @@
 #include "FileUtils.h"
 #include "messages.h"
 #include "ESPectrum.h"
+#include "Tape.h"
 
 #ifdef USE_INT_FLASH
 // using internal storage (spi flash)
@@ -94,6 +95,9 @@ static inline void trim(std::string &s) {
 
 // Read config from FS
 void Config::load() {
+    
+    // Close tape
+    fclose(Tape::tape);   
     
     FILE *f = fopen(DISK_BOOT_FILENAME, "r");
     if (f==NULL)
@@ -217,6 +221,9 @@ void Config::save() {
 
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
+
+    // Close tape
+    fclose(Tape::tape);
 
     printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
 

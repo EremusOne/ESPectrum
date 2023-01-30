@@ -31,7 +31,7 @@
 #include "MemESP.h"
 #include "AySound.h"
 #include "ESPectrum.h"
-//#include "Tape.h"
+#include "Tape.h"
 #include "CPU.h"
 
 // Ports
@@ -92,25 +92,25 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
         if (~(portHigh | 0xBF)&0xFF) result &= (base[6] & wii[6]);
         if (~(portHigh | 0x7F)&0xFF) result &= (base[7] & wii[7]);
 
-        // if (Tape::tapeStatus==TAPE_LOADING) {
+        if (Tape::tapeStatus==TAPE_LOADING) {
             
-        //     bitWrite(result,6,Tape::TAP_Read());
+            bitWrite(result,6,Tape::TAP_Read());
             
-        //     /*
-        //     uint32_t ts_end = micros();
-        //     uint32_t elapsed = ts_end - ts_start;
+            /*
+            uint32_t ts_end = micros();
+            uint32_t elapsed = ts_end - ts_start;
             
-        //     static int ctr = 0;
-        //     if (ctr == 0) {
-        //     ctr = 8192;
-        //         Serial.printf("[TAPE] elapsed: %u\n", elapsed);
-        //     }
-        //     else ctr--;
-        //     */
+            static int ctr = 0;
+            if (ctr == 0) {
+            ctr = 8192;
+                Serial.printf("[TAPE] elapsed: %u\n", elapsed);
+            }
+            else ctr--;
+            */
            
-        // } else {
+        } else {
             if (base[0x20] & 0x18) result |= (0xe0); else result |= (0xa0); // ISSUE 2 behaviour
-        // }
+        }
 
         return result;
 

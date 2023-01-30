@@ -103,21 +103,21 @@ static inline uint16_t readWordFileBE(FILE *f)
 
 static inline size_t readBlockFile(FILE *f, uint8_t* dstBuffer, size_t size)
 {
-    return fread(dstBuffer, 1, 0x4000, f);
+    return fread(dstBuffer, 0x4000, 1, f);
 }
 
-// static inline void writeByteFile(uint8_t value, File f)
-// {
-//     f.write(value);
-// }
+static inline void writeByteFile(uint8_t value, FILE *f)
+{
+    fwrite(&value,1,1,f);
+}
 
-// static inline void writeWordFileLE(uint16_t value, File f)
-// {
-//     uint8_t lo =  value       & 0xFF;
-//     uint8_t hi = (value >> 8) & 0xFF;
-//     f.write(lo);
-//     f.write(hi);
-// }
+static inline void writeWordFileLE(uint16_t value, FILE *f)
+{
+    uint8_t lo =  value       & 0xFF;
+    uint8_t hi = (value >> 8) & 0xFF;
+    fwrite(&lo,1,1,f);
+    fwrite(&hi,1,1,f);
+}
 
 // static inline void writeWordFileBE(uint16_t value, File f)
 // {

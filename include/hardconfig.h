@@ -60,7 +60,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // LOG_DEBUG_TIMING generates simple timing log messages to console every second.
-#define LOG_DEBUG_TIMING
+// #define LOG_DEBUG_TIMING
 
 ///////////////////////////////////////////////////////////////////////////////
 // Resolution, border and centering
@@ -125,9 +125,9 @@
 // for using convenience keys, define just ONE of
 // PS2_CONVENIENCE_KEYS_EN for english keyboard: [backspace][,][.][/][;][´][-][=]
 // PS2_CONVENIENCE_KEYS_EN for SPANISH keyboard: [backspace][,][.][-][´][+]
+
 //#define PS2_CONVENIENCE_KEYS_EN
 #define PS2_CONVENIENCE_KEYS_ES
-
 ///////////////////////////////////////////////////////////////////////////////
 
 

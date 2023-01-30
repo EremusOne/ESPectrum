@@ -37,7 +37,7 @@
 #include "OSDMain.h"
 // #include "Wiimote2Keys.h"
 #include "FileSNA.h"
-
+#include "Tape.h"
 #include <stdio.h>
 
 #include <inttypes.h>
@@ -127,6 +127,9 @@ bool FileSNA::load(string sna_fn)
 
     // if (sna_fn != DISK_PSNA_FILE)
     //     loadKeytableForGame(sna_fn.c_str());
+    
+    // Close tape
+    fclose(Tape::tape);
     
     file = fopen(sna_fn.c_str(), "rb");
     if (file==NULL)
@@ -269,168 +272,167 @@ bool FileSNA::load(string sna_fn)
 
 // ///////////////////////////////////////////////////////////////////////////////
 
-// bool FileSNA::isPersistAvailable(string filename)
-// {
-//     // string filename = DISK_PSNA_FILE;
-//     return THE_FS.exists(filename.c_str());
-// }
+bool FileSNA::isPersistAvailable(string filename)
+{
+
+    FILE *f = fopen(filename.c_str(), "rb");
+
+    if (f == NULL) { return false; }
+
+    fclose(f);
+
+    return true;
+}
 
 // ///////////////////////////////////////////////////////////////////////////////
 
-// //static bool IRAM_ATTR writeMemESPPage(uint8_t page, File file, bool blockMode)
-// static bool writeMemESPPage(uint8_t page, File file, bool blockMode)
-// {
-//     page = page & 0x07;
-//     uint8_t* buffer = MemESP::ram[page];
+static bool writeMemPage(uint8_t page, FILE *file, bool blockMode)
+{
+    page = page & 0x07;
+    uint8_t* buffer = MemESP::ram[page];
 
-//     printf("writing page %d in [%s] mode\n", page, blockMode ? "block" : "byte");
+    // printf("writing page %d in [%s] mode\n", page, blockMode ? "block" : "byte");
 
-//     if (blockMode) {
-//         // writing blocks should be faster, but fails sometimes when flash is getting full.
-//         uint16_t bytesWritten = file.write(buffer, MEMESP_PG_SZ);
-//         if (bytesWritten != MEMESP_PG_SZ) {
-//             printf("error writing page %d: %d of %d bytes written\n", page, bytesWritten, MEMESP_PG_SZ);
-//             return false;
-//         }
-//     }
-//     else {
-//         for (int offset = 0; offset < MEMESP_PG_SZ; offset++) {
-//             uint8_t b = buffer[offset];
-//             if (1 != file.write(b)) {
-//                 printf("error writing byte from page %d at offset %d\n", page, offset);
-//                 return false;
-//             }
-//         }
-//     }
-//     return true;
-// }
-
-// ///////////////////////////////////////////////////////////////////////////////
-
-// bool FileSNA::save(string sna_file) {
-//     // #define BENCHMARK_BOTH_SAVE_METHODS
-//     #ifndef BENCHMARK_BOTH_SAVE_METHODS
-//         // try to save using pages
-
-//         if (FileSNA::save(sna_file, true))
-//             return true;
-//         OSD::osdCenteredMsg(OSD_PSNA_SAVE_WARN, 2);
-//         // try to save byte-by-byte
-//         return FileSNA::save(sna_file, false);
-//     #else
-//         uint32_t ts_start, ts_end;
-//         bool ok;
-
-//         ts_start = millis();
-//         ok = FileSNA::save(sna_file, true);
-//         ts_end = millis();
-
-//         printf("save SNA [page]: ok = %d, millis = %d\n", ok, (ts_end - ts_start));
-
-//         ts_start = millis();
-//         ok = FileSNA::save(sna_file, false);
-//         ts_end = millis();
-
-//         printf("save SNA [byte]: ok = %d, millis = %d\n", ok, (ts_end - ts_start));
-
-//         return ok;
-//     #endif // BENCHMARK_BOTH_SAVE_METHODS
-// }
+    if (blockMode) {
+        // Writing blocks should be faster, but fails sometimes when flash is getting full.
+        for (int offset = 0; offset < MEM_PG_SZ; offset+=0x4000) {
+            // printf("writing block from page %d at offset %d\n", page, offset);
+            if (1 != fwrite(&buffer[offset],0x4000,1,file)) {
+                printf("error writing block from page %d at offset %d\n", page, offset);
+                return false;
+            }
+        }
+    }
+    else {
+        for (int offset = 0; offset < MEM_PG_SZ; offset++) {
+            uint8_t b = buffer[offset];
+            if (1 != fwrite(&b,1,1,file)) {
+                printf("error writing byte from page %d at offset %d\n", page, offset);
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 // ///////////////////////////////////////////////////////////////////////////////
 
-// bool FileSNA::save(string sna_file, bool blockMode) {
-//     KB_INT_STOP;
+bool FileSNA::save(string sna_file) {
+        
+        // Try to save using pages
+        if (FileSNA::save(sna_file, true)) return true;
 
-//     // open file
-//     File file = THE_FS.open(sna_file, FILE_WRITE);
-//     if (!file) {
-//         printf("FileSNA::save: failed to open %s for writing\n", sna_file.c_str());
-//         KB_INT_START;
-//         return false;
-//     }
+        OSD::osdCenteredMsg(OSD_PSNA_SAVE_WARN, 2);
 
-//     // write registers: begin with I
-//     writeByteFile(Z80_GET_I(), file);
+        // Try to save byte-by-byte
+        return FileSNA::save(sna_file, false);
 
-//     writeWordFileLE(Z80_GET_HLx(), file);
-//     writeWordFileLE(Z80_GET_DEx(), file);
-//     writeWordFileLE(Z80_GET_BCx(), file);
-//     writeWordFileLE(Z80_GET_AFx(), file);
+}
 
-//     writeWordFileLE(Z80_GET_HL(), file);
-//     writeWordFileLE(Z80_GET_DE(), file);
-//     writeWordFileLE(Z80_GET_BC(), file);
+// ///////////////////////////////////////////////////////////////////////////////
 
-//     writeWordFileLE(Z80_GET_IY(), file);
-//     writeWordFileLE(Z80_GET_IX(), file);
+bool FileSNA::save(string sna_file, bool blockMode) {
 
-//     uint8_t inter = Z80_GET_IFF2() ? 0x04 : 0;
-//     writeByteFile(inter, file);
-//     writeByteFile(Z80_GET_R(), file);
+    FILE *file;
 
-//     writeWordFileLE(Z80_GET_AF(), file);
+    // Stop keyboard input
+    ESPectrum::PS2Controller.keyboard()->suspendPort();
 
-//     uint16_t SP = Z80_GET_SP();
-//     if (Config::getArch() == "48K") {
-//         // decrement stack pointer it for pushing PC to stack, only on 48K
-//         SP -= 2;
-//         MemESP::writeword(SP, Z80_GET_PC());
-//     }
-//     writeWordFileLE(SP, file);
+    // Close tape
+    fclose(Tape::tape);
+    
+    file = fopen(sna_file.c_str(), "w");
+    if (file==NULL)
+    {
+        printf("FileSNA: Error opening %s for writing",sna_file.c_str());
+        // Resume keyboard input
+        ESPectrum::PS2Controller.keyboard()->resumePort();
+        return false;
+    }
 
-//     writeByteFile(Z80_GET_IM(), file);
-//     uint8_t bordercol = ESPectrum::CPU::borderColor;
-//     writeByteFile(bordercol, file);
+    // write registers: begin with I
+    writeByteFile(Z80_GET_I(), file);
 
-//     // write RAM pages in 48K address space (0x4000 - 0xFFFF)
-//     uint8_t pages[3] = {5, 2, 0};
-//     if (Config::getArch() == "128K")
-//         pages[2] = MemESP::bankLatch;
+    writeWordFileLE(Z80_GET_HLx(), file);
+    writeWordFileLE(Z80_GET_DEx(), file);
+    writeWordFileLE(Z80_GET_BCx(), file);
+    writeWordFileLE(Z80_GET_AFx(), file);
 
-//     for (uint8_t ipage = 0; ipage < 3; ipage++) {
-//         uint8_t page = pages[ipage];
-//         if (!writeMemESPPage(page, file, blockMode)) {
-//             file.close();
-//             KB_INT_START;
-//             return false;
-//         }
-//     }
+    writeWordFileLE(Z80_GET_HL(), file);
+    writeWordFileLE(Z80_GET_DE(), file);
+    writeWordFileLE(Z80_GET_BC(), file);
 
-//     if (Config::getArch() == "48K")
-//     {
-//         // nothing to do here
-//     }
-//     else if (Config::getArch() == "128K")
-//     {
-//         // write pc
-//         writeWordFileLE(Z80_GET_PC(), file);
+    writeWordFileLE(Z80_GET_IY(), file);
+    writeWordFileLE(Z80_GET_IX(), file);
 
-//         // write memESP bank control port
-//         uint8_t tmp_port = MemESP::bankLatch;
-//         bitWrite(tmp_port, 3, MemESP::videoLatch);
-//         bitWrite(tmp_port, 4, MemESP::romLatch);
-//         bitWrite(tmp_port, 5, MemESP::pagingLock);
-//         writeByteFile(tmp_port, file);
+    uint8_t inter = Z80_GET_IFF2() ? 0x04 : 0;
+    writeByteFile(inter, file);
+    writeByteFile(Z80_GET_R(), file);
 
-//         writeByteFile(0, file);     // TR-DOS not paged
+    writeWordFileLE(Z80_GET_AF(), file);
 
-//         // write remaining ram pages
-//         for (int page = 0; page < 8; page++) {
-//             if (page != MemESP::bankLatch && page != 2 && page != 5) {
-//                 if (!writeMemESPPage(page, file, blockMode)) {
-//                     file.close();
-//                     KB_INT_START;
-//                     return false;
-//                 }
-//             }
-//         }
-//     }
+    uint16_t SP = Z80_GET_SP();
+    if (Config::getArch() == "48K") {
+        // decrement stack pointer it for pushing PC to stack, only on 48K
+        SP -= 2;
+        MemESP::writeword(SP, Z80_GET_PC());
+    }
+    writeWordFileLE(SP, file);
 
-//     file.close();
-//     KB_INT_START;
-//     return true;
-// }
+    writeByteFile(Z80_GET_IM(), file);
+    uint8_t bordercol = CPU::borderColor;
+    writeByteFile(bordercol, file);
+
+    // write RAM pages in 48K address space (0x4000 - 0xFFFF)
+    uint8_t pages[3] = {5, 2, 0};
+    if (Config::getArch() == "128K")
+        pages[2] = MemESP::bankLatch;
+
+    for (uint8_t ipage = 0; ipage < 3; ipage++) {
+        uint8_t page = pages[ipage];
+        if (!writeMemPage(page, file, blockMode)) {
+            fclose(file);
+            ESPectrum::PS2Controller.keyboard()->resumePort();
+            return false;
+        }
+    }
+
+    if (Config::getArch() == "48K")
+    {
+        // nothing to do here
+    }
+    else if (Config::getArch() == "128K")
+    {
+        // write pc
+        writeWordFileLE(Z80_GET_PC(), file);
+
+        // write memESP bank control port
+        uint8_t tmp_port = MemESP::bankLatch;
+        bitWrite(tmp_port, 3, MemESP::videoLatch);
+        bitWrite(tmp_port, 4, MemESP::romLatch);
+        bitWrite(tmp_port, 5, MemESP::pagingLock);
+        writeByteFile(tmp_port, file);
+
+        writeByteFile(0, file);     // TR-DOS not paged
+
+        // write remaining ram pages
+        for (int page = 0; page < 8; page++) {
+            if (page != MemESP::bankLatch && page != 2 && page != 5) {
+                if (!writeMemPage(page, file, blockMode)) {
+                    fclose(file);
+                    ESPectrum::PS2Controller.keyboard()->resumePort();
+                    return false;
+                }
+            }
+        }
+    }
+
+    fclose(file);
+
+    ESPectrum::PS2Controller.keyboard()->resumePort();
+
+    return true;
+}
 
 // ///////////////////////////////////////////////////////////////////////////////
 

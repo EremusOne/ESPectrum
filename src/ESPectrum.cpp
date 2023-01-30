@@ -48,7 +48,7 @@
 #include "roms.h"
 #include "CPU.h"
 #include "AySound.h"
-// #include "Tape.h"
+#include "Tape.h"
 #include "Z80_JLS/z80.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -215,7 +215,7 @@ void ESPectrum::setup()
     if (Config::slog_on) showMemInfo("RAM Initialized");
 
 //     // Init tape
-//     Tape::Init();
+    Tape::Init();
 
 // #ifdef SPEAKER_PRESENT
 //     pinMode(SPEAKER_PIN, OUTPUT);
@@ -244,11 +244,13 @@ void ESPectrum::setup()
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
     xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 4096, NULL, 5, &audioTaskHandle, 1);
 
+    #ifdef USE_AY_SOUND
     AySound::initialize();
     // // Set AY channels samplerate to match pwm_audio's
     AySound::_channel[0].setSampleRate(ESP_AUDIO_FREQ);
     AySound::_channel[1].setSampleRate(ESP_AUDIO_FREQ);
     AySound::_channel[2].setSampleRate(ESP_AUDIO_FREQ);
+    #endif
 
     // Set samples per frame depending on arch
     if (Config::getArch() == "48K") samplesPerFrame=546; else samplesPerFrame=554;
@@ -291,10 +293,10 @@ void ESPectrum::reset()
     MemESP::romSP3 = 0;
     MemESP::romInUse = 0;
 
-    // Tape::tapeFileName = "none";
-    // Tape::tapeStatus = TAPE_STOPPED;
-    // Tape::SaveStatus = SAVE_STOPPED;
-    // Tape::romLoading = false;
+    Tape::tapeFileName = "none";
+    Tape::tapeStatus = TAPE_STOPPED;
+    Tape::SaveStatus = SAVE_STOPPED;
+    Tape::romLoading = false;
 
     // Flush audio buffers
     for (int i=0;i<ESP_AUDIO_SAMPLES;i++) {
@@ -312,7 +314,9 @@ void ESPectrum::reset()
     target = CPU::microsPerFrame();
 
     // // Reset AY emulation
+    #ifdef USE_AY_SOUND
     AySound::reset();
+    #endif
 
     CPU::reset();
 
@@ -598,6 +602,7 @@ void ESPectrum::audioFrameEnd() {
         beeper +=  overSamplebuf[i+5];
         beeper +=  overSamplebuf[i+6];
         beeper +=  overSamplebuf[i+7];
+        #ifdef USE_AY_SOUND
         // Mix AY Channels
         aymix = AySound::_channel[0].getSample();
         aymix += AySound::_channel[1].getSample();
@@ -606,6 +611,7 @@ void ESPectrum::audioFrameEnd() {
         // aymix is centered (ranges from -128 to 127), but
         // beeper is not centered (ranges from 0 to 255),
         // so we need to substract 128 from beeper.
+        #endif
         mix = ((beeper >> 3) - 128) + (aymix / 3);
         #ifdef AUDIO_MIX_CLAMP
         mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
@@ -622,7 +628,9 @@ void ESPectrum::audioFrameEnd() {
     buffertofill ^= 1;
     buffertoplay ^= 1;
 
+    #ifdef USE_AY_SOUND
     AySound::update();
+    #endif
 
 }
 
@@ -693,7 +701,9 @@ for(;;) {
 #ifdef VIDEO_FRAME_TIMING
     if (idle > 0) { 
         delayMicroseconds(idle);
+        #ifdef LOG_DEBUG_TIMING
         totalseconds += idle;
+        #endif
     }
 #endif
 

@@ -37,6 +37,7 @@
 #include "OSDMain.h"
 // #include "Wiimote2Keys.h"
 #include "Config.h"
+#include "Tape.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -78,7 +79,10 @@ bool FileZ80::load(string z80_fn)
     // if (sna_fn != DISK_PSNA_FILE)
     //     loadKeytableForGame(sna_fn.c_str());
 
-   file = fopen(z80_fn.c_str(), "rb");
+    // Close tape
+    fclose(Tape::tape);
+
+    file = fopen(z80_fn.c_str(), "rb");
     if (file==NULL)
     {
         printf("FileZ80: Error opening %s",z80_fn.c_str());

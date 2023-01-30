@@ -78,20 +78,20 @@
 #define OSD_PSNA_SAVING "Saving Persist Snapshot..."
 #define OSD_PSNA_SAVE_WARN "Disk error. Trying slow mode, be patient"
 #define OSD_PSNA_SAVE_ERR "ERROR Saving Persist Snapshot"
-#define OSD_PSNA_LOADED "Persist Snapshot Loaded"
+#define OSD_PSNA_LOADED  "  Persist Snapshot Loaded  "
 #define OSD_PSNA_LOAD_ERR "ERROR Loading Persist Snapshot"
-#define OSD_PSNA_SAVED "Persist Snapshot Saved"
+#define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
 
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 #define OSD_TAPE_SELECT_ERR "Please select TAP file first"
 
 #define MENU_SNA_TITLE "Select Snapshot"
 #define MENU_TAP_TITLE "Select TAP file"
-#define MENU_TAP_SELECTED\
-    "[ENTER to close this]\n"\
-    "From BASIC, type LOAD \"\"\n"\
-    "then press F6 to start tape\n"\
-    "or F7 to stop.\n"
+#define MENU_TAP_SELECTED \
+    "How to load TAP\n"\
+    "Type LOAD \"\"\n"\
+    "F6 Play/Pause tape\n"\
+    "F7 Stop tape\n"
 #define MENU_MAIN \
     "Main Menu\n"\
     "Load SNA or Z80\n"\
