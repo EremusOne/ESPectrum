@@ -37,7 +37,7 @@
 // #include "Wiimote2Keys.h"
 // #include "sort.h"
 #include "FileUtils.h"
-// #include "Config.h"
+#include "Config.h"
 #include "roms.h"
 
 #ifdef USE_INT_FLASH

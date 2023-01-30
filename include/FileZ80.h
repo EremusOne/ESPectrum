@@ -27,8 +27,8 @@
 // DEALINGS IN THE SOFTWARE.
 //
 
-#ifndef Config_h
-#define Config_h
+#ifndef FileZ80_h
+#define FileZ80_h
 
 #include <stdio.h>
 #include <inttypes.h>
@@ -36,43 +36,15 @@
 
 using namespace std;
 
-#include "esp_attr.h"
-
-class Config
+class FileZ80
 {
 public:
-    // machine type change request
-    static void requestMachine(string newArch, string newRomSet, bool force);
-
-    // config variables
-    static const string& getArch()   { return arch;   }
-    static const string& getRomSet() { return romSet; }
-    static string   ram_file;
-    static uint8_t  esp32rev;
-    static bool     slog_on;
-    static bool     aspect_16_9;
-
-    // config persistence
-    static void           load();
-    static void IRAM_ATTR save();
-
-    // list of snapshot file names
-    static string   sna_file_list;
-    // list of snapshot display names
-    static string   sna_name_list;
-    // load lists of snapshots
-    static void loadSnapshotLists();
-
-    // list of TAP file names
-    static string   tap_file_list;
-    // list of TAP display names
-    static string   tap_name_list;
-    // load lists of TAP files
-    static void loadTapLists();
+    static bool load(string z80_fn);
+    // static bool save(string z80_fn);
 
 private:
-    static string   arch;
-    static string   romSet;
+    static void loadCompressedMemData(FILE *f, uint16_t dataLen, uint16_t memStart, uint16_t memlen);
+    static void loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage, uint16_t memlen);
 };
 
-#endif // Config.h
+#endif

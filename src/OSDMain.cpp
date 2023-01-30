@@ -35,7 +35,7 @@
 //#include "Wiimote2Keys.h"
 #include "Config.h"
 #include "FileSNA.h"
-//#include "FileZ80.h"
+#include "FileZ80.h"
 //#include "AySound.h"
 #include "MemESP.h"
 //#include "Tape.h"
@@ -314,18 +314,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 changeSnapshot(rowGet(Config::sna_file_list, snanum));
             }
         } 
-        // else if (opt == 2) {
-        //     // Change TAP
-        //     unsigned short tapnum = menuRun(Config::tap_name_list);
-        //     if (tapnum > 0) {
-        //         Tape::tapeFileName=DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
-        //         if (!Tape::TAP_Load()) {
-        //             Tape::tapeFileName="none";
-        //             OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_WARN);
-        //             delay(1000);
-        //         } else menuRun(MENU_TAP_SELECTED);
-        //     }
-        // }
+        else if (opt == 2) {
+            // Change TAP
+            unsigned short tapnum = menuRun(Config::tap_name_list);
+            // if (tapnum > 0) {
+            //     Tape::tapeFileName=DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
+            //     if (!Tape::TAP_Load()) {
+            //         Tape::tapeFileName="none";
+            //         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_WARN);
+            //         delay(1000);
+            //     } else menuRun(MENU_TAP_SELECTED);
+            // }
+        }
         // else if (opt == 3) {
         //     // Change ROM
         //     String arch_menu = getArchMenu();
@@ -532,13 +532,13 @@ void OSD::changeSnapshot(string filename)
         FileSNA::load(dir + "/" + filename);
 
     }
-    // else if (FileUtils::hasZ80extension(filename))
-    // {
-    //     osdCenteredMsg((String)MSG_LOADING_Z80 + ": " + filename, LEVEL_INFO);
-    //     ESPectrum::reset();
-    //     Serial.printf("Loading Z80: %s\n", filename.c_str());
-    //     FileZ80::load((String)DISK_SNA_DIR + "/" + filename);
-    // }
+    else if (FileUtils::hasZ80extension(filename))
+    {
+        osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO);
+        ESPectrum::reset();
+        // printf("Loading Z80: %s\n", filename.c_str());
+        FileZ80::load(dir + "/" + filename);
+    }
 
     // osdCenteredMsg(MSG_SAVE_CONFIG, LEVEL_WARN);
     

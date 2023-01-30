@@ -29,16 +29,13 @@
 
 #include "hardconfig.h"
 #include "FileUtils.h"
-// //#include "PS2Kbd.h"
 #include "Config.h"
 #include "CPU.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
 #include "messages.h"
 #include "OSDMain.h"
-// // #include <FS.h>
-// // #include "Wiimote2Keys.h"
-// // #include "Config.h"
+// #include "Wiimote2Keys.h"
 #include "FileSNA.h"
 
 #include <stdio.h>
@@ -101,7 +98,6 @@ using namespace std;
 
 #ifdef USE_INT_FLASH
 // using internal storage (spi flash)
-// #include <SPIFFS.h>
 #include "esp_spiffs.h"
 // set The Filesystem to SPIFFS
 // #define THE_FS SPIFFS
@@ -121,7 +117,7 @@ using namespace std;
 bool FileSNA::load(string sna_fn)
 {
     FILE *file;
-    uint16_t retaddr;
+    //uint16_t retaddr;
     int sna_size;
     
     ESPectrum::reset();

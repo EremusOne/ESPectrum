@@ -152,15 +152,29 @@ void Config::loadSnapshotLists()
     
 }
 
-// void Config::loadTapLists()
-// {
-//     KB_INT_STOP;
-//     tap_file_list = (String)MENU_TAP_TITLE + "\n" + FileUtils::getSortedFileList(DISK_TAP_DIR);
-//     tap_name_list = String(tap_file_list);
-//     tap_name_list.replace(".TAP", "");
-//     tap_name_list.replace(".tap", "");
-//     KB_INT_START;
-// }
+void Config::loadTapLists()
+{
+
+    tap_file_list = (string) MENU_TAP_TITLE + "\n" + FileUtils::getSortedFileList(DISK_TAP_DIR);
+    tap_name_list = tap_file_list;
+    
+//    printf((tap_name_list + "\n").c_str());
+
+    std::string::size_type n = 0;
+    while ( ( n = tap_name_list.find( ".TAP", n ) ) != std::string::npos )
+    {
+        tap_name_list.replace( n, 4, "" );
+        n++;
+    }
+
+    n = 0;
+    while ( ( n = tap_name_list.find( ".tap", n ) ) != std::string::npos )
+    {
+        tap_name_list.replace( n, 4, "" );
+        n++;
+    }
+
+}
 
 // Dump actual config to FS
 void Config::save() {

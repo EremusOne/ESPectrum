@@ -128,11 +128,8 @@ void ESPectrum::setup()
     FileUtils::initFileSystem();
     Config::load();
     Config::loadSnapshotLists();
-    // Config::loadTapLists();
+    Config::loadTapLists();
     
-    // TESTING
-    // Config::aspect_16_9=false;
-
     // Print chip information
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
