@@ -326,46 +326,46 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             //     } else menuRun(MENU_TAP_SELECTED);
             // }
         }
-        // else if (opt == 3) {
-        //     // Change ROM
-        //     String arch_menu = getArchMenu();
-        //     uint8_t arch_num = menuRun(arch_menu);
-        //     if (arch_num > 0) {
-        //         String romset_menu = getRomsetMenu(rowGet(arch_menu, arch_num));
-        //         uint8_t romset_num = menuRun(romset_menu);
-        //         if (romset_num > 0) {
-        //             String arch = rowGet(arch_menu, arch_num);
-        //             String romSet = rowGet(romset_menu, romset_num);
-        //             Config::requestMachine(arch, romSet, true);
-        //             vTaskDelay(2);
+        else if (opt == 3) {
+            // Change ROM
+            string arch_menu = getArchMenu();
+            uint8_t arch_num = menuRun(arch_menu);
+            if (arch_num > 0) {
+                string romset_menu = getRomsetMenu(rowGet(arch_menu, arch_num));
+                uint8_t romset_num = menuRun(romset_menu);
+                if (romset_num > 0) {
+                    string arch = rowGet(arch_menu, arch_num);
+                    string romSet = rowGet(romset_menu, romset_num);
+                    Config::requestMachine(arch, romSet, true);
+                    vTaskDelay(2);
 
-        //             Config::save();
-        //             vTaskDelay(2);
-        //             ESPectrum::reset();
-        //         }
-        //     }
-        // }
+                    Config::save();
+                    vTaskDelay(2);
+                    ESPectrum::reset();
+                }
+            }
+        }
         // else if (opt == 4) {
         //     quickSave();
         // }
         // else if (opt == 5) {
         //     quickLoad();
         // }
-        // else if (opt == 6) {
-        //     // Persist Save
-        //     uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
-        //     if (opt2 > 0 && opt2<6) {
-        //         persistSave(opt2);
-        //     }
-        // }
-        // else if (opt == 7) {
-        //     // Persist Load
-        //     uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
-        //     if (opt2 > 0 && opt2<6) {
-        //         persistLoad(opt2);
-        //     }
-        // }
-        else if (opt == 8) {
+        else if (opt == 4) {
+            // Persist Save
+            uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
+            if (opt2 > 0 && opt2<6) {
+//                persistSave(opt2);
+            }
+        }
+        else if (opt == 5) {
+            // Persist Load
+            uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
+            if (opt2 > 0 && opt2<6) {
+//                persistLoad(opt2);
+            }
+        }
+        else if (opt == 6) {
             // aspect ratio
             uint8_t opt2;
             if (Config::aspect_16_9)
@@ -379,7 +379,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 esp_hard_reset();
             }
         }
-        else if (opt == 9) {
+        else if (opt == 7) {
             // Reset
             uint8_t opt2 = menuRun(MENU_RESET);
             if (opt2 == 1) {
@@ -400,7 +400,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 esp_hard_reset();
             }
         }
-        else if (opt == 10) {
+        else if (opt == 8) {
             // Help
             drawOSD();
             osdAt(2, 0);

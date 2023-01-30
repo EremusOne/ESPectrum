@@ -97,14 +97,11 @@
     "Load Snapshot to RAM\n"\
     "Select TAP file\n"\
     "Select ROM\n"\
-    "Quick Save (F2)\n"\
-    "Quick Load (F3)\n"\
-    "Persist Save (F4)\n"\
-    "Persist Load (F5)\n"\
+    "Save snapshot(F2)\n"\
+    "Load snapshot(F3)\n"\
     "Aspect Ratio...\n"\
     "Reset\n"\
-    "About...\n"\
-    "Return\n"
+    "About...\n"
 #define MENU_ASPECT_169 \
     "Aspect Ratio\n"\
     "16:9 (current)\n"\
@@ -131,8 +128,16 @@
 #define MENU_PERSIST_LOAD \
     "Persist Load\n" MENU_PERSIST    
 #define MENU_DEMO "Demo mode\nOFF\n 1 minute\n 3 minutes\n 5 minutes\n15 minutes\n30 minutes\n 1 hour\n"
-#define MENU_ARCH "Select Arch\n"
-#define MENU_ROMSET "Select Rom Set\n"
+#define MENU_ARCH "Select Arch\n"\
+    "48K\n"\
+    "128K\n"
+#define MENU_ROMSET48 "Select Rom Set\n"\
+    "SINCLAIR\n"\
+    "SE\n"\
+    "DIAG\n"
+#define MENU_ROMSET128 "Select Rom Set\n"\
+    "SINCLAIR\n"\
+    "PLUS2A\n"
 #define OSD_HELP \
     "Developed in 2019 by Rampa & Queru\n"\
     "Modified  in 2020 by DCrespo\n"\

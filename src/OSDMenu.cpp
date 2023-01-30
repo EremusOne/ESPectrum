@@ -175,15 +175,20 @@ void OSD::menuDraw() {
     menuScrollBar();
 }
 
-// string OSD::getArchMenu() {
-//     string menu = (string)MENU_ARCH + FileUtils::getFileEntriesFromDir(DISK_ROM_DIR);
-//     return menu;
-// }
+string OSD::getArchMenu() {
+    string menu = (string)MENU_ARCH; // + FileUtils::getFileEntriesFromDir(DISK_ROM_DIR);
+    return menu;
+}
 
-// string OSD::getRomsetMenu(string arch) {
-//     string menu = (string)MENU_ROMSET + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
-//     return menu;
-// }
+string OSD::getRomsetMenu(string arch) {
+    string menu;
+    if (arch == "48K") {
+        menu = (string)MENU_ROMSET48; // + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
+    } else {
+        menu = (string)MENU_ROMSET128;
+    }
+    return menu;
+}
 
 // Run a new menu
 unsigned short OSD::menuRun(string new_menu) {
