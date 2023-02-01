@@ -36,7 +36,6 @@ using namespace std;
 #include "CPU.h"
 #include "messages.h"
 #include "OSDMain.h"
-// #include "Wiimote2Keys.h"
 #include <math.h>
 
 #define MENU_MAX_ROWS 23
@@ -201,7 +200,6 @@ unsigned short OSD::menuRun(string new_menu) {
     while (1) {
         MenuKey = kbd->getNextVirtualKey(&Kdown);
         if (!Kdown) continue;
-        // updateWiimote2KeysOSD();
         if (MenuKey == fabgl::VK_UP) {
             if (focus == 1 and begin_row > 1) {
                 menuScroll(DOWN);

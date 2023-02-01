@@ -15,10 +15,9 @@
 //... v1.0.0 (13/02/2017)
 //    quick & dirty conversion by dddddd (AKA deesix)
 
-#include "hardconfig.h"
 #include "Z80_JLS/z80.h"
 
-#pragma GCC optimize ("O3")
+#pragma GCC optimize ("Ofast")
 
 ///////////////////////////////////////////////////////////////////////////////
 // miembros estáticos
@@ -1708,10 +1707,8 @@ void Z80::decodeOpcode(uint8_t opCode) {
         { /* HALT */
             REG_PC--;
             halted = true;
-
             // Signal HALT to CPU Loop
             Z80Ops::signalHalt();
-
             break;
         }
         case 0x77:

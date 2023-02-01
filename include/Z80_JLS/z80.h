@@ -20,8 +20,6 @@
 #ifndef Z80CPP_H
 #define Z80CPP_H
 
-#include "../hardconfig.h"
-
 #include <stdint.h>
 
 #pragma GCC optimize ("O3")

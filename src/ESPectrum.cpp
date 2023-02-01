@@ -34,10 +34,6 @@
 #include "driver/timer.h"
 #include "soc/timer_group_struct.h"
 #include "esp_spiffs.h"
-// #include "esp_log.h"
-// #include <esp_bt.h>
-// #include <esp_wifi.h>
-// #include "Wiimote2Keys.h"
 #include "ESPectrum.h"
 #include "FileSNA.h"
 #include "Config.h"
@@ -56,13 +52,10 @@
 #include "fabgl.h"
 #include "pwm_audio.h"
 #include "hardpins.h"
-//#include "SD.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include <string>
 using namespace std;
-
-
 
 // works, but not needed for now
 #pragma GCC optimize ("O3")
@@ -166,20 +159,7 @@ void ESPectrum::setup()
     PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
     PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout); // TO DO: Add Scancodeset and Layout to Config
 
-    //=======================================================================================
-    // WIIMOTE
-    //=======================================================================================
-
-    #ifndef WIIMOTE_PRESENT
-    // // if no wiimote, turn off peripherals to recover some memory
-    // btStop();
-    // esp_bt_controller_deinit();
-    // esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
-    #else
-    initWiimote2Keys();
-    #endif
-
-    if (Config::slog_on) showMemInfo("Keyboard & Wiimote started");
+    if (Config::slog_on) showMemInfo("Keyboard started");
 
     //=======================================================================================
     // VIDEO
@@ -204,6 +184,10 @@ void ESPectrum::setup()
     MemESP::ram7 = (unsigned char *)calloc(1,0x4000);
     
     if (Config::slog_on) {
+        if (MemESP::ram1 == NULL) printf("ERROR! Unable to allocate ram1\n");        
+        if (MemESP::ram3 == NULL) printf("ERROR! Unable to allocate ram3\n");        
+        if (MemESP::ram4 == NULL) printf("ERROR! Unable to allocate ram4\n");        
+        if (MemESP::ram6 == NULL) printf("ERROR! Unable to allocate ram6\n");
         if (MemESP::ram7 == NULL) printf("ERROR! Unable to allocate ram7\n");
     }
 
@@ -214,20 +198,8 @@ void ESPectrum::setup()
 
     if (Config::slog_on) showMemInfo("RAM Initialized");
 
-//     // Init tape
+    // Init tape
     Tape::Init();
-
-// #ifdef SPEAKER_PRESENT
-//     pinMode(SPEAKER_PIN, OUTPUT);
-//     digitalWrite(SPEAKER_PIN, LOW);
-// #endif
-// #ifdef EAR_PRESENT
-//     pinMode(EAR_PIN, INPUT);
-// #endif
-// #ifdef MIC_PRESENT
-//     pinMode(MIC_PIN, OUTPUT);
-//     digitalWrite(MIC_PIN, LOW);
-// #endif
 
     // START Z80
     CPU::setup();
@@ -238,7 +210,7 @@ void ESPectrum::setup()
         Ports::wii[t] = 0x1f;
     }
 
-    printf("%s %u\n", MSG_EXEC_ON_CORE, xPortGetCoreID());
+    if (Config::slog_on) printf("%s %u\n", MSG_EXEC_ON_CORE, xPortGetCoreID());
 
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
@@ -321,17 +293,6 @@ void ESPectrum::reset()
     CPU::reset();
 
 }
-
-// // for abbreviating evaluation of convenience keys
-// static inline void evalConvKey(uint8_t key, uint8_t p1, uint8_t b1, uint8_t p2, uint8_t b2)
-// {
-//     uint8_t specialKeyState = PS2Keyboard::keymap[key];
-//     if (specialKeyState != PS2Keyboard::oldmap[key])
-//     {
-//         bitWrite(Ports::base[p1], b1, specialKeyState);
-//         bitWrite(Ports::base[p2], b2, specialKeyState);
-//     }
-// }
 
 //=======================================================================================
 // KEYBOARD / KEMPSTON
@@ -674,7 +635,8 @@ void IRAM_ATTR delayMicroseconds(uint32_t us)
 //=======================================================================================
 // MAIN LOOP
 //=======================================================================================
-void ESPectrum::loop() {
+
+void IRAM_ATTR ESPectrum::loop() {
 
 for(;;) {
 
@@ -683,8 +645,6 @@ for(;;) {
 #endif
 
     processKeyboard();
-    
-    // updateWiimote2Keys();
     
     audioFrameStart();
 

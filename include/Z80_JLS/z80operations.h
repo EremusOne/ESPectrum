@@ -11,8 +11,6 @@
 #ifndef Z80OPERATIONS_H
 #define Z80OPERATIONS_H
 
-#include "../hardconfig.h"
-
 #include <stdint.h>
 
 // Class grouping callbacks for Z80 operations

@@ -108,8 +108,8 @@ public:
 
 static unsigned int is169;
 
-static unsigned int flashing = 0;
-static unsigned int halfsec, sp_int_ctr;
+static uint8_t flashing = 0;
+static uint8_t flash_ctr = 0;
 
 static unsigned int DRAM_ATTR offBmp[SPEC_H];
 static unsigned int DRAM_ATTR offAtt[SPEC_H];
@@ -148,6 +148,7 @@ void ALU_video_reset();
 
 static void (*ALU_draw)(unsigned int);
 static void IRAM_ATTR ALU_video(unsigned int statestoadd);
+static void IRAM_ATTR ALU_video_fast_43(unsigned int statestoadd);
 static void IRAM_ATTR ALU_video_169(unsigned int statestoadd);
 static void IRAM_ATTR ALU_flush_video();
 

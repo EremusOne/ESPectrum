@@ -32,7 +32,6 @@
 #include "CPU.h"
 #include "ESPectrum.h"
 #include "messages.h"
-//#include "Wiimote2Keys.h"
 #include "Config.h"
 #include "FileSNA.h"
 #include "FileZ80.h"
@@ -376,7 +375,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             vga.print(OSD_HELP);
             while (1) {
-                // updateWiimote2KeysOSD();
                 KeytoESP = kbd->getNextVirtualKey(&Kdown);
                 if(!Kdown) continue;
                 if ((KeytoESP == fabgl::VK_F1) || (KeytoESP == fabgl::VK_ESCAPE) || (KeytoESP == fabgl::VK_RETURN)) break;

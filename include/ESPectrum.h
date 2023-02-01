@@ -44,7 +44,8 @@ public:
 
     // arduino setup/loop
     static void setup();
-    static void loop();
+
+    static void IRAM_ATTR loop();
 
     // reset machine
     static void reset();
@@ -71,7 +72,7 @@ public:
     
 private:
 
-    static void audioTask(void* unused);
+    static void IRAM_ATTR audioTask(void* unused);
 
 };
 
