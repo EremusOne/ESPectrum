@@ -19,3 +19,4 @@ data/tap/**
 !data/tap/vccc2022.tap
 /unpacked_fs
 downloaded_fs*.bin
+sdkconfig.pico32.old
