@@ -123,7 +123,6 @@ bool FileSNA::load(string sna_fn)
 
         return false;
     }
-    // file = FileUtils::safeOpenFileRead(sna_fn);
 
     fseek(file,0,SEEK_END);
     sna_size = ftell(file);
