@@ -70,10 +70,7 @@ uint32_t CPU::microsPerFrame()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef LOG_DEBUG_TIMING
 uint32_t CPU::framecnt = 0;
-#endif
-
 uint32_t CPU::tstates = 0;
 uint64_t CPU::global_tstates = 0;
 uint32_t CPU::statesInFrame = 0;
@@ -153,11 +150,7 @@ void IRAM_ATTR CPU::loop()
     // We're halted: flush screen and update registers as needed
     if (tstates & 0xFF000000) FlushOnHalt();
 
-    #ifdef LOG_DEBUG_TIMING
     framecnt++;
-    #endif
-
-    CPU::vga.show();
 
     interruptPending = true;
     
@@ -379,6 +372,7 @@ void IRAM_ATTR Z80Ops::addTstates(int32_t tstatestoadd, bool dovideo) {
 VGA6Bit CPU::vga;
 
 uint8_t CPU::borderColor = 0;
+uint8_t CPU::BottomDraw = BOTTOMBORDER;
 
 void precalcColors() {
 
@@ -801,7 +795,7 @@ if (DrawStatus==BOTTOMBORDER_BLANK) {
         lineptr32 = (uint32_t *)(CPU::vga.backBuffer[linedraw_cnt]);
         coldraw_cnt = 0;
         ALU_video_rest = 0;
-        DrawStatus = BOTTOMBORDER;
+        DrawStatus = CPU::BottomDraw;
     } else return;
 }
 
@@ -812,6 +806,30 @@ if (DrawStatus==BOTTOMBORDER) {
     for (int i=0; i < (statestoadd >> 2); i++) {    
         *lineptr32++ = brd;
         *lineptr32++ = brd;
+        if (++coldraw_cnt == 40) {
+            if (++linedraw_cnt == 240) DrawStatus = BLANK; else DrawStatus = BOTTOMBORDER_BLANK;
+            return;
+        }
+    }
+    return;
+}
+
+if (DrawStatus==BOTTOMBORDER_FPS) {
+    statestoadd += ALU_video_rest;
+    ALU_video_rest = statestoadd & 0x03; // Mod 4
+    brd = border32[CPU::borderColor];
+    for (int i=0; i < (statestoadd >> 2); i++) {    
+        
+        if ((linedraw_cnt<220) || (linedraw_cnt>235)) {
+            *lineptr32++ = brd;
+            *lineptr32++ = brd;
+        } else {
+            if ((coldraw_cnt<21) || (coldraw_cnt>38)) {
+                *lineptr32++ = brd;
+                *lineptr32++ = brd;
+            } else lineptr32+=2;
+        }
+        
         if (++coldraw_cnt == 40) {
             if (++linedraw_cnt == 240) DrawStatus = BLANK; else DrawStatus = BOTTOMBORDER_BLANK;
             return;

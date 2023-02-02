@@ -90,8 +90,8 @@
 #define MENU_TAP_SELECTED \
     "How to load TAP\n"\
     "Type LOAD \"\"\n"\
-    "F6 Play/Pause tape\n"\
-    "F7 Stop tape\n"
+    "F5 Play/Pause tape\n"\
+    "F6 Stop tape\n"
 #define MENU_MAIN \
     "Main Menu\n"\
     "Load SNA or Z80\n"\

@@ -66,13 +66,12 @@ public:
 
     // Border color // TO DO: Move to ALUVIDEO OBJECT
     static uint8_t borderColor;
+    static uint8_t BottomDraw;
 
     static VGA6Bit vga;
 
-    #ifdef LOG_DEBUG_TIMING
     // Frames elapsed
     static uint32_t framecnt;
-    #endif
 
 };
 
@@ -104,7 +103,8 @@ public:
 #define RIGHTBORDER 6
 #define BOTTOMBORDER_BLANK 7
 #define BOTTOMBORDER 8
-#define BLANK 9
+#define BOTTOMBORDER_FPS 9
+#define BLANK 10
 
 static unsigned int is169;
 

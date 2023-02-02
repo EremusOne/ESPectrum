@@ -117,6 +117,22 @@ void OSD::drawOSD() {
     osdHome();
 }
 
+void OSD::drawStats(char *line1, char *line2) {
+    VGA6Bit& vga = CPU::vga;
+    unsigned short x = 168;
+    unsigned short y = 220;
+    // vga.fillRect(x, y, 80, 16, OSD::zxColor(1, 0));
+    // vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
+    // vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
+    vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
+    vga.setFont(Font6x8);
+    vga.setCursor(x,y);
+    vga.print(line1);
+    vga.setCursor(x,y+8);
+    vga.print(line2);
+
+}
+
 // static void quickSave()
 // {
 //     OSD::osdCenteredMsg(OSD_QSNA_SAVING, LEVEL_INFO);
@@ -218,7 +234,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         AySound::enable();
     }
-    else if (KeytoESP == fabgl::VK_F6) {
+    else if (KeytoESP == fabgl::VK_F5) {
         // Start .tap reproduction
         if (Tape::tapeFileName=="none") {
             OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
@@ -227,9 +243,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             Tape::TAP_Play();
         }
     }
-    else if (KeytoESP == fabgl::VK_F7) {
+    else if (KeytoESP == fabgl::VK_F6) {
         // Stop .tap reproduction
         Tape::TAP_Stop();
+    }
+    else if (KeytoESP == fabgl::VK_F7) {
+        // Change RAM
+        unsigned short snanum = menuRun(Config::sna_name_list);
+        if (snanum > 0) {
+            changeSnapshot(rowGet(Config::sna_file_list, snanum));
+        }
+    } 
+    else if (KeytoESP == fabgl::VK_F8) {
+        // Show / hide OnScreen Stats
+        if (CPU::BottomDraw == BOTTOMBORDER) CPU::BottomDraw = BOTTOMBORDER_FPS; else CPU::BottomDraw = BOTTOMBORDER;
     }
     else if (KeytoESP == fabgl::VK_F9) {
         if (ESPectrum::aud_volume>-16) {
