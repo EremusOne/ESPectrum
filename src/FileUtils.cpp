@@ -34,74 +34,97 @@
 #include "hardpins.h"
 #include "messages.h"
 #include "OSDMain.h"
-// #include "Wiimote2Keys.h"
 // #include "sort.h"
 #include "FileUtils.h"
 #include "Config.h"
 #include "roms.h"
 #include "esp_vfs.h"
 
-#ifdef USE_INT_FLASH
 #include "esp_spiffs.h"
-#endif
 
-// #ifdef USE_SD_CARD
-// // using external storage (SD card)
-// //#include <SD.h>
-// // set The Filesystem to SD
-// #define THE_FS SD
-// static SPIClass customSPI;
-// #endif
+#include <sys/unistd.h>
+#include <sys/stat.h>
+#include "esp_vfs_fat.h"
+#include "sdmmc_cmd.h"
+// Pin assignments can be set in menuconfig, see "SD SPI Example Configuration" menu.
+// You can also change the pin assignments here by changing the following 4 lines.
+#define PIN_NUM_MISO GPIO_NUM_2
+#define PIN_NUM_MOSI GPIO_NUM_12
+#define PIN_NUM_CLK  GPIO_NUM_14
+#define PIN_NUM_CS   GPIO_NUM_13
 
-// void zx_reset();
+sdmmc_card_t *FileUtils::card;
+
+void FileUtils::unmountSDCard() {
+    // Unmount partition and disable SPI peripheral
+    esp_vfs_fat_sdcard_unmount(MOUNT_POINT_SD, card);
+    // //deinitialize the bus after all devices are removed
+    spi_bus_free(SPI2_HOST);
+}
 
 // Globals
 void FileUtils::initFileSystem() {
-#ifdef USE_INT_FLASH
+
     // Initialize SPIFFS file system
     esp_vfs_spiffs_conf_t config = {
-        .base_path = "/data",
+        .base_path = MOUNT_POINT_SPIFFS,
         .partition_label = NULL,
         .max_files = 1,
         .format_if_mount_failed = false,
     };
     if (esp_vfs_spiffs_register(&config) != ESP_OK) {
-        // OSD::errorHalt(ERR_FS_INT_FAIL);
-        esp_restart();
-    }
-    vTaskDelay(2);
-#endif
-#ifdef USE_SD_CARD
-// using external storage (SD card)
-
-    Serial.println("Initializing external storage...");
-
-    customSPI.begin(SDCARD_CLK, SDCARD_MISO, SDCARD_MOSI, SDCARD_CS);
-
-    if (!SD.begin(SDCARD_CS, customSPI, 4000000, "/sd")) {
-        Serial.println("Card Mount Failed");
-        OSD::errorHalt(ERR_FS_EXT_FAIL);
         return;
     }
-    uint8_t cardType = SD.cardType();
+
+    // Initialize SD Card
+    esp_err_t ret;
+
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = false,
+        .max_files = 5,
+        .allocation_unit_size = 16 * 1024
+    };
     
-    if (cardType == CARD_NONE) {
-        Serial.println("No SD card attached");
-        OSD::errorHalt(ERR_FS_EXT_FAIL);
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+
+    spi_bus_config_t bus_cfg = {
+        .mosi_io_num = PIN_NUM_MOSI,
+        .miso_io_num = PIN_NUM_MISO,
+        .sclk_io_num = PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4000,
+    };
+    
+    ret = spi_bus_initialize(SPI2_HOST, &bus_cfg, SPI_DMA_CH1);
+    if (ret != ESP_OK) {
+        printf("SD Card init: Failed to initialize bus.\n");
         return;
     }
-    
-    Serial.print("SD Card Type: ");
-    if      (cardType == CARD_MMC)  Serial.println("MMC");
-    else if (cardType == CARD_SD )  Serial.println("SDSC");
-    else if (cardType == CARD_SDHC) Serial.println("SDHC");
-    else                            Serial.println("UNKNOWN");
-    
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);
 
+    sdspi_device_config_t slot_config =  {
+    .host_id   = SDSPI_DEFAULT_HOST,
+    .gpio_cs   = GPIO_NUM_13,
+    .gpio_cd   = SDSPI_SLOT_NO_CD,
+    .gpio_wp   = SDSPI_SLOT_NO_WP,
+    .gpio_int  = GPIO_NUM_NC, \
+    };
+    slot_config.gpio_cs = PIN_NUM_CS;
+    slot_config.host_id = SPI2_HOST;
+
+    ret = esp_vfs_fat_sdspi_mount(MOUNT_POINT_SD, &host, &slot_config, &mount_config, &FileUtils::card);
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            printf("Failed to mount filesystem.\n");
+            return;
+        } else {
+            printf("Failed to initialize the card.\n");
+            return;
+        }
+        return;
+    }
     vTaskDelay(2);
-#endif
+
 }
 
 // String FileUtils::getAllFilesFrom(const String path) {

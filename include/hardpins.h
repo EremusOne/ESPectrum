@@ -72,10 +72,10 @@
 // Storage mode: pins for external SD card
 #ifdef USE_SD_CARD
 // adjusted for Lilygo TTGO
-#define SDCARD_CS 13
-#define SDCARD_MOSI 12
-#define SDCARD_MISO 2
-#define SDCARD_CLK 14
+#define PIN_NUM_MISO GPIO_NUM_2
+#define PIN_NUM_MOSI GPIO_NUM_12
+#define PIN_NUM_CLK  GPIO_NUM_14
+#define PIN_NUM_CS   GPIO_NUM_13
 #endif
 
 // 6 bit pins

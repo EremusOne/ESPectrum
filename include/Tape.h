@@ -49,7 +49,6 @@ public:
     static uint8_t romLoading;
 
     static void Init();
-    static bool TAP_Load();
     static void TAP_Play();
     static void TAP_Stop();    
     static uint8_t TAP_Read();

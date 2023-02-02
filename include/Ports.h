@@ -38,9 +38,6 @@ public:
     // keyboard ports read from PS2 keyboard
     static volatile uint8_t base[128];
 
-    // keyboard ports read from Wiimote
-    static volatile uint8_t wii[128];
-
     // read port
     static uint8_t input(uint8_t portLow, uint8_t portHigh);
 

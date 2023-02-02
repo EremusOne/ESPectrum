@@ -80,6 +80,7 @@ public:
     static void errorPanel(string errormsg);
     static void errorHalt(string errormsg);
     static void osdCenteredMsg(string msg, uint8_t warn_level);
+    static void osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause);
 
     // // Menu
     static void newMenu(string new_menu);

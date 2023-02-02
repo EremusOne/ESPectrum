@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <string>
+#include "sdmmc_cmd.h"
 
 using namespace std;
 
@@ -47,6 +48,7 @@ class FileUtils
 {
 public:
     static void initFileSystem();
+    static void unmountSDCard();
     // static String         getAllFilesFrom(const String path);
     // static void           listAllFiles();
     // static void           sanitizeFilename(String filename); // in-place
@@ -61,13 +63,19 @@ public:
 private:
     friend class          Config;
     static void           loadRom(string arch, string romset);
+    static sdmmc_card_t *card;    
 };
 
+#define MOUNT_POINT_SPIFFS "/data"
+#define MOUNT_POINT_SD "/sd"
+
+// Use internal spiffs first
 #define DISK_BOOT_FILENAME "/data/boot.cfg"
 #define DISK_ROM_DIR "/data/rom"
 #define DISK_SNA_DIR "/data/sna"
 #define DISK_TAP_DIR "/data/tap"
 #define DISK_PSNA_FILE "/data/persist/persist"
+
 #define NO_RAM_FILE "none"
 #define SNA_48K_SIZE 49179
 #define SNA_128K_SIZE1 131103

@@ -36,7 +36,6 @@
 
 // Ports
 volatile uint8_t Ports::base[128];
-volatile uint8_t Ports::wii[128];
 
 static uint8_t port_data = 0;
 
@@ -83,14 +82,14 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
         #endif
 
         // Keyboard
-        if (~(portHigh | 0xFE)&0xFF) result &= (base[0] & wii[0]);
-        if (~(portHigh | 0xFD)&0xFF) result &= (base[1] & wii[1]);
-        if (~(portHigh | 0xFB)&0xFF) result &= (base[2] & wii[2]);
-        if (~(portHigh | 0xF7)&0xFF) result &= (base[3] & wii[3]);
-        if (~(portHigh | 0xEF)&0xFF) result &= (base[4] & wii[4]);
-        if (~(portHigh | 0xDF)&0xFF) result &= (base[5] & wii[5]);
-        if (~(portHigh | 0xBF)&0xFF) result &= (base[6] & wii[6]);
-        if (~(portHigh | 0x7F)&0xFF) result &= (base[7] & wii[7]);
+        if (~(portHigh | 0xFE)&0xFF) result &= base[0];
+        if (~(portHigh | 0xFD)&0xFF) result &= base[1];
+        if (~(portHigh | 0xFB)&0xFF) result &= base[2];
+        if (~(portHigh | 0xF7)&0xFF) result &= base[3];
+        if (~(portHigh | 0xEF)&0xFF) result &= base[4];
+        if (~(portHigh | 0xDF)&0xFF) result &= base[5];
+        if (~(portHigh | 0xBF)&0xFF) result &= base[6];
+        if (~(portHigh | 0x7F)&0xFF) result &= base[7];
 
         if (Tape::tapeStatus==TAPE_LOADING) {
             

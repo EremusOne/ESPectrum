@@ -138,44 +138,37 @@ void OSD::drawStats(char *line1, char *line2) {
 //     OSD::osdCenteredMsg(OSD_QSNA_SAVING, LEVEL_INFO);
 //     if (!FileSNA::saveQuick()) {
 //         OSD::osdCenteredMsg(OSD_QSNA_SAVE_ERR, LEVEL_WARN);
-//         delay(1000);
 //         return;
 //     }
 //     OSD::osdCenteredMsg(OSD_QSNA_SAVED, LEVEL_INFO);
-//     delay(200);
 // }
 
 // static void quickLoad()
 // {
 //     if (!FileSNA::isQuickAvailable()) {
 //         OSD::osdCenteredMsg(OSD_QSNA_NOT_AVAIL, LEVEL_INFO);
-//         delay(1000);
 //         return;
 //     }
 //     OSD::osdCenteredMsg(OSD_QSNA_LOADING, LEVEL_INFO);
 //     if (!FileSNA::loadQuick()) {
 //         OSD::osdCenteredMsg(OSD_QSNA_LOAD_ERR, LEVEL_WARN);
-//         delay(1000);
 //         return;
 //     }
 //     if (Config::getArch() == "48K") AySound::reset();
 //     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;
 //     OSD::osdCenteredMsg(OSD_QSNA_LOADED, LEVEL_INFO);
-//     delay(200);
 // }
 
 static void persistSave(uint8_t slotnumber)
 {
     char persistfname[strlen(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
-    OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO);
+    OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO, 0);
     if (!FileSNA::save(persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
         return;
     }
     OSD::osdCenteredMsg(OSD_PSNA_SAVED, LEVEL_INFO);
-    vTaskDelay(400/portTICK_PERIOD_MS);
 }
 
 static void persistLoad(uint8_t slotnumber)
@@ -184,18 +177,15 @@ static void persistLoad(uint8_t slotnumber)
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     if (!FileSNA::isPersistAvailable(persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
         return;
     }
     OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
     if (!FileSNA::load(persistfname)) {
          OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
-         vTaskDelay(1000/portTICK_PERIOD_MS);
     }
     if (Config::getArch() == "48K") AySound::reset();
     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;
     OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
-    vTaskDelay(400/portTICK_PERIOD_MS);
 }
 
 // OSD Main Loop
@@ -208,7 +198,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
     if (KeytoESP == fabgl::VK_PAUSE) {
         AySound::disable();
-        osdCenteredMsg(OSD_PAUSE, LEVEL_INFO);
+        osdCenteredMsg(OSD_PAUSE, LEVEL_INFO, 0);
         while (1) {
             KeytoESP = kbd->getNextVirtualKey(&Kdown);
             if ((Kdown) && (KeytoESP == fabgl::VK_PAUSE)) break;
@@ -238,7 +228,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         // Start .tap reproduction
         if (Tape::tapeFileName=="none") {
             OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
-            vTaskDelay(1000/portTICK_PERIOD_MS);                
         } else {
             Tape::TAP_Play();
         }
@@ -247,13 +236,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         // Stop .tap reproduction
         Tape::TAP_Stop();
     }
-    else if (KeytoESP == fabgl::VK_F7) {
-        // Change RAM
-        unsigned short snanum = menuRun(Config::sna_name_list);
-        if (snanum > 0) {
-            changeSnapshot(rowGet(Config::sna_file_list, snanum));
-        }
-    } 
     else if (KeytoESP == fabgl::VK_F8) {
         // Show / hide OnScreen Stats
         if (CPU::BottomDraw == BOTTOMBORDER) CPU::BottomDraw = BOTTOMBORDER_FPS; else CPU::BottomDraw = BOTTOMBORDER;
@@ -316,15 +298,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         } 
         else if (opt == 2) {
-            // Change TAP
+            // Select TAP File
             unsigned short tapnum = menuRun(Config::tap_name_list);
             if (tapnum > 0) {
                 Tape::tapeFileName=DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
-                if (!Tape::TAP_Load()) {
-                    Tape::tapeFileName="none";
-                    OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_WARN);
-                    vTaskDelay(1000/portTICK_PERIOD_MS);
-                } else menuRun(MENU_TAP_SELECTED);
             }
         }
         else if (opt == 3) {
@@ -381,7 +358,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 // Soft
                 ESPectrum::reset();
                 if (Config::ram_file != NO_RAM_FILE)
-                    FileSNA::load("/data/sna/" + Config::ram_file); // TO DO: fix error if ram_file is .z80 
+                    FileSNA::load(DISK_SNA_DIR + Config::ram_file); // TO DO: fix error if ram_file is .z80 
             }
             else if (opt2 == 2) {
                 // Hard
@@ -442,13 +419,15 @@ void OSD::errorPanel(string errormsg) {
 void OSD::errorHalt(string errormsg) {
     errorPanel(errormsg);
     while (1) {
-        ESPectrum::processKeyboard();
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 
 // Centered message
 void OSD::osdCenteredMsg(string msg, uint8_t warn_level) {
+    osdCenteredMsg(msg,warn_level,1000);
+}
+void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
     const unsigned short w = (msg.length() + 2) * OSD_FONT_W;
     const unsigned short h = OSD_FONT_H * 3;
     const unsigned short x = scrAlignCenterX(w);
@@ -482,6 +461,9 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level) {
     vga.setFont(Font6x8);
     vga.setCursor(x + OSD_FONT_W, y + OSD_FONT_H);
     vga.print(msg.c_str());
+    
+    if (millispause > 0) vTaskDelay(millispause/portTICK_PERIOD_MS); // Pause if needed
+
 }
 
 // // Count NL chars inside a string, useful to count menu rows
@@ -519,7 +501,7 @@ void OSD::changeSnapshot(string filename)
     if (FileUtils::hasSNAextension(filename))
     {
     
-        osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO);
+        osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
 
         ESPectrum::reset();
         // printf("Loading SNA: %s\n", filename.c_str());
@@ -528,13 +510,13 @@ void OSD::changeSnapshot(string filename)
     }
     else if (FileUtils::hasZ80extension(filename))
     {
-        osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO);
+        osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
         ESPectrum::reset();
         // printf("Loading Z80: %s\n", filename.c_str());
         FileZ80::load(dir + "/" + filename);
     }
 
-    // osdCenteredMsg(MSG_SAVE_CONFIG, LEVEL_WARN);
+    // osdCenteredMsg(MSG_SAVE_CONFIG, LEVEL_WARN, 0);
     
     Config::ram_file = filename;
     Config::save();

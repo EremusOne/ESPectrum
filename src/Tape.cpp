@@ -38,6 +38,8 @@ using namespace std;
 #include "CPU.h"
 #include "Tape.h"
 #include "Ports.h"
+#include "OSDMain.h"
+#include "messages.h"
 
 FILE *Tape::tape;
 string Tape::tapeFileName = "none";
@@ -55,7 +57,6 @@ static uint32_t tapebufByteCount;
 static uint16_t tapeHdrPulses;
 static uint32_t tapeBlockLen;
 static size_t tapeFileSize;   
-//static uint8_t* tape;
 static uint8_t tapeEarBit;
 static uint8_t tapeBitMask;    
 
@@ -64,31 +65,21 @@ void Tape::Init()
     tape = NULL;
 }
 
-bool Tape::TAP_Load()
-{
-    Tape::tapeStatus=TAPE_STOPPED;
-
-    // Close tape
-    fclose(tape);
-
-    tape = fopen(Tape::tapeFileName.c_str(), "rb");
-    if (tape==NULL)
-    {
-        printf("TAP_Load: Error opening %s",Tape::tapeFileName.c_str());
-        return false;
-    }
-    fseek(tape,0,SEEK_END);
-    tapeFileSize = ftell(tape);
-    rewind (tape);
-
-    return true;
-
-}
-
 void Tape::TAP_Play()
 {
     switch (Tape::tapeStatus) {
     case TAPE_STOPPED:
+
+        tape = fopen(Tape::tapeFileName.c_str(), "rb");
+        if (tape == NULL)
+        {
+            OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+            return;
+        }
+        fseek(tape,0,SEEK_END);
+        tapeFileSize = ftell(tape);
+        rewind (tape);
+
         tapePhase=TAPE_PHASE_SYNC;
         tapePulseCount=0;
         tapeEarBit=0;
@@ -102,9 +93,11 @@ void Tape::TAP_Play()
         tapeStart=CPU::global_tstates;
         Tape::tapeStatus=TAPE_LOADING;
         break;
+
     case TAPE_LOADING:
         Tape::tapeStatus=TAPE_PAUSED;
         break;
+
     case TAPE_PAUSED:
         tapeStart=CPU::global_tstates;        
         Tape::tapeStatus=TAPE_LOADING;

@@ -35,9 +35,7 @@
 #include "ESPectrum.h"
 #include "messages.h"
 #include "OSDMain.h"
-// #include "Wiimote2Keys.h"
 #include "FileSNA.h"
-#include "Tape.h"
 #include <stdio.h>
 
 #include <inttypes.h>
@@ -96,21 +94,8 @@ using namespace std;
 
 // ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef USE_INT_FLASH
 // using internal storage (spi flash)
 #include "esp_spiffs.h"
-// set The Filesystem to SPIFFS
-// #define THE_FS SPIFFS
-#endif
-
-// ///////////////////////////////////////////////////////////////////////////////
-
-// #ifdef USE_SD_CARD
-// // using external storage (SD card)
-// #include <SD.h>
-// // set The Filesystem to SD
-// #define THE_FS SD
-// #endif
 
 // ///////////////////////////////////////////////////////////////////////////////
 
@@ -127,9 +112,6 @@ bool FileSNA::load(string sna_fn)
 
     // if (sna_fn != DISK_PSNA_FILE)
     //     loadKeytableForGame(sna_fn.c_str());
-    
-    // Close tape
-    fclose(Tape::tape);
     
     file = fopen(sna_fn.c_str(), "rb");
     if (file==NULL)
@@ -322,7 +304,7 @@ bool FileSNA::save(string sna_file) {
         // Try to save using pages
         if (FileSNA::save(sna_file, true)) return true;
 
-        OSD::osdCenteredMsg(OSD_PSNA_SAVE_WARN, 2);
+        OSD::osdCenteredMsg(OSD_PSNA_SAVE_WARN, LEVEL_WARN);
 
         // Try to save byte-by-byte
         return FileSNA::save(sna_file, false);
@@ -338,9 +320,6 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
 
-    // Close tape
-    fclose(Tape::tape);
-    
     file = fopen(sna_file.c_str(), "w");
     if (file==NULL)
     {

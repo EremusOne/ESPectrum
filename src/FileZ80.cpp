@@ -35,9 +35,7 @@
 #include "ESPectrum.h"
 #include "messages.h"
 #include "OSDMain.h"
-// #include "Wiimote2Keys.h"
 #include "Config.h"
-#include "Tape.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -45,21 +43,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef USE_INT_FLASH
 // using internal storage (spi flash)
 #include "esp_spiffs.h"
-// set The Filesystem to SPIFFS
-// #define THE_FS SPIFFS
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
-#ifdef USE_SD_CARD
-// using external storage (SD card)
-#include <SD.h>
-// set The Filesystem to SD
-#define THE_FS SD
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -78,9 +63,6 @@ bool FileZ80::load(string z80_fn)
 
     // if (sna_fn != DISK_PSNA_FILE)
     //     loadKeytableForGame(sna_fn.c_str());
-
-    // Close tape
-    fclose(Tape::tape);
 
     file = fopen(z80_fn.c_str(), "rb");
     if (file==NULL)

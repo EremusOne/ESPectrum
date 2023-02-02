@@ -63,49 +63,6 @@
 #define LOG_DEBUG_TIMING
 
 ///////////////////////////////////////////////////////////////////////////////
-// Resolution, border and centering
-//
-// Total number of pixels drawn affects video task timing,
-// so don't be tempted to draw borders to fill screen, it would ruin timing!
-//
-// BOR_W and BOR_H are the actual border pixels drawn outside of image.
-// OFF_X and OFF_Y are used for centering, use with caution;
-// you could write off the buffer and crash the emulator.
-// 
-// Update: these are specified separately for the two supported aspect ratios.
-///////////////////////////////////////////////////////////////////////////////
-#define BOR_W_16_9 44
-#define BOR_H_16_9 4
-#define OFF_X_16_9 1
-#define OFF_Y_16_9 0
-
-// if you can't center the image in your screen,
-// set some offset, (ex: OFF_X = _20_)
-// use a smaller border (ex: BOR_W = 32 == 52 - _20_)
-// then change OFF_X for software centering (0 < OFF_X < 40) (40 == 2 * _20_)
-#define BOR_W_4_3 40
-#define BOR_H_4_3 24
-#define OFF_X_4_3 0
-#define OFF_Y_4_3 0
-
-///////////////////////////////////////////////////////////////////////////////
-// Storage mode
-//
-// define ONLY one of these
-// USE_INT_FLASH for internal flash storage
-// USE_SD_CARD for external SD card
-///////////////////////////////////////////////////////////////////////////////
-
-#define USE_INT_FLASH 1
-// #define USE_SD_CARD 1
-
-// check: only one must be defined
-#if defined(USE_INT_FLASH) && defined(USE_SD_CARD)
-#error "Only one of (USE_INT_FLASH, USE_SD_CARD) must be defined"
-#endif
-///////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
 // PS/2 Keyboard
 //
 // define PS2_KEYB_PRESENT if you want PS/2 Keyboard to be enabled.

@@ -32,29 +32,13 @@
 #include <locale>
 #include "hardconfig.h"
 #include "Config.h"
-// #include <FS.h>
-// #include "PS2Kbd.h"
 #include "FileUtils.h"
 #include "messages.h"
 #include "ESPectrum.h"
-#include "Tape.h"
 
-#ifdef USE_INT_FLASH
-// using internal storage (spi flash)
 #include "esp_spiffs.h"
-// set The Filesystem to SPIFFS
-//#define THE_FS SPIFFS
-#endif
 
-#ifdef USE_SD_CARD
-// using external storage (SD card)
-#include <SD.h>
-// set The Filesystem to SD
-#define THE_FS SD
-static SPIClass customSPI;
-#endif
-
-string   Config::arch = "128K";
+string   Config::arch = "48K";
 string   Config::ram_file = NO_RAM_FILE;
 string   Config::romSet = "SINCLAIR";
 string   Config::sna_file_list; // list of file names
@@ -96,13 +80,11 @@ static inline void trim(std::string &s) {
 // Read config from FS
 void Config::load() {
     
-    // Close tape
-    fclose(Tape::tape);   
-    
     FILE *f = fopen(DISK_BOOT_FILENAME, "r");
     if (f==NULL)
     {
         // printf("Error opening %s",DISK_BOOT_FILENAME);
+        Config::save(); // Try to create file if doesn't exist
         return;
     }
     // f = FileUtils::safeOpenFileRead(DISK_BOOT_FILENAME);
@@ -219,12 +201,6 @@ void Config::loadTapLists()
 // Dump actual config to FS
 void Config::save() {
 
-    // Stop keyboard input
-    ESPectrum::PS2Controller.keyboard()->suspendPort();
-
-    // Close tape
-    fclose(Tape::tape);
-
     printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
 
     FILE *f = fopen(DISK_BOOT_FILENAME, "w");
@@ -257,12 +233,10 @@ void Config::save() {
     fputs(aspect_16_9 ? "asp169:true\n" : "asp169:false\n",f);
 
     fclose(f);
+    
     vTaskDelay(5);
 
     printf("Config saved OK\n");
-
-    // Resume keyboard input
-    ESPectrum::PS2Controller.keyboard()->resumePort();
 
 }
 
