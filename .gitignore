@@ -3,6 +3,7 @@
 .vscode
 .vscode/**
 data/sna/**
+!data/sna/sna.txt
 !data/sna/sppong.sna
 !data/sna/sppong.txt
 !data/sna/diag.sna
@@ -14,6 +15,7 @@ data/sna/**
 !data/sna/Tetris.sna
 !data/sna/Tetris.txt
 data/tap/**
+!data/tap/tap.txt
 !data/tap/vccc2022.tap
 /unpacked_fs
 downloaded_fs*.bin
