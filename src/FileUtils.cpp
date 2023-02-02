@@ -28,6 +28,7 @@
 //
 
 #include "FileUtils.h"
+#include "Config.h"
 #include "CPU.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
@@ -35,34 +36,18 @@
 #include "messages.h"
 #include "OSDMain.h"
 // #include "sort.h"
-#include "FileUtils.h"
-#include "Config.h"
 #include "roms.h"
+
 #include "esp_vfs.h"
-
 #include "esp_spiffs.h"
-
 #include <sys/unistd.h>
 #include <sys/stat.h>
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
-// Pin assignments can be set in menuconfig, see "SD SPI Example Configuration" menu.
-// You can also change the pin assignments here by changing the following 4 lines.
-#define PIN_NUM_MISO GPIO_NUM_2
-#define PIN_NUM_MOSI GPIO_NUM_12
-#define PIN_NUM_CLK  GPIO_NUM_14
-#define PIN_NUM_CS   GPIO_NUM_13
 
+string FileUtils::MountPoint = MOUNT_POINT_SPIFFS; // Start with SPIFFS
 sdmmc_card_t *FileUtils::card;
 
-void FileUtils::unmountSDCard() {
-    // Unmount partition and disable SPI peripheral
-    esp_vfs_fat_sdcard_unmount(MOUNT_POINT_SD, card);
-    // //deinitialize the bus after all devices are removed
-    spi_bus_free(SPI2_HOST);
-}
-
-// Globals
 void FileUtils::initFileSystem() {
 
     // Initialize SPIFFS file system
@@ -125,6 +110,13 @@ void FileUtils::initFileSystem() {
     }
     vTaskDelay(2);
 
+}
+
+void FileUtils::unmountSDCard() {
+    // Unmount partition and disable SPI peripheral
+    esp_vfs_fat_sdcard_unmount(MOUNT_POINT_SD, card);
+    // //deinitialize the bus after all devices are removed
+    spi_bus_free(SPI2_HOST);
 }
 
 // String FileUtils::getAllFilesFrom(const String path) {
@@ -266,33 +258,9 @@ bool FileUtils::hasZ80extension(string filename)
 //     return count;
 // }
 
-void FileUtils::loadRom(string arch, string romset) {
-
-    if (arch == "48K") {
-        for (int i=0;i < max_list_rom_48; i++) {
-            if (romset.find(gb_list_roms_48k_title[i]) != string::npos) {
-                MemESP::rom[0] = (uint8_t *) gb_list_roms_48k_data[i];
-                break;
-            }
-        }
-    } else {
-        for (int i=0;i < max_list_rom_128; i++) {
-            if (romset.find(gb_list_roms_128k_title[i]) != string::npos) {
-                MemESP::rom[0] = (uint8_t *) gb_list_roms_128k_data[i][0];
-                MemESP::rom[1] = (uint8_t *) gb_list_roms_128k_data[i][1];
-                MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
-                MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
-                break;
-            }
-        }
-    }
-
-}
-
 // Get all sna files sorted alphabetically
 string FileUtils::getSortedFileList(string fileDir)
 {
-
     
     return getFileEntriesFromDir(fileDir);
     

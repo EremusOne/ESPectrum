@@ -164,7 +164,7 @@ static void persistSave(uint8_t slotnumber)
     char persistfname[strlen(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO, 0);
-    if (!FileSNA::save(persistfname)) {
+    if (!FileSNA::save(FileUtils::MountPoint + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
         return;
     }
@@ -175,12 +175,12 @@ static void persistLoad(uint8_t slotnumber)
 {
     char persistfname[strlen(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
-    if (!FileSNA::isPersistAvailable(persistfname)) {
+    if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
         return;
     }
     OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
-    if (!FileSNA::load(persistfname)) {
+    if (!FileSNA::load(FileUtils::MountPoint + persistfname)) {
          OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
     }
     if (Config::getArch() == "48K") AySound::reset();
@@ -302,7 +302,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             // Select TAP File
             unsigned short tapnum = menuRun(Config::tap_name_list);
             if (tapnum > 0) {
-                Tape::tapeFileName=DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
+                Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
             }
         }
         else if (opt == 3) {
@@ -496,7 +496,7 @@ string OSD::rowGet(string menu, unsigned short row) {
 // Change running snapshot
 void OSD::changeSnapshot(string filename)
 {
-    string dir = DISK_SNA_DIR;
+    string dir = FileUtils::MountPoint + DISK_SNA_DIR;
 
     if (FileUtils::hasSNAextension(filename))
     {

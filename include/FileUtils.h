@@ -53,16 +53,16 @@ public:
     // static void           listAllFiles();
     // static void           sanitizeFilename(String filename); // in-place
     // static File IRAM_ATTR safeOpenFileRead(String filename);
-    static string         getFileEntriesFromDir(string path);
+    static string getFileEntriesFromDir(string path);
     // static uint16_t       countFileEntriesFromDir(String path);
-    static string         getSortedFileList(string fileDir);
+    static string getSortedFileList(string fileDir);
+    static bool hasSNAextension(string filename);
+    static bool hasZ80extension(string filename);
 
-    static bool           hasSNAextension(string filename);
-    static bool           hasZ80extension(string filename);
+    static string MountPoint;
 
 private:
-    friend class          Config;
-    static void           loadRom(string arch, string romset);
+    friend class Config;
     static sdmmc_card_t *card;    
 };
 
@@ -71,10 +71,10 @@ private:
 
 // Use internal spiffs first
 #define DISK_BOOT_FILENAME "/data/boot.cfg"
-#define DISK_ROM_DIR "/data/rom"
-#define DISK_SNA_DIR "/data/sna"
-#define DISK_TAP_DIR "/data/tap"
-#define DISK_PSNA_FILE "/data/persist/persist"
+#define DISK_ROM_DIR "/rom"
+#define DISK_SNA_DIR "/sna"
+#define DISK_TAP_DIR "/tap"
+#define DISK_PSNA_FILE "/persist/persist"
 
 #define NO_RAM_FILE "none"
 #define SNA_48K_SIZE 49179

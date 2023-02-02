@@ -29,9 +29,11 @@
 
 #ifndef ESPectrum_h
 #define ESPectrum_h
-
+#include <string>
 #include "hardpins.h"
 #include "fabgl.h"
+
+using namespace std;
 
 #define ESP_AUDIO_OVERSAMPLES 4432 // For 48K we get 4368 samples per frame, for 128K we get 4432
 #define ESP_AUDIO_FREQ 27300
@@ -42,16 +44,14 @@ class ESPectrum
 {
 public:
 
-    // arduino setup/loop
     static void setup();
-
     static void IRAM_ATTR loop();
-
-    // reset machine
     static void reset();
+    static void loadRom(string arch, string romset);
 
     // Kbd
     static void processKeyboard();
+    static fabgl::PS2Controller PS2Controller;
 
     // Audio
     static uint8_t audioBuffer[2][ESP_AUDIO_SAMPLES];
@@ -67,8 +67,6 @@ public:
     static int samplesPerFrame;
 
     static int ESPoffset; // Testing
-
-    static fabgl::PS2Controller PS2Controller;
     
 private:
 

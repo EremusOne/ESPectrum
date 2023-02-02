@@ -326,6 +326,32 @@ void ESPectrum::reset()
 }
 
 //=======================================================================================
+// ROM SWITCHING
+//=======================================================================================
+void ESPectrum::loadRom(string arch, string romset) {
+
+    if (arch == "48K") {
+        for (int i=0;i < max_list_rom_48; i++) {
+            if (romset.find(gb_list_roms_48k_title[i]) != string::npos) {
+                MemESP::rom[0] = (uint8_t *) gb_list_roms_48k_data[i];
+                break;
+            }
+        }
+    } else {
+        for (int i=0;i < max_list_rom_128; i++) {
+            if (romset.find(gb_list_roms_128k_title[i]) != string::npos) {
+                MemESP::rom[0] = (uint8_t *) gb_list_roms_128k_data[i][0];
+                MemESP::rom[1] = (uint8_t *) gb_list_roms_128k_data[i][1];
+                MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
+                MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
+                break;
+            }
+        }
+    }
+
+}
+
+//=======================================================================================
 // KEYBOARD / KEMPSTON
 //=======================================================================================
 void IRAM_ATTR ESPectrum::processKeyboard() {

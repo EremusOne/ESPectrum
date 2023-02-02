@@ -70,20 +70,17 @@
 #endif // ZX_KEYB_PRESENT
 
 // Storage mode: pins for external SD card
-#ifdef USE_SD_CARD
 // adjusted for Lilygo TTGO
 #define PIN_NUM_MISO GPIO_NUM_2
 #define PIN_NUM_MOSI GPIO_NUM_12
 #define PIN_NUM_CLK  GPIO_NUM_14
 #define PIN_NUM_CS   GPIO_NUM_13
-#endif
 
 // 6 bit pins
 // adjusted for Lilygo TTGO
 #define RED_PINS_6B 21, 22
 #define GRE_PINS_6B 18, 19
 #define BLU_PINS_6B  4,  5
-
 // VGA sync pins
 #define HSYNC_PIN 23
 #define VSYNC_PIN 15
