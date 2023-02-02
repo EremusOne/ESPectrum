@@ -57,7 +57,7 @@
 #define ERR_DIR_OPEN "Cannot open directory!"
 
 // OSD
-#define OSD_TITLE  "  ZX-ESPectrum - ESP32 - VGA - Wiimote  "
+#define OSD_TITLE  "  ZX-ESPectrum-IDF - powered by ESP32   "
 #define OSD_BOTTOM "      SCIENCE  LEADS  TO  PROGRESS      "
 #define OSD_ON "OSD ON"
 #define OSD_OFF "OSD OFF"
@@ -139,19 +139,31 @@
     "SINCLAIR\n"\
     "PLUS2A\n"
 #define OSD_HELP \
-    "Developed in 2019 by Rampa & Queru\n"\
-    "Modified  in 2020 by DCrespo\n"\
-    "for adding Wiimote[W] as input device,\n"\
-    "keeping PS/2 keyboard[K] support.\n" \
-    "Modified in 2022 by Eremus.\n" \
-    "for adding tape and multicolour support.\n\n" \
-    "    [K]F1       [W]Home   for main menu\n"\
-    "    [K]Cursors  [W]DPad   to move.\n"\
-    "    [K]Enter    [W]A/1/2  to select.\n"\
-    "    [K]ESC/F1   [W]Home   to exit.\n\n"\
-    "For syncing Wiimote, press buttons 1 & 2\n\n"\
-    "Kempston joystick is emulated using\n"\
-    "cursor keys and AltGr for fire button.\n"
+    " (C)2023 Victor Iborra AKA EremusOne\n"\
+    " http://github.com/EremusOne\n"\    
+    "\n"\
+    " Based on ZX-ESPectrum-Wiimote\n"\
+    " (C)2020-2023 David Crespo\n"\
+    " http://github.com/dcrespo3d\n"\
+    "\n"\
+    " Original (C) 2019 Rampa & Queru\n"\
+    " http://github.com/rampa069\n"\
+    "\n"\
+    " Z80 emulation by JL Sanchez\n"\        
+    " VGA driver by BitLuni\n"\    
+    " PS2 driver by Fabrizio di Vittorio\n"\
+    " Many thxs to http://retrowiki.es and\n"\
+    " his people (Hi ackerman!) for the\n"\
+    " support and inspiration.\n"    
+
+    // "\n"\
+    // "    F1       for main menu\n"\
+    // "    Cursors  to move.\n"\
+    // "    Enter    to select.\n"\
+    // "    ESC/F1   to exit.\n\n"\
+    // "Kempston joystick is emulated using\n"\
+    // "cursor keys and AltGr for fire button.\n"
+
 #define MENU_TEST getTestMenu(200)
 
 #endif // ESPECTRUM_MESSAGES_h
