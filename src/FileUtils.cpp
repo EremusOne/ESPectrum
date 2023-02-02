@@ -190,6 +190,8 @@ string FileUtils::getFileEntriesFromDir(string path) {
         //        printf("HIDDEN\n");
             } else if (filename.substr(filename.size()-4) == ".txt") {
         //        printf("IGNORING TXT\n");
+            } else if (filename.substr(filename.size()-4) == ".TXT") {
+        //        printf("IGNORING TXT\n");
             } else {
         //        printf("ADDING\n");
                 filelist += filename + "\n";
