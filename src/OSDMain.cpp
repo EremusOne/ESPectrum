@@ -356,16 +356,15 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             uint8_t opt2 = menuRun(MENU_RESET);
             if (opt2 == 1) {
                 // Soft
-                ESPectrum::reset();
                 if (Config::ram_file != NO_RAM_FILE)
-                    FileSNA::load(DISK_SNA_DIR + Config::ram_file); // TO DO: fix error if ram_file is .z80 
+                    changeSnapshot(Config::ram_file);
+                else ESPectrum::reset();
             }
             else if (opt2 == 2) {
                 // Hard
                 Config::ram_file = NO_RAM_FILE;
                 Config::save();
                 ESPectrum::reset();
-                //esp_hard_reset();
             }
             else if (opt2 == 3) {
                 // ESP host reset
@@ -502,8 +501,6 @@ void OSD::changeSnapshot(string filename)
     {
     
         osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
-
-        ESPectrum::reset();
         // printf("Loading SNA: %s\n", filename.c_str());
         FileSNA::load(dir + "/" + filename);
 
@@ -511,7 +508,6 @@ void OSD::changeSnapshot(string filename)
     else if (FileUtils::hasZ80extension(filename))
     {
         osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
-        ESPectrum::reset();
         // printf("Loading Z80: %s\n", filename.c_str());
         FileZ80::load(dir + "/" + filename);
     }
@@ -520,11 +516,5 @@ void OSD::changeSnapshot(string filename)
     
     Config::ram_file = filename;
     Config::save();
-
-    #ifdef USE_AY_SOUND
-    if (Config::getArch() == "48K") AySound::reset();
-    #endif
-
-    if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;    
 
 }
