@@ -258,33 +258,34 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     // else if (KeytoESP == fabgl::VK_F10) {
     //     ESPectrum::ESPoffset = ESPectrum::ESPoffset << 1;
     // }
-    else if (KeytoESP == fabgl::VK_F11) {
+    else if (KeytoESP == fabgl::VK_F12) { // Switch active partition
         
         // Switch boot partition
+        string splabel;
         esp_err_t chg_ota;
         const esp_partition_t *ESPectrum_partition = NULL;
 
-        //ESPectrum_partition = esp_ota_get_next_update_partition(NULL);
-        ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,"48k");
+        ESPectrum_partition = esp_ota_get_running_partition();
+        if (ESPectrum_partition->label=="128k") splabel = "48k"; else splabel= "128k";
 
+        ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
         chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
 
-        if (chg_ota == ESP_OK ) esp_hard_reset();
+        esp_hard_reset();
 
     }
-    else if (KeytoESP == fabgl::VK_F12) {
-        // Switch boot partition
-        esp_err_t chg_ota;
-        const esp_partition_t *ESPectrum_partition = NULL;
+    // else if (KeytoESP == fabgl::VK_F12) {
+    //     // Switch boot partition
+    //     esp_err_t chg_ota;
+    //     const esp_partition_t *ESPectrum_partition = NULL;
 
-        //ESPectrum_partition = esp_ota_get_next_update_partition(NULL);
-        ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,"128k");
+    //     //ESPectrum_partition = esp_ota_get_next_update_partition(NULL);
+    //     ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,"128k");
+    //     chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
 
-        chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
-
-        if (chg_ota == ESP_OK ) esp_hard_reset();
+    //     if (chg_ota == ESP_OK ) esp_hard_reset();
             
-    }
+    // }
     else if (KeytoESP == fabgl::VK_F1) {
         AySound::disable();
 
