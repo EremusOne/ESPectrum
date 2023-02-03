@@ -99,6 +99,7 @@
     "Select ROM\n"\
     "Load state (F2)\n"\
     "Save state (F3)\n"\
+    "Storage\n"\
     "Aspect Ratio...\n"\
     "Reset\n"\
     "About\n"
@@ -128,13 +129,19 @@
 #define MENU_PERSIST_LOAD \
     "Persist Load\n" MENU_PERSIST    
 #define MENU_DEMO "Demo mode\nOFF\n 1 minute\n 3 minutes\n 5 minutes\n15 minutes\n30 minutes\n 1 hour\n"
+#define MENU_STORAGE_SD "Select storage\n"\
+    "Internal\n"\
+    "SD Card (current)\n"
+#define MENU_STORAGE_INTERNAL "Select storage\n"\
+    "Internal (current)\n"\
+    "SD Card\n"
 #define MENU_ARCH "Select Arch\n"\
     "48K\n"\
     "128K\n"
 #define MENU_ROMSET48 "Select Rom Set\n"\
-    "SINCLAIR\n"\
-    "SE\n"\
-    "DIAG\n"
+    "SINCLAIR\n"/*\
+    "DIAG\n"\
+    "SE\n"*/
 #define MENU_ROMSET128 "Select Rom Set\n"\
     "SINCLAIR\n"\
     "PLUS2A\n"
@@ -152,7 +159,7 @@
     " Z80 emulation by JL Sanchez\n"\        
     " VGA driver by BitLuni\n"\    
     " PS2 driver by Fabrizio di Vittorio\n"\
-    " Many thxs to http://retrowiki.es and\n"\
+    " Greetings to http://retrowiki.es and\n"\
     " his people (Hi ackerman!) for the\n"\
     " support and inspiration.\n"    
 

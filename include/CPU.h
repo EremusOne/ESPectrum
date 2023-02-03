@@ -66,12 +66,15 @@ public:
 
     // Border color // TO DO: Move to ALUVIDEO OBJECT
     static uint8_t borderColor;
+    static uint8_t LineDraw;
     static uint8_t BottomDraw;
 
     static VGA6Bit vga;
 
     // Frames elapsed
     static uint32_t framecnt;
+
+    static unsigned lastBorder[312];
 
 };
 
@@ -100,11 +103,13 @@ public:
 #define LEFTBORDER 3
 #define LINEDRAW_SYNC 4
 #define LINEDRAW 5
-#define RIGHTBORDER 6
-#define BOTTOMBORDER_BLANK 7
-#define BOTTOMBORDER 8
-#define BOTTOMBORDER_FPS 9
-#define BLANK 10
+#define LINEDRAW_FPS 6
+#define RIGHTBORDER 7
+#define RIGHTBORDER_FPS 8
+#define BOTTOMBORDER_BLANK 9
+#define BOTTOMBORDER 10
+#define BOTTOMBORDER_FPS 11
+#define BLANK 12
 
 static unsigned int is169;
 
@@ -122,8 +127,6 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
 };
 
 static uint32_t DRAM_ATTR ulabytes[16][256] = { 0 };
-
-static unsigned int DRAM_ATTR lastBorder[312]= { 0 };
 
 static unsigned char DrawStatus;
 
@@ -148,8 +151,8 @@ void ALU_video_reset();
 
 static void (*ALU_draw)(unsigned int);
 static void IRAM_ATTR ALU_video(unsigned int statestoadd);
-static void IRAM_ATTR ALU_video_fast_43(unsigned int statestoadd);
+// static void IRAM_ATTR ALU_video_fast_43(unsigned int statestoadd);
 static void IRAM_ATTR ALU_video_169(unsigned int statestoadd);
-static void IRAM_ATTR ALU_flush_video();
+// static void IRAM_ATTR ALU_flush_video();
 
 #endif // CPU_h

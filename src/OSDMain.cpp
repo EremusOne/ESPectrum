@@ -119,8 +119,14 @@ void OSD::drawOSD() {
 
 void OSD::drawStats(char *line1, char *line2) {
     VGA6Bit& vga = CPU::vga;
-    unsigned short x = 168;
-    unsigned short y = 220;
+    unsigned short x,y;
+    if (Config::aspect_16_9) {
+        x = 204;
+        y = 176;
+    } else {
+        x = 168;
+        y = 220;
+    }
     // vga.fillRect(x, y, 80, 16, OSD::zxColor(1, 0));
     // vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
     // vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
@@ -238,7 +244,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F8) {
         // Show / hide OnScreen Stats
-        if (CPU::BottomDraw == BOTTOMBORDER) CPU::BottomDraw = BOTTOMBORDER_FPS; else CPU::BottomDraw = BOTTOMBORDER;
+        if (CPU::LineDraw == LINEDRAW) {
+            CPU::LineDraw = LINEDRAW_FPS;
+            CPU::BottomDraw = BOTTOMBORDER_FPS;
+        } else {
+            CPU::LineDraw = LINEDRAW;
+            CPU::BottomDraw = BOTTOMBORDER;
+            for (int i=176; i<192; i++) CPU::lastBorder[i]=8; //16:9 needs to mark border for redraw 
+        }    
     }
     else if (KeytoESP == fabgl::VK_F9) {
         if (ESPectrum::aud_volume>-16) {
@@ -339,6 +352,22 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         }
         else if (opt == 6) {
+            // Storage source
+            uint8_t opt2;
+            if (FileUtils::MountPoint == MOUNT_POINT_SD)
+                opt2 = menuRun(MENU_STORAGE_SD);
+            else
+                opt2 = menuRun(MENU_STORAGE_INTERNAL);
+            if (opt2) {
+                if (opt2 == 1)
+                    FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
+                else
+                    FileUtils::MountPoint = MOUNT_POINT_SD;
+                Config::loadSnapshotLists();
+                Config::loadTapLists();
+            }
+        }
+        else if (opt == 7) {
             // aspect ratio
             uint8_t opt2;
             if (Config::aspect_16_9)
@@ -352,7 +381,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 esp_hard_reset();
             }
         }
-        else if (opt == 7) {
+        else if (opt == 8) {
             // Reset
             uint8_t opt2 = menuRun(MENU_RESET);
             if (opt2 == 1) {
@@ -372,7 +401,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 esp_hard_reset();
             }
         }
-        else if (opt == 8) {
+        else if (opt == 9) {
             // Help
             drawOSD();
             osdAt(2, 0);

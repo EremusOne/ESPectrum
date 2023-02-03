@@ -68,7 +68,9 @@ public:
     static void writeword(uint16_t addr, uint16_t data);
 };
 
-static uint8_t DRAM_ATTR staticMemPage[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage0[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage1[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage2[0x4000] = { 0 };
 
 ///////////////////////////////////////////////////////////////////////////////
 //

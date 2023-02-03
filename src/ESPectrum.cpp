@@ -206,9 +206,9 @@ void ESPectrum::setup()
     // MEMORY SETUP
     //=======================================================================================
 
-    MemESP::ram5 = staticMemPage;
-    MemESP::ram0 = (unsigned char *)calloc(1,0x4000);
-    MemESP::ram2 = (unsigned char *)calloc(1,0x4000);
+    MemESP::ram5 = staticMemPage0;
+    MemESP::ram0 = staticMemPage1;
+    MemESP::ram2 = staticMemPage2;
 
     MemESP::ram1 = (unsigned char *)calloc(1,0x4000);
     MemESP::ram3 = (unsigned char *)calloc(1,0x4000);
@@ -342,8 +342,8 @@ void ESPectrum::loadRom(string arch, string romset) {
             if (romset.find(gb_list_roms_128k_title[i]) != string::npos) {
                 MemESP::rom[0] = (uint8_t *) gb_list_roms_128k_data[i][0];
                 MemESP::rom[1] = (uint8_t *) gb_list_roms_128k_data[i][1];
-                MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
-                MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
+                // MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
+                // MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
                 break;
             }
         }
@@ -670,7 +670,7 @@ for(;;) {
     ts_start = micros();
 
     // Draw stats, if activated, every 32 frames
-    if (((CPU::framecnt & 31) == 0) && (CPU::BottomDraw == BOTTOMBORDER_FPS)) OSD::drawStats(linea1,linea2); 
+    if (((CPU::framecnt & 31) == 0) && (CPU::LineDraw == LINEDRAW_FPS)) OSD::drawStats(linea1,linea2); 
     
     processKeyboard();
     
@@ -682,14 +682,18 @@ for(;;) {
 
     elapsed = micros() - ts_start;
     idle = target - elapsed;
-    if (idle >= 0) {
-        #ifdef VIDEO_FRAME_TIMING
-        totalseconds += idle ;
-        #endif
-        totalseconds += elapsed;
-        totalsecondsnodelay += elapsed;
-        if (totalseconds >= 1000000) {
+    if (idle < 0) idle = 0;
 
+    #ifdef VIDEO_FRAME_TIMING
+    totalseconds += idle ;
+    #endif
+    
+    totalseconds += elapsed;
+    totalsecondsnodelay += elapsed;
+    if (totalseconds >= 1000000) {
+
+        if (elapsed < 100000) {
+    
             // printf("===========================================================================\n");
             // printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
             // printf("[Audio] Volume: %d\n", aud_volume);
@@ -699,15 +703,17 @@ for(;;) {
             sprintf((char *)linea1,"CPU: %.5u / IDL: %.5d ", elapsed, idle);
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
 
-            totalseconds = 0;
-            totalsecondsnodelay = 0;
-            CPU::framecnt = 0;
-
         }
-        #ifdef VIDEO_FRAME_TIMING    
-        delayMicroseconds(idle);
-        #endif
+
+        totalseconds = 0;
+        totalsecondsnodelay = 0;
+        CPU::framecnt = 0;
+
     }
+    
+    #ifdef VIDEO_FRAME_TIMING    
+    delayMicroseconds(idle);
+    #endif
 
 }
 

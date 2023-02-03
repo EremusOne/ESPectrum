@@ -47,7 +47,7 @@ public:
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
     static uint8_t romLoading;
-
+ 
     static void Init();
     static void TAP_Play();
     static void TAP_Stop();    

@@ -59,6 +59,7 @@ static uint32_t tapeBlockLen;
 static size_t tapeFileSize;   
 static uint8_t tapeEarBit;
 static uint8_t tapeBitMask;    
+static uint8_t tapeReadBuf[4096] = { 0 };
 
 void Tape::Init()
 {
@@ -67,6 +68,9 @@ void Tape::Init()
 
 void Tape::TAP_Play()
 {
+   
+    // TO DO: Use ram buffer (tapeReadBuf) to speed up loading
+   
     switch (Tape::tapeStatus) {
     case TAPE_STOPPED:
 
