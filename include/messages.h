@@ -141,10 +141,11 @@
 #define MENU_ROMSET48 "Select Rom Set\n"\
     "SINCLAIR\n"/*\
     "DIAG\n"\
+    "TESTRAM128\n"\
     "SE\n"*/
 #define MENU_ROMSET128 "Select Rom Set\n"\
-    "SINCLAIR\n"\
-    "PLUS2A\n"
+    "SINCLAIR\n"/*\
+    "PLUS2A\n"*/
 #define OSD_HELP \
     " (C)2023 Victor Iborra AKA EremusOne\n"\
     " http://github.com/EremusOne\n"\    

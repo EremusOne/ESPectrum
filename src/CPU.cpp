@@ -105,7 +105,7 @@ void CPU::reset() {
 void IRAM_ATTR CPU::loop()
 {
 
-    tstates = 0;
+    //tstates = 0;
 
 	while (tstates < statesInFrame )
 	{
@@ -148,7 +148,7 @@ void IRAM_ATTR CPU::loop()
 	}
 
     // We're halted: flush screen and update registers as needed
-    if (tstates & 0xFF000000) FlushOnHalt();
+    if (tstates & 0xFF000000) FlushOnHalt(); else tstates -= statesInFrame;
 
     framecnt++;
 
@@ -187,6 +187,9 @@ void IRAM_ATTR CPU::FlushOnHalt() {
             // ALU_draw(4);
             ALU_draw(ESPectrum::ESPoffset);
         }
+
+        // End value
+        tstates = global_tstates & 0x03;
 
 }
 
@@ -773,6 +776,7 @@ if (DrawStatus==TOPBORDER) {
     statestoadd += ALU_video_rest;
     ALU_video_rest = statestoadd & 0x03; // Mod 4
     brd = border32[CPU::borderColor];
+//    brd = border32[7];
     for (int i=0; i < (statestoadd >> 2); i++) {
         *lineptr32++ = brd;
         *lineptr32++ = brd;
@@ -796,47 +800,40 @@ if (DrawStatus==MAINSCREEN_BLANK) {
         coldraw_cnt = 0;
         ALU_video_rest = 0;
         DrawStatus = LEFTBORDER;
+        bmpOffset = offBmp[linedraw_cnt-24];
+        attOffset = offAtt[linedraw_cnt-24];
+        grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
     } else return;
 }    
 
 if (DrawStatus==LEFTBORDER) {
+
     statestoadd += ALU_video_rest;
     ALU_video_rest = statestoadd & 0x03; // Mod 4
     brd = border32[CPU::borderColor];
+
     for (int i=0; i < (statestoadd >> 2); i++) {    
-        *lineptr32++ = brd;
-        *lineptr32++ = brd;
-        if (++coldraw_cnt == 4) {      
-            DrawStatus = LINEDRAW;
-            bmpOffset = offBmp[linedraw_cnt - 24];
-            attOffset = offAtt[linedraw_cnt - 24];
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-            ALU_video_rest += statestoadd - (i++ << 2);
-            return;
+        
+        if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
+            att = grmem[attOffset++];       // get attribute byte
+            if (att & flashing) {
+                bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
+            } else 
+                bmp = grmem[bmpOffset++];   // get bitmap byte
+
+            *lineptr32++ = ulabytes[bmp >> 4][att];
+            *lineptr32++ = ulabytes[bmp & 0xF][att];
+        } else {
+            *lineptr32++ = brd;
+            *lineptr32++ = brd;
         }
-    }
-    return;
-}    
 
-if (DrawStatus == LINEDRAW) {
-
-    statestoadd += ALU_video_rest;
-    ALU_video_rest = statestoadd & 0x03; // Mod 4
-
-    for (int i=0; i < (statestoadd >> 2); i++) {    
-
-        att = grmem[attOffset++];       // get attribute byte
-        if (att & flashing) {
-            bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
-        } else 
-            bmp = grmem[bmpOffset++];   // get bitmap byte
-
-        *lineptr32++ = ulabytes[bmp >> 4][att];
-        *lineptr32++ = ulabytes[bmp & 0xF][att];
-
-        if (++coldraw_cnt == 36) {
-            DrawStatus = RIGHTBORDER;
-            ALU_video_rest += statestoadd - (i++ << 2);
+        if (++coldraw_cnt == 40) {      
+            DrawStatus = MAINSCREEN_BLANK;
+            if (++linedraw_cnt == 216 ) {
+                DrawStatus = BOTTOMBORDER_BLANK;
+                tstateDraw = TS_PHASE_3_320x240;
+            }
             return;
         }
 
@@ -846,24 +843,70 @@ if (DrawStatus == LINEDRAW) {
 
 }
 
-if (DrawStatus==RIGHTBORDER) {
-    statestoadd += ALU_video_rest;
-    ALU_video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[CPU::borderColor];
-    for (int i=0; i < (statestoadd >> 2); i++) {
-        *lineptr32++ = brd;
-        *lineptr32++ = brd;
-        if (++coldraw_cnt == 40 ) { 
-            DrawStatus = MAINSCREEN_BLANK;
-            if (++linedraw_cnt == 216 ) {
-                DrawStatus = BOTTOMBORDER_BLANK;
-                tstateDraw = TS_PHASE_3_320x240;
-            }
-            return;
-        }
-    }
-    return;
-}    
+        // if (++coldraw_cnt == 4) {      
+        //     DrawStatus = LINEDRAW;
+        //     bmpOffset = offBmp[linedraw_cnt - 24];
+        //     attOffset = offAtt[linedraw_cnt - 24];
+        //     grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+
+
+
+            // //ALU_video_rest += statestoadd - (i++ << 2);
+            // //ALU_video_rest = 0;
+            // return;
+//         }
+//     }
+//     return;
+// }    
+
+// if (DrawStatus == LINEDRAW) {
+
+//     statestoadd += ALU_video_rest;
+//     ALU_video_rest = statestoadd & 0x03; // Mod 4
+
+//     for (int i=0; i < (statestoadd >> 2); i++) {    
+
+//         att = grmem[attOffset++];       // get attribute byte
+//         if (att & flashing) {
+//             bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
+//         } else 
+//             bmp = grmem[bmpOffset++];   // get bitmap byte
+
+//         *lineptr32++ = ulabytes[bmp >> 4][att];
+//         *lineptr32++ = ulabytes[bmp & 0xF][att];
+
+//         if (++coldraw_cnt == 36) {
+//             DrawStatus = RIGHTBORDER;
+// //            ALU_video_rest = statestoadd - (i++ << 2);
+// //            statestoadd = 0;
+// //            break;
+//             return;
+//         }
+
+//     }
+
+//     return;
+
+// }
+
+// if (DrawStatus==RIGHTBORDER) {
+//     statestoadd += ALU_video_rest;
+//     ALU_video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[CPU::borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {
+//         *lineptr32++ = brd;
+//         *lineptr32++ = brd;
+//         if (++coldraw_cnt == 40 ) { 
+//             DrawStatus = MAINSCREEN_BLANK;
+//             if (++linedraw_cnt == 216 ) {
+//                 DrawStatus = BOTTOMBORDER_BLANK;
+//                 tstateDraw = TS_PHASE_3_320x240;
+//             }
+//             return;
+//         }
+//     }
+//     return;
+// }    
 
 if (DrawStatus==BOTTOMBORDER_BLANK) {
     if (CPU::tstates > tstateDraw) {
@@ -880,6 +923,7 @@ if (DrawStatus==BOTTOMBORDER) {
     statestoadd += ALU_video_rest;
     ALU_video_rest = statestoadd & 0x03; // Mod 4
     brd = border32[CPU::borderColor];
+//    brd = border32[7];
     for (int i=0; i < (statestoadd >> 2); i++) {    
         *lineptr32++ = brd;
         *lineptr32++ = brd;
