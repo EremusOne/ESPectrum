@@ -58,7 +58,7 @@
 #define OSD_NORMAL false
 
 #define OSD_W 248
-#define OSD_H 168
+#define OSD_H 176
 #define OSD_MARGIN 4
 
 extern Font Font6x8;
@@ -114,7 +114,7 @@ void OSD::drawOSD() {
     vga.setFont(Font6x8);
     osdHome();
     vga.print(OSD_TITLE);
-    osdAt(19, 0);
+    osdAt(20, 0);
     vga.print(OSD_BOTTOM);
     osdHome();
 }
@@ -391,14 +391,15 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     }
                 }
                 else if (options_num == 2) {
+                    
                     // Change ROM
                     string arch_menu = getArchMenu();
                     uint8_t arch_num = menuRun(arch_menu);
-                    if (arch_num > 0) {
-                        string romset_menu = getRomsetMenu(rowGet(arch_menu, arch_num));
+                    if (arch_num) {
+                        string romset_menu = getRomsetMenu((arch_num==1 ? "48K" : "128K"));
                         uint8_t romset_num = menuRun(romset_menu);
                         if (romset_num > 0) {
-                            string arch = rowGet(arch_menu, arch_num);
+                            string arch = (arch_num==1 ? "48K" : "128K");
                             string romSet = rowGet(romset_menu, romset_num);
                             Config::requestMachine(arch, romSet, true);
                             Config::ram_file = "none";

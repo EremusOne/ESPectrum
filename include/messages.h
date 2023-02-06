@@ -149,15 +149,16 @@
     "SINCLAIR\n"\
     "PLUS2A\n"
 #define OSD_HELP \
-    " (C)2023 Victor Iborra AKA EremusOne\n"\
-    " http://github.com/EremusOne\n"\    
+    " (C)2023 Victor Iborra AKA Eremus\n"\
+    " https://github.com/eremusOne\n"\    
     "\n"\
     " Based on ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
-    " http://github.com/dcrespo3d\n"\
+    " https://github.com/dcrespo3d\n"\
+    " https://youtube.com/davidprograma\n"\
     "\n"\
     " Original (C) 2019 Rampa & Queru\n"\
-    " http://github.com/rampa069\n"\
+    " https://github.com/rampa069\n"\
     "\n"\
     " Z80 emulation by JL Sanchez\n"\        
     " VGA driver by BitLuni\n"\    

@@ -27,6 +27,10 @@
 // DEALINGS IN THE SOFTWARE.
 //
 
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include <algorithm>
 #include "FileUtils.h"
 #include "Config.h"
 #include "CPU.h"
@@ -35,7 +39,6 @@
 #include "hardpins.h"
 #include "messages.h"
 #include "OSDMain.h"
-// #include "sort.h"
 #include "roms.h"
 
 #include "esp_vfs.h"
@@ -44,6 +47,8 @@
 #include <sys/stat.h>
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
+
+using namespace std;
 
 string FileUtils::MountPoint = MOUNT_POINT_SPIFFS; // Start with SPIFFS
 sdmmc_card_t *FileUtils::card;
@@ -262,44 +267,38 @@ bool FileUtils::hasZ80extension(string filename)
 string FileUtils::getSortedFileList(string fileDir)
 {
     
-    return getFileEntriesFromDir(fileDir);
-    
-    // // get string of unsorted filenames, separated by newlines
-    // string entries = getFileEntriesFromDir(fileDir);
+    // get string of unsorted filenames, separated by newlines
+    string entries = getFileEntriesFromDir(fileDir);
 
-    // // count filenames (they always end at newline)
-    // unsigned short count = 0;
-    // for (unsigned short i = 0; i < entries.length(); i++) {
-    //     if (entries.at(i) == ASCII_NL) {
-    //         count++;
-    //     }
-    // }
+    // count filenames (they always end at newline)
+    int count = 0;
+    for (int i = 0; i < entries.length(); i++) {
+        if (entries.at(i) == ASCII_NL) {
+            count++;
+        }
+    }
 
-    // // array of filenames
-    // String* filenames = (String*)malloc(count * sizeof(String));
-    // // memory must be initialized to avoid crash on assign
-    // memset(filenames, 0, count * sizeof(String));
+    std::vector<std::string> filenames;
+    filenames.reserve(count);
 
-    // // copy filenames from string to array
-    // unsigned short ich = 0;
-    // unsigned short ifn = 0;
-    // for (unsigned short i = 0; i < entries.length(); i++) {
-    //     if (entries.charAt(i) == ASCII_NL) {
-    //         filenames[ifn++] = entries.substring(ich, i);
-    //         ich = i + 1;
-    //     }
-    // }
+    // Copy filenames from string to vector
+    string fname = "";
+    for (int i = 0; i < entries.length(); i++) {
+        if (entries.at(i) == ASCII_NL) {
+            filenames.push_back(fname.c_str());
+            fname = "";
+        } else fname += entries.at(i);
+    }
 
-    // // sort array
-    // sortArray(filenames, count);
+    // Sort vector
+    sort(filenames.begin(),filenames.end());
 
-    // // string of sorted filenames
-    // String sortedEntries = "";
+    // Copy back filenames from vector to string
+    string sortedEntries = "";
+    for (int i = 0; i < count; i++) {
+        sortedEntries += filenames[i] + '\n';
+    }
 
-    // // copy filenames from array to string
-    // for (unsigned short i = 0; i < count; i++) {
-    //     sortedEntries += filenames[i] + '\n';
-    // }
+    return sortedEntries;
 
-    // return sortedEntries;
 }
