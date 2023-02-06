@@ -39,6 +39,7 @@
 #include "MemESP.h"
 #include "roms.h"
 #include "CPU.h"
+#include "Video.h"
 #include "messages.h"
 #include "AySound.h"
 #include "Tape.h"
@@ -198,7 +199,7 @@ void ESPectrum::setup()
     // VIDEO
     //=======================================================================================
 
-    ALU_video_init();
+    VIDEO::Init();
 
     if (Config::slog_on) showMemInfo("VGA started");
 
@@ -284,7 +285,7 @@ void ESPectrum::reset()
         Ports::base[i] = 0x1F;
     }
 
-    ALU_video_reset();
+    VIDEO::Reset();
 
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
@@ -541,7 +542,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
     pwm_audio_config_t pac;
     pac.duty_resolution    = LEDC_TIMER_8_BIT;
-    pac.gpio_num_left      = 25;
+    pac.gpio_num_left      = SPEAKER_PIN;
     pac.ledc_channel_left  = LEDC_CHANNEL_0;
     pac.gpio_num_right     = -1;
     pac.ledc_channel_right = LEDC_CHANNEL_1;
@@ -555,21 +556,9 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 
-    // File file = SD.open("/persist/audioout", FILE_WRITE);
-    // int filebufs=0;
-    
     for (;;) {
-
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
-
         pwm_audio_write(audioBuffer[buffertoplay], samplesPerFrame, &written, portMAX_DELAY);
-
-        // if (filebufs<1000) {
-        //     uint16_t bytesWritten = file.write(param, ESP_AUDIO_SAMPLES);
-        //     filebufs++;
-        //     if (filebufs==1000) file.close();
-        // }
-
     }
 
 }
@@ -669,18 +658,23 @@ for(;;) {
 
     ts_start = micros();
 
-    // Draw stats, if activated, every 32 frames
-    if (((CPU::framecnt & 31) == 0) && (CPU::LineDraw == LINEDRAW_FPS)) OSD::drawStats(linea1,linea2); 
-    
     processKeyboard();
-    
+
     audioFrameStart();
 
     CPU::loop();
-    
+
     audioFrameEnd();
 
+    // Flashing flag change
+    if (!(VIDEO::flash_ctr & 0x0f)) VIDEO::flashing ^= 0b10000000;
+    VIDEO::flash_ctr++;
+
+    // Draw stats, if activated, every 32 frames
+    if (((CPU::framecnt & 31) == 0) && (VIDEO::LineDraw == LINEDRAW_FPS)) OSD::drawStats(linea1,linea2); 
+
     elapsed = micros() - ts_start;
+    
     idle = target - elapsed;
     if (idle < 0) idle = 0;
 

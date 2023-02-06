@@ -30,13 +30,7 @@
 #ifndef ESPECTRUM_OSD_H
 #define ESPECTRUM_OSD_H
 
-#include "ESP32Lib/ESP32Lib.h"
-
-// OSD Headers
-#include "hardconfig.h"
-
 #include "fabgl.h"
-
 #include <string>
 
 using namespace std;
@@ -86,6 +80,7 @@ public:
     static void newMenu(string new_menu);
     static void menuRecalc();
     static unsigned short menuRealRowFor(uint8_t virtual_row_num);
+    static bool menuIsSub(uint8_t virtual_row_num);
     static void menuPrintRow(uint8_t virtual_row_num, uint8_t line_type);
     static void menuDraw();
     static void menuRedraw();
@@ -95,7 +90,7 @@ public:
     static void menuScroll(bool up);
     static void menuAt(short int row, short int col);
     static void menuScrollBar();
-    static string getTestMenu(unsigned short n_lines);
+    static uint8_t menu_level;
 
     // // Rows
     static unsigned short rowCount(string menu);

@@ -65,38 +65,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // PS/2 Keyboard
 //
-// define PS2_KEYB_PRESENT if you want PS/2 Keyboard to be enabled.
-//
-// also, if you happen to have a pesky keyboard which won't initialize
-// until it receives an echo message, also define PS2_KEYB_FORCE_INIT
-#define PS2_KEYB_PRESENT
-#define PS2_KEYB_FORCE_INIT
-
 // define NONE, ONE or BOTH of this
 // PS2_ARROWKEYS_AS_CURSOR will use arrow keys 
 // PS2_ARROWKEYS_AS_KEMPSTON will use arrow keys as kempston joystick
 // directions, with AltGr a fire button.
+
 // #define PS2_ARROWKEYS_AS_CURSOR
 #define PS2_ARROWKEYS_AS_KEMPSTON
-
-// for using convenience keys, define just ONE of
-// PS2_CONVENIENCE_KEYS_EN for english keyboard: [backspace][,][.][/][;][´][-][=]
-// PS2_CONVENIENCE_KEYS_EN for SPANISH keyboard: [backspace][,][.][-][´][+]
-
-//#define PS2_CONVENIENCE_KEYS_EN
-#define PS2_CONVENIENCE_KEYS_ES
-///////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
-// Audio I/O
-//
-// define SPEAKER_PRESENT if you want the speaker to be present.
-// define EAR_PRESENT if you want the ear input port to be present.
-// define MIC_PRESENT if you want the mic output port to be present.
-// 
-
-#define SPEAKER_PRESENT
-///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
 // Audio I/O

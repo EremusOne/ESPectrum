@@ -64,95 +64,11 @@ public:
     // CPU Tstates in frame
     static uint32_t statesInFrame;
 
-    // Border color // TO DO: Move to ALUVIDEO OBJECT
-    static uint8_t borderColor;
-    static uint8_t LineDraw;
-    static uint8_t BottomDraw;
-
-    static VGA6Bit vga;
-
     // Frames elapsed
     static uint32_t framecnt;
 
-    static unsigned lastBorder[312];
-
 };
-
-// Video / ALU
-#define SPEC_W 256
-#define SPEC_H 192
-
-// TO DO: Defines per arch (48, 128, etc..)
-
-#define TSTATES_PER_LINE 224
-
-#define TS_PHASE_1_320x240 8944  //  8960 - 16 =  8944 -> START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 40
-#define TS_PHASE_2_320x240 14320 // 14336 - 16 = 14320 -> START OF LEFT BORDER OF TOP LEFT CORNER OF MAINSCREEN, SCANLINE 64
-#define TS_PHASE_3_320x240 57328 // 57344 - 16 = 57328 -> START OF BOTTOM BORDER, SCANLINE 256
-#define TS_PHASE_4_320x240 62720 // END OF VISIBLE SCREEN, SCANLINE 280
-
-#define TS_PHASE_1_360x200 13416 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 60
-#define TS_PHASE_2_360x200 14312 // START OF LEFT BORDER OF TOP LEFT CORNER OF MAINSCREEN, SCANLINE 64
-#define TS_PHASE_3_360x200 57320 // START OF BOTTOM BORDER, SCANLINE 256
-#define TS_PHASE_4_360x200 58240 // END OF VISIBLE SCREEN, SCANLINE 260
-
-// DrawStatus values
-#define TOPBORDER_BLANK 0
-#define TOPBORDER 1
-#define MAINSCREEN_BLANK 2
-#define LEFTBORDER 3
-#define LINEDRAW_SYNC 4
-#define LINEDRAW 5
-#define LINEDRAW_FPS 6
-#define RIGHTBORDER 7
-#define RIGHTBORDER_FPS 8
-#define BOTTOMBORDER_BLANK 9
-#define BOTTOMBORDER 10
-#define BOTTOMBORDER_FPS 11
-#define BLANK 12
-
-static unsigned int is169;
-
-static uint8_t flashing = 0;
-static uint8_t flash_ctr = 0;
-
-static unsigned int DRAM_ATTR offBmp[SPEC_H];
-static unsigned int DRAM_ATTR offAtt[SPEC_H];
-
-#define NUM_SPECTRUM_COLORS 16
-
-static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
-    BLACK,     BLUE,     RED,     MAGENTA,     GREEN,     CYAN,     YELLOW,     WHITE,
-    BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
-};
-
-static uint32_t DRAM_ATTR ulabytes[16][256] = { 0 };
-
-static unsigned char DrawStatus;
-
-static uint8_t* grmem;
-static uint32_t* lineptr32;
-
-static unsigned int tstateDraw; // Drawing start point (in Tstates)
-static unsigned int linedraw_cnt;
-static unsigned int mainscrline_cnt;
-static unsigned int coldraw_cnt;
-static unsigned int ALU_video_rest;
-
-static unsigned int bmpOffset;  // offset for bitmap in graphic memory
-static unsigned int attOffset;  // offset for attrib in graphic memory
-
-static unsigned int brd;
 
 static unsigned char IRAM_ATTR delayContention(unsigned int currentTstates);
-
-void ALU_video_init();
-void ALU_video_reset();
-
-static void (*ALU_draw)(unsigned int);
-static void IRAM_ATTR ALU_video(unsigned int statestoadd);
-// static void IRAM_ATTR ALU_video_fast_43(unsigned int statestoadd);
-static void IRAM_ATTR ALU_video_169(unsigned int statestoadd);
-// static void IRAM_ATTR ALU_flush_video();
 
 #endif // CPU_h

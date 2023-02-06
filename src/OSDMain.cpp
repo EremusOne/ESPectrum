@@ -30,6 +30,7 @@
 #include "OSDMain.h"
 #include "FileUtils.h"
 #include "CPU.h"
+#include "Video.h"
 #include "ESPectrum.h"
 #include "messages.h"
 #include "Config.h"
@@ -42,7 +43,6 @@
 
 #include "esp_system.h"
 #include "esp_ota_ops.h"
-
 #include "fabgl.h"
 
 #include "soc/rtc_wdt.h"
@@ -62,6 +62,8 @@
 #define OSD_MARGIN 4
 
 extern Font Font6x8;
+
+uint8_t OSD::menu_level = 0;
 
 unsigned short OSD::scrW = 320;
 unsigned short OSD::scrH = 240;
@@ -88,7 +90,7 @@ void esp_hard_reset() {
 }
 
 // // Cursor to OSD first row,col
-void OSD::osdHome() { CPU::vga.setCursor(osdInsideX(), osdInsideY()); }
+void OSD::osdHome() { VIDEO::vga.setCursor(osdInsideX(), osdInsideY()); }
 
 // // Cursor positioning
 void OSD::osdAt(uint8_t row, uint8_t col) {
@@ -98,11 +100,11 @@ void OSD::osdAt(uint8_t row, uint8_t col) {
         col = 0;
     unsigned short y = (row * OSD_FONT_H) + osdInsideY();
     unsigned short x = (col * OSD_FONT_W) + osdInsideX();
-    CPU::vga.setCursor(x, y);
+    VIDEO::vga.setCursor(x, y);
 }
 
 void OSD::drawOSD() {
-    VGA6Bit& vga = CPU::vga;
+    VGA6Bit& vga = VIDEO::vga;
     unsigned short x = scrAlignCenterX(OSD_W);
     unsigned short y = scrAlignCenterY(OSD_H);
     vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(1, 0));
@@ -118,8 +120,10 @@ void OSD::drawOSD() {
 }
 
 void OSD::drawStats(char *line1, char *line2) {
-    VGA6Bit& vga = CPU::vga;
+
+    VGA6Bit& vga = VIDEO::vga;
     unsigned short x,y;
+
     if (Config::aspect_16_9) {
         x = 204;
         y = 176;
@@ -127,9 +131,11 @@ void OSD::drawStats(char *line1, char *line2) {
         x = 168;
         y = 220;
     }
+
     // vga.fillRect(x, y, 80, 16, OSD::zxColor(1, 0));
     // vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
     // vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
+
     vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
     vga.setFont(Font6x8);
     vga.setCursor(x,y);
@@ -138,32 +144,6 @@ void OSD::drawStats(char *line1, char *line2) {
     vga.print(line2);
 
 }
-
-// static void quickSave()
-// {
-//     OSD::osdCenteredMsg(OSD_QSNA_SAVING, LEVEL_INFO);
-//     if (!FileSNA::saveQuick()) {
-//         OSD::osdCenteredMsg(OSD_QSNA_SAVE_ERR, LEVEL_WARN);
-//         return;
-//     }
-//     OSD::osdCenteredMsg(OSD_QSNA_SAVED, LEVEL_INFO);
-// }
-
-// static void quickLoad()
-// {
-//     if (!FileSNA::isQuickAvailable()) {
-//         OSD::osdCenteredMsg(OSD_QSNA_NOT_AVAIL, LEVEL_INFO);
-//         return;
-//     }
-//     OSD::osdCenteredMsg(OSD_QSNA_LOADING, LEVEL_INFO);
-//     if (!FileSNA::loadQuick()) {
-//         OSD::osdCenteredMsg(OSD_QSNA_LOAD_ERR, LEVEL_WARN);
-//         return;
-//     }
-//     if (Config::getArch() == "48K") AySound::reset();
-//     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;
-//     OSD::osdCenteredMsg(OSD_QSNA_LOADED, LEVEL_INFO);
-// }
 
 static void persistSave(uint8_t slotnumber)
 {
@@ -197,7 +177,7 @@ static void persistLoad(uint8_t slotnumber)
 // OSD Main Loop
 void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
-    VGA6Bit& vga = CPU::vga;
+    VGA6Bit& vga = VIDEO::vga;
     static uint8_t last_sna_row = 0;
     auto kbd = ESPectrum::PS2Controller.keyboard();
     bool Kdown;
@@ -214,6 +194,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F2) {
         AySound::disable();
+        unsigned short snanum = menuRun(Config::sna_name_list);
+        if (snanum > 0) {
+            changeSnapshot(rowGet(Config::sna_file_list, snanum));
+        }
+        AySound::enable();
+    }
+    else if (KeytoESP == fabgl::VK_F3) {
+        AySound::disable();
         // Persist Load
         uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
         if (opt2 > 0 && opt2<6) {
@@ -221,7 +209,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         AySound::enable();
     }
-    else if (KeytoESP == fabgl::VK_F3) {
+    else if (KeytoESP == fabgl::VK_F4) {
         AySound::disable();
         // Persist Save
         uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
@@ -231,6 +219,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F5) {
+        AySound::disable();                    // Select TAP File
+        unsigned short tapfile = menuRun(Config::tap_name_list);
+        if (tapfile > 0) {
+            Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapfile);
+        }
+        AySound::enable();
+    }
+    else if (KeytoESP == fabgl::VK_F6) {
         // Start .tap reproduction
         if (Tape::tapeFileName=="none") {
             OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
@@ -238,19 +234,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             Tape::TAP_Play();
         }
     }
-    else if (KeytoESP == fabgl::VK_F6) {
+    else if (KeytoESP == fabgl::VK_F7) {
         // Stop .tap reproduction
         Tape::TAP_Stop();
     }
     else if (KeytoESP == fabgl::VK_F8) {
         // Show / hide OnScreen Stats
-        if (CPU::LineDraw == LINEDRAW) {
-            CPU::LineDraw = LINEDRAW_FPS;
-            CPU::BottomDraw = BOTTOMBORDER_FPS;
+        if (VIDEO::LineDraw == LINEDRAW) {
+            VIDEO::LineDraw = LINEDRAW_FPS;
+            VIDEO::BottomDraw = BOTTOMBORDER_FPS;
         } else {
-            CPU::LineDraw = LINEDRAW;
-            CPU::BottomDraw = BOTTOMBORDER;
-            for (int i=176; i<192; i++) CPU::lastBorder[i]=8; //16:9 needs to mark border for redraw 
+            VIDEO::LineDraw = LINEDRAW;
+            VIDEO::BottomDraw = BOTTOMBORDER;
+            for (int i=176; i<192; i++) VIDEO::lastBorder[i]=8; //16:9 needs to mark border for redraw 
         }    
     }
     else if (KeytoESP == fabgl::VK_F9) {
@@ -271,18 +267,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     // else if (KeytoESP == fabgl::VK_F10) {
     //     ESPectrum::ESPoffset = ESPectrum::ESPoffset << 1;
     // }
-    else if (KeytoESP == fabgl::VK_F12) { // Switch active partition
+    else if (KeytoESP == fabgl::VK_F12) {
         
-        // Switch boot partition
-        string splabel;
-        esp_err_t chg_ota;
-        const esp_partition_t *ESPectrum_partition = NULL;
+        // // Switch boot partition
+        // string splabel;
+        // esp_err_t chg_ota;
+        // const esp_partition_t *ESPectrum_partition = NULL;
 
-        ESPectrum_partition = esp_ota_get_running_partition();
-        if (ESPectrum_partition->label=="128k") splabel = "48k"; else splabel= "128k";
+        // ESPectrum_partition = esp_ota_get_running_partition();
+        // if (ESPectrum_partition->label=="128k") splabel = "48k"; else splabel= "128k";
 
-        ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
-        chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
+        // ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
+        // chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
 
         esp_hard_reset();
 
@@ -305,83 +301,56 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         // Main menu
         uint8_t opt = menuRun(MENU_MAIN);
         if (opt == 1) {
-            // Change RAM
-            unsigned short snanum = menuRun(Config::sna_name_list);
-            if (snanum > 0) {
-                changeSnapshot(rowGet(Config::sna_file_list, snanum));
+            // Snapshot menu
+            uint8_t sna_mnu = menuRun(MENU_SNA);
+            if (sna_mnu > 0) {
+                if (sna_mnu == 1) {
+                    unsigned short snanum = menuRun(Config::sna_name_list);
+                    if (snanum > 0) {
+                        changeSnapshot(rowGet(Config::sna_file_list, snanum));
+                    }
+                }
+                else if (sna_mnu == 2) {
+                    // Persist Load
+                    uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
+                    if (opt2 > 0 && opt2<6) {
+                        persistLoad(opt2);
+                    }
+                }
+                else if (sna_mnu == 3) {
+                    // Persist Save
+                    uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
+                    if (opt2 > 0 && opt2<6) {
+                        persistSave(opt2);
+                    }
+                }
             }
         } 
         else if (opt == 2) {
-            // Select TAP File
-            unsigned short tapnum = menuRun(Config::tap_name_list);
-            if (tapnum > 0) {
-                Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapnum);
-            }
-        }
-        else if (opt == 3) {
-            // Change ROM
-            string arch_menu = getArchMenu();
-            uint8_t arch_num = menuRun(arch_menu);
-            if (arch_num > 0) {
-                string romset_menu = getRomsetMenu(rowGet(arch_menu, arch_num));
-                uint8_t romset_num = menuRun(romset_menu);
-                if (romset_num > 0) {
-                    string arch = rowGet(arch_menu, arch_num);
-                    string romSet = rowGet(romset_menu, romset_num);
-                    Config::requestMachine(arch, romSet, true);
-                    Config::ram_file = "none";
-                    vTaskDelay(2);
-                    Config::save();
-                    vTaskDelay(2);
-                    ESPectrum::reset();
+            // Tape menu
+            uint8_t tap_num = menuRun(MENU_TAPE);
+            if (tap_num > 0) {
+                if (tap_num == 1) {
+                    // Select TAP File
+                    unsigned short tapfile = menuRun(Config::tap_name_list);
+                    if (tapfile > 0) {
+                        Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapfile);
+                    }
+                }
+                else if (tap_num == 2) {
+                    // Start .tap reproduction
+                    if (Tape::tapeFileName=="none") {
+                        OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
+                    } else {
+                        Tape::TAP_Play();
+                    }
+                }
+                else if (tap_num == 3) {
+                    Tape::TAP_Stop();
                 }
             }
         }
-        else if (opt == 4) {
-            // Persist Load
-            uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
-            if (opt2 > 0 && opt2<6) {
-                persistLoad(opt2);
-            }
-        }
-        else if (opt == 5) {
-            // Persist Save
-            uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
-            if (opt2 > 0 && opt2<6) {
-                persistSave(opt2);
-            }
-        }
-        else if (opt == 6) {
-            // Storage source
-            uint8_t opt2;
-            if (FileUtils::MountPoint == MOUNT_POINT_SD)
-                opt2 = menuRun(MENU_STORAGE_SD);
-            else
-                opt2 = menuRun(MENU_STORAGE_INTERNAL);
-            if (opt2) {
-                if (opt2 == 1)
-                    FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
-                else
-                    FileUtils::MountPoint = MOUNT_POINT_SD;
-                Config::loadSnapshotLists();
-                Config::loadTapLists();
-            }
-        }
-        else if (opt == 7) {
-            // aspect ratio
-            uint8_t opt2;
-            if (Config::aspect_16_9)
-                opt2 = menuRun(MENU_ASPECT_169);
-            else
-                opt2 = menuRun(MENU_ASPECT_43);
-            if (opt2 == 2)
-            {
-                Config::aspect_16_9 = !Config::aspect_16_9;
-                Config::save();
-                esp_hard_reset();
-            }
-        }
-        else if (opt == 8) {
+        else if (opt == 3) {
             // Reset
             uint8_t opt2 = menuRun(MENU_RESET);
             if (opt2 == 1) {
@@ -401,7 +370,62 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 esp_hard_reset();
             }
         }
-        else if (opt == 9) {
+        else if (opt == 4) {
+            // Tape menu
+            uint8_t options_num = menuRun(MENU_OPTIONS);
+            if (options_num > 0) {
+                if (options_num == 1) {
+                    // Storage source
+                    uint8_t opt2;
+                    if (FileUtils::MountPoint == MOUNT_POINT_SD)
+                        opt2 = menuRun(MENU_STORAGE_SD);
+                    else
+                        opt2 = menuRun(MENU_STORAGE_INTERNAL);
+                    if (opt2) {
+                        if (opt2 == 1)
+                            FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
+                        else
+                            FileUtils::MountPoint = MOUNT_POINT_SD;
+                        Config::loadSnapshotLists();
+                        Config::loadTapLists();
+                    }
+                }
+                else if (options_num == 2) {
+                    // Change ROM
+                    string arch_menu = getArchMenu();
+                    uint8_t arch_num = menuRun(arch_menu);
+                    if (arch_num > 0) {
+                        string romset_menu = getRomsetMenu(rowGet(arch_menu, arch_num));
+                        uint8_t romset_num = menuRun(romset_menu);
+                        if (romset_num > 0) {
+                            string arch = rowGet(arch_menu, arch_num);
+                            string romSet = rowGet(romset_menu, romset_num);
+                            Config::requestMachine(arch, romSet, true);
+                            Config::ram_file = "none";
+                            vTaskDelay(2);
+                            Config::save();
+                            vTaskDelay(2);
+                            ESPectrum::reset();
+                        }
+                    }
+                }
+                else if (options_num == 3) {
+                    // aspect ratio
+                    uint8_t opt2;
+                    if (Config::aspect_16_9)
+                        opt2 = menuRun(MENU_ASPECT_169);
+                    else
+                        opt2 = menuRun(MENU_ASPECT_43);
+                    if (opt2 == 2)
+                    {
+                        Config::aspect_16_9 = !Config::aspect_16_9;
+                        Config::save();
+                        esp_hard_reset();
+                    }
+                }
+            }
+        }
+        else if (opt == 5) {
             // Help
             drawOSD();
             osdAt(2, 0);
@@ -427,7 +451,7 @@ void OSD::errorPanel(string errormsg) {
     if (Config::slog_on)
         printf((errormsg + "\n").c_str());
 
-    VGA6Bit& vga = CPU::vga;
+    VGA6Bit& vga = VIDEO::vga;
 
     vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
     vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(7, 0));
@@ -482,7 +506,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
         paper = OSD::zxColor(1, 0);
     }
 
-    VGA6Bit& vga = CPU::vga;
+    VGA6Bit& vga = VIDEO::vga;
 
     vga.fillRect(x, y, w, h, paper);
     // vga.rect(x - 1, y - 1, w + 2, h + 2, ink);

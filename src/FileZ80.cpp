@@ -31,6 +31,7 @@
 #include "FileZ80.h"
 #include "FileUtils.h"
 #include "CPU.h"
+#include "Video.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
 #include "messages.h"
@@ -123,7 +124,7 @@ bool FileZ80::load(string z80_fn)
 
     uint16_t RegPC = Z80::getRegPC();
 
-    CPU::borderColor = (b12 >> 1) & 0x07;
+    VIDEO::borderColor = (b12 >> 1) & 0x07;
 
     bool dataCompressed = (b12 & 0x20) ? true : false;
     string fileArch = "48K";
@@ -144,7 +145,7 @@ bool FileZ80::load(string z80_fn)
         printf("data length: %d\n", memRawLength);
         printf("b12: %d\n", b12);
         printf("pc: %d\n", RegPC);
-        printf("border: %d\n", CPU::borderColor);
+        printf("border: %d\n", VIDEO::borderColor);
 #endif
 
         if (dataCompressed)
@@ -227,7 +228,7 @@ bool FileZ80::load(string z80_fn)
         printf("b12: %d\n", b12);
         printf("b34: %d\n", b34);
         printf("pc: %d\n", RegPC);
-        printf("border: %d\n", CPU::borderColor);
+        printf("border: %d\n", VIDEO::borderColor);
 #endif
 
         if (fileArch == "48K") {

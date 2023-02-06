@@ -33,13 +33,14 @@
 #include "ESPectrum.h"
 #include "Tape.h"
 #include "CPU.h"
+#include "Video.h"
 
 // Ports
 volatile uint8_t Ports::base[128];
 
 static uint8_t port_data = 0;
 
-// using partial port address decoding
+// Using partial port address decoding
 // see https://worldofspectrum.org/faq/reference/ports.htm
 //
 //        Peripheral: 48K ULA
@@ -66,20 +67,11 @@ static uint8_t port_data = 0;
 uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
 {
     
-    // uint32_t ts_start = micros();
-    
     // 48K ULA
     if ((portLow & 0x01) == 0x00) // (portLow == 0xFE) 
     {
         // all result bits initially set to 1, may be set to 0 eventually
         uint8_t result = 0xbF;
-
-        #ifdef EAR_PRESENT
-        // EAR_PIN
-        if (portHigh == 0xFE) {
-            bitWrite(result, 6, digitalRead(EAR_PIN));
-        }
-        #endif
 
         // Keyboard
         if (~(portHigh | 0xFE)&0xFF) result &= base[0];
@@ -92,21 +84,7 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
         if (~(portHigh | 0x7F)&0xFF) result &= base[7];
 
         if (Tape::tapeStatus==TAPE_LOADING) {
-            
             bitWrite(result,6,Tape::TAP_Read());
-            
-            /*
-            uint32_t ts_end = micros();
-            uint32_t elapsed = ts_end - ts_start;
-            
-            static int ctr = 0;
-            if (ctr == 0) {
-            ctr = 8192;
-                Serial.printf("[TAPE] elapsed: %u\n", elapsed);
-            }
-            else ctr--;
-            */
-           
         } else {
             if (base[0x20] & 0x18) result |= (0xe0); else result |= (0xa0); // ISSUE 2 behaviour
         }
@@ -132,36 +110,28 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
     #endif
 
     uint8_t data = port_data;
-    data |= (0xe0); /* Set bits 5-7 - as reset above */
+    data |= (0xe0); // Set bits 5-7 - as reset above
     data &= ~0x40;
-    // Serial.printf("Port %x%x  Data %x\n", portHigh,portLow,data);
+
     return data;
 }
 
 int Audiobit, Tapebit;
 
 void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
-    // Serial.printf("%02X,%02X:%02X|", portHigh, portLow, data);
 
     // 48K ULA
     if ((portLow & 0x01) == 0x00)
     {
-        CPU::borderColor = data & 0x07;
-
-        #ifdef SPEAKER_PRESENT
+        VIDEO::borderColor = data & 0x07;
 
         // if (Tape::SaveStatus==TAPE_SAVING)
         //     Tapebit = bitRead(data,3);
         // else
-             Audiobit = bitRead(data,4);
+            Audiobit = bitRead(data,4);
 
         ESPectrum::audioGetSample(Audiobit | Tapebit);
 
-        #endif
-
-        #ifdef MIC_PRESENT
-        digitalWrite(MIC_PIN, bitRead(data, 3)); // tape_out
-        #endif
         base[0x20] = data; // ?
     }
     

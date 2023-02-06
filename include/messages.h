@@ -87,65 +87,67 @@
 
 #define MENU_SNA_TITLE "Select Snapshot"
 #define MENU_TAP_TITLE "Select TAP file"
-#define MENU_TAP_SELECTED \
-    "How to load TAP\n"\
-    "Type LOAD \"\"\n"\
-    "F5 Play/Pause tape\n"\
-    "F6 Stop tape\n"
+#define MENU_SNA \
+    "Snapshot menu\n"\
+    "Load (SNA,Z80) \t[F2] >\n"\
+    "Load snapshot \t[F3]  \n"\
+    "Save snapshot \t[F4]  \n"
+#define MENU_TAPE \
+    "Tape menu\n"\
+    "Select TAP  \t[F5] >\n"\
+    "Play/Pause  \t[F6]  \n"\
+    "Stop  \t[F7]  \n"
 #define MENU_MAIN \
     "Main Menu\n"\
-    "Load SNA or Z80\n"\
-    "Select TAP file\n"\
-    "Select ROM\n"\
-    "Load state (F2)\n"\
-    "Save state (F3)\n"\
-    "Storage\n"\
-    "Aspect Ratio...\n"\
-    "Reset\n"\
+    "Snapshot\t>\n"\
+    "Tape\t>\n"\
+    "Reset\t>\n"\
+    "Options\t>\n"\
     "About\n"
+#define MENU_OPTIONS \
+    "Options menu\n"\
+    "Storage\t>\n"\
+    "ROM\t>\n"\
+    "Aspect ratio\t>\n"
 #define MENU_ASPECT_169 \
     "Aspect Ratio\n"\
-    "16:9 (current)\n"\
-    "4:3  (will reset)\n"
+    "16:9\t[*]\n"\
+    "4:3\t[ ]\n"
 #define MENU_ASPECT_43 \
     "Aspect Ratio\n"\
-    "4:3  (current)\n"\
-    "16:9 (will reset)\n"
+    "4:3\t[*]\n"\
+    "16:9\t[ ]\n"
 #define MENU_RESET \
     "Reset Menu\n"\
     "Soft reset\n"\
     "Hard reset\n"\
-    "ESP host reset\n"\
-    "Cancel\n"
+    "ESP32 reset\t[F12]\n"
 #define MENU_PERSIST \
     "Slot 1\n"\
     "Slot 2\n"\
     "Slot 3\n"\
     "Slot 4\n"\
-    "Slot 5\n"\
-    "Cancel\n"
+    "Slot 5\n"
 #define MENU_PERSIST_SAVE \
     "Persist Save\n" MENU_PERSIST
 #define MENU_PERSIST_LOAD \
     "Persist Load\n" MENU_PERSIST    
-#define MENU_DEMO "Demo mode\nOFF\n 1 minute\n 3 minutes\n 5 minutes\n15 minutes\n30 minutes\n 1 hour\n"
 #define MENU_STORAGE_SD "Select storage\n"\
-    "Internal\n"\
-    "SD Card (current)\n"
+    "Internal\t[ ]\n"\
+    "SD Card\t[*]\n"
 #define MENU_STORAGE_INTERNAL "Select storage\n"\
-    "Internal (current)\n"\
-    "SD Card\n"
+    "Internal\t[*]\n"\
+    "SD Card\t[ ]\n"
 #define MENU_ARCH "Select Arch\n"\
-    "48K\n"\
-    "128K\n"
+    "48K\t>\n"\
+    "128K\t>\n"
 #define MENU_ROMSET48 "Select Rom Set\n"\
-    "SINCLAIR\n"/*\
-    "DIAG\n"\
-    "TESTRAM128\n"\
-    "SE\n"*/
+    "SINCLAIR\n"\
+    "SE\n"/*\
+    "DIAG\n"*/
 #define MENU_ROMSET128 "Select Rom Set\n"\
-    "SINCLAIR\n"/*\
-    "PLUS2A\n"*/
+    "SINCLAIR\n"\
+    "PLUS2A\n"
 #define OSD_HELP \
     " (C)2023 Victor Iborra AKA EremusOne\n"\
     " http://github.com/EremusOne\n"\    
@@ -163,15 +165,5 @@
     " Greetings to http://retrowiki.es and\n"\
     " his people (Hi ackerman!) for the\n"\
     " support and inspiration.\n"    
-
-    // "\n"\
-    // "    F1       for main menu\n"\
-    // "    Cursors  to move.\n"\
-    // "    Enter    to select.\n"\
-    // "    ESC/F1   to exit.\n\n"\
-    // "Kempston joystick is emulated using\n"\
-    // "cursor keys and AltGr for fire button.\n"
-
-#define MENU_TEST getTestMenu(200)
 
 #endif // ESPECTRUM_MESSAGES_h

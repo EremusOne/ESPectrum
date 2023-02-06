@@ -31,6 +31,7 @@
 #include "FileUtils.h"
 #include "Config.h"
 #include "CPU.h"
+#include "Video.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
 #include "messages.h"
@@ -172,7 +173,7 @@ bool FileSNA::load(string sna_fn)
 
     Z80_SET_IM(readByteFile(file));
 
-    CPU::borderColor = readByteFile(file);
+    VIDEO::borderColor = readByteFile(file);
 
     // read 48K memory
     readBlockFile(file, MemESP::ram5, 0x4000);
@@ -358,7 +359,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     writeWordFileLE(SP, file);
 
     writeByteFile(Z80_GET_IM(), file);
-    uint8_t bordercol = CPU::borderColor;
+    uint8_t bordercol = VIDEO::borderColor;
     writeByteFile(bordercol, file);
 
     // write RAM pages in 48K address space (0x4000 - 0xFFFF)

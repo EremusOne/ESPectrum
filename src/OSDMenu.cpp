@@ -34,6 +34,7 @@ using namespace std;
 // #include "PS2Kbd.h"
 #include "ESPectrum.h"
 #include "CPU.h"
+#include "Video.h"
 #include "messages.h"
 #include "OSDMain.h"
 #include <math.h>
@@ -75,36 +76,57 @@ void OSD::newMenu(string new_menu) {
 }
 
 void OSD::menuRecalc() {
-    // Columns
-    cols = 24;
-    uint8_t col_count = 0;
-    for (unsigned short i = 0; i < menu.length(); i++) {
-        if (menu.at(i) == ASCII_NL) {
-            if (col_count > cols) {
-                cols = col_count;
-            }
-            col_count = 0;
-        }
-        col_count++;
+
+
+    // Position
+//    x = scrAlignCenterX(w);
+//    y = scrAlignCenterY(h);
+    if (menu_level == 0) {
+        x = 8;
+        y = 8;
+    } else {
+        x = x + ((cols >> 1) * 6);
+        y = y + 16;
     }
-    cols = (cols > osdMaxCols() ? osdMaxCols() : cols);
+
+    menu_level++;
 
     // Rows
     real_rows = rowCount(menu);
     virtual_rows = (real_rows > MENU_MAX_ROWS ? MENU_MAX_ROWS : real_rows);
     begin_row = last_begin_row = last_focus = focus = 1;
 
+    // Columns
+    cols = 0;
+    uint8_t col_count = 0;
+    for (unsigned short i = 0; i < menu.length(); i++) {
+        if ((menu.at(i) == ASCII_TAB) || (menu.at(i) == ASCII_NL)) {
+            if (col_count > cols) {
+                cols = col_count;
+            }
+            while (menu.at(i) != ASCII_NL) i++;
+            col_count = 0;
+        }
+        col_count++;
+    }
+    cols = (cols > osdMaxCols() ? osdMaxCols() : cols + 8);
+
     // Size
     w = (cols * OSD_FONT_W) + 2;
     h = (virtual_rows * OSD_FONT_H) + 2;
 
-    // Position
-    x = scrAlignCenterX(w);
-    y = scrAlignCenterY(h);
 }
 
 // Get real row number for a virtual one
 unsigned short OSD::menuRealRowFor(uint8_t virtual_row_num) { return begin_row + virtual_row_num - 1; }
+
+// Get real row number for a virtual one
+bool OSD::menuIsSub(uint8_t virtual_row_num) { 
+    string line = rowGet(menu, menuRealRowFor(virtual_row_num));
+    int n = line.find(ASCII_TAB);
+    if (n == line.npos) return false;
+    return (line.substr(n+1).find(">") != line.npos);
+}
 
 // Menu relative AT
 void OSD::menuAt(short int row, short int col) {
@@ -112,12 +134,12 @@ void OSD::menuAt(short int row, short int col) {
         col = cols - 2 - col;
     if (row < 0)
         row = virtual_rows - 2 - row;
-    CPU::vga.setCursor(x + 1 + (col * OSD_FONT_W), y + 1 + (row * OSD_FONT_H));
+    VIDEO::vga.setCursor(x + 1 + (col * OSD_FONT_W), y + 1 + (row * OSD_FONT_H));
 }
 
 // Print a virtual row
 void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
-    VGA6Bit& vga = CPU::vga;
+    VGA6Bit& vga = VIDEO::vga;
     uint8_t margin;
     string line = rowGet(menu, menuRealRowFor(virtual_row_num));
     switch (line_type) {
@@ -134,21 +156,22 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
         margin = (real_rows > virtual_rows ? 3 : 2);
     }
 
+    if (line.find(ASCII_TAB) != line.npos) line = line.substr(0,line.find(ASCII_TAB)) + string(cols - margin - line.length(),' ') + line.substr(line.find(ASCII_TAB)+1);
     menuAt(virtual_row_num, 0);
     vga.print(" ");
     if (line.length() < cols - margin) {
         vga.print(line.c_str());
         for (uint8_t i = line.length(); i < (cols - margin); i++)
             vga.print(" ");
-    } else {
-        // vga.print(line.substring(0, cols - margin).c_str());
-    }
+    } /*else {
+        vga.print(line.substring(0, cols - margin).c_str());
+    }*/
     vga.print(" ");
 }
 
 // Draw the complete menu
 void OSD::menuDraw() {
-    VGA6Bit& vga = CPU::vga;
+    VGA6Bit& vga = VIDEO::vga;
     // Set font
     vga.setFont(Font6x8);
     // Menu border
@@ -249,8 +272,10 @@ unsigned short OSD::menuRun(string new_menu) {
             begin_row = real_rows - virtual_rows + 1;
             menuRedraw();
         } else if (MenuKey == fabgl::VK_RETURN) {
+            if (!menuIsSub(focus)) menu_level=0; 
             return menuRealRowFor(focus);
         } else if ((MenuKey == fabgl::VK_ESCAPE) || (MenuKey == fabgl::VK_F1)) {
+            menu_level=0;
             return 0;
         }
     }
@@ -288,7 +313,7 @@ void OSD::menuRedraw() {
 
 // Draw menu scroll bar
 void OSD::menuScrollBar() {
-    VGA6Bit& vga = CPU::vga;
+    VGA6Bit& vga = VIDEO::vga;
     if (real_rows > virtual_rows) {
         // Top handle
         menuAt(1, -1);
@@ -329,14 +354,4 @@ void OSD::menuScrollBar() {
             vga.print("-");
         }
     }
-}
-
-// Return a test menu
-string OSD::getTestMenu(unsigned short n_lines) {
-    string test_menu = "Test Menu\n";
-    for (unsigned short line = 1; line <= n_lines; line += 2) {
-        // test_menu += "Option Line " + (string)line + "\n";
-        test_menu += "1........10........20........30........40........50........60\n";
-    }
-    return test_menu;
 }
