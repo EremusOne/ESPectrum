@@ -18,5 +18,7 @@ data/tap/**
 !data/tap/tap.txt
 !data/tap/vccc2022.tap
 /unpacked_fs
+/unpacked_fs/**
 downloaded_fs*.bin
 /doc
+/doc/**
