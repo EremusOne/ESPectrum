@@ -382,16 +382,116 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
         }
 
         if (KeytoESP == fabgl::VK_BACKSPACE) {
-            keyboard->injectVirtualKey(fabgl::VK_LCTRL,Kdown,false);
-            keyboard->injectVirtualKey(fabgl::VK_0,Kdown,false);            
+            bitWrite(Ports::base[0], 0, !Kdown); // CAPS SHIFT
+            bitWrite(Ports::base[4], 0, !Kdown);
             continue;
         }
 
         if (KeytoESP == fabgl::VK_COMMA) {
-            keyboard->injectVirtualKey(fabgl::VK_RCTRL,Kdown,false);
-            keyboard->injectVirtualKey(fabgl::VK_N,Kdown,false);
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[7], 3, !Kdown);
             continue;
         }
+
+        if (KeytoESP == fabgl::VK_PERIOD) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[7], 2, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_PLUS) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[6], 2, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_MINUS) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[6], 3, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_QUOTE) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[4], 3, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_QUOTEDBL) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[5], 0, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_LEFTPAREN) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[4], 2, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_RIGHTPAREN) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[4], 1, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_EQUALS) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[6], 1, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_COLON) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[0], 1, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_SEMICOLON) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[5], 1, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_SLASH) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[0], 4, !Kdown);
+            continue;
+        }
+
+        // *********************************
+        // TO DO: Add more convenience keys
+        // *********************************
+
+        // Cursor keys
+        #ifdef PS2_ARROWKEYS_AS_CURSOR
+
+            if (KeytoESP == fabgl::VK_UP) {
+                bitWrite(Ports::base[4], 3, !Kdown);
+                continue;
+            }
+
+            if (KeytoESP == fabgl::VK_DOWN) {
+                bitWrite(Ports::base[4], 4, !Kdown);
+            continue;
+            }
+
+            if (KeytoESP == fabgl::VK_LEFT) {
+                bitWrite(Ports::base[3], 4, !Kdown);
+                continue;
+            }
+
+            if (KeytoESP == fabgl::VK_RIGHT) {
+                bitWrite(Ports::base[4], 2, !Kdown);
+                continue;
+            }
+
+            if (KeytoESP == fabgl::VK_RALT) {
+                bitWrite(Ports::base[4], 0, !Kdown);
+                continue;
+            }
+
+        #endif // PS2_ARROWKEYS_AS_CURSOR
 
         //bitWrite(Ports::base[0], 0, !keyboard->isVKDown(fabgl::VK_LCTRL)); // CAPS SHIFT
         bitWrite(Ports::base[0], 1, (!keyboard->isVKDown(fabgl::VK_Z)) & (!keyboard->isVKDown(fabgl::VK_z)));
@@ -441,75 +541,6 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
         bitWrite(Ports::base[7], 3, (!keyboard->isVKDown(fabgl::VK_N)) & (!keyboard->isVKDown(fabgl::VK_n)));
         bitWrite(Ports::base[7], 4, (!keyboard->isVKDown(fabgl::VK_B)) & (!keyboard->isVKDown(fabgl::VK_b)));
 
-        // if (keyboard->isVKDown(fabgl::VK_BACKSPACE)) {
-        //     bitWrite(Ports::base[0], 0, 0);
-        //     bitWrite(Ports::base[4], 0, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_COMMA)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[7], 3, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_PERIOD)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[7], 2, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_PLUS)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[6], 2, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_MINUS)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[6], 3, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_QUOTE)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[4], 3, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_QUOTEDBL)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[5], 0, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_LEFTPAREN)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[4], 2, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_RIGHTPAREN)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[4], 1, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_EQUALS)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[6], 1, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_COLON)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[0], 1, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_SEMICOLON)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[5], 1, 0);
-        // }
-
-        // if (keyboard->isVKDown(fabgl::VK_SLASH)) {
-        //     bitWrite(Ports::base[7], 1, 0);
-        //     bitWrite(Ports::base[0], 4, 0);
-        // }
-
-        // *********************************
-        // TO DO: Add more convenience keys
-        // *********************************
-
         // Kempston joystick
         #ifdef PS2_ARROWKEYS_AS_KEMPSTON
             Ports::base[0x1f] = 0;
@@ -521,15 +552,6 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
         #endif // PS2_ARROWKEYS_AS_KEMPSTON    
 
     }
-
-//     // Cursor keys
-//     uint8_t specialKeyState;
-// #ifdef PS2_ARROWKEYS_AS_CURSOR
-//     evalConvKey(KEY_CURSOR_LEFT,  0, 0, 3, 4);    // LEFT ARROW  (Shift + 5)
-//     evalConvKey(KEY_CURSOR_DOWN,  0, 0, 4, 4);    // DOWN ARROW  (Shift + 6)
-//     evalConvKey(KEY_CURSOR_UP,    0, 0, 4, 3);    // UP ARROW    (Shift + 7)
-//     evalConvKey(KEY_CURSOR_RIGHT, 0, 0, 4, 2);    // RIGHT ARROW (Shift + 8)
-// #endif // PS2_ARROWKEYS_AS_CURSOR
 
 }
 
