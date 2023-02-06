@@ -49,12 +49,10 @@
 #define TS_PHASE_1_320x240 8944  //  8960 - 16 =  8944 -> START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 40
 #define TS_PHASE_2_320x240 14320 // 14336 - 16 = 14320 -> START OF LEFT BORDER OF TOP LEFT CORNER OF MAINSCREEN, SCANLINE 64
 #define TS_PHASE_3_320x240 57328 // 57344 - 16 = 57328 -> START OF BOTTOM BORDER, SCANLINE 256
-#define TS_PHASE_4_320x240 62720 // END OF VISIBLE SCREEN, SCANLINE 280
 
 #define TS_PHASE_1_360x200 13416 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 60
 #define TS_PHASE_2_360x200 14312 // START OF LEFT BORDER OF TOP LEFT CORNER OF MAINSCREEN, SCANLINE 64
 #define TS_PHASE_3_360x200 57320 // START OF BOTTOM BORDER, SCANLINE 256
-#define TS_PHASE_4_360x200 58240 // END OF VISIBLE SCREEN, SCANLINE 260
 
 // DrawStatus values
 #define TOPBORDER_BLANK 0
@@ -149,7 +147,7 @@ static unsigned int tstateDraw; // Drawing start point (in Tstates)
 static unsigned int linedraw_cnt;
 static unsigned int mainscrline_cnt;
 static unsigned int coldraw_cnt;
-static unsigned int ALU_video_rest;
+static unsigned int video_rest;
 
 static unsigned int bmpOffset;  // offset for bitmap in graphic memory
 static unsigned int attOffset;  // offset for attrib in graphic memory

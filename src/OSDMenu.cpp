@@ -31,7 +31,6 @@
 using namespace std;
 
 #include "FileUtils.h"
-// #include "PS2Kbd.h"
 #include "ESPectrum.h"
 #include "CPU.h"
 #include "Video.h"
@@ -39,7 +38,7 @@ using namespace std;
 #include "OSDMain.h"
 #include <math.h>
 
-#define MENU_MAX_ROWS 23
+#define MENU_MAX_ROWS 18
 // Line type
 #define IS_TITLE 0
 #define IS_FOCUSED 1

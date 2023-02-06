@@ -92,43 +92,13 @@ void CPU::reset() {
 void IRAM_ATTR CPU::loop()
 {
 
-	while (tstates < statesInFrame )
-	{
-            // frame Tstates before instruction
-            uint32_t pre_tstates = tstates;
+	while (tstates < statesInFrame ) {
 
-            #ifdef TAPE_TRAPS
-                switch (Z80::getRegPC()) {
-                case 0x0556: // START LOAD        
-                    Tape::romLoading=true;
-                    if (Tape::tapeStatus!=TAPE_LOADING && Tape::tapeFileName!="none") Tape::TAP_Play();
-                    // Serial.printf("------\n");
-                    // Serial.printf("TapeStatus: %u\n", Tape::tapeStatus);
-                    break;
-                case 0x04d0: // START SAVE (used for rerouting mic out to speaker in Ports.cpp)
-                    Tape::SaveStatus=TAPE_SAVING; 
-                    // Serial.printf("------\n");
-                    // Serial.printf("SaveStatus: %u\n", Tape::SaveStatus);
-                    break;
-                case 0x053f: // END LOAD / SAVE
-                    Tape::romLoading=false;
-                    if (Tape::tapeStatus!=TAPE_STOPPED)
-                        if (Z80::isCarryFlag()) Tape::tapeStatus=TAPE_PAUSED; else Tape::tapeStatus=TAPE_STOPPED;
-                    Tape::SaveStatus=SAVE_STOPPED;
-                    /*
-                    Serial.printf("TapeStatus: %u\n", Tape::tapeStatus);
-                    Serial.printf("SaveStatus: %u\n", Tape::SaveStatus);
-                    Serial.printf("Carry Flag: %u\n", Z80::isCarryFlag());            
-                    Serial.printf("------\n");
-                    */
-                    break;
-                }
-            #endif
+            uint32_t pre_tstates = tstates;
 
             Z80::execute();
         
-            // increase global Tstates
-            global_tstates += (tstates - pre_tstates);
+            global_tstates += (tstates - pre_tstates); // increase global Tstates
 
 	}
 

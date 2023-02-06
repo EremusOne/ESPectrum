@@ -87,7 +87,6 @@ void Config::load() {
         Config::save(); // Try to create file if doesn't exist
         return;
     }
-    // f = FileUtils::safeOpenFileRead(DISK_BOOT_FILENAME);
 
     char buf[256];
     while(fgets(buf, sizeof(buf), f) != NULL)
@@ -116,7 +115,13 @@ void Config::load() {
             erase_cntrl(line);
             trim(line);
             aspect_16_9 = (line == "true");
+        } else if (line.find("sdstorage:") != string::npos) {
+            line = line.substr(line.find(':') + 1);
+            erase_cntrl(line);
+            trim(line);
+            FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
         }
+
     }
     fclose(f);
 }
@@ -201,7 +206,7 @@ void Config::loadTapLists()
 // Dump actual config to FS
 void Config::save() {
 
-    printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
+    //printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
 
     FILE *f = fopen(DISK_BOOT_FILENAME, "w");
     if (f==NULL)
@@ -211,26 +216,30 @@ void Config::save() {
     }
 
     // Architecture
-    printf(("arch:" + arch + "\n").c_str());
+    //printf(("arch:" + arch + "\n").c_str());
     fputs(("arch:" + arch + "\n").c_str(),f);
 
     // ROM set
-    printf(("romset:" + romSet + "\n").c_str());
+    //printf(("romset:" + romSet + "\n").c_str());
     fputs(("romset:" + romSet + "\n").c_str(),f);
 
     // RAM SNA
     #ifdef SNAPSHOT_LOAD_LAST    
-    printf(("ram:" + ram_file + "\n").c_str());
+    //printf(("ram:" + ram_file + "\n").c_str());
     fputs(("ram:" + ram_file + "\n").c_str(),f);
     #endif // SNAPSHOT_LOAD_LAST
 
     // Serial logging
-    printf(slog_on ? "slog:true\n" : "slog:false\n");
+    //printf(slog_on ? "slog:true\n" : "slog:false\n");
     fputs(slog_on ? "slog:true\n" : "slog:false\n",f);
 
     // Aspect ratio
-    printf(aspect_16_9 ? "asp169:true\n" : "asp169:false\n");
+    //printf(aspect_16_9 ? "asp169:true\n" : "asp169:false\n");
     fputs(aspect_16_9 ? "asp169:true\n" : "asp169:false\n",f);
+
+    // Mount point
+    //printf(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n");
+    fputs(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n",f);
 
     fclose(f);
     

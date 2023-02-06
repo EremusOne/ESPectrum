@@ -125,7 +125,7 @@ void OSD::drawStats(char *line1, char *line2) {
     unsigned short x,y;
 
     if (Config::aspect_16_9) {
-        x = 204;
+        x = 200;
         y = 176;
     } else {
         x = 168;
@@ -246,7 +246,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         } else {
             VIDEO::LineDraw = LINEDRAW;
             VIDEO::BottomDraw = BOTTOMBORDER;
-            for (int i=176; i<192; i++) VIDEO::lastBorder[i]=8; //16:9 needs to mark border for redraw 
+//          for (int i=176; i<192; i++) VIDEO::lastBorder[i]=8; //16:9 needs to mark border for redraw 
         }    
     }
     else if (KeytoESP == fabgl::VK_F9) {
@@ -412,15 +412,23 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 else if (options_num == 3) {
                     // aspect ratio
                     uint8_t opt2;
-                    if (Config::aspect_16_9)
+                    bool prev_asp = Config::aspect_16_9;
+
+                    if (prev_asp)
                         opt2 = menuRun(MENU_ASPECT_169);
                     else
                         opt2 = menuRun(MENU_ASPECT_43);
-                    if (opt2 == 2)
-                    {
-                        Config::aspect_16_9 = !Config::aspect_16_9;
-                        Config::save();
-                        esp_hard_reset();
+
+                    if (opt2) {
+                        if (opt2 == 1)
+                            Config::aspect_16_9 = false;
+                        else
+                            Config::aspect_16_9 = true;
+
+                        if (Config::aspect_16_9 != prev_asp) {
+                            Config::save();
+                            esp_hard_reset();
+                        }
                     }
                 }
             }

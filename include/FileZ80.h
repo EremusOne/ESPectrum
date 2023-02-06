@@ -40,8 +40,6 @@ class FileZ80
 {
 public:
     static bool load(string z80_fn);
-    // static bool save(string z80_fn);
-
 private:
     static void loadCompressedMemData(FILE *f, uint16_t dataLen, uint16_t memStart, uint16_t memlen);
     static void loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage, uint16_t memlen);

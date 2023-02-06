@@ -39,23 +39,8 @@ class FileSNA
 {
 public:
     static bool load(string sna_fn);
-
-    // // save snapshot in SNA format to disk using specified filename.
-    // // this function tries to save using pages, 
     static bool save(string sna_fn);
-    // // using this function you can choose whether to write pages block by block, or byte by byte.
     static bool save(string sna_fn, bool blockMode);
-
-    // static bool loadQuick();
-    // static bool saveQuick();
-
-    // static bool loadFromMem(uint8_t* srcBuffer, uint32_t size);
-    // static bool saveToMem(uint8_t* dstBuffer, uint32_t size);
-
-    // static bool loadQuick48();
-    // static bool saveQuick48();
-
-    // static bool isQuickAvailable();
     static bool isPersistAvailable(string filename);
 };
 

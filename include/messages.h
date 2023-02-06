@@ -111,8 +111,8 @@
     "Aspect ratio\t>\n"
 #define MENU_ASPECT_169 \
     "Aspect Ratio\n"\
-    "16:9\t[*]\n"\
-    "4:3\t[ ]\n"
+    "4:3\t[ ]\n"\
+    "16:9\t[*]\n"
 #define MENU_ASPECT_43 \
     "Aspect Ratio\n"\
     "4:3\t[*]\n"\
