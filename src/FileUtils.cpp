@@ -61,7 +61,7 @@ void FileUtils::initFileSystem() {
         return;
     }
 
-    // Initialize SD Card
+    // Init SD Card
     esp_err_t ret;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
