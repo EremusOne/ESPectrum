@@ -87,7 +87,7 @@ From OSD you can load snapshots (from `/data/sna`) or change ROMs.
 
 ## Thanks to
 
-- [David Crespo](https://youtube.com/Davidprograma) for his friendly help and support and his excellent work in his [Youtube Channel](https://youtube.com/Davidprograma) and the [ZX-ESPectrum-Wiimote](https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote) emulator.
+- [David Crespo](https://youtube.com/Davidprograma) for his friendly help and support and his excellent work at his [Youtube Channel](https://youtube.com/Davidprograma) and the [ZX-ESPectrum-Wiimote](https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote) emulator.
 - Developers of the [original project](https://github.com/rampa069/ZX-ESPectrum), [Rampa](https://github.com/rampa069) and [Queru](https://github.com/jorgefuertes).
 - VGA Driver from [ESP32Lib by BitLuni](https://github.com/bitluni/ESP32Lib).
 - PS2 Driver from Fabrizio di Vittorio for his [FabGL library](https://github.com/fdivitto/FabGL).
