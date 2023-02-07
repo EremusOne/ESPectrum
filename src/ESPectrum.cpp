@@ -357,6 +357,7 @@ void ESPectrum::loadRom(string arch, string romset) {
 //=======================================================================================
 void IRAM_ATTR ESPectrum::processKeyboard() {
     
+    fabgl::VirtualKeyItem NextKey;
     fabgl::VirtualKey KeytoESP;
     bool Kdown;
 
@@ -364,7 +365,9 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
     while (keyboard->virtualKeyAvailable()) {
 
-        KeytoESP = keyboard->getNextVirtualKey(&Kdown);
+        keyboard->getNextVirtualKey(&NextKey);
+        KeytoESP = NextKey.vk;
+        Kdown = NextKey.down;
 
         if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE))) {
             OSD::do_OSD(KeytoESP);
@@ -459,9 +462,77 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             continue;
         }
 
-        // *********************************
-        // TO DO: Add more convenience keys
-        // *********************************
+        if (KeytoESP == fabgl::VK_EXCLAIM) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[3], 0, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_AT) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[3], 1, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_HASH) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[3], 2, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_DOLLAR) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[3], 3, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_PERCENT) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[3], 4, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_AMPERSAND) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[4], 4, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_UNDERSCORE) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[4], 0, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_LESS) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[2], 3, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_GREATER) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[2], 4, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_ASTERISK) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[7], 4, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_QUESTION) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[0], 3, !Kdown);
+            continue;
+        }
+
+        if (KeytoESP == fabgl::VK_POUND) {
+            bitWrite(Ports::base[7], 1, !Kdown);
+            bitWrite(Ports::base[0], 2, !Kdown);
+            continue;
+        }
 
         // Cursor keys
         #ifdef PS2_ARROWKEYS_AS_CURSOR
