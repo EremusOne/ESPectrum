@@ -26,7 +26,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - 48K sound: beeper digital output.
 - PS/2 Keyboard used as input for Spectrum keys.
 - OSD menu: Snapshot, Tape, Storage, ROM and Aspect ratio management.
-- Realtime Tape saving and loading.
+- Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
 - Persistent snapshot saving and loading (both 48K and 128K supported).
 - Simultaneous internal (SPIFFS) and external (SD card) storage support.
