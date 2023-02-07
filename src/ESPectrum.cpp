@@ -161,7 +161,7 @@ void ESPectrum::setup()
     Config::loadSnapshotLists();
     Config::loadTapLists();
     
-    // Print chip information
+    // Get chip information
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
 

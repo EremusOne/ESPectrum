@@ -334,10 +334,10 @@ bool I2S::initParallelOutputMode(const int *pinMap, long sampleRate, const int b
 		if (Config::esp32rev > 0) { // ESP32 chip revision > 0
 			if (Config::aspect_16_9) {
 				rtc_clk_apll_enable(true, 44, 84, 7, 6);
-				printf("APPL ENABLE DATA FOR 16:9 (360x200) ESP32 chip revision > 0 -> sdm0: 44, sdm1; 84, sdm2: 7, odiv: 6)\n");
+				// printf("APPL ENABLE DATA FOR 16:9 (360x200) ESP32 chip revision > 0 -> sdm0: 44, sdm1; 84, sdm2: 7, odiv: 6)\n");
 			} else {
 				rtc_clk_apll_enable(true, 41, 84, 7, 7);
-				printf("APPL ENABLE DATA FOR 4:3 (320x240) ESP32 chip revision > 0 -> sdm0: 41, sdm1; 84, sdm2: 7, odiv: 7)\n");
+				// printf("APPL ENABLE DATA FOR 4:3 (320x240) ESP32 chip revision > 0 -> sdm0: 41, sdm1; 84, sdm2: 7, odiv: 7)\n");
 			}
 			} else { // ESP32 chip revision == 0
 			if (Config::aspect_16_9) 
