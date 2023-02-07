@@ -87,6 +87,7 @@ public:
     static string getArchMenu();
     static string getRomsetMenu(string arch);
     static unsigned short menuRun(string new_menu);
+    static unsigned short menuFile(string new_menu);
     static void menuScroll(bool up);
     static void menuAt(short int row, short int col);
     static void menuScrollBar();

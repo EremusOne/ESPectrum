@@ -31,6 +31,7 @@
 using namespace std;
 
 #include "FileUtils.h"
+#include "Config.h"
 #include "ESPectrum.h"
 #include "CPU.h"
 #include "Video.h"
@@ -81,7 +82,7 @@ void OSD::menuRecalc() {
 //    x = scrAlignCenterX(w);
 //    y = scrAlignCenterY(h);
     if (menu_level == 0) {
-        x = 8;
+        x = (Config::aspect_16_9 ? 24 : 8);
         y = 8;
     } else {
         x = x + ((cols >> 1) * 6);
@@ -209,6 +210,75 @@ string OSD::getRomsetMenu(string arch) {
         menu = (string)MENU_ROMSET128;
     }
     return menu;
+}
+
+// Run a new file menu
+unsigned short OSD::menuFile(string new_menu) {
+
+    auto kbd = ESPectrum::PS2Controller.keyboard();
+    bool Kdown;
+    fabgl::VirtualKey MenuKey;
+
+    newMenu(new_menu);
+    while (1) {
+        MenuKey = kbd->getNextVirtualKey(&Kdown);
+        if (!Kdown) continue;
+        if (MenuKey == fabgl::VK_UP) {
+            if (focus == 1 and begin_row > 1) {
+                menuScroll(DOWN);
+            } else if (focus > 1) {
+                last_focus = focus;
+                focus--;
+                menuPrintRow(focus, IS_FOCUSED);
+                if (focus + 1 < virtual_rows) {
+                    menuPrintRow(focus + 1, IS_NORMAL);
+                }
+            }
+        } else if (MenuKey == fabgl::VK_DOWN) {
+            if (focus == virtual_rows - 1) {
+                menuScroll(UP);
+            } else if (focus < virtual_rows - 1) {
+                last_focus = focus;
+                focus++;
+                menuPrintRow(focus, IS_FOCUSED);
+                if (focus - 1 > 0) {
+                    menuPrintRow(focus - 1, IS_NORMAL);
+                }
+            }
+        } else if (MenuKey == fabgl::VK_PAGEUP) {
+            if (begin_row > virtual_rows) {
+                focus = 1;
+                begin_row -= virtual_rows;
+            } else {
+                focus = 1;
+                begin_row = 1;
+            }
+            menuRedraw();
+        } else if (MenuKey == fabgl::VK_PAGEDOWN) {
+            if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                focus = 1;
+                begin_row += virtual_rows - 1;
+            } else {
+                focus = virtual_rows - 1;
+                begin_row = real_rows - virtual_rows + 1;
+            }
+            menuRedraw();
+        } else if (MenuKey == fabgl::VK_HOME) {
+            focus = 1;
+            begin_row = 1;
+            menuRedraw();
+        } else if (MenuKey == fabgl::VK_END) {
+            focus = virtual_rows - 1;
+            begin_row = real_rows - virtual_rows + 1;
+            menuRedraw();
+        } else if (MenuKey == fabgl::VK_RETURN) {
+            if (!menuIsSub(focus)) menu_level=0; 
+            return menuRealRowFor(focus);
+        } else if ((MenuKey == fabgl::VK_ESCAPE) || (MenuKey == fabgl::VK_F1)) {
+            menu_level=0;
+            return 0;
+        }
+    }
 }
 
 // Run a new menu

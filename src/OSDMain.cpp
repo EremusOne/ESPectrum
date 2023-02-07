@@ -125,7 +125,7 @@ void OSD::drawStats(char *line1, char *line2) {
     unsigned short x,y;
 
     if (Config::aspect_16_9) {
-        x = 200;
+        x = 184;
         y = 176;
     } else {
         x = 168;
@@ -305,7 +305,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             uint8_t sna_mnu = menuRun(MENU_SNA);
             if (sna_mnu > 0) {
                 if (sna_mnu == 1) {
-                    unsigned short snanum = menuRun(Config::sna_name_list);
+                    unsigned short snanum = menuFile(Config::sna_name_list);
                     if (snanum > 0) {
                         changeSnapshot(rowGet(Config::sna_file_list, snanum));
                     }
