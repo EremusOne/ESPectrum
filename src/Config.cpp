@@ -45,8 +45,8 @@ string   Config::sna_file_list; // list of file names
 string   Config::sna_name_list; // list of names (without ext, '_' -> ' ')
 string   Config::tap_file_list; // list of file names
 string   Config::tap_name_list; // list of names (without ext, '_' -> ' ')
-bool     Config::slog_on = true;
-bool     Config::aspect_16_9 = false;
+bool     Config::slog_on = false;
+bool     Config::aspect_16_9 = true;
 uint8_t  Config::esp32rev = 0;
 
 // erase control characters (in place)
