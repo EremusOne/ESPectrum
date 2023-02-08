@@ -20,3 +20,5 @@ data/tap/**
 downloaded_fs*.bin
 /doc
 /doc/**
+/releases
+/releases/**

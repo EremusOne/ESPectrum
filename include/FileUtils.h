@@ -74,6 +74,7 @@ private:
 #define DISK_ROM_DIR "/rom"
 #define DISK_SNA_DIR "/sna"
 #define DISK_TAP_DIR "/tap"
+#define DISK_SCR_DIR "/scr"
 #define DISK_PSNA_FILE "/persist/persist"
 
 #define NO_RAM_FILE "none"

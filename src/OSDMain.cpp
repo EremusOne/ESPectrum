@@ -40,6 +40,7 @@
 #include "MemESP.h"
 #include "Tape.h"
 #include "pwm_audio.h"
+#include "CaptureBMP.h"
 
 #include "esp_system.h"
 #include "esp_ota_ops.h"
@@ -435,6 +436,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         }
         else if (opt == 5) {
+            // Preliminar: let's hook here for capturing to BMP
+            // CaptureBMP::capture("CaptureBMP.raw");
             // Help
             drawOSD();
             osdAt(2, 0);
