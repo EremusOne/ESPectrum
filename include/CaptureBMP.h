@@ -4,7 +4,7 @@
 class CaptureBMP
 {
 public:
-    static void capture(const char* filename);
+    static void capture();
 };
 
 

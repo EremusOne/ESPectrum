@@ -51,6 +51,7 @@ public:
 
     // Kbd
     static void processKeyboard();
+    static bool readKbd(fabgl::VirtualKeyItem *Nextkey);
     static fabgl::PS2Controller PS2Controller;
 
     // Audio

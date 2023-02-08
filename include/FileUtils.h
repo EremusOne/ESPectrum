@@ -48,6 +48,7 @@ class FileUtils
 {
 public:
     static void initFileSystem();
+    static bool mountSDCard();
     static void unmountSDCard();
     // static String         getAllFilesFrom(const String path);
     // static void           listAllFiles();
@@ -60,6 +61,7 @@ public:
     static bool hasZ80extension(string filename);
 
     static string MountPoint;
+    static bool SDReady;
 
 private:
     friend class Config;

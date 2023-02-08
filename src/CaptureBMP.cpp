@@ -4,6 +4,8 @@
 #include "messages.h"
 #include "stdio.h"
 
+#include "esp_vfs.h"
+
 // custom header for 8 bit indexed BMP with adapted palette
 // which requires no translation between framebuffer values and indices
 #define BMP_HEADER_SIZE 1078
@@ -88,13 +90,11 @@ static void injectSizeValuesInHeader(int w, int h)
     *biSizeImage = w * h;
 }
 
-void CaptureBMP::capture(const char* filename)
+// void CaptureBMP::capture(const char* filename)
+void CaptureBMP::capture()
 {
-    // filename check
-    if (0 == filename || 0 == *filename) {
-        printf("CaptureBMP: null/empty filename\n");
-        return;
-    }
+
+    static char filename[] = "BMP00000.bmp";
 
     // framebuffer size
     int w = VIDEO::vga.xres;
@@ -110,6 +110,38 @@ void CaptureBMP::capture(const char* filename)
         return;
     }
 
+    // Get next filename (BMP + 5 digits, 0 padded sequential)
+    string filelist;
+    string scrdir = (string) MOUNT_POINT_SD + DISK_SCR_DIR;
+
+    DIR* dir = opendir(scrdir.c_str());
+
+    if (dir == NULL) {
+        printf("CaptureBMP: problem accessing SCR dir\n");
+        return;
+    }
+
+    int bmpnumber = 0;
+    struct dirent* de = readdir(dir);
+    if (de) {
+        while (true) {
+            string fname = de->d_name;
+            if ((fname.substr(0,3) == "BMP") && (fname.substr(8,4) == ".bmp")) {
+                int fnum = stoi(fname.substr(3,5));
+                if (fnum > bmpnumber) bmpnumber = fnum;
+            }
+            de = readdir(dir);
+            if (!de) break;
+        }
+    }
+    closedir(dir);
+
+    bmpnumber++;
+
+    printf("BMP number -> %.5d\n",bmpnumber);
+
+    sprintf((char *)filename,"BMP%.5d.bmp",bmpnumber);    
+        
     // Full filename. Save only to SD.
     std::string fullfn = (string) MOUNT_POINT_SD + DISK_SCR_DIR + "/" + filename;
 

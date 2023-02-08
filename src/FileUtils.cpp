@@ -51,6 +51,7 @@
 using namespace std;
 
 string FileUtils::MountPoint = MOUNT_POINT_SPIFFS; // Start with SPIFFS
+bool FileUtils::SDReady = false;
 sdmmc_card_t *FileUtils::card;
 
 void FileUtils::initFileSystem() {
@@ -65,6 +66,14 @@ void FileUtils::initFileSystem() {
     if (esp_vfs_spiffs_register(&config) != ESP_OK) {
         return;
     }
+
+    SDReady = mountSDCard();
+
+    vTaskDelay(2);
+
+}
+
+bool FileUtils::mountSDCard() {
 
     // Init SD Card
     esp_err_t ret;
@@ -89,7 +98,7 @@ void FileUtils::initFileSystem() {
     ret = spi_bus_initialize(SPI2_HOST, &bus_cfg, SPI_DMA_CH1);
     if (ret != ESP_OK) {
         printf("SD Card init: Failed to initialize bus.\n");
-        return;
+        return false;
     }
 
     sdspi_device_config_t slot_config =  {
@@ -106,14 +115,13 @@ void FileUtils::initFileSystem() {
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             printf("Failed to mount filesystem.\n");
-            return;
         } else {
             printf("Failed to initialize the card.\n");
-            return;
         }
-        return;
+        return false;
     }
-    vTaskDelay(2);
+
+    return true;
 
 }
 

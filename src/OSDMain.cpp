@@ -40,7 +40,6 @@
 #include "MemESP.h"
 #include "Tape.h"
 #include "pwm_audio.h"
-#include "CaptureBMP.h"
 
 #include "esp_system.h"
 #include "esp_ota_ops.h"
@@ -180,15 +179,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
     VGA6Bit& vga = VIDEO::vga;
     static uint8_t last_sna_row = 0;
-    auto kbd = ESPectrum::PS2Controller.keyboard();
-    bool Kdown;
+    fabgl::VirtualKeyItem Nextkey;
 
     if (KeytoESP == fabgl::VK_PAUSE) {
         AySound::disable();
         osdCenteredMsg(OSD_PAUSE, LEVEL_INFO, 0);
         while (1) {
-            KeytoESP = kbd->getNextVirtualKey(&Kdown);
-            if ((Kdown) && (KeytoESP == fabgl::VK_PAUSE)) break;
+            ESPectrum::readKbd(&Nextkey);
+            if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
             vTaskDelay(5 / portTICK_PERIOD_MS);
         }
         AySound::enable();
@@ -389,6 +387,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             FileUtils::MountPoint = MOUNT_POINT_SD;
                         Config::loadSnapshotLists();
                         Config::loadTapLists();
+                        Config::save();
                     }
                 }
                 else if (options_num == 2) {
@@ -436,17 +435,15 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         }
         else if (opt == 5) {
-            // Preliminar: let's hook here for capturing to BMP
-            // CaptureBMP::capture("CaptureBMP.raw");
             // Help
             drawOSD();
             osdAt(2, 0);
             vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             vga.print(OSD_HELP);
             while (1) {
-                KeytoESP = kbd->getNextVirtualKey(&Kdown);
-                if(!Kdown) continue;
-                if ((KeytoESP == fabgl::VK_F1) || (KeytoESP == fabgl::VK_ESCAPE) || (KeytoESP == fabgl::VK_RETURN)) break;
+                ESPectrum::readKbd(&Nextkey);
+                if(!Nextkey.down) continue;
+                if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
                 vTaskDelay(5 / portTICK_PERIOD_MS);
             }
         }

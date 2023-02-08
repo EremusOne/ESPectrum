@@ -90,8 +90,8 @@
 #define MENU_SNA \
     "Snapshot menu\n"\
     "Load (SNA,Z80) \t[F2] >\n"\
-    "Load snapshot \t[F3]  \n"\
-    "Save snapshot \t[F4]  \n"
+    "Load snapshot \t[F3] >\n"\
+    "Save snapshot \t[F4] >\n"
 #define MENU_TAPE \
     "Tape menu\n"\
     "Select TAP  \t[F5] >\n"\

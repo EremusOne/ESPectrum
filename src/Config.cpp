@@ -116,10 +116,13 @@ void Config::load() {
             trim(line);
             aspect_16_9 = (line == "true");
         } else if (line.find("sdstorage:") != string::npos) {
-            line = line.substr(line.find(':') + 1);
-            erase_cntrl(line);
-            trim(line);
-            FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
+            if (FileUtils::SDReady) {
+                line = line.substr(line.find(':') + 1);
+                erase_cntrl(line);
+                trim(line);
+                FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
+            } else
+                FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
         }
 
     }
