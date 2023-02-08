@@ -24,8 +24,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Contended memory emulation.
 - Contended I/O emulation.
 - 48K sound: beeper digital output.
-- PS/2 keyboard used as input for Spectrum keys.
-- All symbols mapped to PS/2 keyboard.
+- PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
 - OSD menu: Snapshot, Tape, Storage, ROM and Aspect ratio management.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
