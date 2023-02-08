@@ -63,11 +63,14 @@ All files under the `/data` subdirectory will be copied to the SPIFFS filesystem
 
 #### Using a external micro SD Card and copying games into it
 
-If using external micro sd card, you must copy files from the `/data` subdirectory to the root of the sd card (copy the contents of the folder, NOT the folder itself).
+If using external micro sd card, you must create the following folders in root directory:
+
+- "persist" folder -> Will be used for persist snapshots.
+- "sna" folder     -> Put .SNA and .Z80 files here.
+- "tap" folder     -> Put .TAP files here.
+- "scr" folder     -> For SCR and BMP screen captures (in future releases).
 
 The SD card should be formatted in FAT16 / FAT32.
-
-For adding games to the emulator, just turn it off, extract the sd card, copy games in .SNA or .Z80 format to the `/sna` folder of the sd card, insert it again, and turn it on.
 
 #### Compile and flash it
 
