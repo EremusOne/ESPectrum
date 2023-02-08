@@ -28,6 +28,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - OSD menu: Snapshot, Tape, Storage, ROM and Aspect ratio management.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
+- BMP screen capture to SD Card.
 - Persistent snapshot saving and loading (both 48K and 128K supported).
 - Simultaneous internal (SPIFFS) and external (SD card) storage support.
 
@@ -68,7 +69,7 @@ If using external micro sd card, you must create the following folders in root d
 - "persist" folder -> Will be used for persist snapshots.
 - "sna" folder     -> Put .SNA and .Z80 files here.
 - "tap" folder     -> Put .TAP files here.
-- "scr" folder     -> For SCR and BMP screen captures (in future releases).
+- "scr" folder     -> For SCR (not yet!) and BMP screen captures.
 
 The SD card should be formatted in FAT16 / FAT32.
 
