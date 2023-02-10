@@ -1,9 +1,37 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// ZX-ESPectrum-IDF - Sinclair ZX Spectrum emulator for ESP32 / IDF
+//
+// BMP CAPTURE
+//
+// Copyright (c) 2023 David Crespo [dcrespo3d]
+// https://github.com/dcrespo3d
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+//
+
 #include "CaptureBMP.h"
 #include "Video.h"
 #include "FileUtils.h"
 #include "messages.h"
 #include "stdio.h"
-
+#include "config.h"
 #include "esp_vfs.h"
 
 // custom header for 8 bit indexed BMP with adapted palette
@@ -90,11 +118,10 @@ static void injectSizeValuesInHeader(int w, int h)
     *biSizeImage = w * h;
 }
 
-// void CaptureBMP::capture(const char* filename)
 void CaptureBMP::capture()
 {
 
-    static char filename[] = "BMP00000.bmp";
+    static char filename[] = "ESP00000.bmp";
 
     // framebuffer size
     int w = VIDEO::vga.xres;
@@ -106,7 +133,7 @@ void CaptureBMP::capture()
     // allocate line  buffer
     uint32_t *linebuf = new uint32_t[count];
     if (NULL == linebuf) {
-        printf("CaptureBMP: unable to allocate line buffer\n");
+        printf("Capture BMP: unable to allocate line buffer\n");
         return;
     }
 
@@ -117,7 +144,7 @@ void CaptureBMP::capture()
     DIR* dir = opendir(scrdir.c_str());
 
     if (dir == NULL) {
-        printf("CaptureBMP: problem accessing SCR dir\n");
+        printf("Capture BMP: problem accessing SCR dir\n");
         return;
     }
 
@@ -126,7 +153,7 @@ void CaptureBMP::capture()
     if (de) {
         while (true) {
             string fname = de->d_name;
-            if ((fname.substr(0,3) == "BMP") && (fname.substr(8,4) == ".bmp")) {
+            if ((fname.substr(0,3) == "ESP") && (fname.substr(8,4) == ".bmp")) {
                 int fnum = stoi(fname.substr(3,5));
                 if (fnum > bmpnumber) bmpnumber = fnum;
             }
@@ -138,9 +165,9 @@ void CaptureBMP::capture()
 
     bmpnumber++;
 
-    printf("BMP number -> %.5d\n",bmpnumber);
+    if (Config::slog_on) printf("BMP number -> %.5d\n",bmpnumber);
 
-    sprintf((char *)filename,"BMP%.5d.bmp",bmpnumber);    
+    sprintf((char *)filename,"ESP%.5d.bmp",bmpnumber);    
         
     // Full filename. Save only to SD.
     std::string fullfn = (string) MOUNT_POINT_SD + DISK_SCR_DIR + "/" + filename;
@@ -149,11 +176,11 @@ void CaptureBMP::capture()
     FILE* pf = fopen(fullfn.c_str(), "w");
     if (NULL == pf) {
         delete[] linebuf;
-        printf("CaptureBMP: unable to open file %s for writing\n", fullfn.c_str());
+        printf("Capture BMP: unable to open file %s for writing\n", fullfn.c_str());
         return;
     }
 
-    printf("CaptureBMP: capturing %d x %d to %s...\n", w, h, fullfn.c_str());
+    // printf("CaptureBMP: capturing %d x %d to %s...\n", w, h, fullfn.c_str());
 
     // put width, height and size values in header
     injectSizeValuesInHeader(w, h);
@@ -182,7 +209,7 @@ void CaptureBMP::capture()
     fclose(pf);
     delete[] linebuf;
 
-    printf("CaptureBMP: done\n");
+    // printf("Capture BMP: done\n");
 }
 
 // Reference

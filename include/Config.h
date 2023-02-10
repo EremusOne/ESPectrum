@@ -51,6 +51,8 @@ public:
     static uint8_t  esp32rev;
     static bool     slog_on;
     static bool     aspect_16_9;
+    static string   kbd_layout;
+    static uint8_t  lang;
 
     // config persistence
     static void           load();

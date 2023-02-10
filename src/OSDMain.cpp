@@ -52,6 +52,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include <string>
+
+using namespace std;
+
 #define MENU_REDRAW true
 #define MENU_UPDATE false
 #define OSD_ERROR true
@@ -245,21 +249,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         } else {
             VIDEO::LineDraw = LINEDRAW;
             VIDEO::BottomDraw = BOTTOMBORDER;
-//          for (int i=176; i<192; i++) VIDEO::lastBorder[i]=8; //16:9 needs to mark border for redraw 
         }    
     }
-    else if (KeytoESP == fabgl::VK_F9) {
-        if (ESPectrum::aud_volume>-16) {
-                ESPectrum::aud_volume--;
-                pwm_audio_set_volume(ESPectrum::aud_volume);
-        }
-    }
-    else if (KeytoESP == fabgl::VK_F10) {
-        if (ESPectrum::aud_volume<0) {
-                ESPectrum::aud_volume++;
-                pwm_audio_set_volume(ESPectrum::aud_volume);
-        }
-    }    
     // else if (KeytoESP == fabgl::VK_F9) {
     //     ESPectrum::ESPoffset = ESPectrum::ESPoffset >> 1;
     // }
@@ -298,7 +289,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         AySound::disable();
 
         // Main menu
-        uint8_t opt = menuRun(MENU_MAIN);
+        uint8_t opt = menuRun(MENU_MAIN[Config::lang]);
         if (opt == 1) {
             // Snapshot menu
             uint8_t sna_mnu = menuRun(MENU_SNA);
@@ -371,16 +362,23 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         else if (opt == 4) {
             // Tape menu
-            uint8_t options_num = menuRun(MENU_OPTIONS);
+            uint8_t options_num = menuRun(MENU_OPTIONS[Config::lang]);
             if (options_num > 0) {
                 if (options_num == 1) {
                     // Storage source
-                    uint8_t opt2;
-                    if (FileUtils::MountPoint == MOUNT_POINT_SD)
-                        opt2 = menuRun(MENU_STORAGE_SD);
-                    else
-                        opt2 = menuRun(MENU_STORAGE_INTERNAL);
-                    if (opt2) {
+                    string stor_menu = MENU_STORAGE[Config::lang];
+                    int curopt;
+                    if (FileUtils::MountPoint == MOUNT_POINT_SPIFFS) {
+                        stor_menu.replace(stor_menu.find("[I",0),2,"[*");
+                        stor_menu.replace(stor_menu.find("[S",0),2,"[ ");
+                        curopt = 1;
+                    } else {
+                        stor_menu.replace(stor_menu.find("[I",0),2,"[ ");
+                        stor_menu.replace(stor_menu.find("[S",0),2,"[*");
+                        curopt = 2;
+                    }
+                    uint8_t opt2 = menuRun(stor_menu);
+                    if ((opt2) && (opt2 != curopt)) {
                         if (opt2 == 1)
                             FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
                         else
@@ -432,6 +430,87 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         }
                     }
                 }
+                else if (options_num == 4) {
+                    // aspect ratio
+                    uint8_t opt2;
+                    opt2 = menuRun(MENU_LANGUAGE[Config::lang]);
+                    if (opt2) {
+                        if (opt2 == 1) {
+                            string Mnustr = MENU_INTERFACE_LANG[Config::lang];                            
+                            std::size_t pos = Mnustr.find("[",0);
+                            int nfind = 0;
+                            while (pos != string::npos) {
+                                if (nfind == Config::lang) {
+                                    Mnustr.replace(pos,2,"[*");
+                                    break;
+                                }
+                                pos = Mnustr.find("[",pos + 1);
+                                nfind++;
+                            }
+                            opt2 = menuRun(Mnustr);
+                            if (opt2) {
+                                if (Config::lang != (opt2 - 1)) {
+                                    Config::lang = opt2 - 1;
+                                    Config::save();
+                                }
+                            }
+                        } else if (opt2 == 2) {
+                            string Mnustr = MENU_KBD_LAYOUT[Config::lang];
+                            Mnustr.replace(Mnustr.find("[" + Config::kbd_layout),3,"[*");
+                            std::size_t pos = Mnustr.find("[",0);
+                            while (pos != string::npos) {
+                                if (Mnustr.at(pos + 1) != (char)42) {
+                                    Mnustr.replace(pos,3,"[ ");
+                                }
+                                pos = Mnustr.find("[",pos + 1);
+                            }
+                            opt2 = menuRun(Mnustr);
+                            if (opt2) {
+                                switch (opt2) {
+                                    case 1:
+                                        Config::kbd_layout = "US";
+                                        break;
+                                    case 2:
+                                        Config::kbd_layout = "ES";
+                                        break;
+                                    case 3:
+                                        Config::kbd_layout = "DE";
+                                        break;
+                                    case 4:
+                                        Config::kbd_layout = "FR";
+                                        break;
+                                    case 5:
+                                        Config::kbd_layout = "IT";
+                                        break;
+                                    case 6:
+                                        Config::kbd_layout = "UK";
+                                        break;
+                                    case 7:
+                                        Config::kbd_layout = "JP";
+                                }
+                                Config::save();
+                                
+                                // TO DO: Crear funcion en objeto de teclado aparte para esto
+                                string cfgLayout = Config::kbd_layout;
+                                if(cfgLayout == "ES") 
+                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
+                                else if(cfgLayout == "UK") 
+                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
+                                else if(cfgLayout == "DE") 
+                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
+                                else if(cfgLayout == "IT") 
+                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::ItalianLayout);            
+                                else if(cfgLayout == "FR") 
+                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
+                                else if(cfgLayout == "JP") 
+                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::JapaneseLayout);
+                                else 
+                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
+
+                            }
+                        }
+                    }
+                }
             }
         }
         else if (opt == 5) {
@@ -439,7 +518,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             drawOSD();
             osdAt(2, 0);
             vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
-            vga.print(OSD_HELP);
+            vga.print(OSD_ABOUT[Config::lang]);
             while (1) {
                 ESPectrum::readKbd(&Nextkey);
                 if(!Nextkey.down) continue;

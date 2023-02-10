@@ -48,6 +48,8 @@ string   Config::tap_name_list; // list of names (without ext, '_' -> ' ')
 bool     Config::slog_on = false;
 bool     Config::aspect_16_9 = true;
 uint8_t  Config::esp32rev = 0;
+string   Config::kbd_layout = "US";
+uint8_t  Config::lang = 0;
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -109,7 +111,7 @@ void Config::load() {
             line = line.substr(line.find(':') + 1);
             erase_cntrl(line);
             trim(line);
-            slog_on = (line == "true");
+            slog_on = (line == "true" ? true : false);
         } else if (line.find("asp169:") != string::npos) {
             line = line.substr(line.find(':') + 1);
             erase_cntrl(line);
@@ -123,10 +125,20 @@ void Config::load() {
                 FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
             } else
                 FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
+        } else if (line.find("kbdlayout:") != string::npos) {
+            kbd_layout = line.substr(line.find(':') + 1);
+            erase_cntrl(kbd_layout);
+            trim(kbd_layout);
+        } else if (line.find("language:") != string::npos) {
+            string slang = line.substr(line.find(':') + 1);
+            erase_cntrl(slang);
+            trim(slang);
+            Config::lang = stoi(slang);
         }
 
     }
     fclose(f);
+
 }
 
 void Config::loadSnapshotLists()
@@ -243,6 +255,14 @@ void Config::save() {
     // Mount point
     //printf(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n");
     fputs(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n",f);
+
+    // KBD layout
+    //printf(("kbdlayout:" + kbd_layout + "\n").c_str());
+    fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
+
+    // Language
+    //printf("language:%s\n",std::to_string(Config::lang).c_str());
+    fputs(("language:" + std::to_string(Config::lang) + "\n").c_str(),f);
 
     fclose(f);
     

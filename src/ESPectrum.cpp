@@ -192,9 +192,29 @@ void ESPectrum::setup()
 
     PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
     PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
-    PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout); // TO DO: Add Scancodeset and Layout to Config
 
-    if (Config::slog_on) showMemInfo("Keyboard started");
+    string cfgLayout = Config::kbd_layout;
+
+    if(cfgLayout == "ES") 
+            PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
+    else if(cfgLayout == "UK") 
+            PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
+    else if(cfgLayout == "DE") 
+            PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
+    else if(cfgLayout == "IT") 
+            PS2Controller.keyboard()->setLayout(&fabgl::ItalianLayout);            
+    else if(cfgLayout == "FR") 
+            PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
+    else if(cfgLayout == "JP") 
+            PS2Controller.keyboard()->setLayout(&fabgl::JapaneseLayout);
+    else 
+            PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
+
+    if (Config::slog_on) {
+        showMemInfo("Keyboard started");
+    }
+
+    // printf("Kbd layout: %s\n",Config::kbd_layout.c_str());
 
     //=======================================================================================
     // VIDEO
@@ -244,7 +264,7 @@ void ESPectrum::setup()
         Ports::base[t] = 0x1f;
     }
 
-    if (Config::slog_on) printf("%s %u\n", MSG_EXEC_ON_CORE, xPortGetCoreID());
+    if (Config::slog_on) printf("Executing on core: %u\n", xPortGetCoreID());
 
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
@@ -267,12 +287,14 @@ void ESPectrum::setup()
     Config::requestMachine(Config::getArch(), Config::getRomSet(), true);
 
     #ifdef SNAPSHOT_LOAD_LAST
-    
+
     if (Config::ram_file != NO_RAM_FILE) {
         OSD::changeSnapshot(Config::ram_file);
     }
 
     #endif // SNAPSHOT_LOAD_LAST
+
+    if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
 }
 
@@ -361,10 +383,25 @@ bool ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     bool r = keyboard->getNextVirtualKey(Nextkey);
 
     // Screen capture
-    if ((Nextkey->down) && (Nextkey->vk == fabgl::VK_PRINTSCREEN)) {
-        printf("Capture screen to BMP\n");
-        CaptureBMP::capture();
-        r = false;
+    if (Nextkey->down) {
+        if (Nextkey->vk == fabgl::VK_PRINTSCREEN) { // Capture framebuffer to BMP file in SD Card (thx @dcrespo3d!)
+            CaptureBMP::capture();
+            r = false;
+        }
+        else if (Nextkey->vk == fabgl::VK_F9) { // Volume down
+            if (ESPectrum::aud_volume>-16) {
+                    ESPectrum::aud_volume--;
+                    pwm_audio_set_volume(ESPectrum::aud_volume);
+            }
+            r = false;
+        }
+        else if (Nextkey->vk == fabgl::VK_F10) { // Volume up
+            if (ESPectrum::aud_volume<0) {
+                    ESPectrum::aud_volume++;
+                    pwm_audio_set_volume(ESPectrum::aud_volume);
+            }
+            r = false;
+        }    
     }
 
     return r;

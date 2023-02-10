@@ -77,15 +77,14 @@ void OSD::newMenu(string new_menu) {
 
 void OSD::menuRecalc() {
 
-
     // Position
-//    x = scrAlignCenterX(w);
-//    y = scrAlignCenterY(h);
+    // x = scrAlignCenterX(w);
+    // y = scrAlignCenterY(h);
     if (menu_level == 0) {
         x = (Config::aspect_16_9 ? 24 : 8);
         y = 8;
     } else {
-        x = x + ((cols >> 1) * 6);
+        x = x + (((cols >> 1) - 1)* 6);
         y = y + 16;
     }
 
@@ -198,16 +197,16 @@ void OSD::menuDraw() {
 }
 
 string OSD::getArchMenu() {
-    string menu = (string)MENU_ARCH; // + FileUtils::getFileEntriesFromDir(DISK_ROM_DIR);
+    string menu = (string)MENU_ARCH[Config::lang]; // + FileUtils::getFileEntriesFromDir(DISK_ROM_DIR);
     return menu;
 }
 
 string OSD::getRomsetMenu(string arch) {
     string menu;
     if (arch == "48K") {
-        menu = (string)MENU_ROMSET48; // + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
+        menu = (string)MENU_ROMSET48[Config::lang]; // + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
     } else {
-        menu = (string)MENU_ROMSET128;
+        menu = (string)MENU_ROMSET128[Config::lang];
     }
     return menu;
 }

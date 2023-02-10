@@ -65,14 +65,6 @@
 #define OSD_DEMO_MODE_OFF "Demo Mode OFF"
 #define OSD_PAUSE "--=[PAUSED]=--"
 
-#define OSD_QSNA_NOT_AVAIL "No Quick Snapshot Available"
-#define OSD_QSNA_LOADING "Loading Quick Snapshot..."
-#define OSD_QSNA_SAVING "Saving Quick Snapshot..."
-#define OSD_QSNA_SAVE_ERR "ERROR Saving Quick Snapshot"
-#define OSD_QSNA_LOADED "Quick Snapshot Loaded"
-#define OSD_QSNA_LOAD_ERR "ERROR Loading Quick Snapshot"
-#define OSD_QSNA_SAVED "Quick Snapshot Saved"
-
 #define OSD_PSNA_NOT_AVAIL "No Persist Snapshot Available"
 #define OSD_PSNA_LOADING "Loading Persist Snapshot..."
 #define OSD_PSNA_SAVING "Saving Persist Snapshot..."
@@ -87,68 +79,145 @@
 
 #define MENU_SNA_TITLE "Select Snapshot"
 #define MENU_TAP_TITLE "Select TAP file"
+
 #define MENU_SNA \
     "Snapshot menu\n"\
     "Load (SNA,Z80) \t[F2] >\n"\
     "Load snapshot \t[F3] >\n"\
     "Save snapshot \t[F4] >\n"
+
 #define MENU_TAPE \
     "Tape menu\n"\
     "Select TAP  \t[F5] >\n"\
     "Play/Pause  \t[F6]  \n"\
     "Stop  \t[F7]  \n"
-#define MENU_MAIN \
+
+#define MENU_MAIN_EN \
     "Main Menu\n"\
     "Snapshot\t>\n"\
     "Tape\t>\n"\
     "Reset\t>\n"\
     "Options\t>\n"\
     "About\n"
-#define MENU_OPTIONS \
+#define MENU_MAIN_ES \
+    "Menu principal\n"\
+    "Imagenes\t>\n"\
+    "Casete\t>\n"\
+    "Reiniciar\t>\n"\
+    "Opciones\t>\n"\
+    "Acerca de\n"
+static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
+
+#define MENU_OPTIONS_EN \
     "Options menu\n"\
     "Storage\t>\n"\
     "ROM\t>\n"\
-    "Aspect ratio\t>\n"
+    "Aspect ratio\t>\n"\
+    "Language\t>\n"    
+#define MENU_OPTIONS_ES \
+    "Menu opciones\n"\
+    "Almacenamiento\t>\n"\
+    "ROM\t>\n"\
+    "Rel. aspecto\t>\n"\
+    "Idioma\t>\n"    
+static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
+
 #define MENU_ASPECT_169 \
     "Aspect Ratio\n"\
     "4:3\t[ ]\n"\
     "16:9\t[*]\n"
+
 #define MENU_ASPECT_43 \
     "Aspect Ratio\n"\
     "4:3\t[*]\n"\
     "16:9\t[ ]\n"
+
 #define MENU_RESET \
     "Reset Menu\n"\
     "Soft reset\n"\
     "Hard reset\n"\
     "ESP32 reset\t[F12]\n"
+
 #define MENU_PERSIST \
     "Slot 1\n"\
     "Slot 2\n"\
     "Slot 3\n"\
     "Slot 4\n"\
     "Slot 5\n"
+
 #define MENU_PERSIST_SAVE \
     "Persist Save\n" MENU_PERSIST
+
 #define MENU_PERSIST_LOAD \
     "Persist Load\n" MENU_PERSIST    
-#define MENU_STORAGE_SD "Select storage\n"\
-    "Internal\t[ ]\n"\
-    "SD Card\t[*]\n"
-#define MENU_STORAGE_INTERNAL "Select storage\n"\
-    "Internal\t[*]\n"\
-    "SD Card\t[ ]\n"
-#define MENU_ARCH "Select Arch\n"\
+
+#define MENU_STORAGE_EN "Storage\n"\
+    "Internal\t[I]\n"\
+    "SD Card\t[S]\n"
+#define MENU_STORAGE_ES "Almacenamiento\n"\
+    "Interno\t[I]\n"\
+    "Tarjeta SD\t[S]\n"
+static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+
+#define MENU_ARCH_EN "Select arch.\n"\
     "48K\t>\n"\
     "128K\t>\n"
-#define MENU_ROMSET48 "Select Rom Set\n"\
+#define MENU_ARCH_ES "Elija modelo\n"\
+    "48K\t>\n"\
+    "128K\t>\n"
+static const char *MENU_ARCH[2] = { MENU_ARCH_EN, MENU_ARCH_ES };
+
+#define MENU_ROMSET48_EN "Select ROM\n"\
     "SINCLAIR\n"\
-    "SE\n"/*\
-    "DIAG\n"*/
-#define MENU_ROMSET128 "Select Rom Set\n"\
+    "SE\n"
+#define MENU_ROMSET48_ES "Elija ROM\n"\
+    "SINCLAIR\n"\
+    "SE\n"
+static const char *MENU_ROMSET48[2] = { MENU_ROMSET48_EN, MENU_ROMSET48_ES };
+
+#define MENU_ROMSET128_EN "Select ROM\n"\
     "SINCLAIR\n"\
     "PLUS2A\n"
-#define OSD_HELP \
+#define MENU_ROMSET128_ES "Elija ROM\n"\
+    "SINCLAIR\n"\
+    "PLUS2A\n"
+static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
+
+#define MENU_LANGUAGE_EN "Language\n"\
+    "Interface\t>\n"\
+    "Keyboard\t>\n"
+#define MENU_LANGUAGE_ES "Idioma\n"\
+    "Interfaz\t>\n"\
+    "Teclado\t>\n"
+static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
+
+#define MENU_INTERFACE_LANG_EN "Language\n"\
+    "English\t[ ]\n"\
+    "Spanish\t[ ]\n"
+#define MENU_INTERFACE_LANG_ES "Idioma\n"\
+    "Ingles\t[ ]\n"\
+    "Espanol\t[ ]\n"
+static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
+
+#define MENU_KBD_LAYOUT_EN "Select language\n"\
+    "US English\t[US]\n"\
+    "Spanish\t[ES]\n"\
+    "German\t[DE]\n"\
+    "French\t[FR]\n"\
+    "Italian\t[IT]\n"\
+    "UK British\t[UK]\n"\
+    "Japanese\t[JP]\n"
+#define MENU_KBD_LAYOUT_ES "Elija idioma\n"\
+    "Ingles EEUU\t[US]\n"\
+    "Espanol\t[ES]\n"\
+    "Aleman\t[DE]\n"\
+    "Frances\t[FR]\n"\
+    "Italiano\t[IT]\n"\
+    "Ingles GB\t[UK]\n"\
+    "Japones\t[JP]\n"
+static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
+
+#define OSD_ABOUT_EN \
     " (C)2023 Victor Iborra AKA Eremus\n"\
     " https://github.com/eremusOne\n"\    
     "\n"\
@@ -166,5 +235,24 @@
     " Greetings to http://retrowiki.es and\n"\
     " his people (Hi ackerman!) for the\n"\
     " support and inspiration.\n"    
+#define OSD_ABOUT_ES \
+    " (C)2023 Victor Iborra AKA Eremus\n"\
+    " https://github.com/eremusOne\n"\   
+    "\n"\
+    " Basado en ZX-ESPectrum-Wiimote\n"\
+    " (C)2020-2023 David Crespo\n"\
+    " https://github.com/dcrespo3d\n"\
+    " https://youtube.com/davidprograma\n"\
+    "\n"\
+    " Original (C) 2019 Rampa & Queru\n"\
+    " https://github.com/rampa069\n"\
+    "\n"\
+    " Emulacion Z80 por JL Sanchez\n"\        
+    " Driver VGA por BitLuni\n"\    
+    " Driver PS2 por Fabrizio di Vittorio\n"\
+    " Saludos a http://retrowiki.es y\n"\
+    " su gente (Hola ackerman!) por su\n"\
+    " ayuda e inspiracion.\n"
+static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
 
 #endif // ESPECTRUM_MESSAGES_h
