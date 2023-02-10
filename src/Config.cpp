@@ -144,7 +144,7 @@ void Config::load() {
 void Config::loadSnapshotLists()
 {
     
-    sna_file_list = (string) MENU_SNA_TITLE + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_SNA_DIR);
+    sna_file_list = (string) MENU_SNA_TITLE[Config::lang] + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_SNA_DIR);
 
     sna_name_list = sna_file_list;
     
@@ -197,7 +197,7 @@ void Config::loadSnapshotLists()
 void Config::loadTapLists()
 {
 
-    tap_file_list = (string) MENU_TAP_TITLE + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_TAP_DIR);
+    tap_file_list = (string) MENU_TAP_TITLE[Config::lang] + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_TAP_DIR);
     tap_name_list = tap_file_list;
     
 //    printf((tap_name_list + "\n").c_str());

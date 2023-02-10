@@ -228,9 +228,12 @@ if (DrawStatus==LINEDRAW) {
 
             *lineptr32++ = ulabytes[bmp >> 4][att];
             *lineptr32++ = ulabytes[bmp & 0xF][att];
+
         } else {
+
             *lineptr32++ = brd;
             *lineptr32++ = brd;
+
         }
 
         if (++coldraw_cnt == 40) {      

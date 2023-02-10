@@ -77,20 +77,36 @@
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 #define OSD_TAPE_SELECT_ERR "Please select TAP file first"
 
-#define MENU_SNA_TITLE "Select Snapshot"
-#define MENU_TAP_TITLE "Select TAP file"
+#define MENU_SNA_TITLE_EN "Select Snapshot"
+#define MENU_TAP_TITLE_EN "Select TAP file"
+#define MENU_SNA_TITLE_ES "Elija snapshot"
+#define MENU_TAP_TITLE_ES "Elija fichero TAP"
+static const char *MENU_SNA_TITLE[2] = { MENU_SNA_TITLE_EN,MENU_SNA_TITLE_ES };
+static const char *MENU_TAP_TITLE[2] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES };
 
-#define MENU_SNA \
+#define MENU_SNA_EN \
     "Snapshot menu\n"\
     "Load (SNA,Z80) \t[F2] >\n"\
     "Load snapshot \t[F3] >\n"\
     "Save snapshot \t[F4] >\n"
+#define MENU_SNA_ES \
+    "Menu snapshots\n"\
+    "Cargar (SNA,Z80) \t[F2] >\n"\
+    "Cargar snapshot \t[F3] >\n"\
+    "Guardar snapshot \t[F4] >\n"
+static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
 
-#define MENU_TAPE \
+#define MENU_TAPE_EN \
     "Tape menu\n"\
     "Select TAP  \t[F5] >\n"\
     "Play/Pause  \t[F6]  \n"\
     "Stop  \t[F7]  \n"
+#define MENU_TAPE_ES \
+    "Casete\n"\
+    "Elegir TAP  \t[F5] >\n"\
+    "Play/Pausa  \t[F6]  \n"\
+    "Stop  \t[F7]  \n"
+static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
 
 #define MENU_MAIN_EN \
     "Main Menu\n"\
@@ -101,9 +117,9 @@
     "About\n"
 #define MENU_MAIN_ES \
     "Menu principal\n"\
-    "Imagenes\t>\n"\
+    "Snapshots\t>\n"\
     "Casete\t>\n"\
-    "Reiniciar\t>\n"\
+    "Resetear\t>\n"\
     "Opciones\t>\n"\
     "Acerca de\n"
 static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
@@ -122,34 +138,51 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Idioma\t>\n"    
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
 
-#define MENU_ASPECT_169 \
+#define MENU_ASPECT_EN \
     "Aspect Ratio\n"\
-    "4:3\t[ ]\n"\
-    "16:9\t[*]\n"
+    "4:3\t[4]\n"\
+    "16:9\t[1]\n"
+#define MENU_ASPECT_ES \
+    "Relacion de aspecto\n"\
+    "4:3\t[4]\n"\
+    "16:9\t[1]\n"
+static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
 
-#define MENU_ASPECT_43 \
-    "Aspect Ratio\n"\
-    "4:3\t[*]\n"\
-    "16:9\t[ ]\n"
-
-#define MENU_RESET \
+#define MENU_RESET_EN \
     "Reset Menu\n"\
     "Soft reset\n"\
     "Hard reset\n"\
     "ESP32 reset\t[F12]\n"
+#define MENU_RESET_ES \
+    "Resetear\n"\
+    "Reset parcial\n"\
+    "Reset completo\n"\
+    "Resetear ESP32\t[F12]\n"
+static const char *MENU_RESET[2] = { MENU_RESET_EN, MENU_RESET_ES };
 
-#define MENU_PERSIST \
+#define MENU_PERSIST_EN \
     "Slot 1\n"\
     "Slot 2\n"\
     "Slot 3\n"\
     "Slot 4\n"\
     "Slot 5\n"
+#define MENU_PERSIST_ES \
+    "Ranura 1\n"\
+    "Ranura 2\n"\
+    "Ranura 3\n"\
+    "Ranura 4\n"\
+    "Ranura 5\n"
+#define MENU_PERSIST_SAVE_EN \
+    "Save snapshot\n" MENU_PERSIST_EN
+#define MENU_PERSIST_SAVE_ES \
+    "Guardar snapshot\n" MENU_PERSIST_ES
+static const char *MENU_PERSIST_SAVE[2] = { MENU_PERSIST_SAVE_EN, MENU_PERSIST_SAVE_ES };
 
-#define MENU_PERSIST_SAVE \
-    "Persist Save\n" MENU_PERSIST
-
-#define MENU_PERSIST_LOAD \
-    "Persist Load\n" MENU_PERSIST    
+#define MENU_PERSIST_LOAD_EN \
+    "Load snapshot\n" MENU_PERSIST_EN
+#define MENU_PERSIST_LOAD_ES \
+    "Cargar snapshot\n" MENU_PERSIST_ES
+static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_LOAD_ES };
 
 #define MENU_STORAGE_EN "Storage\n"\
     "Internal\t[I]\n"\

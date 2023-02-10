@@ -206,7 +206,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     else if (KeytoESP == fabgl::VK_F3) {
         AySound::disable();
         // Persist Load
-        uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
+        uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
         if (opt2 > 0 && opt2<6) {
             persistLoad(opt2);
         }
@@ -215,7 +215,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     else if (KeytoESP == fabgl::VK_F4) {
         AySound::disable();
         // Persist Save
-        uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
+        uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
         if (opt2 > 0 && opt2<6) {
             persistSave(opt2);
         }
@@ -292,7 +292,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         uint8_t opt = menuRun(MENU_MAIN[Config::lang]);
         if (opt == 1) {
             // Snapshot menu
-            uint8_t sna_mnu = menuRun(MENU_SNA);
+            uint8_t sna_mnu = menuRun(MENU_SNA[Config::lang]);
             if (sna_mnu > 0) {
                 if (sna_mnu == 1) {
                     unsigned short snanum = menuFile(Config::sna_name_list);
@@ -302,14 +302,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 }
                 else if (sna_mnu == 2) {
                     // Persist Load
-                    uint8_t opt2 = menuRun(MENU_PERSIST_LOAD);
+                    uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
                     if (opt2 > 0 && opt2<6) {
                         persistLoad(opt2);
                     }
                 }
                 else if (sna_mnu == 3) {
                     // Persist Save
-                    uint8_t opt2 = menuRun(MENU_PERSIST_SAVE);
+                    uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
                     if (opt2 > 0 && opt2<6) {
                         persistSave(opt2);
                     }
@@ -318,7 +318,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         } 
         else if (opt == 2) {
             // Tape menu
-            uint8_t tap_num = menuRun(MENU_TAPE);
+            uint8_t tap_num = menuRun(MENU_TAPE[Config::lang]);
             if (tap_num > 0) {
                 if (tap_num == 1) {
                     // Select TAP File
@@ -342,7 +342,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         else if (opt == 3) {
             // Reset
-            uint8_t opt2 = menuRun(MENU_RESET);
+            uint8_t opt2 = menuRun(MENU_RESET[Config::lang]);
             if (opt2 == 1) {
                 // Soft
                 if (Config::ram_file != NO_RAM_FILE)
@@ -410,14 +410,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 }
                 else if (options_num == 3) {
                     // aspect ratio
-                    uint8_t opt2;
+                    string asp_menu = MENU_ASPECT[Config::lang];
                     bool prev_asp = Config::aspect_16_9;
-
-                    if (prev_asp)
-                        opt2 = menuRun(MENU_ASPECT_169);
-                    else
-                        opt2 = menuRun(MENU_ASPECT_43);
-
+                    if (prev_asp) {
+                        asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
+                        asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
+                    } else {
+                        asp_menu.replace(asp_menu.find("[4",0),2,"[*");
+                        asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
+                    }
+                    uint8_t opt2 = menuRun(asp_menu);
                     if (opt2) {
                         if (opt2 == 1)
                             Config::aspect_16_9 = false;
