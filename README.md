@@ -25,7 +25,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Contended I/O emulation.
 - 48K sound: beeper digital output.
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
-- International kbd layout support: US,ES,DE,FR,IT,UK and JP.
+- International kbd layout support: US, ES, DE, FR, IT, UK and JP.
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
