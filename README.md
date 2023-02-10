@@ -29,8 +29,8 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
+- Snapshot saving and loading (both 48K and 128K supported).
 - BMP screen capture to SD Card.
-- Persistent snapshot saving and loading (both 48K and 128K supported).
 - Simultaneous internal (SPIFFS) and external (SD card) storage support.
 
 ## Work in progress
@@ -115,15 +115,14 @@ From OSD you can load snapshots (from `/data/sna`) or change ROMs.
 ## And all the writters, hobbist and documenters
 
 - [Retrowiki](http://retrowiki.es/) especially the people at [ESP32 TTGO VGA32](http://retrowiki.es/viewforum.php?f=114) subforum.
+- [El Mundo del Spectrum](http://www.elmundodelspectrum.com/)
 - [Microhobby magazine](https://es.wikipedia.org/wiki/MicroHobby).
+- [The World of Spectrum](http://www.worldofspectrum.org/)
 - Dr. Ian Logan & Dr. Frank O'Hara for [The Complete Spectrum ROM Disassembly book](http://freestuff.grok.co.uk/rom-dis/).
 - Chris Smith for the The [ZX-Spectrum ULA book](http://www.zxdesign.info/book/).
-- [Abadiaretro](https://abadiaretro.com/)
-- [El Mundo del Spectrum](http://www.elmundodelspectrum.com/)
-- [The World of Spectrum](http://www.worldofspectrum.org/)
 
 ## A lot of programmers, especially
 
-- [GreenWebSevilla](https://www.instagram.com/greenwebsevilla/) for its Fantasy Zone game and others.
-- Julián Urbano Muñoz for [Speccy Pong](https://www.instagram.com/greenwebsevilla/).
+- [GreenWeb Sevilla](https://youtube.com/GreenWebSevilla) for its Fantasy Zone game.
+- Julián Urbano Muñoz for [Speccy Pong](https://zx-dev-conversions.proboards.com/thread/25/speccypong).
 - Others who have donated distribution rights for this project.
