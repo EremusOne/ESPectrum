@@ -29,8 +29,8 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
+- Snapshot saving and loading (both 48K and 128K supported).
 - BMP screen capture to SD Card.
-- Persistent snapshot saving and loading (both 48K and 128K supported).
 - Simultaneous internal (SPIFFS) and external (SD card) storage support.
 
 ## Work in progress
