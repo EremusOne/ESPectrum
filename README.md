@@ -123,6 +123,6 @@ From OSD you can load snapshots (from `/data/sna`) or change ROMs.
 
 ## A lot of programmers, especially
 
-- [GreenWebSevilla](https://www.instagram.com/greenwebsevilla/) for its Fantasy Zone game and others.
+- GreenWeb Sevilla for its Fantasy Zone game.
 - Julián Urbano Muñoz for [Speccy Pong](https://zx-dev-conversions.proboards.com/thread/25/speccypong).
 - Others who have donated distribution rights for this project.
