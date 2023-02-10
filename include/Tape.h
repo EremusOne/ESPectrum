@@ -52,6 +52,7 @@ public:
     static void TAP_Play();
     static void TAP_Stop();    
     static uint8_t TAP_Read();
+    static void Save();
 
 };
 

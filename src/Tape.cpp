@@ -40,6 +40,7 @@ using namespace std;
 #include "Ports.h"
 #include "OSDMain.h"
 #include "messages.h"
+#include "Z80_JLS/z80.h"
 
 FILE *Tape::tape;
 string Tape::tapeFileName = "none";
@@ -59,7 +60,7 @@ static uint32_t tapeBlockLen;
 static size_t tapeFileSize;   
 static uint8_t tapeEarBit;
 static uint8_t tapeBitMask;    
-static uint8_t tapeReadBuf[4096] = { 0 };
+// static uint8_t tapeReadBuf[4096] = { 0 };
 
 void Tape::Init()
 {
@@ -187,4 +188,51 @@ uint8_t Tape::TAP_Read()
     ESPectrum::audioGetSample(tapeEarBit);
     
     return tapeEarBit;
+}
+
+void Tape::Save() {
+
+	FILE *fichero;
+    unsigned char xxor,salir_s;
+	uint8_t dato;
+	int longitud;
+
+    fichero = fopen("/sd/tap/cinta1.tap", "a");
+    if (fichero == NULL)
+    {
+        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+        return;
+    }
+
+	xxor=0;
+	
+	longitud=(int)(Z80::getRegDE());
+	longitud+=2;
+	
+	dato=(uint8_t)(longitud%256);
+	fprintf(fichero,"%c",dato);
+	dato=(uint8_t)(longitud/256);
+	fprintf(fichero,"%c",dato); // file length
+
+	fprintf(fichero,"%c",Z80::getRegA()); // flag
+
+	xxor^=Z80::getRegA();
+
+	salir_s = 0;
+	do {
+	 	if (Z80::getRegDE() == 0)
+	 		salir_s = 2;
+	 	if (!salir_s) {
+            dato = MemESP::readbyte(Z80::getRegIX());
+			fprintf(fichero,"%c",dato);
+	 		xxor^=dato;
+	        Z80::setRegIX(Z80::getRegIX() + 1);
+	        Z80::setRegDE(Z80::getRegDE() - 1);
+	 	}
+	} while (!salir_s);
+	fprintf(fichero,"%c",xxor);
+	Z80::setRegIX(Z80::getRegIX() + 2);
+
+    fclose(fichero);
+
 }
