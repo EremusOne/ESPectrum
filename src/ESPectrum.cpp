@@ -378,7 +378,8 @@ void ESPectrum::loadRom(string arch, string romset) {
 //=======================================================================================
 // KEYBOARD / KEMPSTON
 //=======================================================================================
-bool ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
+bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
+    
     auto keyboard = PS2Controller.keyboard();
     bool r = keyboard->getNextVirtualKey(Nextkey);
 
