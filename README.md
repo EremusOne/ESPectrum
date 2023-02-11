@@ -1,6 +1,6 @@
 # ZX-ESPectrum-IDF
 
-**IMPORTANT: Putting too much files in the SD Card directories could crash the emu right now (RAM issues). A fix for this will be available soon. Right now be careful with the number of files and don't forget THIS IS AN EARLY BETA.**
+**IMPORTANT: Putting too much files in the SPIFFS or SD Card dirs could crash the emu right now (RAM issues). A fix for this will be available soon. Right now be careful with the number of files and don't forget THIS IS AN EARLY BETA.**
 
 This is an emulator of the Sinclair ZX Spectrum computer running on a Lilygo TTGo VGA32 board.
 
