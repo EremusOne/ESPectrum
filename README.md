@@ -1,5 +1,7 @@
 # ZX-ESPectrum-IDF
 
+** IMPORTANT: Putting too much files on the SD Card directorios could crash the emu right now (RAM issues). A fix for this will be available soon. Right now be careful with the number of files and remember: THIS IS AN EARLY BETA
+
 This is an emulator of the Sinclair ZX Spectrum computer running on a Lilygo TTGo VGA32 board.
 
 Just connect a VGA monitor, a PS/2 keyboard, a SD Card (optional) and power via microUSB.
