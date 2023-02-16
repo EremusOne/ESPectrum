@@ -445,7 +445,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     } else {
         // x = (Config::aspect_16_9 ? 59 : 39);
         // y = 40;
-        x = x + (((cols >> 1) - 1)* 6);
+        x = x + (((cols >> 1) - 3)* 6);
         y = y + 16;
     }
 
