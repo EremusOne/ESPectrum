@@ -66,7 +66,7 @@ void CaptureToBmp()
 
     DIR* dir = opendir(scrdir.c_str());
     if (dir == NULL) {
-        printf("Capture BMP: problem accessing SCR dir\n");
+        printf("Capture BMP: problem accessing capture dir\n");
         return;
     }
     int bmpnumber = 0;
