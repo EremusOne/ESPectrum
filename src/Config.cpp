@@ -35,7 +35,6 @@
 #include "FileUtils.h"
 #include "messages.h"
 #include "ESPectrum.h"
-
 #include "esp_spiffs.h"
 
 string   Config::arch = "48K";
@@ -144,13 +143,15 @@ void Config::load() {
 void Config::loadSnapshotLists()
 {
     
-    sna_file_list = (string) MENU_SNA_TITLE[Config::lang] + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_SNA_DIR);
+    int n;
 
+    sna_file_list = (string) MENU_SNA_TITLE[Config::lang] + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_SNA_DIR);
     sna_name_list = sna_file_list;
     
-//    printf((sna_name_list + "\n").c_str());
+    // printf((sna_name_list + "\n").c_str());
 
-    std::string::size_type n = 0;
+    // std::string::size_type n = 0;
+    n = 0;
     while ( ( n = sna_name_list.find( ".sna", n ) ) != std::string::npos )
     {
         sna_name_list.replace( n, 4, "" );
@@ -178,20 +179,6 @@ void Config::loadSnapshotLists()
         n++;
     }
 
-    n = 0;
-    while ( ( n = sna_name_list.find( "_", n ) ) != std::string::npos )
-    {
-        sna_name_list.replace( n, 1, "" );
-        n++;
-    }
-
-    n = 0;
-    while ( ( n = sna_name_list.find( "-", n ) ) != std::string::npos )
-    {
-        sna_name_list.replace( n, 1, "" );
-        n++;
-    }
-    
 }
 
 void Config::loadTapLists()
@@ -200,7 +187,7 @@ void Config::loadTapLists()
     tap_file_list = (string) MENU_TAP_TITLE[Config::lang] + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_TAP_DIR);
     tap_name_list = tap_file_list;
     
-//    printf((tap_name_list + "\n").c_str());
+    // printf((tap_name_list + "\n").c_str());
 
     std::string::size_type n = 0;
     while ( ( n = tap_name_list.find( ".TAP", n ) ) != std::string::npos )

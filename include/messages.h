@@ -143,7 +143,7 @@ static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
     "4:3\t[4]\n"\
     "16:9\t[1]\n"
 #define MENU_ASPECT_ES \
-    "Relacion de aspecto\n"\
+    "Rel. aspecto\n"\
     "4:3\t[4]\n"\
     "16:9\t[1]\n"
 static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
@@ -186,10 +186,12 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
 
 #define MENU_STORAGE_EN "Storage\n"\
     "Internal\t[I]\n"\
-    "SD Card\t[S]\n"
+    "SD Card\t[S]\n"\
+    "Refresh directories\n"
 #define MENU_STORAGE_ES "Almacenamiento\n"\
     "Interno\t[I]\n"\
-    "Tarjeta SD\t[S]\n"
+    "Tarjeta SD\t[S]\n"\
+    "Refrescar directorios\n"
 static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
 #define MENU_ARCH_EN "Select arch.\n"\
@@ -237,17 +239,13 @@ static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTER
     "Spanish\t[ES]\n"\
     "German\t[DE]\n"\
     "French\t[FR]\n"\
-    "Italian\t[IT]\n"\
-    "UK British\t[UK]\n"\
-    "Japanese\t[JP]\n"
+    "UK British\t[UK]\n"
 #define MENU_KBD_LAYOUT_ES "Elija idioma\n"\
     "Ingles EEUU\t[US]\n"\
     "Espanol\t[ES]\n"\
     "Aleman\t[DE]\n"\
     "Frances\t[FR]\n"\
-    "Italiano\t[IT]\n"\
-    "Ingles GB\t[UK]\n"\
-    "Japones\t[JP]\n"
+    "Ingles GB\t[UK]\n"
 static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
 
 #define OSD_ABOUT_EN \

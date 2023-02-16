@@ -53,13 +53,55 @@ void (*VIDEO::Draw)(unsigned int) = &VIDEO::Draw_43;
 
 void precalcColors() {
 
-    uint16_t specfast_colors[128]; // Array for faster color calc in Draw
+//    uint16_t specfast_colors[128]; // Array for faster color calc in Draw
 
-    unsigned int pal[2],b0,b1,b2,b3;
+//    unsigned int pal[2],b0,b1,b2,b3;
 
     for (int i = 0; i < NUM_SPECTRUM_COLORS; i++) {
         spectrum_colors[i] = (spectrum_colors[i] & VIDEO::vga.RGBAXMask) | VIDEO::vga.SBits;
     }
+
+    // // Calc array for faster color calcs in Draw
+    // for (int i = 0; i < (NUM_SPECTRUM_COLORS >> 1); i++) {
+    //     // Normal
+    //     specfast_colors[i] = spectrum_colors[i];
+    //     specfast_colors[i << 3] = spectrum_colors[i];
+    //     // Bright
+    //     specfast_colors[i | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
+    //     specfast_colors[(i << 3) | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
+    // }
+
+    // // Calc ULA bytes
+    // AluBytes = new uint32_t*[16];
+    // for (int i = 0; i < 16; i++) {
+    //     AluBytes[i] = new uint32_t[256];
+    // }
+
+    // // deallocate memory using the delete operator
+    // for (int i = 0; i < 16; i++) {
+    //     delete[] AluBytes[i];
+    // }
+    // delete[] AluBytes;
+
+    // for (int i = 0; i < 16; i++) {
+    //     for (int n = 0; n < 256; n++) {
+    //         pal[0] = specfast_colors[n & 0x78];
+    //         pal[1] = specfast_colors[n & 0x47];
+    //         b0 = pal[(i >> 3) & 0x01];
+    //         b1 = pal[(i >> 2) & 0x01];
+    //         b2 = pal[(i >> 1) & 0x01];
+    //         b3 = pal[i & 0x01];
+    //         AluBytes[i][n]=b2 | (b3<<8) | (b0<<16) | (b1<<24);
+    //     }
+    // }    
+
+}
+
+void precalcAluBytes() {
+
+    uint16_t specfast_colors[128]; // Array for faster color calc in Draw
+
+    unsigned int pal[2],b0,b1,b2,b3;
 
     // Calc array for faster color calcs in Draw
     for (int i = 0; i < (NUM_SPECTRUM_COLORS >> 1); i++) {
@@ -71,7 +113,12 @@ void precalcColors() {
         specfast_colors[(i << 3) | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
     }
 
-    // Calc ULA bytes
+    // Alloc ALUbytes
+    AluBytes = new uint32_t*[16];
+    for (int i = 0; i < 16; i++) {
+        AluBytes[i] = new uint32_t[256];
+    }
+
     for (int i = 0; i < 16; i++) {
         for (int n = 0; n < 256; n++) {
             pal[0] = specfast_colors[n & 0x78];
@@ -80,11 +127,21 @@ void precalcColors() {
             b1 = pal[(i >> 2) & 0x01];
             b2 = pal[(i >> 1) & 0x01];
             b3 = pal[i & 0x01];
-            ulabytes[i][n]=b2 | (b3<<8) | (b0<<16) | (b1<<24);
+            AluBytes[i][n]=b2 | (b3<<8) | (b0<<16) | (b1<<24);
         }
     }    
 
 }
+
+void deallocAluBytes() {
+
+    // For dealloc
+    for (int i = 0; i < 16; i++) {
+        delete[] AluBytes[i];
+    }
+    delete[] AluBytes;
+
+};
 
 uint16_t zxColor(uint8_t color, uint8_t bright) {
     if (bright) color += 8;
@@ -122,6 +179,8 @@ void VIDEO::Init() {
     vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
 
     precalcColors();    // precalculate colors for current VGA mode
+
+    precalcAluBytes(); // Alloc and calc AluBytes
 
     precalcULASWAP();   // precalculate ULA SWAP values
 
@@ -226,8 +285,8 @@ if (DrawStatus==LINEDRAW) {
             } else 
                 bmp = grmem[bmpOffset++];   // get bitmap byte
 
-            *lineptr32++ = ulabytes[bmp >> 4][att];
-            *lineptr32++ = ulabytes[bmp & 0xF][att];
+            *lineptr32++ = AluBytes[bmp >> 4][att];
+            *lineptr32++ = AluBytes[bmp & 0xF][att];
 
         } else {
 
@@ -381,8 +440,8 @@ if (DrawStatus==LINEDRAW) {
             } else 
                 bmp = grmem[bmpOffset++];   // get bitmap byte
 
-            *lineptr32++ = ulabytes[bmp >> 4][att];
-            *lineptr32++ = ulabytes[bmp & 0xF][att];
+            *lineptr32++ = AluBytes[bmp >> 4][att];
+            *lineptr32++ = AluBytes[bmp & 0xF][att];
         } else {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
@@ -420,8 +479,8 @@ if (DrawStatus==LINEDRAW_FPS) {
             } else 
                 bmp = grmem[bmpOffset++];   // get bitmap byte
 
-            *lineptr32++ = ulabytes[bmp >> 4][att];
-            *lineptr32++ = ulabytes[bmp & 0xF][att];
+            *lineptr32++ = AluBytes[bmp >> 4][att];
+            *lineptr32++ = AluBytes[bmp & 0xF][att];
         } else {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
@@ -480,7 +539,7 @@ if (DrawStatus==BLANK) {
 // ///////////////////////////////////////////////////////////////////////////////
 // // Flush -> Flush screen after HALT
 // ///////////////////////////////////////////////////////////////////////////////
-void IRAM_ATTR VIDEO::Flush() {
+void VIDEO::Flush() {
 
 #ifndef NO_VIDEO
 
@@ -546,8 +605,8 @@ void IRAM_ATTR VIDEO::Flush() {
 //                             bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
 //                         } else 
 //                             bmp = grmem[bmpOffset++];   // get bitmap byte
-//                         *lineptr32++ = ulabytes[bmp >> 4][att];
-//                         *lineptr32++ = ulabytes[bmp & 0xF][att];
+//                         *lineptr32++ = AluBytes[bmp >> 4][att];
+//                         *lineptr32++ = AluBytes[bmp & 0xF][att];
 //                 }
 
 //             }
@@ -665,8 +724,8 @@ void IRAM_ATTR VIDEO::Flush() {
 //             } else 
 //                 bmp = grmem[bmpOffset];   // get bitmap byte
 
-//             *lineptr32++ = ulabytes[bmp >> 4][att];
-//             *lineptr32++ = ulabytes[bmp & 0xF][att];
+//             *lineptr32++ = AluBytes[bmp >> 4][att];
+//             *lineptr32++ = AluBytes[bmp & 0xF][att];
 
 //             attOffset++;
 //             bmpOffset++;
@@ -710,8 +769,8 @@ void IRAM_ATTR VIDEO::Flush() {
 //             } else 
 //                 bmp = grmem[bmpOffset];   // get bitmap byte
 
-//             *lineptr32++ = ulabytes[bmp >> 4][att];
-//             *lineptr32++ = ulabytes[bmp & 0xF][att];
+//             *lineptr32++ = AluBytes[bmp >> 4][att];
+//             *lineptr32++ = AluBytes[bmp & 0xF][att];
 
 //             attOffset++;
 //             bmpOffset++;

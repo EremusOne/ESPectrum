@@ -45,9 +45,6 @@
 #include "Tape.h"
 #include "Z80_JLS/z80.h"
 #include "pwm_audio.h"
-#include "hardpins.h"
-#include "CaptureBMP.h"
-
 #include "fabgl.h"
 
 #include "freertos/FreeRTOS.h"
@@ -201,12 +198,8 @@ void ESPectrum::setup()
             PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
     else if(cfgLayout == "DE") 
             PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
-    else if(cfgLayout == "IT") 
-            PS2Controller.keyboard()->setLayout(&fabgl::ItalianLayout);            
     else if(cfgLayout == "FR") 
             PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
-    else if(cfgLayout == "JP") 
-            PS2Controller.keyboard()->setLayout(&fabgl::JapaneseLayout);
     else 
             PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
 
@@ -383,10 +376,10 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     auto keyboard = PS2Controller.keyboard();
     bool r = keyboard->getNextVirtualKey(Nextkey);
 
-    // Screen capture
+    // Global keys
     if (Nextkey->down) {
         if (Nextkey->vk == fabgl::VK_PRINTSCREEN) { // Capture framebuffer to BMP file in SD Card (thx @dcrespo3d!)
-            CaptureBMP::capture();
+            CaptureToBmp();
             r = false;
         }
         else if (Nextkey->vk == fabgl::VK_F9) { // Volume down
@@ -403,6 +396,7 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             }
             r = false;
         }    
+
     }
 
     return r;
@@ -722,7 +716,7 @@ void ESPectrum::audioFrameStart() {
 
 }
 
-void ESPectrum::audioGetSample(int Audiobit) {
+void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
 
     if (Audiobit != lastaudioBit) {
 
@@ -768,8 +762,10 @@ void ESPectrum::audioFrameEnd() {
         // aymix is centered (ranges from -128 to 127), but
         // beeper is not centered (ranges from 0 to 255),
         // so we need to substract 128 from beeper.
-        #endif
         mix = ((beeper >> 3) - 128) + (aymix / 3);
+        #else
+        mix = (beeper >> 3) - 128;
+        #endif
         #ifdef AUDIO_MIX_CLAMP
         mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
         #else
@@ -838,12 +834,23 @@ for(;;) {
 
         if (elapsed < 100000) {
     
-            // printf("===========================================================================\n");
-            // printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
-            // printf("[Audio] Volume: %d\n", aud_volume);
-            // printf("[Framecnt] %u; [Seconds] %.2f; [FPS] %.2f; [FPS (no delay)] %.2f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-            // printf("[ESPoffset] %d\n", ESPoffset);
-            
+            printf("===========================================================================\n");
+            printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
+            printf("[Audio] Volume: %d\n", aud_volume);
+            printf("[Framecnt] %u; [Seconds] %.2f; [FPS] %.2f; [FPS (no delay)] %.2f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            printf("[ESPoffset] %d\n", ESPoffset);
+
+            multi_heap_info_t info;
+
+            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+            printf("=========================================================================\n");
+            printf("Total currently free in all non-continues blocks : %d\n", info.total_free_bytes);
+            printf("Minimum free ever                                : %d\n", info.minimum_free_bytes);
+            printf("Largest continues block to allocate big array    : %d\n", info.largest_free_block);
+            printf("Heap caps get free size                          : %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+            printf("=========================================================================\n\n");
+
+
             sprintf((char *)linea1,"CPU: %.5u / IDL: %.5d ", elapsed, idle);
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
 

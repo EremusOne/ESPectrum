@@ -108,24 +108,22 @@ void OSD::osdAt(uint8_t row, uint8_t col) {
 }
 
 void OSD::drawOSD() {
-    VGA6Bit& vga = VIDEO::vga;
     unsigned short x = scrAlignCenterX(OSD_W);
     unsigned short y = scrAlignCenterY(OSD_H);
-    vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(1, 0));
-    vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
-    vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
-    vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(5, 1));
-    vga.setFont(Font6x8);
+    VIDEO::vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(1, 0));
+    VIDEO::vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
+    VIDEO::vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
+    VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(5, 1));
+    VIDEO::vga.setFont(Font6x8);
     osdHome();
-    vga.print(OSD_TITLE);
+    VIDEO::vga.print(OSD_TITLE);
     osdAt(20, 0);
-    vga.print(OSD_BOTTOM);
+    VIDEO::vga.print(OSD_BOTTOM);
     osdHome();
 }
 
 void OSD::drawStats(char *line1, char *line2) {
 
-    VGA6Bit& vga = VIDEO::vga;
     unsigned short x,y;
 
     if (Config::aspect_16_9) {
@@ -136,16 +134,16 @@ void OSD::drawStats(char *line1, char *line2) {
         y = 220;
     }
 
-    // vga.fillRect(x, y, 80, 16, OSD::zxColor(1, 0));
-    // vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
-    // vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
+    // VIDEO::vga.fillRect(x, y, 80, 16, OSD::zxColor(1, 0));
+    // VIDEO::vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
+    // VIDEO::vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
 
-    vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
-    vga.setFont(Font6x8);
-    vga.setCursor(x,y);
-    vga.print(line1);
-    vga.setCursor(x,y+8);
-    vga.print(line2);
+    VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
+    VIDEO::vga.setFont(Font6x8);
+    VIDEO::vga.setCursor(x,y);
+    VIDEO::vga.print(line1);
+    VIDEO::vga.setCursor(x,y+8);
+    VIDEO::vga.print(line2);
 
 }
 
@@ -181,7 +179,6 @@ static void persistLoad(uint8_t slotnumber)
 // OSD Main Loop
 void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
-    VGA6Bit& vga = VIDEO::vga;
     static uint8_t last_sna_row = 0;
     fabgl::VirtualKeyItem Nextkey;
 
@@ -197,9 +194,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F2) {
         AySound::disable();
-        unsigned short snanum = menuRun(Config::sna_name_list);
-        if (snanum > 0) {
-            changeSnapshot(rowGet(Config::sna_file_list, snanum));
+        string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
+        if (mFile != "") {
+            changeSnapshot(mFile);
         }
         AySound::enable();
     }
@@ -222,10 +219,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F5) {
-        AySound::disable();                    // Select TAP File
-        unsigned short tapfile = menuRun(Config::tap_name_list);
-        if (tapfile > 0) {
-            Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapfile);
+        AySound::disable();
+        string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
+        if (mFile != "") {
+            Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
         }
         AySound::enable();
     }
@@ -252,10 +249,26 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }    
     }
     // else if (KeytoESP == fabgl::VK_F9) {
-    //     ESPectrum::ESPoffset = ESPectrum::ESPoffset >> 1;
+
+    //     OSD::osdCenteredMsg("Refresh snapshot dir", LEVEL_INFO);
+    //     deallocAluBytes();
+    //     int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_SNA_DIR, ".sna.SNA.z80.Z80"); // Prepare sna filelist
+    //     if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_SNA_DIR,chunks); // Merge files
+    //     precalcAluBytes();
+
+    //     // ESPectrum::ESPoffset = ESPectrum::ESPoffset >> 1;
+
     // }
     // else if (KeytoESP == fabgl::VK_F10) {
-    //     ESPectrum::ESPoffset = ESPectrum::ESPoffset << 1;
+
+    //     OSD::osdCenteredMsg("Refresh tape dir", LEVEL_INFO);
+    //     deallocAluBytes();
+    //     int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_TAP_DIR, ".tap.TAP"); // Prepare tap filelist
+    //     if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_TAP_DIR,chunks); // Merge files
+    //     precalcAluBytes();
+
+    //     // ESPectrum::ESPoffset = ESPectrum::ESPoffset << 1;
+
     // }
     else if (KeytoESP == fabgl::VK_F12) {
         
@@ -295,10 +308,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             uint8_t sna_mnu = menuRun(MENU_SNA[Config::lang]);
             if (sna_mnu > 0) {
                 if (sna_mnu == 1) {
-                    unsigned short snanum = menuFile(Config::sna_name_list);
-                    if (snanum > 0) {
-                        changeSnapshot(rowGet(Config::sna_file_list, snanum));
+                    string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
+                    if (mFile != "") {
+                        changeSnapshot(mFile);
                     }
+                    // unsigned short snanum = menuRun(Config::sna_name_list);
+                    // if (snanum > 0) {
+                    //     changeSnapshot(rowGet(Config::sna_file_list, snanum));
+                    // }
                 }
                 else if (sna_mnu == 2) {
                     // Persist Load
@@ -322,9 +339,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             if (tap_num > 0) {
                 if (tap_num == 1) {
                     // Select TAP File
-                    unsigned short tapfile = menuRun(Config::tap_name_list);
-                    if (tapfile > 0) {
-                        Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + rowGet(Config::tap_file_list, tapfile);
+                    string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
+                    if (mFile != "") {
+                        Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
                     }
                 }
                 else if (tap_num == 2) {
@@ -378,14 +395,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         curopt = 2;
                     }
                     uint8_t opt2 = menuRun(stor_menu);
-                    if ((opt2) && (opt2 != curopt)) {
-                        if (opt2 == 1)
-                            FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
-                        else
-                            FileUtils::MountPoint = MOUNT_POINT_SD;
-                        Config::loadSnapshotLists();
-                        Config::loadTapLists();
-                        Config::save();
+                    if (opt2) {
+                        if (opt2 == 3) {
+                            deallocAluBytes();
+                            OSD::osdCenteredMsg("Refreshing snap dir", LEVEL_INFO);
+                            int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_SNA_DIR, ".sna.SNA.z80.Z80"); // Prepare sna filelist
+                            if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_SNA_DIR,chunks); // Merge files
+                            OSD::osdCenteredMsg("Refreshing tape dir", LEVEL_INFO);
+                            chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_TAP_DIR, ".tap.TAP"); // Prepare tap filelist
+                            if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_TAP_DIR,chunks); // Merge files
+                            precalcAluBytes();
+                        } else if (opt2 != curopt) {
+                            if (opt2 == 1)
+                                FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
+                            else
+                                FileUtils::MountPoint = MOUNT_POINT_SD;
+                            // Config::loadSnapshotLists();
+                            // Config::loadTapLists();
+                            Config::save();
+                        }
                     }
                 }
                 else if (options_num == 2) {
@@ -482,13 +510,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                         Config::kbd_layout = "FR";
                                         break;
                                     case 5:
-                                        Config::kbd_layout = "IT";
-                                        break;
-                                    case 6:
                                         Config::kbd_layout = "UK";
-                                        break;
-                                    case 7:
-                                        Config::kbd_layout = "JP";
                                 }
                                 Config::save();
                                 
@@ -500,12 +522,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                         ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
                                 else if(cfgLayout == "DE") 
                                         ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
-                                else if(cfgLayout == "IT") 
-                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::ItalianLayout);            
                                 else if(cfgLayout == "FR") 
                                         ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
-                                else if(cfgLayout == "JP") 
-                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::JapaneseLayout);
                                 else 
                                         ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
 
@@ -519,8 +537,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             // Help
             drawOSD();
             osdAt(2, 0);
-            vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
-            vga.print(OSD_ABOUT[Config::lang]);
+            VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
+            VIDEO::vga.print(OSD_ABOUT[Config::lang]);
             while (1) {
                 ESPectrum::readKbd(&Nextkey);
                 if(!Nextkey.down) continue;
@@ -541,21 +559,19 @@ void OSD::errorPanel(string errormsg) {
     if (Config::slog_on)
         printf((errormsg + "\n").c_str());
 
-    VGA6Bit& vga = VIDEO::vga;
-
-    vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
-    vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(7, 0));
-    vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(2, 1));
-    vga.setFont(Font6x8);
+    VIDEO::vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
+    VIDEO::vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(7, 0));
+    VIDEO::vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(2, 1));
+    VIDEO::vga.setFont(Font6x8);
     osdHome();
-    vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
-    vga.print(ERROR_TITLE);
+    VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
+    VIDEO::vga.print(ERROR_TITLE);
     osdAt(2, 0);
-    vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
-    vga.println(errormsg.c_str());
+    VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
+    VIDEO::vga.println(errormsg.c_str());
     osdAt(17, 0);
-    vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
-    vga.print(ERROR_BOTTOM);
+    VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(2, 1));
+    VIDEO::vga.print(ERROR_BOTTOM);
 }
 
 // Error panel and infinite loop
@@ -596,14 +612,12 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
         paper = OSD::zxColor(1, 0);
     }
 
-    VGA6Bit& vga = VIDEO::vga;
-
-    vga.fillRect(x, y, w, h, paper);
-    // vga.rect(x - 1, y - 1, w + 2, h + 2, ink);
-    vga.setTextColor(ink, paper);
-    vga.setFont(Font6x8);
-    vga.setCursor(x + OSD_FONT_W, y + OSD_FONT_H);
-    vga.print(msg.c_str());
+    VIDEO::vga.fillRect(x, y, w, h, paper);
+    // VIDEO::vga.rect(x - 1, y - 1, w + 2, h + 2, ink);
+    VIDEO::vga.setTextColor(ink, paper);
+    VIDEO::vga.setFont(Font6x8);
+    VIDEO::vga.setCursor(x + OSD_FONT_W, y + OSD_FONT_H);
+    VIDEO::vga.print(msg.c_str());
     
     if (millispause > 0) vTaskDelay(millispause/portTICK_PERIOD_MS); // Pause if needed
 
@@ -612,7 +626,8 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
 // // Count NL chars inside a string, useful to count menu rows
 unsigned short OSD::rowCount(string menu) {
     unsigned short count = 0;
-    for (unsigned short i = 1; i < menu.length(); i++) {
+    for (unsigned short i = 0; i < menu.length(); i++) {
+//    for (unsigned short i = 1; i < menu.length(); i++) {
         if (menu.at(i) == ASCII_NL) {
             count++;
         }
@@ -633,7 +648,7 @@ string OSD::rowGet(string menu, unsigned short row) {
             last = i + 1;
         }
     }
-    return "MENU ERROR! (Unknown row?)";
+    return "<Unknown menu row>";
 }
 
 // Change running snapshot
@@ -645,7 +660,7 @@ void OSD::changeSnapshot(string filename)
     {
     
         osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
-        // printf("Loading SNA: %s\n", filename.c_str());
+        // printf("Loading SNA: <%s>\n", (dir + "/" + filename).c_str());
         FileSNA::load(dir + "/" + filename);
 
     }

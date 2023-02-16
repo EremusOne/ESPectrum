@@ -98,20 +98,20 @@ void IRAM_ATTR CPU::loop()
 
             Z80::execute();
 
-            /* if PC is 0x970, a call to SA_CONTRL has been made, so if
-		    we want to save to the TAP file, we first delete old */
-            if(Z80::getRegPC()==0x970) {
-                remove("/sd/tap/cinta1.tap");
-			}
-            /* if PC is 0x04C2, a call to SA_BYTES has been made, so if
-		    we want to save to the TAP file, we do it */
-            if(Z80::getRegPC()==0x04C2) {
-                Tape::Save();
-                // printf("Save in ROM called\n");
-                Z80::setRegPC(0x555);
-			}
-
             global_tstates += (tstates - pre_tstates); // increase global Tstates
+
+            // // if PC is 0x970, a call to SA_CONTRL has been made:
+            // // remove .tap output file if exists
+            // if(Z80::getRegPC() == 0x970) {
+            //     remove("/sd/tap/cinta1.tap");
+			// }
+            // // if PC is 0x04C2, a call to SA_BYTES has been made:
+            // // Call Save function
+            // if(Z80::getRegPC() == 0x04C2) {
+            //     Tape::Save();
+            //     // printf("Save in ROM called\n");
+            //     Z80::setRegPC(0x555);
+			// }
 
 	}
 
@@ -124,7 +124,7 @@ void IRAM_ATTR CPU::loop()
 
 }
 
-void IRAM_ATTR CPU::FlushOnHalt() {
+void CPU::FlushOnHalt() {
         
     tstates &= 0x00FFFFFF;
     global_tstates &= 0x00FFFFFF;

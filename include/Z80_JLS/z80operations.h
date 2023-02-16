@@ -12,6 +12,7 @@
 #define Z80OPERATIONS_H
 
 #include <stdint.h>
+#include "esp_attr.h"
 
 // Class grouping callbacks for Z80 operations
 // methods declared here should be defined elsewhere... for example, in CPU.cpp
@@ -20,34 +21,34 @@ class Z80Ops
 {
 public:
     /* Read opcode from RAM */
-    static uint8_t fetchOpcode(uint16_t address);
+    static uint8_t IRAM_ATTR fetchOpcode(uint16_t address);
 
     /* Read/Write byte from/to RAM */
-    static uint8_t peek8(uint16_t address);
-    static void poke8(uint16_t address, uint8_t value);
+    static uint8_t IRAM_ATTR peek8(uint16_t address);
+    static void IRAM_ATTR poke8(uint16_t address, uint8_t value);
 
     /* Read/Write word from/to RAM */
-    static uint16_t peek16(uint16_t adddress);
-    static void poke16(uint16_t address, RegisterPair word);
+    static uint16_t IRAM_ATTR peek16(uint16_t adddress);
+    static void IRAM_ATTR poke16(uint16_t address, RegisterPair word);
 
     /* In/Out byte from/to IO Bus */
-    static uint8_t inPort(uint16_t port);
-    static void outPort(uint16_t port, uint8_t value);
+    static uint8_t IRAM_ATTR inPort(uint16_t port);
+    static void IRAM_ATTR outPort(uint16_t port, uint8_t value);
 
     /* Put an address on bus lasting 'tstates' cycles */
-    static void addressOnBus(uint16_t address, int32_t wstates);
+    static void IRAM_ATTR addressOnBus(uint16_t address, int32_t wstates);
 
     /* Clocks needed for processing INT and NMI */
-    static void interruptHandlingTime(int32_t wstates);
+    static void IRAM_ATTR interruptHandlingTime(int32_t wstates);
 
     /* Callback to know when the INT signal is active */
-    static bool isActiveINT(void);
+    static bool IRAM_ATTR isActiveINT(void);
 
     /* Add tStates and do ALU_video and audio buffer capture */
-    static void addTstates(int32_t tstatestoadd, bool dovideo);
+    static void IRAM_ATTR addTstates(int32_t tstatestoadd, bool dovideo);
 
     /* Signal HALT in tstates */
-    static void signalHalt();
+    static void IRAM_ATTR signalHalt();
 
 };
 

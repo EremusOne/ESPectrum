@@ -89,7 +89,7 @@ public:
     static void IRAM_ATTR Draw_169(unsigned int statestoadd);
     
     // For flushing video buffer as fast as possible after HALT
-    static void IRAM_ATTR Flush();
+    static void Flush();
 
     static void (*Draw)(unsigned int);
 
@@ -136,7 +136,9 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
 };
 
-static uint32_t DRAM_ATTR ulabytes[16][256] = { 0 };
+// static uint32_t DRAM_ATTR ulabytes[16][256] = { 0 };
+
+static uint32_t** AluBytes;
 
 static unsigned char DrawStatus;
 
@@ -153,5 +155,9 @@ static unsigned int bmpOffset;  // offset for bitmap in graphic memory
 static unsigned int attOffset;  // offset for attrib in graphic memory
 
 static unsigned int brd;
+
+void precalcAluBytes();
+
+void deallocAluBytes();
 
 #endif // VIDEO_h

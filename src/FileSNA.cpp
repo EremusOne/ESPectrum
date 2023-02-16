@@ -103,7 +103,6 @@ using namespace std;
 bool FileSNA::load(string sna_fn)
 {
     FILE *file;
-    //uint16_t retaddr;
     int sna_size;
     
     ESPectrum::reset();
@@ -111,9 +110,6 @@ bool FileSNA::load(string sna_fn)
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
 
-    // if (sna_fn != DISK_PSNA_FILE)
-    //     loadKeytableForGame(sna_fn.c_str());
-    
     file = fopen(sna_fn.c_str(), "rb");
     if (file==NULL)
     {

@@ -53,8 +53,10 @@ public:
     // static String         getAllFilesFrom(const String path);
     // static void           listAllFiles();
     // static void           sanitizeFilename(String filename); // in-place
-    // static File IRAM_ATTR safeOpenFileRead(String filename);
+    // static File           safeOpenFileRead(String filename);
     static string getFileEntriesFromDir(string path);
+    static int DirToFile(string Dir, string fileExts);
+    static void Mergefiles(string fpath, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
     static string getSortedFileList(string fileDir);
     static bool hasSNAextension(string filename);
@@ -73,16 +75,18 @@ private:
 
 // Use internal spiffs first
 #define DISK_BOOT_FILENAME "/data/boot.cfg"
-#define DISK_ROM_DIR "/rom"
-#define DISK_SNA_DIR "/sna"
-#define DISK_TAP_DIR "/tap"
-#define DISK_SCR_DIR "/scr"
-#define DISK_PSNA_FILE "/persist/persist"
+#define DISK_ROM_DIR "/r"
+#define DISK_SNA_DIR "/s"
+#define DISK_TAP_DIR "/t"
+#define DISK_SCR_DIR "/c"
+#define DISK_PSNA_FILE "/p/persist"
 
 #define NO_RAM_FILE "none"
 #define SNA_48K_SIZE 49179
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
+
+#define MAX_FNAMES_PER_CHUNK 256
 
 // inline utility functions for uniform access to file/memory
 // and making it easy to to implement SNA/Z80 functions

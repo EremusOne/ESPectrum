@@ -31,6 +31,7 @@
 #define ESPectrum_h
 #include <string>
 #include "hardpins.h"
+#include "CaptureBMP.h"
 #include "fabgl.h"
 
 using namespace std;
@@ -50,8 +51,8 @@ public:
     static void loadRom(string arch, string romset);
 
     // Kbd
-    static void processKeyboard();
-    static bool readKbd(fabgl::VirtualKeyItem *Nextkey);
+    static void IRAM_ATTR processKeyboard();
+    static bool IRAM_ATTR readKbd(fabgl::VirtualKeyItem *Nextkey);
     static fabgl::PS2Controller PS2Controller;
 
     // Audio
@@ -63,7 +64,7 @@ public:
     static uint32_t audbufcnt;
     static int lastaudioBit;
     static void audioFrameStart();
-    static void audioGetSample(int Audiobit);
+    static void IRAM_ATTR audioGetSample(int Audiobit);
     static void audioFrameEnd();
     static int samplesPerFrame;
 

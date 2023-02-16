@@ -47,7 +47,7 @@ public:
     static void reset();
 
     // Flush screen
-    static void IRAM_ATTR FlushOnHalt();
+    static void FlushOnHalt();
 
     // get the number of CPU Tstates per frame (machine dependant)
     static uint32_t statesPerFrame();

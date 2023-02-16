@@ -55,8 +55,8 @@ public:
     static uint8_t  lang;
 
     // config persistence
-    static void           load();
-    static void IRAM_ATTR save();
+    static void load();
+    static void save();
 
     // list of snapshot file names
     static string   sna_file_list;
