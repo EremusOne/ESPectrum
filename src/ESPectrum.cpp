@@ -834,22 +834,21 @@ for(;;) {
 
         if (elapsed < 100000) {
     
-            printf("===========================================================================\n");
-            printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
-            printf("[Audio] Volume: %d\n", aud_volume);
-            printf("[Framecnt] %u; [Seconds] %.2f; [FPS] %.2f; [FPS (no delay)] %.2f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-            printf("[ESPoffset] %d\n", ESPoffset);
+            // printf("===========================================================================\n");
+            // printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
+            // printf("[Audio] Volume: %d\n", aud_volume);
+            // printf("[Framecnt] %u; [Seconds] %.2f; [FPS] %.2f; [FPS (no delay)] %.2f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            // printf("[ESPoffset] %d\n", ESPoffset);
 
-            multi_heap_info_t info;
+            // multi_heap_info_t info;
 
-            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-            printf("=========================================================================\n");
-            printf("Total currently free in all non-continues blocks : %d\n", info.total_free_bytes);
-            printf("Minimum free ever                                : %d\n", info.minimum_free_bytes);
-            printf("Largest continues block to allocate big array    : %d\n", info.largest_free_block);
-            printf("Heap caps get free size                          : %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-            printf("=========================================================================\n\n");
-
+            // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+            // printf("=========================================================================\n");
+            // printf("Total currently free in all non-continues blocks : %d\n", info.total_free_bytes);
+            // printf("Minimum free ever                                : %d\n", info.minimum_free_bytes);
+            // printf("Largest continues block to allocate big array    : %d\n", info.largest_free_block);
+            // printf("Heap caps get free size                          : %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+            // printf("=========================================================================\n\n");
 
             sprintf((char *)linea1,"CPU: %.5u / IDL: %.5d ", elapsed, idle);
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
