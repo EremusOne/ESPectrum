@@ -127,16 +127,12 @@ void OSD::drawStats(char *line1, char *line2) {
     unsigned short x,y;
 
     if (Config::aspect_16_9) {
-        x = 184;
+        x = 188;
         y = 176;
     } else {
         x = 168;
         y = 220;
     }
-
-    // VIDEO::vga.fillRect(x, y, 80, 16, OSD::zxColor(1, 0));
-    // VIDEO::vga.rect(x, y, OSD_W, OSD_H, OSD::zxColor(0, 0));
-    // VIDEO::vga.rect(x + 1, y + 1, OSD_W - 2, OSD_H - 2, OSD::zxColor(7, 0));
 
     VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
     VIDEO::vga.setFont(Font6x8);
@@ -184,7 +180,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
     if (KeytoESP == fabgl::VK_PAUSE) {
         AySound::disable();
-        osdCenteredMsg(OSD_PAUSE, LEVEL_INFO, 0);
+        osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 0);
         while (1) {
             ESPectrum::readKbd(&Nextkey);
             if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
@@ -229,7 +225,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     else if (KeytoESP == fabgl::VK_F6) {
         // Start .tap reproduction
         if (Tape::tapeFileName=="none") {
-            OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
+            OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
         } else {
             Tape::TAP_Play();
         }
@@ -347,7 +343,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 else if (tap_num == 2) {
                     // Start .tap reproduction
                     if (Tape::tapeFileName=="none") {
-                        OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR, LEVEL_WARN);
+                        OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
                     } else {
                         Tape::TAP_Play();
                     }

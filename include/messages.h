@@ -31,21 +31,10 @@
 #define ESPECTRUM_MESSAGES_h
 
 // General
-#define MSG_LOADING "Loading file"
 #define MSG_LOADING_SNA "Loading SNA file"
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
-#define MSG_CHIP_SETUP "Chip setup"
 #define MSG_VGA_INIT "Initializing VGA"
-#define MSG_FREE_HEAP_BEFORE "Free heap before "
-#define MSG_FREE_HEAP_AFTER "Free heap after "
-#define MSG_Z80_RESET "Reseting Z80 CPU"
-#define MSG_EXEC_ON_CORE "Executing on core #"
-#define ULA_ON "ULA ON"
-#define ULA_OFF "ULA OFF"
-
-// WiFi
-#define MSG_WIFI_CONN_BEGIN "Connecting to WiFi"
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -59,11 +48,10 @@
 // OSD
 #define OSD_TITLE  "  ZX-ESPectrum-IDF - powered by ESP32   "
 #define OSD_BOTTOM "      SCIENCE  LEADS  TO  PROGRESS      "
-#define OSD_ON "OSD ON"
-#define OSD_OFF "OSD OFF"
-#define OSD_DEMO_MODE_ON "Demo Mode ON"
-#define OSD_DEMO_MODE_OFF "Demo Mode OFF"
-#define OSD_PAUSE "--=[PAUSED]=--"
+
+#define OSD_PAUSE_EN " --=[PAUSED]=-- "
+#define OSD_PAUSE_ES "--=[EN PAUSA]=--"
+static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 
 #define OSD_PSNA_NOT_AVAIL "No Persist Snapshot Available"
 #define OSD_PSNA_LOADING "Loading Persist Snapshot..."
@@ -73,15 +61,18 @@
 #define OSD_PSNA_LOADED  "  Persist Snapshot Loaded  "
 #define OSD_PSNA_LOAD_ERR "ERROR Loading Persist Snapshot"
 #define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
-
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
-#define OSD_TAPE_SELECT_ERR "Please select TAP file first"
+
+#define OSD_TAPE_SELECT_ERR_EN "Please select TAP file first"
+#define OSD_TAPE_SELECT_ERR_ES "Por favor elija primero un archivo TAP"
+static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
 
 #define MENU_SNA_TITLE_EN "Select Snapshot"
-#define MENU_TAP_TITLE_EN "Select TAP file"
 #define MENU_SNA_TITLE_ES "Elija snapshot"
-#define MENU_TAP_TITLE_ES "Elija fichero TAP"
 static const char *MENU_SNA_TITLE[2] = { MENU_SNA_TITLE_EN,MENU_SNA_TITLE_ES };
+
+#define MENU_TAP_TITLE_EN "Select TAP file"
+#define MENU_TAP_TITLE_ES "Elija fichero TAP"
 static const char *MENU_TAP_TITLE[2] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES };
 
 #define MENU_SNA_EN \

@@ -36,16 +36,6 @@
 class AySound
 {
 public:
-#ifndef USE_AY_SOUND
-    static void initialize() {}
-    static void update() {}
-    static void reset() {}
-    static void disable() {}
-    static void enable() {}
-    static uint8_t getRegisterData() { return 0; }
-    static void selectRegister(uint8_t data) {}
-    static void setRegisterData(uint8_t data) {}
-#else
     static void initialize();
 
     static void update();
@@ -82,7 +72,6 @@ private:
     static uint8_t selectedRegister;
     static uint8_t channelVolume[3];
     static uint16_t channelFrequency[3];
-#endif
 };
 
 #endif // AySound_h

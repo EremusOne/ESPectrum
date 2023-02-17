@@ -386,7 +386,7 @@ if (DrawStatus==TOPBORDER_BLANK) {
         statestoadd = CPU::tstates - tstateDraw;
         tstateDraw += TSTATES_PER_LINE;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        lineptr32 += 4; // Offset for 360x200
+        lineptr32 += 5; // Offset for 360x200
         coldraw_cnt = 0;
         DrawStatus = TOPBORDER;
         video_rest = 0;
@@ -417,7 +417,7 @@ if (DrawStatus==MAINSCREEN_BLANK) {
         statestoadd = CPU::tstates - tstateDraw;
         tstateDraw += TSTATES_PER_LINE;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        lineptr32 += 4;
+        lineptr32 += 5;
         coldraw_cnt = 0;
         video_rest = 0;
         DrawStatus = LineDraw;
@@ -502,7 +502,7 @@ if (DrawStatus==BOTTOMBORDER_BLANK) {
         statestoadd = CPU::tstates - tstateDraw;
         tstateDraw += TSTATES_PER_LINE;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        lineptr32 += 4;
+        lineptr32 += 5;
         coldraw_cnt = 0;
         video_rest = 0;
         DrawStatus = BOTTOMBORDER;

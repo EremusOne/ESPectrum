@@ -263,16 +263,17 @@ void ESPectrum::setup()
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
     xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 4096, NULL, 5, &audioTaskHandle, 1);
 
-    #ifdef USE_AY_SOUND
-    AySound::initialize();
-    // // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(ESP_AUDIO_FREQ);
-    AySound::_channel[1].setSampleRate(ESP_AUDIO_FREQ);
-    AySound::_channel[2].setSampleRate(ESP_AUDIO_FREQ);
-    #endif
-
-    // Set samples per frame depending on arch
-    if (Config::getArch() == "48K") samplesPerFrame=546; else samplesPerFrame=554;
+    if (Config::getArch() == "48K") {
+        // Set samples per frame depending on arch
+        samplesPerFrame=546;
+    } else {
+        AySound::initialize();
+        // // Set AY channels samplerate to match pwm_audio's
+        AySound::_channel[0].setSampleRate(ESP_AUDIO_FREQ);
+        AySound::_channel[1].setSampleRate(ESP_AUDIO_FREQ);
+        AySound::_channel[2].setSampleRate(ESP_AUDIO_FREQ);
+        samplesPerFrame=554;
+    }
 
     // Video sync
     target = CPU::microsPerFrame();
@@ -328,15 +329,16 @@ void ESPectrum::reset()
     lastaudioBit=0;
 
     // Set samples per frame depending on arch
-    if (Config::getArch() == "48K") samplesPerFrame=546; else samplesPerFrame=554;
+    if (Config::getArch() == "48K") {
+        samplesPerFrame=546;
+    } else {
+        // Reset AY emulation
+        AySound::reset();
+        samplesPerFrame=554;
+    }
 
     // Video sync
     target = CPU::microsPerFrame();
-
-    // // Reset AY emulation
-    #ifdef USE_AY_SOUND
-    AySound::reset();
-    #endif
 
     CPU::reset();
 
@@ -396,6 +398,24 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             }
             r = false;
         }    
+        #ifdef DEV_STUFF 
+        else if (Nextkey->vk == fabgl::VK_DEGREE) { // Show mem info
+            // multi_heap_info_t info;
+            // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+            printf("=========================================================================\n");
+            // printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
+            // printf("Minimum free ever: %d\n", info.minimum_free_bytes);
+            // printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
+            // printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+            // printf("=========================================================================\n\n");
+            
+            heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            // heap_caps_dump(MALLOC_CAP_INTERNAL);
+            
+            r = false;
+        }    
+        #endif
+
 
     }
 
@@ -586,22 +606,22 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             // Cursor keys
             #ifdef PS2_ARROWKEYS_AS_CURSOR
 
-                if (KeytoESP == fabgl::VK_UP) {
+                if (KeytoESP == fabgl::VK_KP_DOWN) {
                     bitWrite(Ports::base[4], 3, !Kdown);
                     continue;
                 }
 
-                if (KeytoESP == fabgl::VK_DOWN) {
+                if (KeytoESP == fabgl::VK_KP_UP) {
                     bitWrite(Ports::base[4], 4, !Kdown);
                 continue;
                 }
 
-                if (KeytoESP == fabgl::VK_LEFT) {
+                if (KeytoESP == fabgl::VK_KP_LEFT) {
                     bitWrite(Ports::base[3], 4, !Kdown);
                     continue;
                 }
 
-                if (KeytoESP == fabgl::VK_RIGHT) {
+                if (KeytoESP == fabgl::VK_KP_RIGHT) {
                     bitWrite(Ports::base[4], 2, !Kdown);
                     continue;
                 }
@@ -664,10 +684,10 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             // Kempston joystick
             #ifdef PS2_ARROWKEYS_AS_KEMPSTON
                 Ports::base[0x1f] = 0;
-                bitWrite(Ports::base[0x1f], 0, keyboard->isVKDown(fabgl::VK_RIGHT));
-                bitWrite(Ports::base[0x1f], 1, keyboard->isVKDown(fabgl::VK_LEFT));
-                bitWrite(Ports::base[0x1f], 2, keyboard->isVKDown(fabgl::VK_DOWN));
-                bitWrite(Ports::base[0x1f], 3, keyboard->isVKDown(fabgl::VK_UP));
+                bitWrite(Ports::base[0x1f], 0, keyboard->isVKDown(fabgl::VK_KP_RIGHT));
+                bitWrite(Ports::base[0x1f], 1, keyboard->isVKDown(fabgl::VK_KP_LEFT));
+                bitWrite(Ports::base[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN));
+                bitWrite(Ports::base[0x1f], 3, keyboard->isVKDown(fabgl::VK_KP_UP));
                 bitWrite(Ports::base[0x1f], 4, keyboard->isVKDown(fabgl::VK_RALT));
             #endif // PS2_ARROWKEYS_AS_KEMPSTON    
 
@@ -743,47 +763,68 @@ void ESPectrum::audioFrameEnd() {
 
     // Downsample beeper (median) and mix AY channels to output buffer
     int beeper, aymix, mix;
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
-        // Downsample (median)
-        beeper  =  overSamplebuf[i];
-        beeper +=  overSamplebuf[i+1];
-        beeper +=  overSamplebuf[i+2];
-        beeper +=  overSamplebuf[i+3];
-        beeper +=  overSamplebuf[i+4];
-        beeper +=  overSamplebuf[i+5];
-        beeper +=  overSamplebuf[i+6];
-        beeper +=  overSamplebuf[i+7];
-        #ifdef USE_AY_SOUND
-        // Mix AY Channels
-        aymix = AySound::_channel[0].getSample();
-        aymix += AySound::_channel[1].getSample();
-        aymix += AySound::_channel[2].getSample();
-        // mix must be centered around 0:
-        // aymix is centered (ranges from -128 to 127), but
-        // beeper is not centered (ranges from 0 to 255),
-        // so we need to substract 128 from beeper.
-        mix = ((beeper >> 3) - 128) + (aymix / 3);
-        #else
-        mix = (beeper >> 3) - 128;
-        #endif
-        #ifdef AUDIO_MIX_CLAMP
-        mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
-        #else
-        mix >>= 1;
-        #endif
-        // add 128 to recover original range (0 to 255)
-        mix += 128;
+    
+    if (Config::getArch() == "48K") {
 
-        audioBuffer[buffertofill][i>>3] = mix;
+        for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
+            // Downsample (median)
+            beeper  =  overSamplebuf[i];
+            beeper +=  overSamplebuf[i+1];
+            beeper +=  overSamplebuf[i+2];
+            beeper +=  overSamplebuf[i+3];
+            beeper +=  overSamplebuf[i+4];
+            beeper +=  overSamplebuf[i+5];
+            beeper +=  overSamplebuf[i+6];
+            beeper +=  overSamplebuf[i+7];
+            mix = (beeper >> 3) - 128;
+            #ifdef AUDIO_MIX_CLAMP
+            mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
+            #else
+            mix >>= 1;
+            #endif
+            // add 128 to recover original range (0 to 255)
+            mix += 128;
+            audioBuffer[buffertofill][i>>3] = mix;
+        }
+
+    } else {
+
+        for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
+            // Downsample (median)
+            beeper  =  overSamplebuf[i];
+            beeper +=  overSamplebuf[i+1];
+            beeper +=  overSamplebuf[i+2];
+            beeper +=  overSamplebuf[i+3];
+            beeper +=  overSamplebuf[i+4];
+            beeper +=  overSamplebuf[i+5];
+            beeper +=  overSamplebuf[i+6];
+            beeper +=  overSamplebuf[i+7];
+            // Mix AY Channels
+            aymix = AySound::_channel[0].getSample();
+            aymix += AySound::_channel[1].getSample();
+            aymix += AySound::_channel[2].getSample();
+            // mix must be centered around 0:
+            // aymix is centered (ranges from -128 to 127), but
+            // beeper is not centered (ranges from 0 to 255),
+            // so we need to substract 128 from beeper.
+            mix = ((beeper >> 3) - 128) + (aymix / 3);
+            #ifdef AUDIO_MIX_CLAMP
+            mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
+            #else
+            mix >>= 1;
+            #endif
+            // add 128 to recover original range (0 to 255)
+            mix += 128;
+            audioBuffer[buffertofill][i>>3] = mix;
+        }
+
+        AySound::update();
+
     }
 
     // Swap audio buffers
     buffertofill ^= 1;
     buffertoplay ^= 1;
-
-    #ifdef USE_AY_SOUND
-    AySound::update();
-    #endif
 
 }
 
@@ -839,16 +880,6 @@ for(;;) {
             // printf("[Audio] Volume: %d\n", aud_volume);
             // printf("[Framecnt] %u; [Seconds] %.2f; [FPS] %.2f; [FPS (no delay)] %.2f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
             // printf("[ESPoffset] %d\n", ESPoffset);
-
-            // multi_heap_info_t info;
-
-            // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-            // printf("=========================================================================\n");
-            // printf("Total currently free in all non-continues blocks : %d\n", info.total_free_bytes);
-            // printf("Minimum free ever                                : %d\n", info.minimum_free_bytes);
-            // printf("Largest continues block to allocate big array    : %d\n", info.largest_free_block);
-            // printf("Heap caps get free size                          : %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-            // printf("=========================================================================\n\n");
 
             sprintf((char *)linea1,"CPU: %.5u / IDL: %.5d ", elapsed, idle);
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    

@@ -102,12 +102,10 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
     #endif
     
     // Sound (AY-3-8912)
-    #ifdef USE_AY_SOUND
     if ((portHigh & 0xC0) == 0xC0 && (portLow & 0x02) == 0x00)  // 0xFFFD
     {
         return AySound::getRegisterData();
     }
-    #endif
 
     uint8_t data = port_data;
     data |= (0xe0); // Set bits 5-7 - as reset above
@@ -138,7 +136,6 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
     if ((portLow & 0x02) == 0x00)
     {
         // 128K AY
-        #ifdef USE_AY_SOUND
         if ((portHigh & 0x80) == 0x80)
         {
             if ((portHigh & 0x40) == 0x40)
@@ -146,7 +143,6 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
             else
                 AySound::setRegisterData(data);
         }
-        #endif
 
         // will decode both
         // 128K / +2 Memory Control

@@ -30,8 +30,6 @@
 #include "AySound.h"
 #include "hardconfig.h"
 
-#ifdef USE_AY_SOUND
-
 //static SoundGenerator _soundGenerator;
 
 SquareWaveformGenerator AySound::_channel[3];
@@ -308,5 +306,3 @@ void AySound::reset()
         _channel[channel].setVolume(0);
     }
 }
-
-#endif
