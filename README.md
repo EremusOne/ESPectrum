@@ -1,7 +1,5 @@
 # ZX-ESPectrum-IDF
 
-**IMPORTANT: Putting too much files in the SPIFFS or SD Card dirs could crash the emu right now (RAM issues). A fix for this will be available soon. Right now be careful with the number of files and don't forget THIS IS AN EARLY BETA.**
-
 This is an emulator of the Sinclair ZX Spectrum computer running on a Lilygo TTGo VGA32 board.
 
 Just connect a VGA monitor, a PS/2 keyboard, a SD Card (optional) and power via microUSB.
@@ -63,16 +61,16 @@ Default aspect ratio is 16:9, so if your monitor has this, you don't need to cha
 
 `PlatformIO > Project Tasks > Upload File System Image`
 
-All files under the `/data` subdirectory will be copied to the SPIFFS filesystem partition. Run this task whenever you add any file to the data subdirectory (e.g, adding games in .SNA or .Z80 format, into the `/data/sna` subdirectory).
+All files under the `/data` subdirectory will be copied to the SPIFFS filesystem partition. Run this task whenever you add any file to the data subdirectory (e.g, adding games in .SNA or .Z80 format, into the `/data/s` subdirectory).
 
 #### Using a external micro SD Card and copying games into it
 
 If using external micro sd card, you must create the following folders in root directory:
 
-- "persist" folder -> Will be used for persist snapshots.
-- "sna" folder     -> Put .SNA and .Z80 files here.
-- "tap" folder     -> Put .TAP files here.
-- "scr" folder     -> For SCR (not yet!) and BMP screen captures.
+- "p" folder     -> Will be used for persist snapshots.
+- "s" folder     -> Put .SNA and .Z80 files here.
+- "t" folder     -> Put .TAP files here.
+- "c" folder     -> For SCR (not yet!) and BMP screen captures.
 
 The SD card should be formatted in FAT16 / FAT32.
 
@@ -90,7 +88,7 @@ Pin assignment in `hardpins.h` is set to match the TTGo VGA32, use it as-is, or 
 
 ## OSD Menu
 
-From OSD you can load snapshots (from `/data/sna`) or change ROMs.
+From OSD you can load snapshots (from `/data/s`) or change ROMs.
 
 ## Thanks to
 
