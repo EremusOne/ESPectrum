@@ -846,9 +846,9 @@ static double totalsecondsnodelay = 0;
 uint32_t ts_start, elapsed;
 int32_t idle;
 
-// Testing/Profiling: Start with stats on
-VIDEO::LineDraw = LINEDRAW_FPS;
-VIDEO::BottomDraw = BOTTOMBORDER_FPS;
+// // Testing/Profiling: Start with stats on
+// VIDEO::LineDraw = LINEDRAW_FPS;
+// VIDEO::BottomDraw = BOTTOMBORDER_FPS;
 
 
 for(;;) {
