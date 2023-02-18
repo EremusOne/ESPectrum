@@ -100,6 +100,9 @@ void IRAM_ATTR CPU::loop()
 
             global_tstates += (tstates - pre_tstates); // increase global Tstates
 
+            //
+            // PRELIMINARY TAPE SAVE TEST
+            //            
             // // if PC is 0x970, a call to SA_CONTRL has been made:
             // // remove .tap output file if exists
             // if(Z80::getRegPC() == 0x970) {

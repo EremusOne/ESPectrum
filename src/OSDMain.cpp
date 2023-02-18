@@ -167,7 +167,7 @@ static void persistLoad(uint8_t slotnumber)
     if (!FileSNA::load(FileUtils::MountPoint + persistfname)) {
          OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
     }
-    if (Config::getArch() == "48K") AySound::reset();
+    AySound::reset();
     if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;
     OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
 }

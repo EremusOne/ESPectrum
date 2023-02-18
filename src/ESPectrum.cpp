@@ -259,19 +259,22 @@ void ESPectrum::setup()
 
     if (Config::slog_on) printf("Executing on core: %u\n", xPortGetCoreID());
 
+    // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
     xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 4096, NULL, 5, &audioTaskHandle, 1);
+
+    // AY Sound
+    AySound::initialize();
+    // // Set AY channels samplerate to match pwm_audio's
+    AySound::_channel[0].setSampleRate(ESP_AUDIO_FREQ);
+    AySound::_channel[1].setSampleRate(ESP_AUDIO_FREQ);
+    AySound::_channel[2].setSampleRate(ESP_AUDIO_FREQ);
 
     if (Config::getArch() == "48K") {
         // Set samples per frame depending on arch
         samplesPerFrame=546;
     } else {
-        AySound::initialize();
-        // // Set AY channels samplerate to match pwm_audio's
-        AySound::_channel[0].setSampleRate(ESP_AUDIO_FREQ);
-        AySound::_channel[1].setSampleRate(ESP_AUDIO_FREQ);
-        AySound::_channel[2].setSampleRate(ESP_AUDIO_FREQ);
         samplesPerFrame=554;
     }
 
@@ -329,14 +332,11 @@ void ESPectrum::reset()
     lastaudioBit=0;
 
     // Set samples per frame depending on arch
-    if (Config::getArch() == "48K") {
-        samplesPerFrame=546;
-    } else {
-        // Reset AY emulation
-        AySound::reset();
-        samplesPerFrame=554;
-    }
+    if (Config::getArch() == "48K") samplesPerFrame=546; else samplesPerFrame=554;
 
+    // Reset AY emulation
+    AySound::reset();
+    
     // Video sync
     target = CPU::microsPerFrame();
 
@@ -611,6 +611,11 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                     continue;
                 }
 
+                if (KeytoESP == fabgl::VK_KP_CENTER) {
+                    bitWrite(Ports::base[4], 3, !Kdown);
+                    continue;
+                }
+
                 if (KeytoESP == fabgl::VK_KP_UP) {
                     bitWrite(Ports::base[4], 4, !Kdown);
                 continue;
@@ -686,7 +691,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 Ports::base[0x1f] = 0;
                 bitWrite(Ports::base[0x1f], 0, keyboard->isVKDown(fabgl::VK_KP_RIGHT));
                 bitWrite(Ports::base[0x1f], 1, keyboard->isVKDown(fabgl::VK_KP_LEFT));
-                bitWrite(Ports::base[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN));
+                bitWrite(Ports::base[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN) || keyboard->isVKDown(fabgl::VK_KP_CENTER));
                 bitWrite(Ports::base[0x1f], 3, keyboard->isVKDown(fabgl::VK_KP_UP));
                 bitWrite(Ports::base[0x1f], 4, keyboard->isVKDown(fabgl::VK_RALT));
             #endif // PS2_ARROWKEYS_AS_KEMPSTON    
@@ -841,6 +846,11 @@ static double totalsecondsnodelay = 0;
 uint32_t ts_start, elapsed;
 int32_t idle;
 
+// Testing/Profiling: Start with stats on
+VIDEO::LineDraw = LINEDRAW_FPS;
+VIDEO::BottomDraw = BOTTOMBORDER_FPS;
+
+
 for(;;) {
 
     ts_start = micros();
@@ -854,8 +864,7 @@ for(;;) {
     audioFrameEnd();
 
     // Flashing flag change
-    if (!(VIDEO::flash_ctr & 0x0f)) VIDEO::flashing ^= 0b10000000;
-    VIDEO::flash_ctr++;
+    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
 
     // Draw stats, if activated, every 32 frames
     if (((CPU::framecnt & 31) == 0) && (VIDEO::LineDraw == LINEDRAW_FPS)) OSD::drawStats(linea1,linea2); 
