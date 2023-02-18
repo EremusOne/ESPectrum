@@ -10,6 +10,8 @@ Quick start from PlatformIO:
 - Execute task: Upload
 - Enjoy
 
+You can also flash the binaries directly to the board if do not want to mess with code and compilers. Check the [releases section](https://github.com/EremusOne/ZX-ESPectrum-IDF/releases)
+
 This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote) which is a fork of the [ZX-ESPectrum](https://github.com/rampa069/ZX-ESPectrum) project by Rampa and Queru.
 
 ## Features
@@ -25,7 +27,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Contended I/O emulation.
 - 48K sound: beeper digital output.
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
-- International kbd layout support: US, ES, DE, FR, IT, UK and JP.
+- International kbd layout support: US, ES, DE, FR and UK.
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
@@ -85,10 +87,6 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 ## Hardware configuration and pinout
 
 Pin assignment in `hardpins.h` is set to match the TTGo VGA32, use it as-is, or change it to your own preference. It is already set for the [TTGo version 1.4](http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=1083&FId=t3:50033:3).
-
-## OSD Menu
-
-From OSD you can load snapshots (from `/data/s`) or change ROMs.
 
 ## Thanks to
 
