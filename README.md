@@ -76,6 +76,8 @@ If using external micro sd card, you must create the following folders in root d
 
 The SD card should be formatted in FAT16 / FAT32.
 
+First time the emulator access sna or tape directories, it will create and index for sorting the files in it. It may take some time if you put many archives (15-20 seconds in my tests for about 1000 files). Once created, file dialogs will open fast but if you extract the card and add files, you must later use "Options/Storage/Refresh directories" to be able to view new files on the files dialogs.
+
 #### Compile and flash it
 
 `PlatformIO > Project Tasks > Build `, then
