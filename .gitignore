@@ -2,8 +2,6 @@
 .pio
 .vscode
 .vscode/**
-data/p/**
-data/p/persist.txt
 data/s/**
 !data/s/sppong.sna
 !data/s/fantasy.sna
