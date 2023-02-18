@@ -402,16 +402,13 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
     rc = stat((filedir + "/.d").c_str(), &stat_buf);
     if (rc < 0) {
-        OSD::osdCenteredMsg("No dir file. Please refresh directory first.", LEVEL_WARN);
-        menu_level = 0;
-        return "";
-        // OSD::
-        // printf("No dir file\n");
-        // deallocAluBytes();
-        // int chunks = FileUtils::DirToFile(filedir, extensions); // Prepare dir file
-        // if (chunks) FileUtils::Mergefiles(filedir,chunks); // Merge files        
-        // precalcAluBytes();
-        // rc = stat((filedir + "/.d").c_str(), &stat_buf);
+        deallocAluBytes();
+        OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO);
+        int chunks = FileUtils::DirToFile(filedir, extensions); // Prepare sna filelist
+        if (chunks) FileUtils::Mergefiles(filedir,chunks); // Merge files
+        OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
+        precalcAluBytes();
+        rc = stat((filedir + "/.d").c_str(), &stat_buf);
     }
     
     // Open dir file for read
