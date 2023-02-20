@@ -56,13 +56,13 @@ public:
     static fabgl::PS2Controller PS2Controller;
 
     // Audio
-    static uint8_t audioBuffer[2][ESP_AUDIO_SAMPLES];
+    static uint8_t audioBuffer[ESP_AUDIO_SAMPLES];
     static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES];
     static signed char aud_volume;
-    static int buffertofill;
-    static int buffertoplay;
     static uint32_t audbufcnt;
+    static uint32_t faudbufcnt;    
     static int lastaudioBit;
+    static int faudioBit;
     static void audioFrameStart();
     static void IRAM_ATTR audioGetSample(int Audiobit);
     static void audioFrameEnd();

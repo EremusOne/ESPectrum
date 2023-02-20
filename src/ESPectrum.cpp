@@ -69,13 +69,13 @@ fabgl::PS2Controller PS2Controller;
 //=======================================================================================
 // AUDIO
 //=======================================================================================
-uint8_t ESPectrum::audioBuffer[2][ESP_AUDIO_SAMPLES];
+uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES];
 uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES];
 signed char ESPectrum::aud_volume = -8;
-int ESPectrum::buffertofill=1;
-int ESPectrum::buffertoplay=0;
 uint32_t ESPectrum::audbufcnt = 0;
+uint32_t ESPectrum::faudbufcnt = 0;
 int ESPectrum::lastaudioBit = 0;
+int ESPectrum::faudioBit = 0;
 int ESPectrum::samplesPerFrame = 546; // 48k value
 static QueueHandle_t audioTaskQueue;
 static TaskHandle_t audioTaskHandle;
@@ -322,13 +322,8 @@ void ESPectrum::reset()
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 
-    // Flush audio buffers
-    for (int i=0;i<ESP_AUDIO_SAMPLES;i++) {
-        audioBuffer[0][i]=0;
-        audioBuffer[1][i]=0;
-    }
-    buffertofill=1;
-    buffertoplay=0;
+    // Empty oversample audio buffer
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i]=0;
     lastaudioBit=0;
 
     // Set samples per frame depending on arch
@@ -726,15 +721,86 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pwm_audio_set_volume(aud_volume);
 
     for (;;) {
+
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
-        pwm_audio_write(audioBuffer[buffertoplay], samplesPerFrame, &written, portMAX_DELAY);
+
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);        
+
+        xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
+
+        // // Finish fill of oversampled audio buffer
+        if (faudbufcnt < ESP_AUDIO_OVERSAMPLES) {
+            int signal = faudioBit ? 255: 0;
+            for (int i=faudbufcnt; i < ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i] = signal;
+        }
+
+        // Downsample beeper (median) and mix AY channels to output buffer
+        int beeper, aymix, mix;
+        
+        if (Config::getArch() == "48K") {
+
+            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
+                // Downsample (median)
+                beeper  =  overSamplebuf[i];
+                beeper +=  overSamplebuf[i+1];
+                beeper +=  overSamplebuf[i+2];
+                beeper +=  overSamplebuf[i+3];
+                beeper +=  overSamplebuf[i+4];
+                beeper +=  overSamplebuf[i+5];
+                beeper +=  overSamplebuf[i+6];
+                beeper +=  overSamplebuf[i+7];
+                mix = (beeper >> 3) - 128;
+                #ifdef AUDIO_MIX_CLAMP
+                mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
+                #else
+                mix >>= 1;
+                #endif
+                // add 128 to recover original range (0 to 255)
+                mix += 128;
+                audioBuffer[i>>3] = mix;
+            }
+
+        } else {
+
+            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
+                // Downsample (median)
+                beeper  =  overSamplebuf[i];
+                beeper +=  overSamplebuf[i+1];
+                beeper +=  overSamplebuf[i+2];
+                beeper +=  overSamplebuf[i+3];
+                beeper +=  overSamplebuf[i+4];
+                beeper +=  overSamplebuf[i+5];
+                beeper +=  overSamplebuf[i+6];
+                beeper +=  overSamplebuf[i+7];
+                // Mix AY Channels
+                aymix = AySound::_channel[0].getSample();
+                aymix += AySound::_channel[1].getSample();
+                aymix += AySound::_channel[2].getSample();
+                // mix must be centered around 0:
+                // aymix is centered (ranges from -128 to 127), but
+                // beeper is not centered (ranges from 0 to 255),
+                // so we need to substract 128 from beeper.
+                mix = ((beeper >> 3) - 128) + (aymix / 3);
+                #ifdef AUDIO_MIX_CLAMP
+                mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
+                #else
+                mix >>= 1;
+                #endif
+                // add 128 to recover original range (0 to 255)
+                mix += 128;
+                audioBuffer[i>>3] = mix;
+            }
+
+            AySound::update();
+
+        }
+
     }
 
 }
 
 void ESPectrum::audioFrameStart() {
 
-    // param = (uint8_t *) audioBuffer[buffertoplay];
     xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
     audbufcnt = 0;
@@ -744,7 +810,6 @@ void ESPectrum::audioFrameStart() {
 void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
 
     if (Audiobit != lastaudioBit) {
-
         // Audio buffer generation (oversample)
         uint32_t audbufpos = CPU::tstates >> 4;
         int signal = lastaudioBit ? 255: 0;
@@ -752,84 +817,16 @@ void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
             overSamplebuf[i] = signal;
         }
         audbufcnt = audbufpos;
-
         lastaudioBit = Audiobit;
     }
 
 }
 
 void ESPectrum::audioFrameEnd() {
-
-    // // Finish fill of oversampled audio buffer
-    if (audbufcnt < ESP_AUDIO_OVERSAMPLES) {
-        int signal = lastaudioBit ? 255: 0;
-        for (int i=audbufcnt; i < ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i] = signal;
-    }
-
-    // Downsample beeper (median) and mix AY channels to output buffer
-    int beeper, aymix, mix;
     
-    if (Config::getArch() == "48K") {
-
-        for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
-            // Downsample (median)
-            beeper  =  overSamplebuf[i];
-            beeper +=  overSamplebuf[i+1];
-            beeper +=  overSamplebuf[i+2];
-            beeper +=  overSamplebuf[i+3];
-            beeper +=  overSamplebuf[i+4];
-            beeper +=  overSamplebuf[i+5];
-            beeper +=  overSamplebuf[i+6];
-            beeper +=  overSamplebuf[i+7];
-            mix = (beeper >> 3) - 128;
-            #ifdef AUDIO_MIX_CLAMP
-            mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
-            #else
-            mix >>= 1;
-            #endif
-            // add 128 to recover original range (0 to 255)
-            mix += 128;
-            audioBuffer[buffertofill][i>>3] = mix;
-        }
-
-    } else {
-
-        for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
-            // Downsample (median)
-            beeper  =  overSamplebuf[i];
-            beeper +=  overSamplebuf[i+1];
-            beeper +=  overSamplebuf[i+2];
-            beeper +=  overSamplebuf[i+3];
-            beeper +=  overSamplebuf[i+4];
-            beeper +=  overSamplebuf[i+5];
-            beeper +=  overSamplebuf[i+6];
-            beeper +=  overSamplebuf[i+7];
-            // Mix AY Channels
-            aymix = AySound::_channel[0].getSample();
-            aymix += AySound::_channel[1].getSample();
-            aymix += AySound::_channel[2].getSample();
-            // mix must be centered around 0:
-            // aymix is centered (ranges from -128 to 127), but
-            // beeper is not centered (ranges from 0 to 255),
-            // so we need to substract 128 from beeper.
-            mix = ((beeper >> 3) - 128) + (aymix / 3);
-            #ifdef AUDIO_MIX_CLAMP
-            mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
-            #else
-            mix >>= 1;
-            #endif
-            // add 128 to recover original range (0 to 255)
-            mix += 128;
-            audioBuffer[buffertofill][i>>3] = mix;
-        }
-
-        AySound::update();
-
-    }
-
-    // Swap audio buffers
-    buffertofill ^= 1;
-    buffertoplay ^= 1;
+    faudbufcnt = audbufcnt;
+    faudioBit = lastaudioBit;
+    xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
 }
 
