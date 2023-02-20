@@ -120,13 +120,15 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Storage\t>\n"\
     "ROM\t>\n"\
     "Aspect ratio\t>\n"\
-    "Language\t>\n"    
+    "Language\t>\n"\
+    "Other\t>\n"
 #define MENU_OPTIONS_ES \
     "Menu opciones\n"\
     "Almacenamiento\t>\n"\
     "ROM\t>\n"\
     "Rel. aspecto\t>\n"\
-    "Idioma\t>\n"    
+    "Idioma\t>\n"\
+    "Otros\t>\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
 
 #define MENU_ASPECT_EN \
@@ -184,6 +186,20 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
     "Tarjeta SD\t[S]\n"\
     "Refrescar directorios\n"
 static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+
+#define MENU_OTHER_EN "Other\n"\
+    "AY sound on 48K\t>\n"
+#define MENU_OTHER_ES "Otros\n"\
+    "Sonido AY en 48K\t>\n"
+static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
+
+#define MENU_AY48_EN "AY Sound on 48K\n"\
+    "Yes\t[Y]\n"\
+    "No\t[N]\n"
+#define MENU_AY48_ES "Sonido AY en 48K\n"\
+    "Si\t[Y]\n"\
+    "No\t[N]\n"
+static const char *MENU_AY48[2] = { MENU_AY48_EN, MENU_AY48_ES };
 
 #define MENU_ARCH_EN "Select arch.\n"\
     "48K\t>\n"\

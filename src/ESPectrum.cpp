@@ -80,6 +80,7 @@ int ESPectrum::samplesPerFrame = 546; // 48k value
 static QueueHandle_t audioTaskQueue;
 static TaskHandle_t audioTaskHandle;
 static uint8_t *param;
+bool ESPectrum::AY_emu = false;
 
 //=======================================================================================
 // ARDUINO FUNCTIONS
@@ -271,11 +272,13 @@ void ESPectrum::setup()
     AySound::_channel[1].setSampleRate(ESP_AUDIO_FREQ);
     AySound::_channel[2].setSampleRate(ESP_AUDIO_FREQ);
 
+    // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
-        // Set samples per frame depending on arch
-        samplesPerFrame=546;
+        samplesPerFrame=546; 
+        AY_emu = Config::AY48;
     } else {
         samplesPerFrame=554;
+        AY_emu = true;        
     }
 
     // Video sync
@@ -326,8 +329,14 @@ void ESPectrum::reset()
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i]=0;
     lastaudioBit=0;
 
-    // Set samples per frame depending on arch
-    if (Config::getArch() == "48K") samplesPerFrame=546; else samplesPerFrame=554;
+    // Set samples per frame and AY_emu flag depending on arch
+    if (Config::getArch() == "48K") {
+        samplesPerFrame=546; 
+        AY_emu = Config::AY48;
+    } else {
+        samplesPerFrame=554;
+        AY_emu = true;        
+    }
 
     // Reset AY emulation
     AySound::reset();
@@ -356,8 +365,8 @@ void ESPectrum::loadRom(string arch, string romset) {
             if (romset.find(gb_list_roms_128k_title[i]) != string::npos) {
                 MemESP::rom[0] = (uint8_t *) gb_list_roms_128k_data[i][0];
                 MemESP::rom[1] = (uint8_t *) gb_list_roms_128k_data[i][1];
-                // MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
-                // MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
+                MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
+                MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
                 break;
             }
         }
@@ -379,20 +388,6 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             CaptureToBmp();
             r = false;
         }
-        else if (Nextkey->vk == fabgl::VK_F9) { // Volume down
-            if (ESPectrum::aud_volume>-16) {
-                    ESPectrum::aud_volume--;
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
-            }
-            r = false;
-        }
-        else if (Nextkey->vk == fabgl::VK_F10) { // Volume up
-            if (ESPectrum::aud_volume<0) {
-                    ESPectrum::aud_volume++;
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
-            }
-            r = false;
-        }    
         #ifdef DEV_STUFF 
         else if (Nextkey->vk == fabgl::VK_DEGREE) { // Show mem info
             // multi_heap_info_t info;
@@ -410,8 +405,6 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             r = false;
         }    
         #endif
-
-
     }
 
     return r;
@@ -737,30 +730,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         // Downsample beeper (median) and mix AY channels to output buffer
         int beeper, aymix, mix;
         
-        if (Config::getArch() == "48K") {
-
-            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
-                // Downsample (median)
-                beeper  =  overSamplebuf[i];
-                beeper +=  overSamplebuf[i+1];
-                beeper +=  overSamplebuf[i+2];
-                beeper +=  overSamplebuf[i+3];
-                beeper +=  overSamplebuf[i+4];
-                beeper +=  overSamplebuf[i+5];
-                beeper +=  overSamplebuf[i+6];
-                beeper +=  overSamplebuf[i+7];
-                mix = (beeper >> 3) - 128;
-                #ifdef AUDIO_MIX_CLAMP
-                mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
-                #else
-                mix >>= 1;
-                #endif
-                // add 128 to recover original range (0 to 255)
-                mix += 128;
-                audioBuffer[i>>3] = mix;
-            }
-
-        } else {
+        if (AY_emu) {
 
             for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
                 // Downsample (median)
@@ -792,6 +762,29 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
             }
 
             AySound::update();
+
+        } else {
+
+            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
+                // Downsample (median)
+                beeper  =  overSamplebuf[i];
+                beeper +=  overSamplebuf[i+1];
+                beeper +=  overSamplebuf[i+2];
+                beeper +=  overSamplebuf[i+3];
+                beeper +=  overSamplebuf[i+4];
+                beeper +=  overSamplebuf[i+5];
+                beeper +=  overSamplebuf[i+6];
+                beeper +=  overSamplebuf[i+7];
+                mix = (beeper >> 3) - 128;
+                #ifdef AUDIO_MIX_CLAMP
+                mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
+                #else
+                mix >>= 1;
+                #endif
+                // add 128 to recover original range (0 to 255)
+                mix += 128;
+                audioBuffer[i>>3] = mix;
+            }
 
         }
 

@@ -49,6 +49,7 @@ bool     Config::aspect_16_9 = true;
 uint8_t  Config::esp32rev = 0;
 string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
+bool     Config::AY48 = false;
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -93,7 +94,7 @@ void Config::load() {
     while(fgets(buf, sizeof(buf), f) != NULL)
     {
         string line = buf;
-        // printf(line.c_str());
+        printf(line.c_str());
         if (line.find("ram:") != string::npos) {
             ram_file = line.substr(line.find(':') + 1);
             erase_cntrl(ram_file);
@@ -133,7 +134,12 @@ void Config::load() {
             erase_cntrl(slang);
             trim(slang);
             Config::lang = stoi(slang);
-        }
+        } else if (line.find("AY48:") != string::npos) {
+            line = line.substr(line.find(':') + 1);
+            erase_cntrl(line);
+            trim(line);
+            AY48 = (line == "true");
+        } 
 
     }
     fclose(f);
@@ -250,6 +256,9 @@ void Config::save() {
     // Language
     //printf("language:%s\n",std::to_string(Config::lang).c_str());
     fputs(("language:" + std::to_string(Config::lang) + "\n").c_str(),f);
+
+    // AY emulation on 48K mode
+    fputs(AY48 ? "AY48:true\n" : "AY48:false\n",f);
 
     fclose(f);
     

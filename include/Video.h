@@ -82,6 +82,8 @@ public:
     // Video draw function (4:3)
     static void IRAM_ATTR Draw_43(unsigned int statestoadd);
 
+    static void IRAM_ATTR TopBorder_Blank();
+
     // Video draw function (4:3 fast) No multicolour effects, no border effects
     // static void IRAM_ATTR Draw_43_fast(unsigned int statestoadd);
 
@@ -92,6 +94,7 @@ public:
     static void Flush();
 
     static void (*Draw)(unsigned int);
+    static void (*DrawCur)();
 
     static VGA6Bit vga;
 

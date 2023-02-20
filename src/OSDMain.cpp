@@ -244,27 +244,23 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             VIDEO::BottomDraw = BOTTOMBORDER;
         }    
     }
+    else if (KeytoESP == fabgl::VK_F9) { // Volume down
+        if (ESPectrum::aud_volume>-16) {
+                ESPectrum::aud_volume--;
+                pwm_audio_set_volume(ESPectrum::aud_volume);
+        }
+    }
+    else if (KeytoESP == fabgl::VK_F10) { // Volume up
+        if (ESPectrum::aud_volume<0) {
+                ESPectrum::aud_volume++;
+                pwm_audio_set_volume(ESPectrum::aud_volume);
+        }
+    }    
     // else if (KeytoESP == fabgl::VK_F9) {
-
-    //     OSD::osdCenteredMsg("Refresh snapshot dir", LEVEL_INFO);
-    //     deallocAluBytes();
-    //     int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_SNA_DIR, ".sna.SNA.z80.Z80"); // Prepare sna filelist
-    //     if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_SNA_DIR,chunks); // Merge files
-    //     precalcAluBytes();
-
     //     // ESPectrum::ESPoffset = ESPectrum::ESPoffset >> 1;
-
     // }
     // else if (KeytoESP == fabgl::VK_F10) {
-
-    //     OSD::osdCenteredMsg("Refresh tape dir", LEVEL_INFO);
-    //     deallocAluBytes();
-    //     int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_TAP_DIR, ".tap.TAP"); // Prepare tap filelist
-    //     if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_TAP_DIR,chunks); // Merge files
-    //     precalcAluBytes();
-
     //     // ESPectrum::ESPoffset = ESPectrum::ESPoffset << 1;
-
     // }
     else if (KeytoESP == fabgl::VK_F12) {
         
@@ -295,6 +291,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             
     // }
     else if (KeytoESP == fabgl::VK_F1) {
+
         AySound::disable();
 
         // Main menu
@@ -527,6 +524,35 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         }
                     }
                 }
+                else if (options_num == 5) {
+                    // Other
+                    uint8_t options_num = menuRun(MENU_OTHER[Config::lang]);
+                    if (options_num > 0) {
+                        if (options_num == 1) {
+                            string ay_menu = MENU_AY48[Config::lang];
+                            bool prev_ay48 = Config::AY48;
+                            if (prev_ay48) {
+                                ay_menu.replace(ay_menu.find("[Y",0),2,"[*");
+                                ay_menu.replace(ay_menu.find("[N",0),2,"[ ");                        
+                            } else {
+                                ay_menu.replace(ay_menu.find("[Y",0),2,"[ ");
+                                ay_menu.replace(ay_menu.find("[N",0),2,"[*");                        
+                            }
+                            uint8_t opt2 = menuRun(ay_menu);
+                            if (opt2) {
+                                if (opt2 == 1)
+                                    Config::AY48 = true;
+                                else
+                                    Config::AY48 = false;
+
+                                if (Config::AY48 != prev_ay48) {
+                                    Config::save();
+                                }
+                            }
+                        }
+                    }
+                }
+
             }
         }
         else if (opt == 5) {

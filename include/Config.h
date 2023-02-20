@@ -53,6 +53,7 @@ public:
     static bool     aspect_16_9;
     static string   kbd_layout;
     static uint8_t  lang;
+    static bool     AY48;
 
     // config persistence
     static void load();

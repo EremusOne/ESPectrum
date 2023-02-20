@@ -67,6 +67,7 @@ public:
     static void IRAM_ATTR audioGetSample(int Audiobit);
     static void audioFrameEnd();
     static int samplesPerFrame;
+    static bool AY_emu;
 
     static int ESPoffset; // Testing
     

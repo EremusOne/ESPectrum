@@ -50,6 +50,7 @@ uint8_t VIDEO::flashing = 0;
 uint8_t VIDEO::flash_ctr= 0;
 
 void (*VIDEO::Draw)(unsigned int) = &VIDEO::Draw_43;
+void (*VIDEO::DrawCur)() = &VIDEO::TopBorder_Blank;
 
 void precalcColors() {
 
@@ -213,6 +214,21 @@ void VIDEO::Reset() {
 ///////////////////////////////////////////////////////////////////////////////
 //  VIDEO DRAW FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
+
+void IRAM_ATTR VIDEO::TopBorder_Blank() {
+
+    unsigned int statestoadd;
+
+    if (CPU::tstates > tstateDraw) {
+        statestoadd = CPU::tstates - tstateDraw;
+        tstateDraw += TSTATES_PER_LINE;
+        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+        coldraw_cnt = 0;
+        video_rest = 0;
+        DrawCur = &TopBorder_Blank;        
+    }
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Draw_43 -> Multicolour and Border effects support
