@@ -1,7 +1,5 @@
 # ZX-ESPectrum-IDF
 
-**IMPORTANT: Putting too much files in the SPIFFS or SD Card dirs could crash the emu right now (RAM issues). A fix for this will be available soon. Right now be careful with the number of files and don't forget THIS IS AN EARLY BETA.**
-
 This is an emulator of the Sinclair ZX Spectrum computer running on a Lilygo TTGo VGA32 board.
 
 Just connect a VGA monitor, a PS/2 keyboard, a SD Card (optional) and power via microUSB.
@@ -11,6 +9,8 @@ Quick start from PlatformIO:
 - Execute task: Upload File System Image
 - Execute task: Upload
 - Enjoy
+
+You can also flash the binaries directly to the board if do not want to mess with code and compilers. Check the [releases section](https://github.com/EremusOne/ZX-ESPectrum-IDF/releases)
 
 This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote) which is a fork of the [ZX-ESPectrum](https://github.com/rampa069/ZX-ESPectrum) project by Rampa and Queru.
 
@@ -27,7 +27,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Contended I/O emulation.
 - 48K sound: beeper digital output.
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
-- International kbd layout support: US, ES, DE, FR, IT, UK and JP.
+- International kbd layout support: US, ES, DE, FR and UK.
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
@@ -63,18 +63,20 @@ Default aspect ratio is 16:9, so if your monitor has this, you don't need to cha
 
 `PlatformIO > Project Tasks > Upload File System Image`
 
-All files under the `/data` subdirectory will be copied to the SPIFFS filesystem partition. Run this task whenever you add any file to the data subdirectory (e.g, adding games in .SNA or .Z80 format, into the `/data/sna` subdirectory).
+All files under the `/data` subdirectory will be copied to the SPIFFS filesystem partition. Run this task whenever you add any file to the data subdirectory (e.g, adding games in .SNA or .Z80 format, into the `/data/s` subdirectory).
 
 #### Using a external micro SD Card and copying games into it
 
 If using external micro sd card, you must create the following folders in root directory:
 
-- "persist" folder -> Will be used for persist snapshots.
-- "sna" folder     -> Put .SNA and .Z80 files here.
-- "tap" folder     -> Put .TAP files here.
-- "scr" folder     -> For SCR (not yet!) and BMP screen captures.
+- "p" folder     -> Will be used for persist snapshots.
+- "s" folder     -> Put .SNA and .Z80 files here.
+- "t" folder     -> Put .TAP files here.
+- "c" folder     -> For SCR (not yet!) and BMP screen captures.
 
 The SD card should be formatted in FAT16 / FAT32.
+
+First time the emulator access sna or tape directories, it will create and index for sorting the files in it. It may take some time if you put many archives (15-20 seconds in my tests for about 1000 files, about 3 minutes for about 6000 files). Once created, file dialogs will open fast but if you extract the card and add files, you must later use "Options/Storage/Refresh directories" to be able to view new files on the files dialogs.
 
 #### Compile and flash it
 
@@ -87,10 +89,6 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 ## Hardware configuration and pinout
 
 Pin assignment in `hardpins.h` is set to match the TTGo VGA32, use it as-is, or change it to your own preference. It is already set for the [TTGo version 1.4](http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=1083&FId=t3:50033:3).
-
-## OSD Menu
-
-From OSD you can load snapshots (from `/data/sna`) or change ROMs.
 
 ## Thanks to
 
