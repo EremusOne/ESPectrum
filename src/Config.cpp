@@ -94,7 +94,7 @@ void Config::load() {
     while(fgets(buf, sizeof(buf), f) != NULL)
     {
         string line = buf;
-        printf(line.c_str());
+        // printf(line.c_str());
         if (line.find("ram:") != string::npos) {
             ram_file = line.substr(line.find(':') + 1);
             erase_cntrl(ram_file);

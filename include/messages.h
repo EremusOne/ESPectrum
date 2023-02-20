@@ -188,15 +188,15 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
 static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
 #define MENU_OTHER_EN "Other\n"\
-    "AY sound on 48K\t>\n"
+    "AY on 48K\t>\n"
 #define MENU_OTHER_ES "Otros\n"\
-    "Sonido AY en 48K\t>\n"
+    "AY en 48K\t>\n"
 static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
 
-#define MENU_AY48_EN "AY Sound on 48K\n"\
+#define MENU_AY48_EN "AY on 48K\n"\
     "Yes\t[Y]\n"\
     "No\t[N]\n"
-#define MENU_AY48_ES "Sonido AY en 48K\n"\
+#define MENU_AY48_ES "AY en 48K\n"\
     "Si\t[Y]\n"\
     "No\t[N]\n"
 static const char *MENU_AY48[2] = { MENU_AY48_EN, MENU_AY48_ES };
