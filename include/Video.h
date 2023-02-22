@@ -45,29 +45,26 @@
 
 // TO DO: Defines per arch (48, 128, etc..)
 #define TSTATES_PER_LINE 224
+#define TSTATES_PER_LINE_128 228
 
-#define TS_PHASE_1_320x240 8944  //  8960 - 16 =  8944 -> START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 40
-#define TS_PHASE_2_320x240 14320 // 14336 - 16 = 14320 -> START OF LEFT BORDER OF TOP LEFT CORNER OF MAINSCREEN, SCANLINE 64
-#define TS_PHASE_3_320x240 57328 // 57344 - 16 = 57328 -> START OF BOTTOM BORDER, SCANLINE 256
+#define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 40, -16 FROM BORDER
 
-#define TS_PHASE_1_360x200 13424 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 60
-#define TS_PHASE_2_360x200 14320 // START OF LEFT BORDER OF TOP LEFT CORNER OF MAINSCREEN, SCANLINE 64
-#define TS_PHASE_3_360x200 57328 // START OF BOTTOM BORDER, SCANLINE 256
+#define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 60, -16 FROM BORDER
 
-// DrawStatus values
-#define TOPBORDER_BLANK 0
-#define TOPBORDER 1
-#define MAINSCREEN_BLANK 2
-#define LEFTBORDER 3
-#define LINEDRAW_SYNC 4
-#define LINEDRAW 5
-#define LINEDRAW_FPS 6
-#define RIGHTBORDER 7
-#define RIGHTBORDER_FPS 8
-#define BOTTOMBORDER_BLANK 9
-#define BOTTOMBORDER 10
-#define BOTTOMBORDER_FPS 11
-#define BLANK 12
+// // DrawStatus values
+// #define TOPBORDER_BLANK 0
+// #define TOPBORDER 1
+// #define MAINSCREEN_BLANK 2
+// #define LEFTBORDER 3
+// #define LINEDRAW_SYNC 4
+// #define LINEDRAW 5
+// #define LINEDRAW_FPS 6
+// #define RIGHTBORDER 7
+// #define RIGHTBORDER_FPS 8
+// #define BOTTOMBORDER_BLANK 9
+// #define BOTTOMBORDER 10
+// #define BOTTOMBORDER_FPS 11
+// #define BLANK 12
 
 class VIDEO
 {
@@ -79,33 +76,37 @@ public:
     // Reset video
     static void Reset();
 
-    // Video draw function (4:3)
-    static void IRAM_ATTR Draw_43(unsigned int statestoadd);
-
-    static void IRAM_ATTR TopBorder_Blank();
-
-    // Video draw function (4:3 fast) No multicolour effects, no border effects
-    // static void IRAM_ATTR Draw_43_fast(unsigned int statestoadd);
-
-    // Video draw function (16:9) No border effects support (only 4 pixels of up & down border)
-    static void IRAM_ATTR Draw_169(unsigned int statestoadd);
-    
-    // For flushing video buffer as fast as possible after HALT
-    static void Flush();
+    // Video draw functions
+    static void IRAM_ATTR TopBorder_Blank(unsigned int statestoadd);
+    static void IRAM_ATTR TopBorder(unsigned int statestoadd);
+    static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd);
+    static void IRAM_ATTR MainScreen(unsigned int statestoadd);
+    static void IRAM_ATTR MainScreen_OSD(unsigned int statestoadd);
+    static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd);
+    static void IRAM_ATTR BottomBorder(unsigned int statestoadd);
+    static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd);    
+    static void IRAM_ATTR Blank(unsigned int statestoadd);
+    static void IRAM_ATTR NoVideo(unsigned int statestoadd);
 
     static void (*Draw)(unsigned int);
-    static void (*DrawCur)();
+    static void (*DrawOSD43)(unsigned int);
+    static void (*DrawOSD169)(unsigned int);
+
+    // For flushing video buffer as fast as possible after HALT
+    static void Flush();
 
     static VGA6Bit vga;
 
     static uint8_t borderColor;
     static unsigned lastBorder[312];
 
-    static uint8_t LineDraw;
-    static uint8_t BottomDraw;
+    // static uint8_t LineDraw;
+    // static uint8_t BottomDraw;
 
     static uint8_t flashing;
     static uint8_t flash_ctr;
+
+    static bool OSD;
 
 };
 

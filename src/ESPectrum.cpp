@@ -857,7 +857,7 @@ for(;;) {
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
 
     // Draw stats, if activated, every 32 frames
-    if (((CPU::framecnt & 31) == 0) && (VIDEO::LineDraw == LINEDRAW_FPS)) OSD::drawStats(linea1,linea2); 
+    if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
 
     elapsed = micros() - ts_start;
     

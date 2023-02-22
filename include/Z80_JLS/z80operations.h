@@ -44,9 +44,6 @@ public:
     /* Callback to know when the INT signal is active */
     static bool IRAM_ATTR isActiveINT(void);
 
-    /* Add tStates and do ALU_video and audio buffer capture */
-    static void IRAM_ATTR addTstates(int32_t tstatestoadd, bool dovideo);
-
     /* Signal HALT in tstates */
     static void IRAM_ATTR signalHalt();
 

@@ -43,59 +43,22 @@
 
 VGA6Bit VIDEO::vga;
 uint8_t VIDEO::borderColor = 0;
-uint8_t VIDEO::LineDraw = LINEDRAW;
-uint8_t VIDEO::BottomDraw = BOTTOMBORDER;
+// uint8_t VIDEO::LineDraw = LINEDRAW;
+// uint8_t VIDEO::BottomDraw = BOTTOMBORDER;
 unsigned int VIDEO::lastBorder[312] = { 0 };
 uint8_t VIDEO::flashing = 0;
 uint8_t VIDEO::flash_ctr= 0;
+bool VIDEO::OSD = false;
 
-void (*VIDEO::Draw)(unsigned int) = &VIDEO::Draw_43;
-void (*VIDEO::DrawCur)() = &VIDEO::TopBorder_Blank;
+// void (*VIDEO::Draw)(unsigned int) = &VIDEO::Draw_43;
+void (*VIDEO::Draw)(unsigned int) = &VIDEO::Blank;
+void (*VIDEO::DrawOSD43)(unsigned int) = &VIDEO::BottomBorder;
+void (*VIDEO::DrawOSD169)(unsigned int) = &VIDEO::MainScreen;
 
 void precalcColors() {
-
-//    uint16_t specfast_colors[128]; // Array for faster color calc in Draw
-
-//    unsigned int pal[2],b0,b1,b2,b3;
-
     for (int i = 0; i < NUM_SPECTRUM_COLORS; i++) {
         spectrum_colors[i] = (spectrum_colors[i] & VIDEO::vga.RGBAXMask) | VIDEO::vga.SBits;
     }
-
-    // // Calc array for faster color calcs in Draw
-    // for (int i = 0; i < (NUM_SPECTRUM_COLORS >> 1); i++) {
-    //     // Normal
-    //     specfast_colors[i] = spectrum_colors[i];
-    //     specfast_colors[i << 3] = spectrum_colors[i];
-    //     // Bright
-    //     specfast_colors[i | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
-    //     specfast_colors[(i << 3) | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
-    // }
-
-    // // Calc ULA bytes
-    // AluBytes = new uint32_t*[16];
-    // for (int i = 0; i < 16; i++) {
-    //     AluBytes[i] = new uint32_t[256];
-    // }
-
-    // // deallocate memory using the delete operator
-    // for (int i = 0; i < 16; i++) {
-    //     delete[] AluBytes[i];
-    // }
-    // delete[] AluBytes;
-
-    // for (int i = 0; i < 16; i++) {
-    //     for (int n = 0; n < 256; n++) {
-    //         pal[0] = specfast_colors[n & 0x78];
-    //         pal[1] = specfast_colors[n & 0x47];
-    //         b0 = pal[(i >> 3) & 0x01];
-    //         b1 = pal[(i >> 2) & 0x01];
-    //         b2 = pal[(i >> 1) & 0x01];
-    //         b3 = pal[i & 0x01];
-    //         AluBytes[i][n]=b2 | (b3<<8) | (b0<<16) | (b1<<24);
-    //     }
-    // }    
-
 }
 
 void precalcAluBytes() {
@@ -192,9 +155,7 @@ void VIDEO::Init() {
 
     is169 = Config::aspect_16_9 ? 1 : 0;
 
-    DrawStatus = BLANK;
-
-    Draw = is169 ? &Draw_169 : &Draw_43;
+    Draw = &Blank;
 
 }
 
@@ -204,10 +165,8 @@ void VIDEO::Reset() {
     borderColor = 7;
 
     is169 = Config::aspect_16_9 ? 1 : 0;
-
-    DrawStatus = BLANK;
-
-    Draw = is169 ? &Draw_169 : &Draw_43;
+    
+    Draw = &Blank;
 
 }
 
@@ -215,45 +174,30 @@ void VIDEO::Reset() {
 //  VIDEO DRAW FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
-void IRAM_ATTR VIDEO::TopBorder_Blank() {
+void IRAM_ATTR VIDEO::NoVideo(unsigned int statestoadd) {
+   CPU::tstates += statestoadd;
+}
 
-    unsigned int statestoadd;
+void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd) {
+
+    CPU::tstates += statestoadd;
 
     if (CPU::tstates > tstateDraw) {
-        statestoadd = CPU::tstates - tstateDraw;
+        video_rest = CPU::tstates - tstateDraw;
         tstateDraw += TSTATES_PER_LINE;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+        if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
-        video_rest = 0;
-        DrawCur = &TopBorder_Blank;        
+        Draw = &TopBorder;
+        Draw(0);
     }
 
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Draw_43 -> Multicolour and Border effects support
-// 4:3 (320x240)
-///////////////////////////////////////////////////////////////////////////////
-void IRAM_ATTR VIDEO::Draw_43(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd) {
 
-uint8_t att, bmp;
+    CPU::tstates += statestoadd;
 
-CPU::tstates += statestoadd;
-
-#ifndef NO_VIDEO
-
-if (DrawStatus==TOPBORDER_BLANK) {
-    if (CPU::tstates > tstateDraw) {
-        statestoadd = CPU::tstates - tstateDraw;
-        tstateDraw += TSTATES_PER_LINE;
-        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        coldraw_cnt = 0;
-        DrawStatus = TOPBORDER;
-        video_rest = 0;
-    } else return;
-}
-
-if (DrawStatus==TOPBORDER) {
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
     brd = border32[borderColor];
@@ -261,32 +205,37 @@ if (DrawStatus==TOPBORDER) {
         *lineptr32++ = brd;
         *lineptr32++ = brd;
         if (++coldraw_cnt == 40) {
-            DrawStatus = TOPBORDER_BLANK;
-            if (++linedraw_cnt == 24) {
-                DrawStatus = MAINSCREEN_BLANK;
-                tstateDraw=TS_PHASE_2_320x240;
-            }
+            Draw = ++linedraw_cnt == (is169 ? 4 : 24) ? &MainScreen_Blank : &TopBorder_Blank;
             return;
         }
     }
-    return;
+
 }
 
-if (DrawStatus==MAINSCREEN_BLANK) {
+void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd) {
+    
+    CPU::tstates += statestoadd;
+
     if (CPU::tstates > tstateDraw) {
-        statestoadd = CPU::tstates - tstateDraw;
+        video_rest = CPU::tstates - tstateDraw;
         tstateDraw += TSTATES_PER_LINE;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+        if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
-        video_rest = 0;
-        DrawStatus = LINEDRAW;
-        bmpOffset = offBmp[linedraw_cnt-24];
-        attOffset = offAtt[linedraw_cnt-24];
+        bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
+        attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24)];
         grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-    } else return;
+        Draw = DrawOSD169;
+        Draw(0);
+    }
+
 }    
 
-if (DrawStatus==LINEDRAW) {
+void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd) {
+
+    uint8_t att, bmp;
+
+    CPU::tstates += statestoadd;
 
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
@@ -312,169 +261,20 @@ if (DrawStatus==LINEDRAW) {
         }
 
         if (++coldraw_cnt == 40) {      
-            if (++linedraw_cnt == 216 ) {
-                DrawStatus = BOTTOMBORDER_BLANK;
-                tstateDraw = TS_PHASE_3_320x240;
-            } else DrawStatus = MAINSCREEN_BLANK;
+            Draw = ++linedraw_cnt == (is169 ? 196 : 216) ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
         }
 
     }
-    return;
-}
-
-if (DrawStatus==BOTTOMBORDER_BLANK) {
-    if (CPU::tstates > tstateDraw) {
-        statestoadd = CPU::tstates - tstateDraw;
-        tstateDraw += TSTATES_PER_LINE;
-        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        coldraw_cnt = 0;
-        video_rest = 0;
-        DrawStatus = BottomDraw;
-    } else return;
-}
-
-if (DrawStatus==BOTTOMBORDER) {
-    statestoadd += video_rest;
-    video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
-    for (int i=0; i < (statestoadd >> 2); i++) {    
-        *lineptr32++ = brd;
-        *lineptr32++ = brd;
-        if (++coldraw_cnt == 40) {
-            if (++linedraw_cnt == 240) DrawStatus = BLANK; else DrawStatus = BOTTOMBORDER_BLANK;
-            return;
-        }
-    }
-    return;
-}
-
-if (DrawStatus==BOTTOMBORDER_FPS) {
-    statestoadd += video_rest;
-    video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
-    for (int i=0; i < (statestoadd >> 2); i++) {    
-        
-        if ((linedraw_cnt<220) || (linedraw_cnt>235)) {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        } else {
-            if ((coldraw_cnt<21) || (coldraw_cnt>38)) {
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
-            } else lineptr32+=2;
-        }
-        
-        if (++coldraw_cnt == 40) {
-            if (++linedraw_cnt == 240) DrawStatus = BLANK; else DrawStatus = BOTTOMBORDER_BLANK;
-            return;
-        }
-    }
-    return;
-}
-
-if (DrawStatus==BLANK) {
-    if (CPU::tstates < TSTATES_PER_LINE) {
-        linedraw_cnt = 0;
-        tstateDraw = TS_PHASE_1_320x240;
-        DrawStatus = TOPBORDER_BLANK;
-    }
-}
-
-#endif
 
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Draw_169 -> Multicolour and Border effects support
-// 16:9 (360x200)
-///////////////////////////////////////////////////////////////////////////////
-void IRAM_ATTR VIDEO::Draw_169(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd) {
 
-uint8_t att, bmp;
+    uint8_t att, bmp;
 
-CPU::tstates += statestoadd;
+    CPU::tstates += statestoadd;
 
-#ifndef NO_VIDEO
-
-if (DrawStatus==TOPBORDER_BLANK) {
-    if (CPU::tstates > tstateDraw) {
-        statestoadd = CPU::tstates - tstateDraw;
-        tstateDraw += TSTATES_PER_LINE;
-        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        lineptr32 += 5; // Offset for 360x200
-        coldraw_cnt = 0;
-        DrawStatus = TOPBORDER;
-        video_rest = 0;
-    } else return;
-}
-
-if (DrawStatus==TOPBORDER) {
-    statestoadd += video_rest;
-    video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
-    for (int i=0; i < (statestoadd >> 2); i++) {
-        *lineptr32++ = brd;
-        *lineptr32++ = brd;
-        if (++coldraw_cnt == 40) {
-            DrawStatus = TOPBORDER_BLANK;
-            if (++linedraw_cnt == 4) {
-                DrawStatus = MAINSCREEN_BLANK;
-                tstateDraw=TS_PHASE_2_360x200;
-            }
-            return;
-        }
-    }
-    return;
-}
-
-if (DrawStatus==MAINSCREEN_BLANK) {
-    if (CPU::tstates > tstateDraw) {
-        statestoadd = CPU::tstates - tstateDraw;
-        tstateDraw += TSTATES_PER_LINE;
-        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        lineptr32 += 5;
-        coldraw_cnt = 0;
-        video_rest = 0;
-        DrawStatus = LineDraw;
-        bmpOffset = offBmp[linedraw_cnt-4];
-        attOffset = offAtt[linedraw_cnt-4];
-        grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-    } else return;
-}    
-
-if (DrawStatus==LINEDRAW) {
-    statestoadd += video_rest;
-    video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
-    for (int i=0; i < (statestoadd >> 2); i++) {    
-        
-        if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
-            att = grmem[attOffset++];       // get attribute byte
-            if (att & flashing) {
-                bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
-            } else 
-                bmp = grmem[bmpOffset++];   // get bitmap byte
-
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
-        } else {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        }
-
-        if (++coldraw_cnt == 40) {
-            if (++linedraw_cnt == 196 ) {
-                DrawStatus = BOTTOMBORDER_BLANK;
-                tstateDraw = TS_PHASE_3_360x200;
-            } else DrawStatus = MAINSCREEN_BLANK;
-            return;
-        }
-    }
-    return;
-}
-
-if (DrawStatus==LINEDRAW_FPS) {
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
     brd = border32[borderColor];
@@ -503,29 +303,33 @@ if (DrawStatus==LINEDRAW_FPS) {
         }
 
         if (++coldraw_cnt == 40) {
-            if (++linedraw_cnt == 196 ) {
-                DrawStatus = BOTTOMBORDER_BLANK;
-                tstateDraw = TS_PHASE_3_360x200;
-            } else DrawStatus = MAINSCREEN_BLANK;
+            Draw = ++linedraw_cnt == 196 ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
         }
     }
-    return;
+
 }
 
-if (DrawStatus==BOTTOMBORDER_BLANK) {
+void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd) {
+
+    CPU::tstates += statestoadd;
+
     if (CPU::tstates > tstateDraw) {
-        statestoadd = CPU::tstates - tstateDraw;
+        video_rest = CPU::tstates - tstateDraw;
         tstateDraw += TSTATES_PER_LINE;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
-        lineptr32 += 5;
+        if (is169) lineptr32 += 5;        
         coldraw_cnt = 0;
-        video_rest = 0;
-        DrawStatus = BOTTOMBORDER;
-    } else return;
+        Draw = DrawOSD43;
+        Draw(0);
+    }
+
 }
 
-if (DrawStatus==BOTTOMBORDER) {
+void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd) {
+
+    CPU::tstates += statestoadd;
+
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
     brd = border32[borderColor];
@@ -533,39 +337,366 @@ if (DrawStatus==BOTTOMBORDER) {
         *lineptr32++ = brd;
         *lineptr32++ = brd;
         if (++coldraw_cnt == 40) {
-            if (++linedraw_cnt == 200) DrawStatus = BLANK; else DrawStatus = BOTTOMBORDER_BLANK;
+            Draw = ++linedraw_cnt == (is169 ? 200 : 240) ? &Blank : &BottomBorder_Blank ;
             return;
         }
     }
-    return;
 }
 
-if (DrawStatus==BLANK) {
+void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd) {
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+    video_rest = statestoadd & 0x03; // Mod 4
+    brd = border32[borderColor];
+    for (int i=0; i < (statestoadd >> 2); i++) {    
+        
+        if ((linedraw_cnt<220) || (linedraw_cnt>235)) {
+            *lineptr32++ = brd;
+            *lineptr32++ = brd;
+        } else {
+            if ((coldraw_cnt<21) || (coldraw_cnt>38)) {
+                *lineptr32++ = brd;
+                *lineptr32++ = brd;
+            } else lineptr32+=2;
+        }
+        
+        if (++coldraw_cnt == 40) {
+            Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
+            return;
+        }
+    }
+
+}
+
+void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd) {
+
+    CPU::tstates += statestoadd;
+
     if (CPU::tstates < TSTATES_PER_LINE) {
         linedraw_cnt = 0;
-        tstateDraw = TS_PHASE_1_360x200;
-        DrawStatus = TOPBORDER_BLANK;
+        tstateDraw = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+        Draw = &TopBorder_Blank;
     }
-}
-
-#endif
 
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Draw_43 -> Multicolour and Border effects support
+// 4:3 (320x240)
+///////////////////////////////////////////////////////////////////////////////
+// void IRAM_ATTR VIDEO::Draw_43(unsigned int statestoadd) {
+
+// uint8_t att, bmp;
+
+// CPU::tstates += statestoadd;
+
+// #ifndef NO_VIDEO
+
+// if (DrawStatus==TOPBORDER_BLANK) {
+//     if (CPU::tstates > tstateDraw) {
+//         statestoadd = CPU::tstates - tstateDraw;
+//         tstateDraw += TSTATES_PER_LINE;
+//         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+//         coldraw_cnt = 0;
+//         DrawStatus = TOPBORDER;
+//         video_rest = 0;
+//     } else return;
+// }
+
+// if (DrawStatus==TOPBORDER) {
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {
+//         *lineptr32++ = brd;
+//         *lineptr32++ = brd;
+//         if (++coldraw_cnt == 40) {
+//             DrawStatus = ++linedraw_cnt == 24 ? MAINSCREEN_BLANK : TOPBORDER_BLANK;
+//             return;
+//         }
+//     }
+//     return;
+// }
+
+// if (DrawStatus==MAINSCREEN_BLANK) {
+//     if (CPU::tstates > tstateDraw) {
+//         statestoadd = CPU::tstates - tstateDraw;
+//         tstateDraw += TSTATES_PER_LINE;
+//         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+//         coldraw_cnt = 0;
+//         video_rest = 0;
+//         DrawStatus = LINEDRAW;
+//         bmpOffset = offBmp[linedraw_cnt-24];
+//         attOffset = offAtt[linedraw_cnt-24];
+//         grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+//     } else return;
+// }    
+
+// if (DrawStatus==LINEDRAW) {
+
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+
+//     for (int i=0; i < (statestoadd >> 2); i++) {    
+        
+//         if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
+//             att = grmem[attOffset++];       // get attribute byte
+//             if (att & flashing) {
+//                 bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
+//             } else 
+//                 bmp = grmem[bmpOffset++];   // get bitmap byte
+
+//             *lineptr32++ = AluBytes[bmp >> 4][att];
+//             *lineptr32++ = AluBytes[bmp & 0xF][att];
+
+//         } else {
+
+//             *lineptr32++ = brd;
+//             *lineptr32++ = brd;
+
+//         }
+
+//         if (++coldraw_cnt == 40) {      
+//             DrawStatus = ++linedraw_cnt == 216 ? BOTTOMBORDER_BLANK : MAINSCREEN_BLANK;
+//             return;
+//         }
+
+//     }
+//     return;
+// }
+
+// if (DrawStatus==BOTTOMBORDER_BLANK) {
+//     if (CPU::tstates > tstateDraw) {
+//         statestoadd = CPU::tstates - tstateDraw;
+//         tstateDraw += TSTATES_PER_LINE;
+//         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+//         coldraw_cnt = 0;
+//         video_rest = 0;
+//         DrawStatus = BottomDraw;
+//     } else return;
+// }
+
+// if (DrawStatus==BOTTOMBORDER) {
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {    
+//         *lineptr32++ = brd;
+//         *lineptr32++ = brd;
+//         if (++coldraw_cnt == 40) {
+//             DrawStatus = ++linedraw_cnt == 240 ? BLANK : BOTTOMBORDER_BLANK;
+//             return;
+//         }
+//     }
+//     return;
+// }
+
+// if (DrawStatus==BOTTOMBORDER_FPS) {
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {    
+        
+//         if ((linedraw_cnt<220) || (linedraw_cnt>235)) {
+//             *lineptr32++ = brd;
+//             *lineptr32++ = brd;
+//         } else {
+//             if ((coldraw_cnt<21) || (coldraw_cnt>38)) {
+//                 *lineptr32++ = brd;
+//                 *lineptr32++ = brd;
+//             } else lineptr32+=2;
+//         }
+        
+//         if (++coldraw_cnt == 40) {
+//             DrawStatus = ++linedraw_cnt == 240 ? BLANK : BOTTOMBORDER_BLANK;
+//             return;
+//         }
+//     }
+//     return;
+// }
+
+// if (DrawStatus==BLANK) {
+//     if (CPU::tstates < TSTATES_PER_LINE) {
+//         linedraw_cnt = 0;
+//         tstateDraw = TS_SCREEN_320x240;
+//         DrawStatus = TOPBORDER_BLANK;
+//     }
+// }
+
+// #endif
+
+// }
+
+// ///////////////////////////////////////////////////////////////////////////////
+// // Draw_169 -> Multicolour and Border effects support
+// // 16:9 (360x200)
+// ///////////////////////////////////////////////////////////////////////////////
+// void IRAM_ATTR VIDEO::Draw_169(unsigned int statestoadd) {
+
+// uint8_t att, bmp;
+
+// CPU::tstates += statestoadd;
+
+// #ifndef NO_VIDEO
+
+// if (DrawStatus==TOPBORDER_BLANK) {
+//     if (CPU::tstates > tstateDraw) {
+//         statestoadd = CPU::tstates - tstateDraw;
+//         tstateDraw += TSTATES_PER_LINE;
+//         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+//         lineptr32 += 5; // Offset for 360x200
+//         coldraw_cnt = 0;
+//         DrawStatus = TOPBORDER;
+//         video_rest = 0;
+//     } else return;
+// }
+
+// if (DrawStatus==TOPBORDER) {
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {
+//         *lineptr32++ = brd;
+//         *lineptr32++ = brd;
+//         if (++coldraw_cnt == 40) {
+//             DrawStatus = ++linedraw_cnt == 4 ? MAINSCREEN_BLANK : TOPBORDER_BLANK;
+//             return;
+//         }
+//     }
+//     return;
+// }
+
+// if (DrawStatus==MAINSCREEN_BLANK) {
+//     if (CPU::tstates > tstateDraw) {
+//         statestoadd = CPU::tstates - tstateDraw;
+//         tstateDraw += TSTATES_PER_LINE;
+//         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+//         lineptr32 += 5;
+//         coldraw_cnt = 0;
+//         video_rest = 0;
+//         DrawStatus = LineDraw;
+//         bmpOffset = offBmp[linedraw_cnt-4];
+//         attOffset = offAtt[linedraw_cnt-4];
+//         grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+//     } else return;
+// }    
+
+// if (DrawStatus==LINEDRAW) {
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {    
+        
+//         if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
+//             att = grmem[attOffset++];       // get attribute byte
+//             if (att & flashing) {
+//                 bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
+//             } else 
+//                 bmp = grmem[bmpOffset++];   // get bitmap byte
+
+//             *lineptr32++ = AluBytes[bmp >> 4][att];
+//             *lineptr32++ = AluBytes[bmp & 0xF][att];
+//         } else {
+//             *lineptr32++ = brd;
+//             *lineptr32++ = brd;
+//         }
+
+//         if (++coldraw_cnt == 40) {
+//             DrawStatus = ++linedraw_cnt == 196 ? BOTTOMBORDER_BLANK : MAINSCREEN_BLANK;
+//             return;
+//         }
+//     }
+//     return;
+// }
+
+// if (DrawStatus==LINEDRAW_FPS) {
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {    
+
+//         if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>20) && (coldraw_cnt<39)) {
+//             lineptr32+=2;
+//             attOffset++;
+//             bmpOffset++;
+//             coldraw_cnt++;
+//             continue;
+//         }
+
+//         if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
+//             att = grmem[attOffset++];       // get attribute byte
+//             if (att & flashing) {
+//                 bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
+//             } else 
+//                 bmp = grmem[bmpOffset++];   // get bitmap byte
+
+//             *lineptr32++ = AluBytes[bmp >> 4][att];
+//             *lineptr32++ = AluBytes[bmp & 0xF][att];
+//         } else {
+//             *lineptr32++ = brd;
+//             *lineptr32++ = brd;
+//         }
+
+//         if (++coldraw_cnt == 40) {
+//             DrawStatus = ++linedraw_cnt == 196 ? BOTTOMBORDER_BLANK : MAINSCREEN_BLANK;
+//             return;
+//         }
+//     }
+//     return;
+// }
+
+// if (DrawStatus==BOTTOMBORDER_BLANK) {
+//     if (CPU::tstates > tstateDraw) {
+//         statestoadd = CPU::tstates - tstateDraw;
+//         tstateDraw += TSTATES_PER_LINE;
+//         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+//         lineptr32 += 5;
+//         coldraw_cnt = 0;
+//         video_rest = 0;
+//         DrawStatus = BOTTOMBORDER;
+//     } else return;
+// }
+
+// if (DrawStatus==BOTTOMBORDER) {
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03; // Mod 4
+//     brd = border32[borderColor];
+//     for (int i=0; i < (statestoadd >> 2); i++) {    
+//         *lineptr32++ = brd;
+//         *lineptr32++ = brd;
+//         if (++coldraw_cnt == 40) {
+//             DrawStatus = ++linedraw_cnt == 200 ? BLANK : BOTTOMBORDER_BLANK;
+//             return;
+//         }
+//     }
+//     return;
+// }
+
+// if (DrawStatus==BLANK) {
+//     if (CPU::tstates < TSTATES_PER_LINE) {
+//         linedraw_cnt = 0;
+//         tstateDraw = TS_SCREEN_360x200;
+//         DrawStatus = TOPBORDER_BLANK;
+//     }
+// }
+
+// #endif
+
+// }
 
 // ///////////////////////////////////////////////////////////////////////////////
 // // Flush -> Flush screen after HALT
 // ///////////////////////////////////////////////////////////////////////////////
 void VIDEO::Flush() {
 
-#ifndef NO_VIDEO
-
     // TO DO: Write faster version: there's no need to use Draw function
-    
     while (CPU::tstates < CPU::statesInFrame) {
-        Draw(TSTATES_PER_LINE);
+        Draw(TSTATES_PER_LINE);        
     }
-
-#endif
 
 }
 

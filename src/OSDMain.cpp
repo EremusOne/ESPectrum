@@ -236,12 +236,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F8) {
         // Show / hide OnScreen Stats
-        if (VIDEO::LineDraw == LINEDRAW) {
-            VIDEO::LineDraw = LINEDRAW_FPS;
-            VIDEO::BottomDraw = BOTTOMBORDER_FPS;
+        if (VIDEO::OSD) {
+            if (Config::aspect_16_9) 
+                VIDEO::DrawOSD169 = VIDEO::MainScreen;
+            else
+                VIDEO::DrawOSD43 = VIDEO::BottomBorder;
+            VIDEO::OSD = false;
         } else {
-            VIDEO::LineDraw = LINEDRAW;
-            VIDEO::BottomDraw = BOTTOMBORDER;
+            if (Config::aspect_16_9) 
+                VIDEO::DrawOSD169 = VIDEO::MainScreen_OSD;
+            else
+                VIDEO::DrawOSD43  = VIDEO::BottomBorder_OSD;
+            VIDEO::OSD = true;
         }    
     }
     else if (KeytoESP == fabgl::VK_F9) { // Volume down

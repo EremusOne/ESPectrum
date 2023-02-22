@@ -199,23 +199,23 @@ static unsigned char IRAM_ATTR delayContention(unsigned int currentTstates) {
 static void ALUContentEarly( uint16_t port )
 {
     if ( ( port & 49152 ) == 16384 )
-        Z80Ops::addTstates(delayContention(CPU::tstates) + 1,true);
+        VIDEO::Draw(delayContention(CPU::tstates) + 1);
     else
-        Z80Ops::addTstates(1,true);
+        VIDEO::Draw(1);
 }
 
 static void ALUContentLate( uint16_t port )
 {
 
   if( (port & 0x0001) == 0x00) {
-        Z80Ops::addTstates(delayContention(CPU::tstates) + 3,true);
+        VIDEO::Draw(delayContention(CPU::tstates) + 3);
   } else {
     if ( (port & 49152) == 16384 ) {
-        Z80Ops::addTstates(delayContention(CPU::tstates) + 1,true);
-        Z80Ops::addTstates(delayContention(CPU::tstates) + 1,true);
-        Z80Ops::addTstates(delayContention(CPU::tstates) + 1,true);
-	} else {
-        Z80Ops::addTstates(3,true);
+        VIDEO::Draw(delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(delayContention(CPU::tstates) + 1);
+    } else {
+        VIDEO::Draw(3);
 	}
 
   }
@@ -229,9 +229,9 @@ static void ALUContentLate( uint16_t port )
 uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
     // 3 clocks to fetch opcode from RAM and 1 execution clock
     if (ADDRESS_IN_LOW_RAM(address))
-        addTstates(delayContention(CPU::tstates) + 4,true);
+        VIDEO::Draw(delayContention(CPU::tstates) + 4);
     else
-        addTstates(4,true);
+        VIDEO::Draw(4);
 
     return MemESP::readbyte(address);
 }
@@ -240,19 +240,19 @@ uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
 uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
     // 3 clocks for read byte from RAM
     if (ADDRESS_IN_LOW_RAM(address))
-        addTstates(delayContention(CPU::tstates) + 3,true);
+        VIDEO::Draw(delayContention(CPU::tstates) + 3);
     else
-        addTstates(3,true);
+        VIDEO::Draw(3);
 
     return MemESP::readbyte(address);
 }
 
 /* Write byte to RAM */
 void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
-    if (ADDRESS_IN_LOW_RAM(address)) {
-        addTstates(delayContention(CPU::tstates) + 3, true);
-    } else 
-        addTstates(3,true);
+    if (ADDRESS_IN_LOW_RAM(address))
+        VIDEO::Draw(delayContention(CPU::tstates) + 3);
+    else 
+        VIDEO::Draw(3);        
 
     MemESP::writebyte(address, value);
 }
@@ -260,17 +260,31 @@ void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
 /* Read/Write word from/to RAM */
 uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
-    // Order matters, first read lsb, then read msb, don't "optimize"
-    uint8_t lsb = Z80Ops::peek8(address);
-    uint8_t msb = Z80Ops::peek8(address + 1);
+    // 3 clocks for read byte from RAM
+    if (ADDRESS_IN_LOW_RAM(address))
+        VIDEO::Draw(delayContention(CPU::tstates) + 3);
+    else
+        VIDEO::Draw(3);
 
-    return (msb << 8) | lsb;
+    uint8_t lsb = MemESP::readbyte(address);
+
+    address++;
+
+    // 3 clocks for read byte from RAM
+    if (ADDRESS_IN_LOW_RAM(address))
+        VIDEO::Draw(delayContention(CPU::tstates) + 3);
+    else
+        VIDEO::Draw(3);
+
+    return (MemESP::readbyte(address) << 8) | lsb;
 }
 
 void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
-    // Order matters, first write lsb, then write msb, don't "optimize"
+
+    // // Order matters, first write lsb, then write msb, don't "optimize"
     Z80Ops::poke8(address, word.byte8.lo);
     Z80Ops::poke8(address + 1, word.byte8.hi);
+
 }
 
 /* In/Out byte from/to IO Bus */
@@ -303,15 +317,15 @@ void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
     // Additional clocks to be added on some instructions
     if (ADDRESS_IN_LOW_RAM(address))
         for (int idx = 0; idx < wstates; idx++)
-            addTstates(delayContention(CPU::tstates) + 1,true);
+            VIDEO::Draw(delayContention(CPU::tstates) + 1);        
     else
-        addTstates(wstates,true); // I've changed this to CPU::tstates direct increment. All seems working OK. Investigate.
+        VIDEO::Draw(wstates);        
 
 }
 
 /* Clocks needed for processing INT and NMI */
 void IRAM_ATTR Z80Ops::interruptHandlingTime(int32_t wstates) {
-    addTstates(wstates,true);
+    VIDEO::Draw(wstates);
 }
 
 /* Signal HALT in tstates */
@@ -324,11 +338,4 @@ bool IRAM_ATTR Z80Ops::isActiveINT(void) {
     if (!interruptPending) return false;
     interruptPending = false;
     return true;
-}
-
-void IRAM_ATTR Z80Ops::addTstates(int32_t tstatestoadd, bool dovideo) {
-    if (dovideo)
-        VIDEO::Draw(tstatestoadd);
-    else
-        CPU::tstates+=tstatestoadd;
 }
