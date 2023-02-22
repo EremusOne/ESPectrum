@@ -32,7 +32,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
 - Snapshot saving and loading (both 48K and 128K supported).
-- BMP screen capture to SD Card.
+- BMP screen capture to SD Card (thanks David Crespo 😉)
 - Simultaneous internal (SPIFFS) and external (SD card) storage support.
 
 ## Work in progress
