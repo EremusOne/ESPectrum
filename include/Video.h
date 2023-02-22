@@ -48,23 +48,10 @@
 #define TSTATES_PER_LINE_128 228
 
 #define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 40, -16 FROM BORDER
+#define TS_SCREEN_320x240_128 8874  // START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 39, -16 FROM BORDER
 
 #define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 60, -16 FROM BORDER
-
-// // DrawStatus values
-// #define TOPBORDER_BLANK 0
-// #define TOPBORDER 1
-// #define MAINSCREEN_BLANK 2
-// #define LEFTBORDER 3
-// #define LINEDRAW_SYNC 4
-// #define LINEDRAW 5
-// #define LINEDRAW_FPS 6
-// #define RIGHTBORDER 7
-// #define RIGHTBORDER_FPS 8
-// #define BOTTOMBORDER_BLANK 9
-// #define BOTTOMBORDER 10
-// #define BOTTOMBORDER_FPS 11
-// #define BLANK 12
+#define TS_SCREEN_360x200_128 13434 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 59, -16 FROM BORDER
 
 class VIDEO
 {
@@ -100,8 +87,8 @@ public:
     static uint8_t borderColor;
     static unsigned lastBorder[312];
 
-    // static uint8_t LineDraw;
-    // static uint8_t BottomDraw;
+    static uint8_t tStatesPerLine;
+    static int tStatesScreen;
 
     static uint8_t flashing;
     static uint8_t flash_ctr;

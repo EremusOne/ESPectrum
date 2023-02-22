@@ -51,7 +51,7 @@ static bool interruptPending = false;
 uint32_t CPU::statesPerFrame()
 {
     if (Config::getArch() == "48K") return 69888; // 69888 is the right value.
-    else                            return 70912; // 70908 is the right value. Added 4 states to make it divisible by 128 (audio issues)
+    else                            return 70912; // 70908 is the right value. Added 4 states to make it divisible by 128 (for audio calcs)
 }
 
 uint32_t CPU::microsPerFrame()
@@ -74,6 +74,7 @@ void CPU::setup()
         createCalled = true;
     }
     statesInFrame = CPU::statesPerFrame();
+
     ESPectrum::reset();
 }
 
@@ -83,6 +84,15 @@ void CPU::reset() {
 
     Z80::reset();
     statesInFrame = CPU::statesPerFrame();
+
+    if (Config::getArch() == "48K") {
+        delayContention = &delayContention48;
+        address_is_contended = &address_is_contended_48;
+    } else {
+        delayContention = &delayContention128;
+        address_is_contended = &address_is_contended_128;
+    }
+
     global_tstates = 0;
 
 }
@@ -127,6 +137,15 @@ void IRAM_ATTR CPU::loop()
 
 }
 
+bool IRAM_ATTR address_is_contended_48(uint16_t address) {
+    return (1 == (address >> 14));
+}
+
+bool IRAM_ATTR address_is_contended_128(uint16_t address) {
+    int i = address >> 14;
+    return ((i == 1) || ((i == 3) && (MemESP::bankLatch & 0x01 == 1)));
+}
+
 void CPU::FlushOnHalt() {
         
     tstates &= 0x00FFFFFF;
@@ -134,7 +153,7 @@ void CPU::FlushOnHalt() {
 
     uint32_t calcRegR = Z80::getRegR();
 
-    bool LowR = ADDRESS_IN_LOW_RAM(Z80::getRegPC());
+    bool LowR = address_is_contended(Z80::getRegPC());
     if (LowR) {
         uint32_t tIncr = tstates;
         while (tIncr < statesInFrame) {
@@ -161,7 +180,7 @@ void CPU::FlushOnHalt() {
 //
 // Delay Contention: for emulating CPU slowing due to sharing bus with ULA
 // NOTE: Only 48K spectrum contention implemented. This function must be called
-// only when dealing with affected memory (use ADDRESS_IN_LOW_RAM macro)
+// only when dealing with affected memory (use address_is_contended macro)
 //
 // delay contention: emulates wait states introduced by the ULA (graphic chip)
 // whenever there is a memory access to contended memory (shared between ULA and CPU).
@@ -171,22 +190,36 @@ void CPU::FlushOnHalt() {
 // without reading the previous paragraphs about line timings, it may be confusing.
 //
 
-static unsigned char wait_states[8] = { 6, 5, 4, 3, 2, 1, 0, 0 }; // sequence of wait states
-static unsigned char IRAM_ATTR delayContention(unsigned int currentTstates) {
+static const unsigned char wait_states[8] = { 6, 5, 4, 3, 2, 1, 0, 0 }; // sequence of wait states
+
+static unsigned char IRAM_ATTR delayContention48(unsigned int currentTstates) {
     
     // delay states one t-state BEFORE the first pixel to be drawn
     currentTstates++;
 
 	// each line spans 224 t-states
 	unsigned short int line = currentTstates / 224; // int line
-
     // only the 192 lines between 64 and 255 have graphic data, the rest is border
 	if (line < 64 || line >= 256) return 0;
 
 	// only the first 128 t-states of each line correspond to a graphic data transfer
 	// the remaining 96 t-states correspond to border
 	unsigned char halfpix = currentTstates % 224; // int halfpix
+	if (halfpix >= 128) return 0;
 
+    return(wait_states[halfpix & 0x07]);
+
+}
+
+static unsigned char IRAM_ATTR delayContention128(unsigned int currentTstates) {
+    
+    // delay states one t-state BEFORE the first pixel to be drawn
+    currentTstates++;
+
+    unsigned short int line = currentTstates / 228; // int line
+	if (line < 63 || line >= 255) return 0;
+
+	unsigned char halfpix = currentTstates % 228; // int halfpix
 	if (halfpix >= 128) return 0;
 
     return(wait_states[halfpix & 0x07]);
@@ -228,7 +261,7 @@ static void ALUContentLate( uint16_t port )
 /* Read opcode from RAM */
 uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
     // 3 clocks to fetch opcode from RAM and 1 execution clock
-    if (ADDRESS_IN_LOW_RAM(address))
+    if (address_is_contended(address))
         VIDEO::Draw(delayContention(CPU::tstates) + 4);
     else
         VIDEO::Draw(4);
@@ -239,7 +272,7 @@ uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
 /* Read byte from RAM */
 uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
     // 3 clocks for read byte from RAM
-    if (ADDRESS_IN_LOW_RAM(address))
+    if (address_is_contended(address))
         VIDEO::Draw(delayContention(CPU::tstates) + 3);
     else
         VIDEO::Draw(3);
@@ -249,7 +282,7 @@ uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
 
 /* Write byte to RAM */
 void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
-    if (ADDRESS_IN_LOW_RAM(address))
+    if (address_is_contended(address))
         VIDEO::Draw(delayContention(CPU::tstates) + 3);
     else 
         VIDEO::Draw(3);        
@@ -261,7 +294,7 @@ void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
 uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
     // 3 clocks for read byte from RAM
-    if (ADDRESS_IN_LOW_RAM(address))
+    if (address_is_contended(address))
         VIDEO::Draw(delayContention(CPU::tstates) + 3);
     else
         VIDEO::Draw(3);
@@ -271,7 +304,7 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
     address++;
 
     // 3 clocks for read byte from RAM
-    if (ADDRESS_IN_LOW_RAM(address))
+    if (address_is_contended(address))
         VIDEO::Draw(delayContention(CPU::tstates) + 3);
     else
         VIDEO::Draw(3);
@@ -315,7 +348,7 @@ void IRAM_ATTR Z80Ops::outPort(uint16_t port, uint8_t value) {
 void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
 
     // Additional clocks to be added on some instructions
-    if (ADDRESS_IN_LOW_RAM(address))
+    if (address_is_contended(address))
         for (int idx = 0; idx < wstates; idx++)
             VIDEO::Draw(delayContention(CPU::tstates) + 1);        
     else

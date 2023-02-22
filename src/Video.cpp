@@ -43,15 +43,19 @@
 
 VGA6Bit VIDEO::vga;
 uint8_t VIDEO::borderColor = 0;
-// uint8_t VIDEO::LineDraw = LINEDRAW;
-// uint8_t VIDEO::BottomDraw = BOTTOMBORDER;
 unsigned int VIDEO::lastBorder[312] = { 0 };
 uint8_t VIDEO::flashing = 0;
 uint8_t VIDEO::flash_ctr= 0;
 bool VIDEO::OSD = false;
+uint8_t VIDEO::tStatesPerLine;
+int VIDEO::tStatesScreen;
 
-// void (*VIDEO::Draw)(unsigned int) = &VIDEO::Draw_43;
+#ifdef NOVIDEO
+void (*VIDEO::Draw)(unsigned int) = &VIDEO::NoVideo;
+#else
 void (*VIDEO::Draw)(unsigned int) = &VIDEO::Blank;
+#endif
+
 void (*VIDEO::DrawOSD43)(unsigned int) = &VIDEO::BottomBorder;
 void (*VIDEO::DrawOSD169)(unsigned int) = &VIDEO::MainScreen;
 
@@ -155,7 +159,19 @@ void VIDEO::Init() {
 
     is169 = Config::aspect_16_9 ? 1 : 0;
 
-    Draw = &Blank;
+    if (Config::getArch() == "48K") {
+        tStatesPerLine = TSTATES_PER_LINE;
+        tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+    } else {
+        tStatesPerLine = TSTATES_PER_LINE_128;
+        tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+    }
+
+    #ifdef NOVIDEO
+        Draw = &NoVideo;
+    #else
+        Draw = &Blank;
+    #endif
 
 }
 
@@ -166,7 +182,20 @@ void VIDEO::Reset() {
 
     is169 = Config::aspect_16_9 ? 1 : 0;
     
-    Draw = &Blank;
+    if (Config::getArch() == "48K") {
+        tStatesPerLine = TSTATES_PER_LINE;
+        tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+
+    } else {
+        tStatesPerLine = TSTATES_PER_LINE_128;
+        tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+    }
+
+    #ifdef NOVIDEO
+        Draw = &NoVideo;
+    #else
+        Draw = &Blank;
+    #endif
 
 }
 
@@ -184,7 +213,7 @@ void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd) {
 
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
-        tstateDraw += TSTATES_PER_LINE;
+        tstateDraw += tStatesPerLine;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
@@ -218,7 +247,7 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd) {
 
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
-        tstateDraw += TSTATES_PER_LINE;
+        tstateDraw += tStatesPerLine;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
@@ -316,7 +345,7 @@ void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd) {
 
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
-        tstateDraw += TSTATES_PER_LINE;
+        tstateDraw += tStatesPerLine;
         lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
         if (is169) lineptr32 += 5;        
         coldraw_cnt = 0;
@@ -374,14 +403,25 @@ void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd) {
 
     CPU::tstates += statestoadd;
 
-    if (CPU::tstates < TSTATES_PER_LINE) {
+    if (CPU::tstates < tStatesPerLine) {
         linedraw_cnt = 0;
-        tstateDraw = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+        tstateDraw = tStatesScreen;
         Draw = &TopBorder_Blank;
     }
 
 }
 
+// ///////////////////////////////////////////////////////////////////////////////
+// // Flush -> Flush screen after HALT
+// ///////////////////////////////////////////////////////////////////////////////
+void VIDEO::Flush() {
+
+    // TO DO: Write faster version: there's no need to use Draw function
+    while (CPU::tstates < CPU::statesInFrame) {
+        Draw(tStatesPerLine);        
+    }
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Draw_43 -> Multicolour and Border effects support
@@ -687,18 +727,6 @@ void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd) {
 // #endif
 
 // }
-
-// ///////////////////////////////////////////////////////////////////////////////
-// // Flush -> Flush screen after HALT
-// ///////////////////////////////////////////////////////////////////////////////
-void VIDEO::Flush() {
-
-    // TO DO: Write faster version: there's no need to use Draw function
-    while (CPU::tstates < CPU::statesInFrame) {
-        Draw(TSTATES_PER_LINE);        
-    }
-
-}
 
 // ///////////////////////////////////////////////////////////////////////////////
 // // TO DO: Draw_43_fast -> Fast draw (no multicolour, border effects support)

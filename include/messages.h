@@ -219,10 +219,10 @@ static const char *MENU_ROMSET48[2] = { MENU_ROMSET48_EN, MENU_ROMSET48_ES };
 
 #define MENU_ROMSET128_EN "Select ROM\n"\
     "SINCLAIR\n"\
-    "PLUS2A\n"
+    "PLUS2\n"
 #define MENU_ROMSET128_ES "Elija ROM\n"\
     "SINCLAIR\n"\
-    "PLUS2A\n"
+    "PLUS2\n"
 static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
 
 #define MENU_LANGUAGE_EN "Language\n"\

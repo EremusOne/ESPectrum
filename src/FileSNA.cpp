@@ -241,6 +241,15 @@ bool FileSNA::load(string sna_fn)
         }
     }
 
+    if (Config::getArch() == "48K") {
+        VIDEO::tStatesPerLine = TSTATES_PER_LINE;
+        VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+
+    } else {
+        VIDEO::tStatesPerLine = TSTATES_PER_LINE_128;
+        VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+    }
+
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
 

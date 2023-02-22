@@ -33,7 +33,7 @@
 #include <inttypes.h>
 #include <esp_attr.h>
 
-#define ADDRESS_IN_LOW_RAM(addr) (1 == (addr >> 14))
+// #define address_is_contended(addr) (1 == (addr >> 14))
 
 #define MEM_PG_SZ 0x4000
 

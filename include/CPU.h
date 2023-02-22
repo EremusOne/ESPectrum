@@ -69,6 +69,12 @@ public:
 
 };
 
-static unsigned char IRAM_ATTR delayContention(unsigned int currentTstates);
+static bool (*address_is_contended)(uint16_t address);
+static bool IRAM_ATTR address_is_contended_48(uint16_t address);
+static bool IRAM_ATTR address_is_contended_128(uint16_t address);
+
+static unsigned char (*delayContention)(unsigned int currentTstates);
+static unsigned char IRAM_ATTR delayContention48(unsigned int currentTstates);
+static unsigned char IRAM_ATTR delayContention128(unsigned int currentTstates);
 
 #endif // CPU_h
