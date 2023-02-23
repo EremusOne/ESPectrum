@@ -38,40 +38,17 @@
 // Ports
 volatile uint8_t Ports::base[128];
 
-static uint8_t port_data = 0;
-
-// Using partial port address decoding
-// see https://worldofspectrum.org/faq/reference/ports.htm
-//
-//        Peripheral: 48K ULA
-//        Port: ---- ---- ---- ---0
-//
-//        Peripheral: Kempston Joystick.
-//        Port: ---- ---- 000- ---- 
-//
-//        Peripheral: 128K AY Register
-//        Port: 11-- ---- ---- --0-
-//
-//        Peripheral: 128K AY (Data)
-//        Port: 10-- ---- ---- --0-
-//
-//        Peripheral: ZX Spectrum 128K / +2 Memory Control
-//        Port: 0--- ---- ---- --0-
-//
-//        Peripheral: ZX Spectrum +2A / +3 Primary Memory Control
-//        Port: 01-- ---- ---- --0-
-//
-//        Peripheral: ZX Spectrum +2A / +3 Secondary Memory Control
-//        Port: 0001 ---- ---- --0-
-//
 uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
 {
     
-    // 48K ULA
-    if ((portLow & 0x01) == 0x00) // (portLow == 0xFE) 
+    #ifdef PS2_ARROWKEYS_AS_KEMPSTON
+    if (portLow == 0x1f) return base[0x1f]; // Kempston port
+    #endif
+
+    if (portLow == 0xfe) // ULA PORT
     {
         // all result bits initially set to 1, may be set to 0 eventually
-        uint8_t result = 0xbF;
+        uint8_t result = 0xbf;
 
         // Keyboard
         if (~(portHigh | 0xFE)&0xFF) result &= base[0];
@@ -85,36 +62,32 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
 
         if (Tape::tapeStatus==TAPE_LOADING) {
             bitWrite(result,6,Tape::TAP_Read());
-        } else {
-            if (base[0x20] & 0x18) result |= (0xe0); else result |= (0xa0); // ISSUE 2 behaviour
-        }
+        } 
+        
+        // else {
+        //     // if (base[0x20] & 0x18) result |= (0xe0); else result |= (0xa0); // ISSUE 2 behaviour
+        //     result |= (0xa0); // ISSUE 2 behaviour
+        // }
+
+        result |= (0xa0); // ISSUE 2 behaviour
 
         return result;
 
     }
-
-    #ifdef PS2_ARROWKEYS_AS_KEMPSTON
-    // Kempston
-    if ((portLow & 0xE0) == 0x00) // (portLow == 0x1F)
-    {
-        return base[0x1f];
-    }
-    #endif
     
     // Sound (AY-3-8912)
-    if ((portHigh & 0xC0) == 0xC0 && (portLow & 0x02) == 0x00)  // 0xFFFD
+    if ((portHigh & 0xc0) == 0xc0 && (portLow & 0x02) == 0x00)  // 0xFFFD
     {
         return AySound::getRegisterData();
     }
 
-    uint8_t data = port_data;
-    data |= (0xe0); // Set bits 5-7 - as reset above
-    data &= ~0x40;
+    if (portLow == 0xff) { // 0xFF -> Floating bus
+        return VIDEO::getFloatBusData();
+    }
+    
+    return 0xFF;    
 
-    return data;
 }
-
-int Audiobit, Tapebit;
 
 void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
 
@@ -124,13 +97,15 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
         VIDEO::borderColor = data & 0x07;
 
         // if (Tape::SaveStatus==TAPE_SAVING)
-        //     Tapebit = bitRead(data,3);
+        //     int Tapebit = bitRead(data,3);
         // else
-            Audiobit = bitRead(data,4);
+            int Audiobit = bitRead(data,4);
 
-        ESPectrum::audioGetSample(Audiobit | Tapebit);
+        // ESPectrum::audioGetSample(Audiobit | Tapebit);
+        ESPectrum::audioGetSample(Audiobit);        
 
-        base[0x20] = data; // ?
+        return;
+
     }
     
     if ((portLow & 0x02) == 0x00)
@@ -142,6 +117,8 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
                 AySound::selectRegister(data);
             else
                 AySound::setRegisterData(data);
+
+            return;
         }
 
         // will decode both
@@ -157,6 +134,9 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
                 bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
                 bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
             }
+
+            return;
+
         }
         
         // +2A / +3 Secondary Memory Control
@@ -166,6 +146,9 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
             MemESP::romSP3 = bitRead(data, 2);
             bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+
+            return;
+
         }
 
     }

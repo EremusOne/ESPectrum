@@ -75,6 +75,10 @@ public:
     static void IRAM_ATTR Blank(unsigned int statestoadd);
     static void IRAM_ATTR NoVideo(unsigned int statestoadd);
 
+    static uint8_t (*getFloatBusData)();
+    static uint8_t IRAM_ATTR getFloatBusData48();
+    static uint8_t IRAM_ATTR getFloatBusData128();    
+
     static void (*Draw)(unsigned int);
     static void (*DrawOSD43)(unsigned int);
     static void (*DrawOSD169)(unsigned int);

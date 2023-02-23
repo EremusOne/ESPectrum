@@ -88,9 +88,11 @@ void CPU::reset() {
     if (Config::getArch() == "48K") {
         delayContention = &delayContention48;
         address_is_contended = &address_is_contended_48;
+        VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
     } else {
         delayContention = &delayContention128;
         address_is_contended = &address_is_contended_128;
+        VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
     }
 
     global_tstates = 0;

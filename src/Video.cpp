@@ -50,6 +50,9 @@ bool VIDEO::OSD = false;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
 
+
+uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
+
 #ifdef NOVIDEO
 void (*VIDEO::Draw)(unsigned int) = &VIDEO::NoVideo;
 #else
@@ -196,6 +199,98 @@ void VIDEO::Reset() {
     #else
         Draw = &Blank;
     #endif
+
+}
+
+uint8_t IRAM_ATTR VIDEO::getFloatBusData48() {
+
+    unsigned int currentTstates = CPU::tstates;
+
+	// each line spans 224 t-states
+	unsigned short int line = currentTstates / 224; // int line
+    // only the 192 lines between 64 and 255 have graphic data, the rest is border
+	if (line < 64 || line >= 256) return 0xFF;
+
+    // only the first 128 t-states of each line correspond to a graphic data transfer
+	// the remaining 96 t-states correspond to border
+	unsigned char halfpix = currentTstates % 224;
+	if (halfpix >= 128) return 0xFF;
+
+    switch (halfpix & 0x07) {
+        case 3: { // Bitmap
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int bmpOffset = offBmp[line - 64];
+            int hpoffset = (halfpix - 3) >> 2;
+            return(grmem[bmpOffset + hpoffset]);
+        }
+        case 4: { // Attr
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int attOffset = offAtt[line - 64];
+            int hpoffset = (halfpix - 3) >> 2;
+            return(grmem[attOffset + hpoffset]);
+        }
+        case 5: { // Bitmap + 1
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int bmpOffset = offBmp[line - 64];
+            int hpoffset = ((halfpix - 3) >> 2) + 1;
+            return(grmem[bmpOffset + hpoffset]);
+        }
+        case 6: { // Attr + 1
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int attOffset = offAtt[line - 64];
+            int hpoffset = ((halfpix - 3) >> 2) + 1;
+            return(grmem[attOffset + hpoffset]);
+        }
+    }
+
+    return(0xFF);
+
+}
+
+uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
+
+    unsigned int currentTstates = CPU::tstates;
+
+    currentTstates++;
+
+	// each line spans 224 t-states
+	unsigned short int line = currentTstates / 228; // int line
+    // only the 192 lines between 64 and 255 have graphic data, the rest is border
+	if (line < 63 || line >= 255) return 0xFF;
+
+    // only the first 128 t-states of each line correspond to a graphic data transfer
+	// the remaining 96 t-states correspond to border
+	unsigned char halfpix = currentTstates % 228;
+	if (halfpix >= 128) return 0xFF;
+
+    switch (halfpix & 0x07) {
+        case 0: { // Bitmap
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int bmpOffset = offBmp[line - 63];
+            int hpoffset = (halfpix) >> 2;
+            return(grmem[bmpOffset + hpoffset]);
+        }
+        case 1: { // Attr
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int attOffset = offAtt[line - 63];
+            int hpoffset = (halfpix) >> 2;
+            return(grmem[attOffset + hpoffset]);
+        }
+        case 2: { // Bitmap + 1
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int bmpOffset = offBmp[line - 63];
+            int hpoffset = ((halfpix) >> 2) + 1;
+            return(grmem[bmpOffset + hpoffset]);
+        }
+        case 3: { // Attr + 1
+            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            unsigned int attOffset = offAtt[line - 63];
+            int hpoffset = ((halfpix) >> 2) + 1;
+            return(grmem[attOffset + hpoffset]);
+        }
+    }
+
+    return(0xFF);
 
 }
 
