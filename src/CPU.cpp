@@ -51,7 +51,7 @@ static bool interruptPending = false;
 uint32_t CPU::statesPerFrame()
 {
     if (Config::getArch() == "48K") return 69888; // 69888 is the right value.
-    else                            return 70912; // 70908 is the right value. Added 4 states to make it divisible by 128 (for audio calcs)
+    else                            return 70908; // 70908 is the right value. Added 4 states to make it divisible by 128 (for audio calcs)
 }
 
 uint32_t CPU::microsPerFrame()
@@ -73,9 +73,21 @@ void CPU::setup()
         Z80::create();
         createCalled = true;
     }
+    
     statesInFrame = CPU::statesPerFrame();
 
-    ESPectrum::reset();
+    if (Config::getArch() == "48K") {
+        delayContention = &delayContention48;
+        address_is_contended = &address_is_contended_48;
+        VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
+    } else {
+        delayContention = &delayContention128;
+        address_is_contended = &address_is_contended_128;
+        VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
+    }
+
+    global_tstates = 0;
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -83,6 +95,7 @@ void CPU::setup()
 void CPU::reset() {
 
     Z80::reset();
+    
     statesInFrame = CPU::statesPerFrame();
 
     if (Config::getArch() == "48K") {

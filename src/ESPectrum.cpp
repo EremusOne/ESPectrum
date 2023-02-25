@@ -77,10 +77,12 @@ uint32_t ESPectrum::faudbufcnt = 0;
 int ESPectrum::lastaudioBit = 0;
 int ESPectrum::faudioBit = 0;
 int ESPectrum::samplesPerFrame = 546; // 48k value
+bool ESPectrum::AY_emu = false;
+int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+
 static QueueHandle_t audioTaskQueue;
 static TaskHandle_t audioTaskHandle;
 static uint8_t *param;
-bool ESPectrum::AY_emu = false;
 
 //=======================================================================================
 // ARDUINO FUNCTIONS
@@ -250,15 +252,18 @@ void ESPectrum::setup()
     // Init tape
     Tape::Init();
 
-    // START Z80
-    CPU::setup();
-
-    // make sure keyboard ports are FF
-    for (int t = 0; t < 32; t++) {
-        Ports::base[t] = 0x1f;
-    }
-
     if (Config::slog_on) printf("Executing on core: %u\n", xPortGetCoreID());
+
+    // Set samples per frame and AY_emu flag depending on arch
+    if (Config::getArch() == "48K") {
+        samplesPerFrame=546; 
+        AY_emu = Config::AY48;
+        Audio_freq = ESP_AUDIO_FREQ_48;
+    } else {
+        samplesPerFrame=554;
+        AY_emu = true;        
+        Audio_freq = ESP_AUDIO_FREQ_128;
+    }
 
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
@@ -268,18 +273,32 @@ void ESPectrum::setup()
     // AY Sound
     AySound::initialize();
     // // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(ESP_AUDIO_FREQ);
-    AySound::_channel[1].setSampleRate(ESP_AUDIO_FREQ);
-    AySound::_channel[2].setSampleRate(ESP_AUDIO_FREQ);
+    AySound::_channel[0].setSampleRate(Audio_freq);
+    AySound::_channel[1].setSampleRate(Audio_freq);
+    AySound::_channel[2].setSampleRate(Audio_freq);
 
-    // Set samples per frame and AY_emu flag depending on arch
-    if (Config::getArch() == "48K") {
-        samplesPerFrame=546; 
-        AY_emu = Config::AY48;
-    } else {
-        samplesPerFrame=554;
-        AY_emu = true;        
+    // START Z80
+    CPU::setup();
+
+    int i;
+    for (i = 0; i < 128; i++) {
+        Ports::base[i] = 0x1F;
     }
+
+    MemESP::bankLatch = 0;
+    MemESP::videoLatch = 0;
+    MemESP::romLatch = 0;
+
+    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+
+    MemESP::modeSP3 = 0;
+    MemESP::romSP3 = 0;
+    MemESP::romInUse = 0;
+
+    Tape::tapeFileName = "none";
+    Tape::tapeStatus = TAPE_STOPPED;
+    Tape::SaveStatus = SAVE_STOPPED;
+    Tape::romLoading = false;
 
     // Video sync
     target = CPU::microsPerFrame();
@@ -325,6 +344,8 @@ void ESPectrum::reset()
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 
+    pwm_audio_stop();
+
     // Empty oversample audio buffer
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i]=0;
     lastaudioBit=0;
@@ -333,14 +354,25 @@ void ESPectrum::reset()
     if (Config::getArch() == "48K") {
         samplesPerFrame=546; 
         AY_emu = Config::AY48;
+        Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
         samplesPerFrame=554;
         AY_emu = true;        
+        Audio_freq = ESP_AUDIO_FREQ_128;
     }
+
+    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
 
     // Reset AY emulation
     AySound::reset();
-    
+
+    // Set AY channels samplerate to match pwm_audio's
+    AySound::_channel[0].setSampleRate(Audio_freq);
+    AySound::_channel[1].setSampleRate(Audio_freq);
+    AySound::_channel[2].setSampleRate(Audio_freq);
+
+    pwm_audio_start();
+
     // Video sync
     target = CPU::microsPerFrame();
 
@@ -697,6 +729,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
     size_t written;
 
+    // PWM Audio Init
     pwm_audio_config_t pac;
     pac.duty_resolution    = LEDC_TIMER_8_BIT;
     pac.gpio_num_left      = SPEAKER_PIN;
@@ -709,7 +742,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pac.ringbuf_len        = 1024 * 8;
 
     pwm_audio_init(&pac);
-    pwm_audio_set_param(ESP_AUDIO_FREQ,LEDC_TIMER_8_BIT,1);
+    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 
@@ -717,7 +750,9 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);        
+        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);        
+        
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
@@ -860,7 +895,6 @@ for(;;) {
     if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
 
     elapsed = micros() - ts_start;
-    
     idle = target - elapsed;
     if (idle < 0) idle = 0;
 
@@ -892,7 +926,9 @@ for(;;) {
     }
     
     #ifdef VIDEO_FRAME_TIMING    
-    delayMicroseconds(idle);
+    elapsed = micros() - ts_start;
+    idle = target - elapsed;
+    if (idle > 0) delayMicroseconds(idle);
     #endif
 
 }

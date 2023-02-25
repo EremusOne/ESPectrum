@@ -37,7 +37,8 @@
 using namespace std;
 
 #define ESP_AUDIO_OVERSAMPLES 4432 // For 48K we get 4368 samples per frame, for 128K we get 4432
-#define ESP_AUDIO_FREQ 27300
+#define ESP_AUDIO_FREQ_48 27300
+#define ESP_AUDIO_FREQ_128 27700
 #define ESP_AUDIO_SAMPLES 554 // For 48K we get 546 samples per frame, for 128K we get 554
 #define ESP_AUDIO_TSTATES 128
 
@@ -68,6 +69,7 @@ public:
     static void audioFrameEnd();
     static int samplesPerFrame;
     static bool AY_emu;
+    static int Audio_freq;
 
     static int ESPoffset; // Testing
     
