@@ -241,13 +241,21 @@ bool FileSNA::load(string sna_fn)
         }
     }
 
+    // CUIDADO CON PARAMETROS DE SONIDO POR ARQUITECTURA: PROBABLEMENTE HAY QUE AÑADIRLO AQUI Y EN Z80LOAD
     if (Config::getArch() == "48K") {
+        //printf("48K arch activated\n");
         VIDEO::tStatesPerLine = TSTATES_PER_LINE;
         VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
-
+        Z80Ops::delayContention = &Z80Ops::delayContention48;
+        VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
+        Z80Ops::is48 = true;
     } else {
+        //printf("128K arch activated\n");
         VIDEO::tStatesPerLine = TSTATES_PER_LINE_128;
         VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+        Z80Ops::delayContention = &Z80Ops::delayContention128;
+        VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
+        Z80Ops::is48 = false;
     }
 
     // Resume keyboard input

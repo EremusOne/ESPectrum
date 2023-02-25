@@ -67,6 +67,8 @@ uint64_t CPU::global_tstates = 0;
 uint32_t CPU::statesInFrame = 0;
 uint32_t CPU::framecnt = 0;
 
+bool Z80Ops::is48 = true;
+
 void CPU::setup()
 {
     if (!createCalled) {
@@ -77,13 +79,13 @@ void CPU::setup()
     statesInFrame = CPU::statesPerFrame();
 
     if (Config::getArch() == "48K") {
-        delayContention = &delayContention48;
-        address_is_contended = &address_is_contended_48;
+        Z80Ops::delayContention = &Z80Ops::delayContention48;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
+        Z80Ops::is48 = true;
     } else {
-        delayContention = &delayContention128;
-        address_is_contended = &address_is_contended_128;
+        Z80Ops::delayContention = &Z80Ops::delayContention128;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
+        Z80Ops::is48 = false;
     }
 
     global_tstates = 0;
@@ -99,13 +101,13 @@ void CPU::reset() {
     statesInFrame = CPU::statesPerFrame();
 
     if (Config::getArch() == "48K") {
-        delayContention = &delayContention48;
-        address_is_contended = &address_is_contended_48;
+        Z80Ops::delayContention = &Z80Ops::delayContention48;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
+        Z80Ops::is48 = true;
     } else {
-        delayContention = &delayContention128;
-        address_is_contended = &address_is_contended_128;
+        Z80Ops::delayContention = &Z80Ops::delayContention128;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
+        Z80Ops::is48 = false;
     }
 
     global_tstates = 0;
@@ -152,15 +154,6 @@ void IRAM_ATTR CPU::loop()
 
 }
 
-bool IRAM_ATTR address_is_contended_48(uint16_t address) {
-    return (1 == (address >> 14));
-}
-
-bool IRAM_ATTR address_is_contended_128(uint16_t address) {
-    int i = address >> 14;
-    return ((i == 1) || ((i == 3) && (MemESP::bankLatch & 0x01 == 1)));
-}
-
 void CPU::FlushOnHalt() {
         
     tstates &= 0x00FFFFFF;
@@ -168,11 +161,20 @@ void CPU::FlushOnHalt() {
 
     uint32_t calcRegR = Z80::getRegR();
 
-    bool LowR = address_is_contended(Z80::getRegPC());
+    bool LowR = false;
+    uint8_t page = Z80::getRegPC() >> 14;
+    switch (page) {
+    case 1:
+        LowR=true;
+        break;
+    case 3:
+        if ((!Z80Ops::is48) && (MemESP::bankLatch & 0x01 == 1)) LowR=true;
+    }
+
     if (LowR) {
         uint32_t tIncr = tstates;
         while (tIncr < statesInFrame) {
-            tIncr += delayContention(tIncr) + 4;
+            tIncr += Z80Ops::delayContention(tIncr) + 4;
             calcRegR++;
         }
         global_tstates += (tIncr - tstates);
@@ -207,7 +209,9 @@ void CPU::FlushOnHalt() {
 
 static const unsigned char wait_states[8] = { 6, 5, 4, 3, 2, 1, 0, 0 }; // sequence of wait states
 
-static unsigned char IRAM_ATTR delayContention48(unsigned int currentTstates) {
+unsigned char (*Z80Ops::delayContention)(unsigned int currentTstates);
+
+unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
     
     // delay states one t-state BEFORE the first pixel to be drawn
     currentTstates++;
@@ -226,7 +230,7 @@ static unsigned char IRAM_ATTR delayContention48(unsigned int currentTstates) {
 
 }
 
-static unsigned char IRAM_ATTR delayContention128(unsigned int currentTstates) {
+unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) {
     
     // delay states one t-state BEFORE the first pixel to be drawn
     currentTstates++;
@@ -247,7 +251,7 @@ static unsigned char IRAM_ATTR delayContention128(unsigned int currentTstates) {
 static void ALUContentEarly( uint16_t port )
 {
     if ( ( port & 49152 ) == 16384 )
-        VIDEO::Draw(delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
     else
         VIDEO::Draw(1);
 }
@@ -256,12 +260,12 @@ static void ALUContentLate( uint16_t port )
 {
 
   if( (port & 0x0001) == 0x00) {
-        VIDEO::Draw(delayContention(CPU::tstates) + 3);
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
   } else {
     if ( (port & 49152) == 16384 ) {
-        VIDEO::Draw(delayContention(CPU::tstates) + 1);
-        VIDEO::Draw(delayContention(CPU::tstates) + 1);
-        VIDEO::Draw(delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
     } else {
         VIDEO::Draw(3);
 	}
@@ -276,27 +280,25 @@ static void ALUContentLate( uint16_t port )
 /* Read opcode from RAM */
 uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
 
-    // // 3 clocks to fetch opcode from RAM and 1 execution clock
-    // if (address_is_contended(address))
-    //     VIDEO::Draw(delayContention(CPU::tstates) + 4);
-    // else
-    //     VIDEO::Draw(4);
-
-    // return MemESP::readbyte(address);
-
     uint8_t page = address >> 14;
     switch (page) {
     case 0:
         VIDEO::Draw(4);
         return MemESP::rom[MemESP::romInUse][address];
     case 1:
-        VIDEO::Draw(delayContention(CPU::tstates) + 4);
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 4);
         return MemESP::ram5[address - 0x4000];
     case 2:
         VIDEO::Draw(4);
         return MemESP::ram2[address - 0x8000];
     case 3:
-        VIDEO::Draw(4);
+        if (is48)
+            VIDEO::Draw(4);
+        else
+            if (MemESP::bankLatch & 0x01 == 1)
+                VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 4);
+            else
+                VIDEO::Draw(4);
         return MemESP::ram[MemESP::bankLatch][address - 0xC000];
     default:
         VIDEO::Draw(4);
@@ -307,52 +309,148 @@ uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
 
 /* Read byte from RAM */
 uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
-    // 3 clocks for read byte from RAM
-    if (address_is_contended(address))
-        VIDEO::Draw(delayContention(CPU::tstates) + 3);
-    else
-        VIDEO::Draw(3);
 
-    return MemESP::readbyte(address);
+    uint8_t page = address >> 14;
+    switch (page) {
+    case 0:
+        VIDEO::Draw(3);
+        return MemESP::rom[MemESP::romInUse][address];
+    case 1:
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+        return MemESP::ram5[address - 0x4000];
+    case 2:
+        VIDEO::Draw(3);
+        return MemESP::ram2[address - 0x8000];
+    case 3:
+        if (is48)
+            VIDEO::Draw(3);
+        else
+            if (MemESP::bankLatch & 0x01 == 1)
+                VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+            else
+                VIDEO::Draw(3);
+        return MemESP::ram[MemESP::bankLatch][address - 0xC000];
+    default:
+        VIDEO::Draw(3);
+        return MemESP::rom[MemESP::romInUse][address];
+    }
+
 }
 
 /* Write byte to RAM */
 void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
-    if (address_is_contended(address))
-        VIDEO::Draw(delayContention(CPU::tstates) + 3);
-    else 
-        VIDEO::Draw(3);        
 
-    MemESP::writebyte(address, value);
+    uint8_t page = address >> 14;
+    switch (page) {
+    case 0:
+        VIDEO::Draw(3);        
+        return;
+    case 1:
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+        MemESP::ram5[address - 0x4000] = value;
+        return;
+    case 2:
+        VIDEO::Draw(3);        
+        MemESP::ram2[address - 0x8000] = value;
+        return;
+    case 3:
+        if (is48)
+            VIDEO::Draw(3);
+        else
+            if (MemESP::bankLatch & 0x01 == 1)
+                VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+            else
+                VIDEO::Draw(3);
+        MemESP::ram[MemESP::bankLatch][address - 0xC000] = value;
+        return;
+    }
+
 }
 
 /* Read/Write word from/to RAM */
 uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
-    // 3 clocks for read byte from RAM
-    if (address_is_contended(address))
-        VIDEO::Draw(delayContention(CPU::tstates) + 3);
-    else
-        VIDEO::Draw(3);
+    // Check if address is between two different pages
+    if ((address >> 14) == ((address + 1) >> 14)) {
+ 
+        uint8_t page = address >> 14;
+        switch (page) {
+        case 0:
+            VIDEO::Draw(6);
+            return ((MemESP::rom[MemESP::romInUse][address + 1] << 8) | MemESP::rom[MemESP::romInUse][address]);
+        case 1:
+            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+            return ((MemESP::ram5[address - 0x3FFF] << 8) | MemESP::ram5[address - 0x4000]);
+        case 2:
+            VIDEO::Draw(6);
+            return ((MemESP::ram2[address - 0x7FFF] << 8) | MemESP::ram2[address - 0x8000]);
+        case 3:
+            if (is48)
+                VIDEO::Draw(6);
+            else
+                if (MemESP::bankLatch & 0x01 == 1) {
+                    VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+                    VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+                } else
+                    VIDEO::Draw(6);
+            return ((MemESP::ram[MemESP::bankLatch][address - 0xBFFF] << 8) | MemESP::ram[MemESP::bankLatch][address - 0xC000]);
+        default:
+            VIDEO::Draw(6);
+            return ((MemESP::rom[MemESP::romInUse][address + 1] << 8) | MemESP::rom[MemESP::romInUse][address]);
+        }
 
-    uint8_t lsb = MemESP::readbyte(address);
+    } else {
 
-    address++;
+        // Order matters, first read lsb, then read msb, don't "optimize"
+        uint8_t lsb = Z80Ops::peek8(address);
+        uint8_t msb = Z80Ops::peek8(address + 1);
+        return (msb << 8) | lsb;
 
-    // 3 clocks for read byte from RAM
-    if (address_is_contended(address))
-        VIDEO::Draw(delayContention(CPU::tstates) + 3);
-    else
-        VIDEO::Draw(3);
+    }
 
-    return (MemESP::readbyte(address) << 8) | lsb;
 }
 
 void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
-    // // Order matters, first write lsb, then write msb, don't "optimize"
-    Z80Ops::poke8(address, word.byte8.lo);
-    Z80Ops::poke8(address + 1, word.byte8.hi);
+    // Check if address is between two different pages
+    if ((address >> 14) == ((address + 1) >> 14)) {
+
+        uint8_t page = address >> 14;
+        switch (page) {
+        case 0:
+            VIDEO::Draw(6);        
+            return;
+        case 1:
+            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+            MemESP::ram5[address - 0x4000] = word.byte8.lo;
+            MemESP::ram5[address - 0x3fff] = word.byte8.hi;
+            return;
+        case 2:
+            VIDEO::Draw(6);        
+            MemESP::ram2[address - 0x8000] = word.byte8.lo;
+            MemESP::ram2[address - 0x7fff] = word.byte8.hi;
+            return;
+        case 3:
+            if (is48)
+                VIDEO::Draw(6);
+            else
+                if (MemESP::bankLatch & 0x01 == 1) {
+                    VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+                    VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+                } else
+                    VIDEO::Draw(6);
+            MemESP::ram[MemESP::bankLatch][address - 0xC000] = word.byte8.lo;
+            MemESP::ram[MemESP::bankLatch][address - 0xbfff] = word.byte8.hi;
+            return;
+        }
+
+    } else {
+        // // Order matters, first write lsb, then write msb, don't "optimize"
+        Z80Ops::poke8(address, word.byte8.lo);
+        Z80Ops::poke8(address + 1, word.byte8.hi);
+    }
 
 }
 
@@ -383,12 +481,25 @@ void IRAM_ATTR Z80Ops::outPort(uint16_t port, uint8_t value) {
 /* Put an address on bus lasting 'tstates' cycles */
 void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
 
-    // Additional clocks to be added on some instructions
-    if (address_is_contended(address))
+    uint8_t page = address >> 14;
+    switch (page) {
+    case 1:
         for (int idx = 0; idx < wstates; idx++)
-            VIDEO::Draw(delayContention(CPU::tstates) + 1);        
-    else
+            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);  
+        return;      
+    case 3:
+        if (is48)
+            VIDEO::Draw(wstates);
+        else
+            if (MemESP::bankLatch & 0x01 == 1) {
+                for (int idx = 0; idx < wstates; idx++)
+                    VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);        
+            } else
+                VIDEO::Draw(wstates);
+        return;
+    default:
         VIDEO::Draw(wstates);        
+    }
 
 }
 

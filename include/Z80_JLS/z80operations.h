@@ -47,6 +47,12 @@ public:
     /* Signal HALT in tstates */
     static void IRAM_ATTR signalHalt();
 
+    static unsigned char (*delayContention)(unsigned int currentTstates);
+    static unsigned char IRAM_ATTR delayContention48(unsigned int currentTstates);
+    static unsigned char IRAM_ATTR delayContention128(unsigned int currentTstates);
+
+    static bool is48;
+
 };
 
 #endif // Z80OPERATIONS_H
