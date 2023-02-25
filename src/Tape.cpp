@@ -1,7 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// ZX-ESPectrum - ZX Spectrum emulator for ESP32
+// ZX-ESPectrum-IDF - Sinclair ZX Spectrum emulator for ESP32 / IDF
 //
+// TAPE EMULATION
+//
+// Copyright (c) 2023 Víctor Iborra [EremusOne]
+// https://github.com/EremusOne/ZX-ESPectrum-IDF
+//
+// Based on ZX-ESPectrum-Wiimote
 // Copyright (c) 2020, 2021 David Crespo [dcrespo3d]
 // https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 //

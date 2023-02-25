@@ -275,13 +275,34 @@ static void ALUContentLate( uint16_t port )
 ///////////////////////////////////////////////////////////////////////////////
 /* Read opcode from RAM */
 uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
-    // 3 clocks to fetch opcode from RAM and 1 execution clock
-    if (address_is_contended(address))
-        VIDEO::Draw(delayContention(CPU::tstates) + 4);
-    else
-        VIDEO::Draw(4);
 
-    return MemESP::readbyte(address);
+    // // 3 clocks to fetch opcode from RAM and 1 execution clock
+    // if (address_is_contended(address))
+    //     VIDEO::Draw(delayContention(CPU::tstates) + 4);
+    // else
+    //     VIDEO::Draw(4);
+
+    // return MemESP::readbyte(address);
+
+    uint8_t page = address >> 14;
+    switch (page) {
+    case 0:
+        VIDEO::Draw(4);
+        return MemESP::rom[MemESP::romInUse][address];
+    case 1:
+        VIDEO::Draw(delayContention(CPU::tstates) + 4);
+        return MemESP::ram5[address - 0x4000];
+    case 2:
+        VIDEO::Draw(4);
+        return MemESP::ram2[address - 0x8000];
+    case 3:
+        VIDEO::Draw(4);
+        return MemESP::ram[MemESP::bankLatch][address - 0xC000];
+    default:
+        VIDEO::Draw(4);
+        return MemESP::rom[MemESP::romInUse][address];
+    }
+
 }
 
 /* Read byte from RAM */

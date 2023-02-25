@@ -64,11 +64,6 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
             bitWrite(result,6,Tape::TAP_Read());
         } 
         
-        // else {
-        //     // if (base[0x20] & 0x18) result |= (0xe0); else result |= (0xa0); // ISSUE 2 behaviour
-        //     result |= (0xa0); // ISSUE 2 behaviour
-        // }
-
         result |= (0xa0); // ISSUE 2 behaviour
 
         return result;
