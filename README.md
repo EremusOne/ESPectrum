@@ -16,16 +16,16 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 ## Features
 
-- Spectrum 48/128 architecture emulation (no PSRAM needed).
-- 128/+2/+2A emulation and AY-3-8912 sound chip working but still incomplete.
+- Spectrum 48/128/+2 architecture emulation (no PSRAM needed).
 - Accurate Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
 - VGA output (6 bpp, BRIGHT attribute kept) with good emulation of Spectrum screen.
 - Support for two aspect ratios: 16:9 or 4:3 monitors (using 360x200 or 320x240 modes)
 - Multicolor attribute effects emulated (Bifrost*2, Nirvana and Nirvana+ engines).
 - Border effects emulated (Aquaplane, The Sentinel, Overscan demo).
-- Contended memory emulation.
-- Contended I/O emulation.
+- Floating bus effect emulation (Arkanoid, Sidewize).
+- Contended memory and contended I/O emulation.
 - 48K sound: beeper digital output.
+- AY-3-8912 sound chip working but still incomplete.
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
 - International kbd layout support: US, ES, DE, FR and UK.
 - Complete OSD menu in two languages: English & Spanish.
