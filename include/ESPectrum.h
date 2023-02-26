@@ -71,6 +71,8 @@ public:
     static bool AY_emu;
     static int Audio_freq;
 
+    static uint32_t target;
+
     static int ESPoffset; // Testing
     
 private:

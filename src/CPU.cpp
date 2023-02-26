@@ -193,20 +193,6 @@ void CPU::FlushOnHalt() {
 
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// Delay Contention: for emulating CPU slowing due to sharing bus with ULA
-// NOTE: Only 48K spectrum contention implemented. This function must be called
-// only when dealing with affected memory (use address_is_contended macro)
-//
-// delay contention: emulates wait states introduced by the ULA (graphic chip)
-// whenever there is a memory access to contended memory (shared between ULA and CPU).
-// detailed info: https://worldofspectrum.org/faq/reference/48kreference.htm#ZXSpectrum
-// from paragraph which starts with "The 50 Hz interrupt is synchronized with..."
-// if you only read from https://worldofspectrum.org/faq/reference/48kreference.htm#Contention
-// without reading the previous paragraphs about line timings, it may be confusing.
-//
-
 static const unsigned char wait_states[8] = { 6, 5, 4, 3, 2, 1, 0, 0 }; // sequence of wait states
 
 unsigned char (*Z80Ops::delayContention)(unsigned int currentTstates);
@@ -232,7 +218,6 @@ unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
 
 unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) {
     
-    // delay states one t-state BEFORE the first pixel to be drawn
     currentTstates++;
 
     unsigned short int line = currentTstates / 228; // int line

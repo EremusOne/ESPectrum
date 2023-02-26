@@ -99,15 +99,13 @@ static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
     "Stop  \t[F7]  \n"
 static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
 
-#define MENU_MAIN_EN \
-    "Main Menu\n"\
+#define MENU_MAIN_EN /*"Main Menu\n"*/ \
     "Snapshot\t>\n"\
     "Tape\t>\n"\
     "Reset\t>\n"\
     "Options\t>\n"\
     "About\n"
-#define MENU_MAIN_ES \
-    "Menu principal\n"\
+#define MENU_MAIN_ES /*"Menu principal\n"*/ \
     "Snapshots\t>\n"\
     "Casete\t>\n"\
     "Resetear\t>\n"\

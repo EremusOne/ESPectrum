@@ -36,7 +36,6 @@
 #include "Config.h"
 #include "FileSNA.h"
 #include "FileZ80.h"
-#include "AySound.h"
 #include "MemESP.h"
 #include "Tape.h"
 #include "pwm_audio.h"
@@ -167,8 +166,6 @@ static void persistLoad(uint8_t slotnumber)
     if (!FileSNA::load(FileUtils::MountPoint + persistfname)) {
          OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
     }
-    AySound::reset();
-    if (Config::getArch() == "48K") ESPectrum::samplesPerFrame=546; else ESPectrum::samplesPerFrame=554;
     OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
 }
 
@@ -179,48 +176,38 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     fabgl::VirtualKeyItem Nextkey;
 
     if (KeytoESP == fabgl::VK_PAUSE) {
-        AySound::disable();
         osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 0);
         while (1) {
             ESPectrum::readKbd(&Nextkey);
             if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
             vTaskDelay(5 / portTICK_PERIOD_MS);
         }
-        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F2) {
-        AySound::disable();
         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
         if (mFile != "") {
             changeSnapshot(mFile);
         }
-        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F3) {
-        AySound::disable();
         // Persist Load
         uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
         if (opt2 > 0 && opt2<6) {
             persistLoad(opt2);
         }
-        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F4) {
-        AySound::disable();
         // Persist Save
         uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
         if (opt2 > 0 && opt2<6) {
             persistSave(opt2);
         }
-        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F5) {
-        AySound::disable();
         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
         if (mFile != "") {
             Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
         }
-        AySound::enable();
     }
     else if (KeytoESP == fabgl::VK_F6) {
         // Start .tap reproduction
@@ -298,10 +285,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     // }
     else if (KeytoESP == fabgl::VK_F1) {
 
-        AySound::disable();
-
         // Main menu
-        uint8_t opt = menuRun(MENU_MAIN[Config::lang]);
+        uint8_t opt = menuRun("Spectrum " + Config::getArch() + "\n" + MENU_MAIN[Config::lang]);
+  
         if (opt == 1) {
             // Snapshot menu
             uint8_t sna_mnu = menuRun(MENU_SNA[Config::lang]);
@@ -573,9 +559,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
                 vTaskDelay(5 / portTICK_PERIOD_MS);
             }
-        }
-        
-        AySound::enable();
+        }        
     }
 }
 

@@ -37,6 +37,9 @@
 #include "messages.h"
 #include "OSDMain.h"
 #include "FileSNA.h"
+#include "Tape.h"
+#include "AySound.h"
+#include "pwm_audio.h"
 #include <stdio.h>
 
 #include <inttypes.h>
@@ -241,7 +244,8 @@ bool FileSNA::load(string sna_fn)
         }
     }
 
-    // CUIDADO CON PARAMETROS DE SONIDO POR ARQUITECTURA: PROBABLEMENTE HAY QUE AÑADIRLO AQUI Y EN Z80LOAD
+    CPU::statesInFrame = CPU::statesPerFrame();
+
     if (Config::getArch() == "48K") {
         //printf("48K arch activated\n");
         VIDEO::tStatesPerLine = TSTATES_PER_LINE;
@@ -257,6 +261,43 @@ bool FileSNA::load(string sna_fn)
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
         Z80Ops::is48 = false;
     }
+
+    Tape::tapeFileName = "none";
+    Tape::tapeStatus = TAPE_STOPPED;
+    Tape::SaveStatus = SAVE_STOPPED;
+    Tape::romLoading = false;
+
+    pwm_audio_stop();
+
+    // Empty oversample audio buffer
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i++) ESPectrum::overSamplebuf[i]=0;
+    ESPectrum::lastaudioBit=0;
+
+    // Set samples per frame and AY_emu flag depending on arch
+    if (Config::getArch() == "48K") {
+        ESPectrum::samplesPerFrame=546; 
+        ESPectrum::AY_emu = Config::AY48;
+        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+    } else {
+        ESPectrum::samplesPerFrame=554;
+        ESPectrum::AY_emu = true;        
+        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
+    }
+
+    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
+
+    // Reset AY emulation
+    AySound::reset();
+
+    // Set AY channels samplerate to match pwm_audio's
+    AySound::_channel[0].setSampleRate(ESPectrum::Audio_freq);
+    AySound::_channel[1].setSampleRate(ESPectrum::Audio_freq);
+    AySound::_channel[2].setSampleRate(ESPectrum::Audio_freq);
+
+    pwm_audio_start();
+
+    // Video sync
+    ESPectrum::target = CPU::microsPerFrame();
 
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
