@@ -25,7 +25,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Floating bus effect emulation (Arkanoid, Sidewize).
 - Contended memory and contended I/O emulation.
 - 48K sound: beeper digital output.
-- AY-3-8912 sound chip working but still incomplete.
+- AY-3-8912 sound emulation working but still incomplete.
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
 - International kbd layout support: US, ES, DE, FR and UK.
 - Complete OSD menu in two languages: English & Spanish.
@@ -37,7 +37,6 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 ## Work in progress
 
-- Floating bus emulation.
 - Better AY-3-8912 emulation (128K sound is still a little dirty).
 
 ## Compiling and installing
