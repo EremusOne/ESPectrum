@@ -83,6 +83,8 @@ public:
     static void (*DrawOSD43)(unsigned int);
     static void (*DrawOSD169)(unsigned int);
 
+    static uint8_t* grmem;
+
     // For flushing video buffer as fast as possible after HALT
     static void Flush();
 
@@ -137,7 +139,6 @@ static uint32_t** AluBytes;
 
 static unsigned char DrawStatus;
 
-static uint8_t* grmem;
 static uint32_t* lineptr32;
 
 static unsigned int tstateDraw; // Drawing start point (in Tstates)

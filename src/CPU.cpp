@@ -218,7 +218,7 @@ unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
 
 unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) {
     
-    currentTstates++;
+    currentTstates+=2;
 
     unsigned short int line = currentTstates / 228; // int line
 	if (line < 63 || line >= 255) return 0;
@@ -233,31 +233,31 @@ unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) 
 ///////////////////////////////////////////////////////////////////////////////
 // Port Contention
 ///////////////////////////////////////////////////////////////////////////////
-static void ALUContentEarly( uint16_t port )
-{
-    if ( ( port & 49152 ) == 16384 )
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-    else
-        VIDEO::Draw(1);
-}
+// static void ALUContentEarly( uint16_t port )
+// {
+//     if ( ( port & 49152 ) == 16384 )
+//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+//     else
+//         VIDEO::Draw(1);
+// }
 
-static void ALUContentLate( uint16_t port )
-{
+// static void ALUContentLate( uint16_t port )
+// {
 
-  if( (port & 0x0001) == 0x00) {
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-  } else {
-    if ( (port & 49152) == 16384 ) {
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-    } else {
-        VIDEO::Draw(3);
-	}
+//   if( (port & 0x0001) == 0x00) {
+//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+//   } else {
+//     if ( (port & 49152) == 16384 ) {
+//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+//     } else {
+//         VIDEO::Draw(3);
+// 	}
 
-  }
+//   }
 
-}
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Z80Ops
@@ -442,8 +442,8 @@ void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 /* In/Out byte from/to IO Bus */
 uint8_t IRAM_ATTR Z80Ops::inPort(uint16_t port) {
     
-    ALUContentEarly( port );   // Contended I/O
-    ALUContentLate( port );    // Contended I/O
+    // ALUContentEarly( port );   // Contended I/O
+    // ALUContentLate( port );    // Contended I/O
 
     uint8_t hiport = port >> 8;
     uint8_t loport = port & 0xFF;
@@ -453,13 +453,13 @@ uint8_t IRAM_ATTR Z80Ops::inPort(uint16_t port) {
 
 void IRAM_ATTR Z80Ops::outPort(uint16_t port, uint8_t value) {
     
-    ALUContentEarly( port );   // Contended I/O
+    // ALUContentEarly( port );   // Contended I/O
 
     uint8_t hiport = port >> 8;
     uint8_t loport = port & 0xFF;
     Ports::output(loport, hiport, value);
 
-    ALUContentLate( port );    // Contended I/O
+    // ALUContentLate( port );    // Contended I/O
 
 }
 

@@ -249,6 +249,9 @@ void ESPectrum::setup()
 
     if (Config::slog_on) showMemInfo("RAM Initialized");
 
+    // Active graphic bank pointer
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+
     // Init tape
     Tape::Init();
 
@@ -327,8 +330,6 @@ void ESPectrum::reset()
         Ports::base[i] = 0x1F;
     }
 
-    VIDEO::Reset();
-
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
     MemESP::romLatch = 0;
@@ -338,6 +339,8 @@ void ESPectrum::reset()
     MemESP::modeSP3 = 0;
     MemESP::romSP3 = 0;
     MemESP::romInUse = 0;
+
+    VIDEO::Reset();
 
     Tape::tapeFileName = "none";
     Tape::tapeStatus = TAPE_STOPPED;

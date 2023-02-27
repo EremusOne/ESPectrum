@@ -49,7 +49,7 @@ uint8_t VIDEO::flash_ctr= 0;
 bool VIDEO::OSD = false;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
-
+uint8_t* VIDEO::grmem;
 
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
@@ -194,6 +194,8 @@ void VIDEO::Reset() {
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
     }
 
+    grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+
     #ifdef NOVIDEO
         Draw = &NoVideo;
     #else
@@ -218,25 +220,25 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData48() {
 
     switch (halfpix & 0x07) {
         case 3: { // Bitmap
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 64];
             int hpoffset = (halfpix - 3) >> 2;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 4: { // Attr
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 64];
             int hpoffset = (halfpix - 3) >> 2;
             return(grmem[attOffset + hpoffset]);
         }
         case 5: { // Bitmap + 1
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 64];
             int hpoffset = ((halfpix - 3) >> 2) + 1;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 6: { // Attr + 1
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 64];
             int hpoffset = ((halfpix - 3) >> 2) + 1;
             return(grmem[attOffset + hpoffset]);
@@ -251,7 +253,7 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
 
     unsigned int currentTstates = CPU::tstates;
 
-    currentTstates++;
+    currentTstates-=2;
 
 	// each line spans 224 t-states
 	unsigned short int line = currentTstates / 228; // int line
@@ -265,25 +267,25 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
 
     switch (halfpix & 0x07) {
         case 0: { // Bitmap
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 63];
             int hpoffset = (halfpix) >> 2;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 1: { // Attr
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 63];
             int hpoffset = (halfpix) >> 2;
             return(grmem[attOffset + hpoffset]);
         }
         case 2: { // Bitmap + 1
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 63];
             int hpoffset = ((halfpix) >> 2) + 1;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 3: { // Attr + 1
-            grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 63];
             int hpoffset = ((halfpix) >> 2) + 1;
             return(grmem[attOffset + hpoffset]);
@@ -348,7 +350,6 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd) {
         coldraw_cnt = 0;
         bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
         attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24)];
-        grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
         Draw = DrawOSD169;
         Draw(0);
     }
@@ -360,13 +361,13 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd) {
     uint8_t att, bmp;
 
     CPU::tstates += statestoadd;
-
+    
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
     brd = border32[borderColor];
 
     for (int i=0; i < (statestoadd >> 2); i++) {    
-        
+
         if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
             att = grmem[attOffset++];       // get attribute byte
             if (att & flashing) {
