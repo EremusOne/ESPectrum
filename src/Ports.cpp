@@ -44,7 +44,7 @@ volatile uint8_t Ports::base[128];
 ///////////////////////////////////////////////////////////////////////////////
 static void ALUContentEarly( uint16_t port )
 {
-//    if ( ( port & 49152 ) == 16384 )
+    // if ( ( port & 49152 ) == 16384 )
     uint8_t page = port >> 14;
     if ((page == 1) || ((!Z80Ops::is48) && (page == 3)))
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
@@ -58,10 +58,10 @@ static void ALUContentLate( uint16_t port )
   if( (port & 0x0001) == 0x00) {
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
   } else {
-//    if ( (port & 49152) == 16384 ) {
+    // if ( (port & 49152) == 16384 ) {
     uint8_t page = port >> 14;   
     if ((page == 1) || ((!Z80Ops::is48) && (page == 3))) {
-      VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
     } else {
@@ -75,7 +75,7 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
 {
     
     uint16_t address = portHigh << 8 | portLow;
-    
+
     ALUContentEarly(address);
     ALUContentLate(address);
 

@@ -50,8 +50,8 @@ static bool interruptPending = false;
 
 uint32_t CPU::statesPerFrame()
 {
-    if (Config::getArch() == "48K") return 69888; // 69888 is the right value.
-    else                            return 70908; // 70908 is the right value. Added 4 states to make it divisible by 128 (for audio calcs)
+    if (Config::getArch() == "48K") return 69888;
+    else                            return 70908;
 }
 
 uint32_t CPU::microsPerFrame()
@@ -218,7 +218,7 @@ unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
 
 unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) {
     
-    currentTstates+=2;
+    currentTstates+=3;
 
     unsigned short int line = currentTstates / 228; // int line
 	if (line < 63 || line >= 255) return 0;

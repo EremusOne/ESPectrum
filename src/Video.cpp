@@ -253,7 +253,7 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
 
     unsigned int currentTstates = CPU::tstates;
 
-    currentTstates-=2;
+    currentTstates--;
 
 	// each line spans 224 t-states
 	unsigned short int line = currentTstates / 228; // int line
