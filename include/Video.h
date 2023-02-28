@@ -91,6 +91,8 @@ public:
     static VGA6Bit vga;
 
     static uint8_t borderColor;
+    static uint32_t border32[8];
+    static uint32_t brd;
     static unsigned lastBorder[312];
 
     static uint8_t tStatesPerLine;
@@ -149,8 +151,6 @@ static unsigned int video_rest;
 
 static unsigned int bmpOffset;  // offset for bitmap in graphic memory
 static unsigned int attOffset;  // offset for attrib in graphic memory
-
-static unsigned int brd;
 
 void precalcAluBytes();
 

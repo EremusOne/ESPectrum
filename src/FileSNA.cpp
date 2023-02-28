@@ -173,6 +173,7 @@ bool FileSNA::load(string sna_fn)
     Z80_SET_IM(readByteFile(file));
 
     VIDEO::borderColor = readByteFile(file);
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
 
     // read 48K memory
     readBlockFile(file, MemESP::ram5, 0x4000);

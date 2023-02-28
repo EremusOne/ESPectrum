@@ -128,7 +128,8 @@ bool FileZ80::load(string z80_fn)
     uint16_t RegPC = Z80::getRegPC();
 
     VIDEO::borderColor = (b12 >> 1) & 0x07;
-
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+    
     bool dataCompressed = (b12 & 0x20) ? true : false;
     string fileArch = "48K";
     uint8_t memPagingReg = 0;

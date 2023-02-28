@@ -43,7 +43,9 @@
 
 VGA6Bit VIDEO::vga;
 uint8_t VIDEO::borderColor = 0;
+uint32_t VIDEO::brd;
 unsigned int VIDEO::lastBorder[312] = { 0 };
+uint32_t VIDEO::border32[8];
 uint8_t VIDEO::flashing = 0;
 uint8_t VIDEO::flash_ctr= 0;
 bool VIDEO::OSD = false;
@@ -128,13 +130,11 @@ void precalcULASWAP() {
     }
 }
 
-// Precalc border 32 bits values
-static unsigned int border32[8];
 void precalcborder32()
 {
     for (int i = 0; i < 8; i++) {
         uint8_t border = zxColor(i,0);
-        border32[i] = border | (border << 8) | (border << 16) | (border << 24);
+        VIDEO::border32[i] = border | (border << 8) | (border << 16) | (border << 24);
     }
 }
 
@@ -159,6 +159,7 @@ void VIDEO::Init() {
 
     for (int i=0;i<312;i++) lastBorder[i]=8; // 8 -> Force repaint of border
     borderColor = 0;
+    brd = border32[0];
 
     is169 = Config::aspect_16_9 ? 1 : 0;
 
@@ -182,6 +183,7 @@ void VIDEO::Reset() {
 
     for (int i=0;i<312;i++) lastBorder[i]=8; // 8 -> Force repaint of border
     borderColor = 7;
+    brd = border32[7];    
 
     is169 = Config::aspect_16_9 ? 1 : 0;
     
@@ -326,7 +328,6 @@ void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd) {
 
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
     for (int i=0; i < (statestoadd >> 2); i++) {
         *lineptr32++ = brd;
         *lineptr32++ = brd;
@@ -364,7 +365,6 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd) {
     
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
 
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
@@ -402,7 +402,6 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd) {
 
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
         if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>20) && (coldraw_cnt<39)) {
@@ -457,7 +456,6 @@ void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd) {
 
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
     for (int i=0; i < (statestoadd >> 2); i++) {    
         *lineptr32++ = brd;
         *lineptr32++ = brd;
@@ -474,7 +472,6 @@ void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd) {
 
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
-    brd = border32[borderColor];
     for (int i=0; i < (statestoadd >> 2); i++) {    
         
         if ((linedraw_cnt<220) || (linedraw_cnt>235)) {

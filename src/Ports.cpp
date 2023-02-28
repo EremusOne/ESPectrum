@@ -133,6 +133,7 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
     if (ulaPort) {
 
         VIDEO::borderColor = data & 0x07;
+        VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
 
         // if (Tape::SaveStatus==TAPE_SAVING)
         //     int Tapebit = bitRead(data,3);

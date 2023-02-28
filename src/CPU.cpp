@@ -119,6 +119,8 @@ void CPU::reset() {
 void IRAM_ATTR CPU::loop()
 {
 
+    // bool interruptDone = true;
+
 	while (tstates < statesInFrame ) {
 
             uint32_t pre_tstates = tstates;
@@ -142,6 +144,10 @@ void IRAM_ATTR CPU::loop()
             //     // printf("Save in ROM called\n");
             //     Z80::setRegPC(0x555);
 			// }
+
+            // if (tstates >= 31) {
+            //     interruptPending = false;
+            // }
 
 	}
 
