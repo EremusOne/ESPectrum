@@ -961,52 +961,48 @@ void Z80::execute(void) {
     }
 #endif
     
-    if (!halted) {
-    
-        REG_PC++;
+    REG_PC++;
 
-        // El prefijo 0xCB no cuenta para esta guerra.
-        // En CBxx todas las xx producen un código válido
-        // de instrucción, incluyendo CBCB.
-        switch (prefixOpcode) {
-            case 0x00:
-                flagQ = pendingEI = false;
-                decodeOpcode(opCode);
-                break;
-            case 0xDD:
-                prefixOpcode = 0;
-                decodeDDFD(opCode, regIX);
-                break;
-            case 0xED:
-                prefixOpcode = 0;
-                decodeED(opCode);
-                break;
-            case 0xFD:
-                prefixOpcode = 0;
-                decodeDDFD(opCode, regIY);
-                break;
-            default:
-                // // Ahora se comprueba si está activada la señal INT
-                // if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
-                //     interrupt();
-                // }
-                return;
-        }
-
-        if (prefixOpcode != 0) {
-            if (prefixOpcode == 0xFF) prefixOpcode = 0; // Restore prefix from signal halt
+    // El prefijo 0xCB no cuenta para esta guerra.
+    // En CBxx todas las xx producen un código válido
+    // de instrucción, incluyendo CBCB.
+    switch (prefixOpcode) {
+        case 0x00:
+            flagQ = pendingEI = false;
+            decodeOpcode(opCode);
+            break;
+        case 0xDD:
+            prefixOpcode = 0;
+            decodeDDFD(opCode, regIX);
+            break;
+        case 0xED:
+            prefixOpcode = 0;
+            decodeED(opCode);
+            break;
+        case 0xFD:
+            prefixOpcode = 0;
+            decodeDDFD(opCode, regIY);
+            break;
+        default:
+            // // Ahora se comprueba si está activada la señal INT
+            // if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
+            //     interrupt();
+            // }
             return;
-        }
-
-        lastFlagQ = flagQ;
-
-    #ifdef WITH_EXEC_DONE
-        if (execDone) {
-            Z80Ops::execDone();
-        }
-    #endif
-    
     }
+
+    if (prefixOpcode != 0) {
+        // if (prefixOpcode == 0xFF) prefixOpcode = 0; // Restore prefix from signal halt
+        return;
+    }
+
+    lastFlagQ = flagQ;
+
+#ifdef WITH_EXEC_DONE
+    if (execDone) {
+        Z80Ops::execDone();
+    }
+#endif
     
     // // Primero se comprueba NMI
     // // Si se activa NMI no se comprueba INT porque la siguiente
@@ -1738,8 +1734,8 @@ void Z80::decodeOpcode(uint8_t opCode) {
             // Signal HALT to CPU Loop
             Z80Ops::signalHalt();
             halted = true;
-            lastFlagQ = flagQ;
-            prefixOpcode = 0xFF; // To exit from execute ASAP
+            // lastFlagQ = flagQ;
+            // prefixOpcode = 0xFF; // To exit from execute ASAP
             break;
         }
         case 0x77:

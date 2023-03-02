@@ -158,7 +158,7 @@ void CPU::FlushOnHalt() {
     tstates &= 0x00FFFFFF;
     global_tstates &= 0x00FFFFFF;
 
-    Z80::checkINT();
+    // Z80::checkINT();
 
     uint32_t savstate = tstates;        
 
@@ -166,7 +166,7 @@ void CPU::FlushOnHalt() {
 
     tstates = savstate;
 
-    uint8_t page = Z80::getRegPC() >> 14;
+    uint8_t page = (Z80::getRegPC() + 1) >> 14;
     bool contend = false;
     switch (page) {
     case 1:
@@ -183,23 +183,24 @@ void CPU::FlushOnHalt() {
 
     if (contend) {
 
+        // printf("Contend on flushonhalt!\n");
+
         while (tstates < statesInFrame ) {
             CPU::tstates += Z80Ops::delayContention(CPU::tstates) + 4;
             Z80::incRegR();
-            // Z80::checkINT();
         }
 
     } else {
 
-        while (tstates < statesInFrame ) {
+       while (tstates < statesInFrame ) {
             CPU::tstates += 4;
             Z80::incRegR();
-            // Z80::checkINT();
         }
-
+    
     }
 
-    Z80::checkINT(); // I think I could put this out of the tstates while. Study
+    Z80::checkINT(); // I think I can put this out of the "while (tstates .. ". Study
+
 
     global_tstates += (tstates - pre_tstates); // increase global Tstates
         
