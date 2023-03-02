@@ -22,7 +22,8 @@
 
 #include <stdint.h>
 
-#pragma GCC optimize ("O3")
+//#pragma GCC optimize ("O3")
+#pragma GCC optimize ("O2")
 
 #define Z80CPP_IS_LITTLE_ENDIAN 1
 
@@ -393,6 +394,11 @@ public:
 
     // Execute one instruction
     static void execute(void);
+
+    // Check INT
+    static void checkINT(void);
+
+    static void incRegR(void);
 
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool isBreakpoint(void) { return breakpointEnabled; }

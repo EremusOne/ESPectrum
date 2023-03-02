@@ -46,7 +46,7 @@ static void ALUContentEarly( uint16_t port )
 {
     // if ( ( port & 49152 ) == 16384 )
     uint8_t page = port >> 14;
-    if ((page == 1) || ((!Z80Ops::is48) && (page == 3)))
+    if ((page == 1) || ((!Z80Ops::is48) && (page == 3) && (MemESP::bankLatch & 0x01 != 0)))
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
     else
         VIDEO::Draw(1);
@@ -60,7 +60,7 @@ static void ALUContentLate( uint16_t port )
   } else {
     // if ( (port & 49152) == 16384 ) {
     uint8_t page = port >> 14;   
-    if ((page == 1) || ((!Z80Ops::is48) && (page == 3))) {
+    if ((page == 1) || ((!Z80Ops::is48) && (page == 3) && (MemESP::bankLatch & 0x01 != 0))) {
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
@@ -73,7 +73,7 @@ static void ALUContentLate( uint16_t port )
 
 uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
 {
-    
+
     uint16_t address = portHigh << 8 | portLow;
 
     ALUContentEarly(address);
@@ -102,7 +102,7 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
             bitWrite(result,6,Tape::TAP_Read());
         } 
         
-        result |= (0xa0); // ISSUE 2 behaviour
+        result |= (0xa0); // ISSUE 2
 
         return result;
 
@@ -114,11 +114,43 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
         return AySound::getRegisterData();
     }
 
-    if (portLow == 0xff) { // 0xFF -> Floating bus
-        return VIDEO::getFloatBusData();
-    }
+    // if (portLow == 0xff) { // 0xFF -> Floating bus
+    //     return VIDEO::getFloatBusData();
+    // }
+
+    // THIS IS FROM SPECCY. SEEMS NEEDED BY FUSETEST. ALSO PORT 3FFD. STUDY:
+    //
+    // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
+    // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
+    // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
+    // if ((port & 0x8002) == 0 && spectrumModel == MachineTypes.SPECTRUM128K) {
+    //     memory.setPort7ffd(floatbus);
+    //     // Si ha cambiado la pantalla visible hay que invalidar
+    //     if ((port7ffd & 0x08) != (floatbus & 0x08)) {
+    //         invalidateScreen(true);
+    //     }
+    //     // En el 128k las páginas impares son contended
+    //     contendedRamPage[3] = contendedIOPage[3] = (floatbus & 0x01) != 0;
+    //     port7ffd = floatbus;
+    // }
+
+    uint8_t data = VIDEO::getFloatBusData();
     
-    return 0xFF;    
+    if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
+
+        if (!MemESP::pagingLock) {
+            MemESP::pagingLock = bitRead(data, 5);
+            MemESP::bankLatch = data & 0x7;
+            MemESP::videoLatch = bitRead(data, 3);
+            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
+            MemESP::romLatch = bitRead(data, 4);
+            bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+            // data = VIDEO::getFloatBusData();            
+        }
+
+    }
+
+    return data & 0xFF;
 
 }
 
@@ -146,18 +178,19 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
     }
 
     // AY ========================================================================
-    if ((address & 0x8002) == 0x8000) {
+    if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
       if ((address & 0x4000) != 0) {
         AySound::selectRegister(data);
       }
       else {
         AySound::setRegisterData(data);
       }
-
     }
 
+    ALUContentLate(address);
+    
     // 128 & 128+X ===============================================================
-    if ((address & 0x8002) == 0)
+    if ((!Z80Ops::is48) && ((address & 0x8002) == 0))
     {
 
         if (MemESP::pagingLock) return;
@@ -171,12 +204,14 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
 
     }
 
-    ALUContentLate(address);
+    // ALUContentLate(address);
 
     // // 48K ULA
     // if ((portLow & 0x01) == 0x00)
     // {
     //     VIDEO::borderColor = data & 0x07;
+    //     VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+
 
     //     // if (Tape::SaveStatus==TAPE_SAVING)
     //     //     int Tapebit = bitRead(data,3);
@@ -190,40 +225,41 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
     
     // if ((portLow & 0x02) == 0x00)
     // {
-        // // 128K AY
-        // if ((portHigh & 0x80) == 0x80)
-        // {
-        //     if ((portHigh & 0x40) == 0x40)
-        //         AySound::selectRegister(data);
-        //     else
-        //         AySound::setRegisterData(data);
-
-        // }
-
-        // // will decode both
-        // // 128K / +2 Memory Control
-        // // +2A / +3 Memory Control
-        // if ((portHigh & 0xC0) == 0x40)
-        // {
-        //     if (!MemESP::pagingLock) {
-        //         MemESP::pagingLock = bitRead(data, 5);
-        //         MemESP::romLatch = bitRead(data, 4);
-        //         MemESP::videoLatch = bitRead(data, 3);
-        //         MemESP::bankLatch = data & 0x7;
-        //         bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
-        //         bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-        //     }
-
-        // }
-        
-        // +2A / +3 Secondary Memory Control
-    //     if ((portHigh & 0xF0) == 0x01)
+    //     // 128K AY
+    //     if ((portHigh & 0x80) == 0x80)
     //     {
-    //         MemESP::modeSP3 = bitRead(data, 0);
-    //         MemESP::romSP3 = bitRead(data, 2);
-    //         bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
-    //         bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+    //         if ((portHigh & 0x40) == 0x40)
+    //             AySound::selectRegister(data);
+    //         else
+    //             AySound::setRegisterData(data);
+
     //     }
+
+    //     // will decode both
+    //     // 128K / +2 Memory Control
+    //     // +2A / +3 Memory Control
+    //     if ((portHigh & 0xC0) == 0x40)
+    //     {
+    //         if (!MemESP::pagingLock) {
+    //             MemESP::pagingLock = bitRead(data, 5);
+    //             MemESP::romLatch = bitRead(data, 4);
+    //             MemESP::videoLatch = bitRead(data, 3);
+    //             VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+    //             MemESP::bankLatch = data & 0x7;
+    //             bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
+    //             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+    //         }
+
+    //     }
+        
+    //     // // +2A / +3 Secondary Memory Control
+    //     // if ((portHigh & 0xF0) == 0x01)
+    //     // {
+    //     //     MemESP::modeSP3 = bitRead(data, 0);
+    //     //     MemESP::romSP3 = bitRead(data, 2);
+    //     //     bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
+    //     //     bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+    //     // }
 
     // }
     

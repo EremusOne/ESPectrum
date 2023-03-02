@@ -17,7 +17,8 @@
 
 #include "Z80_JLS/z80.h"
 
-#pragma GCC optimize ("Ofast")
+// #pragma GCC optimize ("Ofast")
+#pragma GCC optimize ("O2")
 
 ///////////////////////////////////////////////////////////////////////////////
 // miembros estáticos
@@ -890,6 +891,9 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
  *      M5: 3 T-Estados -> leer byte alto y saltar a la rutina de INT
  */
 void Z80::interrupt(void) {
+    
+    lastFlagQ = false;
+    
     // Si estaba en un HALT esperando una INT, lo saca de la espera
     if (halted) {
         halted = false;
@@ -899,6 +903,8 @@ void Z80::interrupt(void) {
     Z80Ops::interruptHandlingTime(7);
 
     regR++;
+    //regR = (regR & 128) | ((regR & 127) + 1);
+
     ffIFF1 = ffIFF2 = false;
     push(REG_PC); // el push añadirá 6 t-estados (+contended si toca)
     if (modeINT == IntMode::IM2) {
@@ -926,73 +932,96 @@ void Z80::nmi(void) {
         REG_PC++;
     }
     regR++;
+    //regR = (regR & 128) | ((regR & 127) + 1);
     ffIFF1 = false;
     push(REG_PC); // 3+3 t-estados + contended si procede
     REG_PC = REG_WZ = 0x0066;
 }
 
-void Z80::execute(void) {
-
-    // Primero se comprueba NMI
-    // Si se activa NMI no se comprueba INT porque la siguiente
-    // instrucción debe ser la de 0x0066.
-    if (activeNMI) {
-        activeNMI = false;
-        lastFlagQ = false;
-        nmi();
-        return;
-    }
+void Z80::checkINT(void) {
 
     // Ahora se comprueba si está activada la señal INT
     if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
-        lastFlagQ = false;
         interrupt();
     }
 
+}
+
+void Z80::incRegR(void) {
+    regR++;
+}
+void Z80::execute(void) {
+
     opCode = Z80Ops::fetchOpcode(REG_PC);
     regR++;
-
+    //regR = (regR & 128) | ((regR & 127) + 1);
 #ifdef WITH_BREAKPOINT_SUPPORT
     if (breakpointEnabled && prefixOpcode == 0) {
         opCode = Z80Ops::breakpoint(REG_PC, opCode);
     }
 #endif
-    REG_PC++;
+    
+    if (!halted) {
+    
+        REG_PC++;
 
-    // El prefijo 0xCB no cuenta para esta guerra.
-    // En CBxx todas las xx producen un código válido
-    // de instrucción, incluyendo CBCB.
-    switch (prefixOpcode) {
-        case 0x00:
-            flagQ = pendingEI = false;
-            decodeOpcode(opCode);
-            break;
-        case 0xDD:
-            prefixOpcode = 0;
-            decodeDDFD(opCode, regIX);
-            break;
-        case 0xED:
-            prefixOpcode = 0;
-            decodeED(opCode);
-            break;
-        case 0xFD:
-            prefixOpcode = 0;
-            decodeDDFD(opCode, regIY);
-            break;
-        default:
+        // El prefijo 0xCB no cuenta para esta guerra.
+        // En CBxx todas las xx producen un código válido
+        // de instrucción, incluyendo CBCB.
+        switch (prefixOpcode) {
+            case 0x00:
+                flagQ = pendingEI = false;
+                decodeOpcode(opCode);
+                break;
+            case 0xDD:
+                prefixOpcode = 0;
+                decodeDDFD(opCode, regIX);
+                break;
+            case 0xED:
+                prefixOpcode = 0;
+                decodeED(opCode);
+                break;
+            case 0xFD:
+                prefixOpcode = 0;
+                decodeDDFD(opCode, regIY);
+                break;
+            default:
+                // // Ahora se comprueba si está activada la señal INT
+                // if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
+                //     interrupt();
+                // }
+                return;
+        }
+
+        if (prefixOpcode != 0) {
+            if (prefixOpcode == 0xFF) prefixOpcode = 0; // Restore prefix from signal halt
             return;
+        }
+
+        lastFlagQ = flagQ;
+
+    #ifdef WITH_EXEC_DONE
+        if (execDone) {
+            Z80Ops::execDone();
+        }
+    #endif
+    
     }
+    
+    // // Primero se comprueba NMI
+    // // Si se activa NMI no se comprueba INT porque la siguiente
+    // // instrucción debe ser la de 0x0066.
+    // if (activeNMI) {
+    //     activeNMI = false;
+    //     lastFlagQ = false;
+    //     nmi();
+    //     return;
+    // }
 
-    if (prefixOpcode != 0)
-        return;
-
-    lastFlagQ = flagQ;
-
-#ifdef WITH_EXEC_DONE
-    if (execDone) {
-        Z80Ops::execDone();
+    // Ahora se comprueba si está activada la señal INT
+    if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
+        interrupt();
     }
-#endif
 
 }
 
@@ -1706,9 +1735,11 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x76:
         { /* HALT */
             REG_PC--;
-            halted = true;
             // Signal HALT to CPU Loop
             Z80Ops::signalHalt();
+            halted = true;
+            lastFlagQ = flagQ;
+            prefixOpcode = 0xFF; // To exit from execute ASAP
             break;
         }
         case 0x77:
@@ -2317,6 +2348,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         { /* Subconjunto de instrucciones */
             opCode = Z80Ops::fetchOpcode(REG_PC++);
             regR++;
+            //regR = (regR & 128) | ((regR & 127) + 1);
             decodeDDFD(opCode, regIX);
             break;
         }
@@ -2423,6 +2455,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0xED: /*Subconjunto de instrucciones*/
             opCode = Z80Ops::fetchOpcode(REG_PC++);
             regR++;
+            //regR = (regR & 128) | ((regR & 127) + 1);
             decodeED(opCode);
             break;
         case 0xEE: /* XOR n */
@@ -2512,6 +2545,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0xFD: /* Subconjunto de instrucciones */
             opCode = Z80Ops::fetchOpcode(REG_PC++);
             regR++;
+            //regR = (regR & 128) | ((regR & 127) + 1);
             decodeDDFD(opCode, regIY);
             break;
         case 0xFE: /* CP n */
@@ -2530,7 +2564,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
 void Z80::decodeCB(void) {
     uint8_t opCode = Z80Ops::fetchOpcode(REG_PC++);
     regR++;
-
+    //regR = (regR & 128) | ((regR & 127) + 1);
     switch (opCode) {
         case 0x00:
         { /* RLC B */

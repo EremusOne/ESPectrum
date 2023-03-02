@@ -59,7 +59,8 @@
 using namespace std;
 
 // works, but not needed for now
-#pragma GCC optimize ("O3")
+//#pragma GCC optimize ("O3")
+#pragma GCC optimize ("O2")
 
 //=======================================================================================
 // KEYBOARD

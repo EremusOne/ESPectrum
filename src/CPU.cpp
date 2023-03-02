@@ -37,10 +37,11 @@
 #include "Video.h"
 #include "Z80_JLS/z80.h"
 
-#pragma GCC optimize ("O3")
+//#pragma GCC optimize ("O3")
+#pragma GCC optimize ("O2")
 
 static bool createCalled = false;
-static bool interruptPending = false;
+// static bool interruptPending = false;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -119,9 +120,7 @@ void CPU::reset() {
 void IRAM_ATTR CPU::loop()
 {
 
-    // bool interruptDone = true;
-
-	while (tstates < statesInFrame ) {
+    while (tstates < statesInFrame ) {
 
             uint32_t pre_tstates = tstates;
 
@@ -145,16 +144,13 @@ void IRAM_ATTR CPU::loop()
             //     Z80::setRegPC(0x555);
 			// }
 
-            // if (tstates >= 31) {
-            //     interruptPending = false;
-            // }
-
 	}
 
     // If we're halted flush screen and update registers as needed
     if (tstates & 0xFF000000) FlushOnHalt(); else tstates -= statesInFrame;
+    // printf("RegR: %u\n",Z80::getRegR());
 
-    interruptPending = true;
+    //tstates -= statesInFrame;
 
     framecnt++;
 
@@ -165,37 +161,86 @@ void CPU::FlushOnHalt() {
     tstates &= 0x00FFFFFF;
     global_tstates &= 0x00FFFFFF;
 
-    uint32_t calcRegR = Z80::getRegR();
+    Z80::checkINT();
 
-    bool LowR = false;
+    uint32_t savstate = tstates;        
+
+    VIDEO::Flush(); // Draw the rest of the frame
+
+    tstates = savstate;
+
     uint8_t page = Z80::getRegPC() >> 14;
-    switch (page) {
-    case 1:
-        LowR=true;
-        break;
-    case 3:
-        if ((!Z80Ops::is48) && (MemESP::bankLatch & 0x01 == 1)) LowR=true;
-    }
 
-    if (LowR) {
-        uint32_t tIncr = tstates;
-        while (tIncr < statesInFrame) {
-            tIncr += Z80Ops::delayContention(tIncr) + 4;
-            calcRegR++;
+    uint32_t pre_tstates = tstates;
+
+    while (tstates < statesInFrame ) {
+
+        switch (page) {
+        case 0:
+            CPU::tstates += 4;
+            break;
+        case 1:
+            CPU::tstates += Z80Ops::delayContention(CPU::tstates) + 4;
+            break;
+        case 2:
+            CPU::tstates += 4;
+            break;
+        case 3:
+            if (Z80Ops::is48)
+                CPU::tstates += 4;
+            else
+                if (MemESP::bankLatch & 0x01 == 1)
+                    CPU::tstates += Z80Ops::delayContention(CPU::tstates) + 4;
+                else
+                    CPU::tstates += 4;
+            break;
+        default:
+            CPU::tstates += 4;
         }
-        global_tstates += (tIncr - tstates);
-        Z80::setRegR(calcRegR & 0x000000FF);
-    } else {        
-        global_tstates += (statesInFrame - tstates) + (tstates & 0x03);
-        uint32_t calcRegR = Z80::getRegR() + ((statesInFrame - tstates) >> 2);
-        Z80::setRegR(calcRegR & 0x000000FF);
+
+        Z80::incRegR();
+        
+        Z80::checkINT();
+
     }
+    
+    global_tstates += (tstates - pre_tstates); // increase global Tstates
+        
+    // uint32_t calcRegR = Z80::getRegR();
 
-    // Draw the rest of the frame
-    VIDEO::Flush();
+    // bool LowR = false;
+    // uint8_t page = Z80::getRegPC() >> 14;
+    // switch (page) {
+    // case 1:
+    //     LowR=true;
+    //     break;
+    // case 3:
+    //     if ((!Z80Ops::is48) && (MemESP::bankLatch & 0x01 == 1)) LowR=true;
+    // }
 
-    // End value
-    tstates = global_tstates & 0x03;
+    // if (LowR) {
+    //     uint32_t tIncr = tstates;
+    //     while (tIncr < statesInFrame) {
+    //         tIncr += Z80Ops::delayContention(tIncr) + 4;
+    //         calcRegR++;
+    //     }
+    //     global_tstates += (tIncr - tstates);
+    //     Z80::setRegR(calcRegR & 0x000000FF);
+    // } else {        
+    //     global_tstates += (statesInFrame - tstates) + (tstates & 0x03);
+
+    //     uint32_t calcRegR = Z80::getRegR() + ((statesInFrame - tstates) >> 2);
+        
+    //     Z80::setRegR((calcRegR + 1) & 0x0000007F);
+
+    // // }
+
+    // // End value
+    // tstates = statesInFrame + (tstates & 0x03);
+
+    // Z80::checkINT();
+
+    tstates -= statesInFrame;
 
 }
 
@@ -241,10 +286,12 @@ unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) 
 ///////////////////////////////////////////////////////////////////////////////
 // static void ALUContentEarly( uint16_t port )
 // {
+
 //     if ( ( port & 49152 ) == 16384 )
 //         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
 //     else
 //         VIDEO::Draw(1);
+
 // }
 
 // static void ALUContentLate( uint16_t port )
@@ -260,7 +307,6 @@ unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) 
 //     } else {
 //         VIDEO::Draw(3);
 // 	}
-
 //   }
 
 // }
@@ -506,7 +552,15 @@ void IRAM_ATTR Z80Ops::signalHalt() {
 
 /* Callback to know when the INT signal is active */
 bool IRAM_ATTR Z80Ops::isActiveINT(void) {
-    if (!interruptPending) return false;
-    interruptPending = false;
-    return true;
+    
+    int tmp = CPU::tstates;
+    if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
+    return ((tmp >= 0) && (tmp < (is48 ? 32 : 36)));
+
+    // return ((CPU::tstates >= 0) && (CPU::tstates < (is48 ? 32 : 36)));
+    
+    // if (!interruptPending) return false;
+    // interruptPending = false;
+    // return true;
+
 }
