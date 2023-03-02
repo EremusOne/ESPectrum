@@ -148,9 +148,6 @@ void IRAM_ATTR CPU::loop()
 
     // If we're halted flush screen and update registers as needed
     if (tstates & 0xFF000000) FlushOnHalt(); else tstates -= statesInFrame;
-    // printf("RegR: %u\n",Z80::getRegR());
-
-    //tstates -= statesInFrame;
 
     framecnt++;
 
@@ -170,76 +167,42 @@ void CPU::FlushOnHalt() {
     tstates = savstate;
 
     uint8_t page = Z80::getRegPC() >> 14;
+    bool contend = false;
+    switch (page) {
+    case 1:
+        contend = true;
+        break;
+    case 3:
+        if (!Z80Ops::is48)
+            if (MemESP::bankLatch & 0x01 == 1)
+                contend = true;
+        break;
+    }
 
     uint32_t pre_tstates = tstates;
 
-    while (tstates < statesInFrame ) {
+    if (contend) {
 
-        switch (page) {
-        case 0:
-            CPU::tstates += 4;
-            break;
-        case 1:
+        while (tstates < statesInFrame ) {
             CPU::tstates += Z80Ops::delayContention(CPU::tstates) + 4;
-            break;
-        case 2:
-            CPU::tstates += 4;
-            break;
-        case 3:
-            if (Z80Ops::is48)
-                CPU::tstates += 4;
-            else
-                if (MemESP::bankLatch & 0x01 == 1)
-                    CPU::tstates += Z80Ops::delayContention(CPU::tstates) + 4;
-                else
-                    CPU::tstates += 4;
-            break;
-        default:
-            CPU::tstates += 4;
+            Z80::incRegR();
+            // Z80::checkINT();
         }
 
-        Z80::incRegR();
-        
-        Z80::checkINT();
+    } else {
+
+        while (tstates < statesInFrame ) {
+            CPU::tstates += 4;
+            Z80::incRegR();
+            // Z80::checkINT();
+        }
 
     }
-    
+
+    Z80::checkINT(); // I think I could put this out of the tstates while. Study
+
     global_tstates += (tstates - pre_tstates); // increase global Tstates
         
-    // uint32_t calcRegR = Z80::getRegR();
-
-    // bool LowR = false;
-    // uint8_t page = Z80::getRegPC() >> 14;
-    // switch (page) {
-    // case 1:
-    //     LowR=true;
-    //     break;
-    // case 3:
-    //     if ((!Z80Ops::is48) && (MemESP::bankLatch & 0x01 == 1)) LowR=true;
-    // }
-
-    // if (LowR) {
-    //     uint32_t tIncr = tstates;
-    //     while (tIncr < statesInFrame) {
-    //         tIncr += Z80Ops::delayContention(tIncr) + 4;
-    //         calcRegR++;
-    //     }
-    //     global_tstates += (tIncr - tstates);
-    //     Z80::setRegR(calcRegR & 0x000000FF);
-    // } else {        
-    //     global_tstates += (statesInFrame - tstates) + (tstates & 0x03);
-
-    //     uint32_t calcRegR = Z80::getRegR() + ((statesInFrame - tstates) >> 2);
-        
-    //     Z80::setRegR((calcRegR + 1) & 0x0000007F);
-
-    // // }
-
-    // // End value
-    // tstates = statesInFrame + (tstates & 0x03);
-
-    // Z80::checkINT();
-
     tstates -= statesInFrame;
 
 }
