@@ -249,23 +249,37 @@ unsigned short OSD::menuRun(string new_menu) {
         if (Menukey.vk == fabgl::VK_UP) {
             if (focus == 1 and begin_row > 1) {
                 menuScroll(DOWN);
-            } else if (focus > 1) {
+            } else {
                 last_focus = focus;
                 focus--;
-                menuPrintRow(focus, IS_FOCUSED);
-                if (focus + 1 < virtual_rows) {
-                    menuPrintRow(focus + 1, IS_NORMAL);
+                if (focus < 1) {
+                    focus = virtual_rows - 1;
+                    last_begin_row = begin_row;
+                    begin_row = real_rows - virtual_rows + 1;
+                    menuRedraw();
+                    menuPrintRow(focus, IS_FOCUSED);
+                }
+                else {
+                    menuPrintRow(focus, IS_FOCUSED);
+                    menuPrintRow(last_focus, IS_NORMAL);
                 }
             }
         } else if (Menukey.vk == fabgl::VK_DOWN) {
-            if (focus == virtual_rows - 1) {
+            if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {                
                 menuScroll(UP);
-            } else if (focus < virtual_rows - 1) {
+            } else {
                 last_focus = focus;
                 focus++;
-                menuPrintRow(focus, IS_FOCUSED);
-                if (focus - 1 > 0) {
-                    menuPrintRow(focus - 1, IS_NORMAL);
+                if (focus > virtual_rows - 1) {
+                    focus = 1;
+                    last_begin_row = begin_row;
+                    begin_row = 1;
+                    menuRedraw();
+                    menuPrintRow(focus, IS_FOCUSED);
+                }
+                else {
+                    menuPrintRow(focus, IS_FOCUSED);
+                    menuPrintRow(last_focus, IS_NORMAL);                
                 }
             }
         } else if (Menukey.vk == fabgl::VK_PAGEUP) {

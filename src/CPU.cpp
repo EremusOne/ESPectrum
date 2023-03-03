@@ -230,36 +230,6 @@ unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Port Contention
-///////////////////////////////////////////////////////////////////////////////
-// static void ALUContentEarly( uint16_t port )
-// {
-
-//     if ( ( port & 49152 ) == 16384 )
-//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-//     else
-//         VIDEO::Draw(1);
-
-// }
-
-// static void ALUContentLate( uint16_t port )
-// {
-
-//   if( (port & 0x0001) == 0x00) {
-//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-//   } else {
-//     if ( (port & 49152) == 16384 ) {
-//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-//         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-//     } else {
-//         VIDEO::Draw(3);
-// 	}
-//   }
-
-// }
-
-///////////////////////////////////////////////////////////////////////////////
 // Z80Ops
 ///////////////////////////////////////////////////////////////////////////////
 /* Read opcode from RAM */

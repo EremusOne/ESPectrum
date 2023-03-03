@@ -44,7 +44,6 @@ volatile uint8_t Ports::base[128];
 ///////////////////////////////////////////////////////////////////////////////
 static void ALUContentEarly( uint16_t port )
 {
-    // if ( ( port & 49152 ) == 16384 )
     uint8_t page = port >> 14;
     if ((page == 1) || ((!Z80Ops::is48) && (page == 3) && (MemESP::bankLatch & 0x01 != 0)))
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
@@ -58,7 +57,6 @@ static void ALUContentLate( uint16_t port )
   if( (port & 0x0001) == 0x00) {
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
   } else {
-    // if ( (port & 49152) == 16384 ) {
     uint8_t page = port >> 14;   
     if ((page == 1) || ((!Z80Ops::is48) && (page == 3) && (MemESP::bankLatch & 0x01 != 0))) {
         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
@@ -189,7 +187,7 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
 
     ALUContentLate(address);
     
-    // 128 & 128+X ===============================================================
+    // 128 =======================================================================
     if ((!Z80Ops::is48) && ((address & 0x8002) == 0))
     {
 
@@ -203,64 +201,5 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
         bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
 
     }
-
-    // ALUContentLate(address);
-
-    // // 48K ULA
-    // if ((portLow & 0x01) == 0x00)
-    // {
-    //     VIDEO::borderColor = data & 0x07;
-    //     VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
-
-
-    //     // if (Tape::SaveStatus==TAPE_SAVING)
-    //     //     int Tapebit = bitRead(data,3);
-    //     // else
-    //         int Audiobit = bitRead(data,4);
-
-    //     // ESPectrum::audioGetSample(Audiobit | Tapebit);
-    //     ESPectrum::audioGetSample(Audiobit);        
-
-    // }
-    
-    // if ((portLow & 0x02) == 0x00)
-    // {
-    //     // 128K AY
-    //     if ((portHigh & 0x80) == 0x80)
-    //     {
-    //         if ((portHigh & 0x40) == 0x40)
-    //             AySound::selectRegister(data);
-    //         else
-    //             AySound::setRegisterData(data);
-
-    //     }
-
-    //     // will decode both
-    //     // 128K / +2 Memory Control
-    //     // +2A / +3 Memory Control
-    //     if ((portHigh & 0xC0) == 0x40)
-    //     {
-    //         if (!MemESP::pagingLock) {
-    //             MemESP::pagingLock = bitRead(data, 5);
-    //             MemESP::romLatch = bitRead(data, 4);
-    //             MemESP::videoLatch = bitRead(data, 3);
-    //             VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-    //             MemESP::bankLatch = data & 0x7;
-    //             bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
-    //             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-    //         }
-
-    //     }
-        
-    //     // // +2A / +3 Secondary Memory Control
-    //     // if ((portHigh & 0xF0) == 0x01)
-    //     // {
-    //     //     MemESP::modeSP3 = bitRead(data, 0);
-    //     //     MemESP::romSP3 = bitRead(data, 2);
-    //     //     bitWrite(MemESP::romInUse, 1, MemESP::romSP3);
-    //     //     bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-    //     // }
-
-    // }
-    
+   
 }
