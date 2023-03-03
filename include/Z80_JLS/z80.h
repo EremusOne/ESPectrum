@@ -398,7 +398,7 @@ public:
     // Check INT
     static void checkINT(void);
 
-    static void incRegR(void);
+    static void incRegR(uint8_t inc);
 
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool isBreakpoint(void) { return breakpointEnabled; }

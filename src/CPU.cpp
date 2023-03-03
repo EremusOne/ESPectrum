@@ -155,52 +155,36 @@ void IRAM_ATTR CPU::loop()
 
 void CPU::FlushOnHalt() {
         
+    VIDEO::Flush(); // Draw the rest of the frame
+
     tstates &= 0x00FFFFFF;
     global_tstates &= 0x00FFFFFF;
 
-    // Z80::checkINT();
-
-    uint32_t savstate = tstates;        
-
-    VIDEO::Flush(); // Draw the rest of the frame
-
-    tstates = savstate;
+    uint32_t pre_tstates = tstates;        
 
     uint8_t page = (Z80::getRegPC() + 1) >> 14;
-    bool contend = false;
-    switch (page) {
-    case 1:
-        contend = true;
-        break;
-    case 3:
-        if (!Z80Ops::is48)
-            if (MemESP::bankLatch & 0x01 == 1)
-                contend = true;
-        break;
-    }
-
-    uint32_t pre_tstates = tstates;
-
-    if (contend) {
+    if ((page == 1) || ((page == 3) && (!Z80Ops::is48) && (MemESP::bankLatch & 0x01))) {
 
         // printf("Contend on flushonhalt!\n");
 
         while (tstates < statesInFrame ) {
-            CPU::tstates += Z80Ops::delayContention(CPU::tstates) + 4;
-            Z80::incRegR();
+            tstates += Z80Ops::delayContention(tstates) + 4;
+            Z80::incRegR(1);
         }
 
     } else {
 
-       while (tstates < statesInFrame ) {
-            CPU::tstates += 4;
-            Z80::incRegR();
-        }
-    
+        // tstates
+        uint32_t incr = (statesInFrame - pre_tstates) >> 2;
+        if (tstates & 0x03) incr++;
+        tstates += (incr << 2);
+
+        // RegR
+        Z80::incRegR(incr & 0x000000FF);
+
     }
 
     Z80::checkINT(); // I think I can put this out of the "while (tstates .. ". Study
-
 
     global_tstates += (tstates - pre_tstates); // increase global Tstates
         

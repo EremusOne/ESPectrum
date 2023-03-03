@@ -903,7 +903,6 @@ void Z80::interrupt(void) {
     Z80Ops::interruptHandlingTime(7);
 
     regR++;
-    //regR = (regR & 128) | ((regR & 127) + 1);
 
     ffIFF1 = ffIFF2 = false;
     push(REG_PC); // el push añadirá 6 t-estados (+contended si toca)
@@ -932,7 +931,6 @@ void Z80::nmi(void) {
         REG_PC++;
     }
     regR++;
-    //regR = (regR & 128) | ((regR & 127) + 1);
     ffIFF1 = false;
     push(REG_PC); // 3+3 t-estados + contended si procede
     REG_PC = REG_WZ = 0x0066;
@@ -947,14 +945,17 @@ void Z80::checkINT(void) {
 
 }
 
-void Z80::incRegR(void) {
-    regR++;
+void Z80::incRegR(uint8_t inc) {
+
+    regR += inc;
+
 }
+
 void Z80::execute(void) {
 
     opCode = Z80Ops::fetchOpcode(REG_PC);
     regR++;
-    //regR = (regR & 128) | ((regR & 127) + 1);
+
 #ifdef WITH_BREAKPOINT_SUPPORT
     if (breakpointEnabled && prefixOpcode == 0) {
         opCode = Z80Ops::breakpoint(REG_PC, opCode);
@@ -984,17 +985,10 @@ void Z80::execute(void) {
             decodeDDFD(opCode, regIY);
             break;
         default:
-            // // Ahora se comprueba si está activada la señal INT
-            // if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
-            //     interrupt();
-            // }
             return;
     }
 
-    if (prefixOpcode != 0) {
-        // if (prefixOpcode == 0xFF) prefixOpcode = 0; // Restore prefix from signal halt
-        return;
-    }
+    if (prefixOpcode != 0) return;
 
     lastFlagQ = flagQ;
 
@@ -1734,8 +1728,6 @@ void Z80::decodeOpcode(uint8_t opCode) {
             // Signal HALT to CPU Loop
             Z80Ops::signalHalt();
             halted = true;
-            // lastFlagQ = flagQ;
-            // prefixOpcode = 0xFF; // To exit from execute ASAP
             break;
         }
         case 0x77:
@@ -2344,7 +2336,6 @@ void Z80::decodeOpcode(uint8_t opCode) {
         { /* Subconjunto de instrucciones */
             opCode = Z80Ops::fetchOpcode(REG_PC++);
             regR++;
-            //regR = (regR & 128) | ((regR & 127) + 1);
             decodeDDFD(opCode, regIX);
             break;
         }
@@ -2451,7 +2442,6 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0xED: /*Subconjunto de instrucciones*/
             opCode = Z80Ops::fetchOpcode(REG_PC++);
             regR++;
-            //regR = (regR & 128) | ((regR & 127) + 1);
             decodeED(opCode);
             break;
         case 0xEE: /* XOR n */
@@ -2541,7 +2531,6 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0xFD: /* Subconjunto de instrucciones */
             opCode = Z80Ops::fetchOpcode(REG_PC++);
             regR++;
-            //regR = (regR & 128) | ((regR & 127) + 1);
             decodeDDFD(opCode, regIY);
             break;
         case 0xFE: /* CP n */
@@ -2560,7 +2549,6 @@ void Z80::decodeOpcode(uint8_t opCode) {
 void Z80::decodeCB(void) {
     uint8_t opCode = Z80Ops::fetchOpcode(REG_PC++);
     regR++;
-    //regR = (regR & 128) | ((regR & 127) + 1);
     switch (opCode) {
         case 0x00:
         { /* RLC B */
