@@ -359,11 +359,11 @@ bool FileZ80::load(string z80_fn)
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
-        ESPectrum::samplesPerFrame=546; 
+        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         ESPectrum::AY_emu = Config::AY48;
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
-        ESPectrum::samplesPerFrame=554;
+        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         ESPectrum::AY_emu = true;        
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
     }

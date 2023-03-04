@@ -509,149 +509,157 @@ void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd) {
 // ///////////////////////////////////////////////////////////////////////////////
 void VIDEO::Flush() {
 
-    uint8_t att, bmp;
-
-    int n = linedraw_cnt;
-    if (coldraw_cnt >= 40) n++;
-
-    // Top border
-    while (n < (is169 ? 4 : 24)) {
-
-        lineptr32 = (uint32_t *)(vga.backBuffer[n]);
-        if (is169) lineptr32 += 5;
-
-        for (int i=0; i < 40; i++) {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        }
-
-        n++;
-
+    while (CPU::tstates < CPU::statesInFrame) {
+        Draw(tStatesPerLine);
     }
 
-    if (DrawOSD169 == MainScreen) {
+    // return;
 
-        //Mainscreen
-        while (n < (is169 ? 196 : 216)) {
+    // // THIS IS SLIGHTLY FASTER BUT IT'S NOT CORRECT YET (WHITE LINE ON FPGA48all.tap)
 
-            lineptr32 = (uint32_t *)(vga.backBuffer[n]);
-            if (is169) lineptr32 += 5;
+    // uint8_t att, bmp;
 
-            bmpOffset = offBmp[n-(is169 ? 4 : 24)];
-            attOffset = offAtt[n-(is169 ? 4 : 24)];
+    // int n = linedraw_cnt;
+    // if (coldraw_cnt >= 40) n++;
+
+    // // Top border
+    // while (n < (is169 ? 4 : 24)) {
+
+    //     lineptr32 = (uint32_t *)(vga.backBuffer[n]);
+    //     if (is169) lineptr32 += 5;
+
+    //     for (int i=0; i < 40; i++) {
+    //         *lineptr32++ = brd;
+    //         *lineptr32++ = brd;
+    //     }
+
+    //     n++;
+
+    // }
+
+    // if (DrawOSD169 == MainScreen) {
+
+    //     //Mainscreen
+    //     while (n < (is169 ? 196 : 216)) {
+
+    //         lineptr32 = (uint32_t *)(vga.backBuffer[n]);
+    //         if (is169) lineptr32 += 5;
+
+    //         bmpOffset = offBmp[n-(is169 ? 4 : 24)];
+    //         attOffset = offAtt[n-(is169 ? 4 : 24)];
     
-            for (int i = 0; i < 4; i++) {    
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
-            }
+    //         for (int i = 0; i < 4; i++) {    
+    //             *lineptr32++ = brd;
+    //             *lineptr32++ = brd;
+    //         }
 
-            for (int i = 0; i < 32; i++) {    
+    //         for (int i = 0; i < 32; i++) {    
 
-                    att = grmem[attOffset++];       // get attribute byte
-                    if (att & flashing) {
-                        bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
-                    } else 
-                        bmp = grmem[bmpOffset++];   // get bitmap byte
+    //                 att = grmem[attOffset++];       // get attribute byte
+    //                 if (att & flashing) {
+    //                     bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
+    //                 } else 
+    //                     bmp = grmem[bmpOffset++];   // get bitmap byte
 
-                    *lineptr32++ = AluBytes[bmp >> 4][att];
-                    *lineptr32++ = AluBytes[bmp & 0xF][att];
+    //                 *lineptr32++ = AluBytes[bmp >> 4][att];
+    //                 *lineptr32++ = AluBytes[bmp & 0xF][att];
 
-            }
+    //         }
 
-            for (int i = 0; i < 4; i++) {    
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
-            }
+    //         for (int i = 0; i < 4; i++) {    
+    //             *lineptr32++ = brd;
+    //             *lineptr32++ = brd;
+    //         }
 
-            n++;
+    //         n++;
 
-        }
+    //     }
 
-    } else {
+    // } else {
 
-        // Mainscreen OSD
-        while (n < 196) {
+    //     // Mainscreen OSD
+    //     while (n < 196) {
 
-            lineptr32 = (uint32_t *)(vga.backBuffer[n]);
-            lineptr32 += 5;
+    //         lineptr32 = (uint32_t *)(vga.backBuffer[n]);
+    //         lineptr32 += 5;
 
-            bmpOffset = offBmp[n - 4];
-            attOffset = offAtt[n - 4];
+    //         bmpOffset = offBmp[n - 4];
+    //         attOffset = offAtt[n - 4];
 
-            for (int i=0; i < 40; i++) {    
+    //         for (int i=0; i < 40; i++) {    
 
-                if ((n>175) && (n<192) && (i>20) && (i<39)) {
-                    lineptr32+=2;
-                    attOffset++;
-                    bmpOffset++;
-                    coldraw_cnt++;
-                    continue;
-                }
+    //             if ((n>175) && (n<192) && (i>20) && (i<39)) {
+    //                 lineptr32+=2;
+    //                 attOffset++;
+    //                 bmpOffset++;
+    //                 coldraw_cnt++;
+    //                 continue;
+    //             }
 
-                if ((i>3) && (i<36)) {
-                    att = grmem[attOffset++];       // get attribute byte
-                    if (att & flashing) {
-                        bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
-                    } else 
-                        bmp = grmem[bmpOffset++];   // get bitmap byte
+    //             if ((i>3) && (i<36)) {
+    //                 att = grmem[attOffset++];       // get attribute byte
+    //                 if (att & flashing) {
+    //                     bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
+    //                 } else 
+    //                     bmp = grmem[bmpOffset++];   // get bitmap byte
 
-                    *lineptr32++ = AluBytes[bmp >> 4][att];
-                    *lineptr32++ = AluBytes[bmp & 0xF][att];
-                } else {
-                    *lineptr32++ = brd;
-                    *lineptr32++ = brd;
-                }
+    //                 *lineptr32++ = AluBytes[bmp >> 4][att];
+    //                 *lineptr32++ = AluBytes[bmp & 0xF][att];
+    //             } else {
+    //                 *lineptr32++ = brd;
+    //                 *lineptr32++ = brd;
+    //             }
 
-            }
+    //         }
 
-            n++;
+    //         n++;
 
-        }
+    //     }
 
-    }
+    // }
 
-    // Bottom border
-    if (DrawOSD43 == BottomBorder) {
+    // // Bottom border
+    // if (DrawOSD43 == BottomBorder) {
 
-        while (n < (is169 ? 200 : 240)) {
+    //     while (n < (is169 ? 200 : 240)) {
 
-            lineptr32 = (uint32_t *)(vga.backBuffer[n]);
-            if (is169) lineptr32 += 5;
+    //         lineptr32 = (uint32_t *)(vga.backBuffer[n]);
+    //         if (is169) lineptr32 += 5;
 
-            for (int i=0; i < 40; i++) {
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
-            }
+    //         for (int i=0; i < 40; i++) {
+    //             *lineptr32++ = brd;
+    //             *lineptr32++ = brd;
+    //         }
 
-            n++;
+    //         n++;
 
-        }    
+    //     }    
 
-    } else {
+    // } else {
 
-        while (n < 240) {
+    //     while (n < 240) {
 
-            lineptr32 = (uint32_t *)(vga.backBuffer[n]);
+    //         lineptr32 = (uint32_t *)(vga.backBuffer[n]);
 
-            for (int i=0; i < 40; i++) {
-                if ((n<220) || (n>235)) {
-                    *lineptr32++ = brd;
-                    *lineptr32++ = brd;
-                } else {
-                    if ((i<21) || (i>38)) {
-                        *lineptr32++ = brd;
-                        *lineptr32++ = brd;
-                    } else lineptr32+=2;
-                }
-            }
+    //         for (int i=0; i < 40; i++) {
+    //             if ((n<220) || (n>235)) {
+    //                 *lineptr32++ = brd;
+    //                 *lineptr32++ = brd;
+    //             } else {
+    //                 if ((i<21) || (i>38)) {
+    //                     *lineptr32++ = brd;
+    //                     *lineptr32++ = brd;
+    //                 } else lineptr32+=2;
+    //             }
+    //         }
 
-            n++;
+    //         n++;
 
-        }
+    //     }
     
-    }
+    // }
     
-    Draw = &Blank;
+    // Draw = &Blank;
 
 }
 

@@ -79,6 +79,8 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
 
     #ifdef PS2_ARROWKEYS_AS_KEMPSTON
     if (portLow == 0x1f) return base[0x1f]; // Kempston port
+    #else
+    if (portLow == 0x1f) return 0; // No Kempston connected
     #endif
 
     if (portLow == 0xfe) // ULA PORT
@@ -107,35 +109,19 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
     }
     
     // Sound (AY-3-8912)
-    if ((portHigh & 0xc0) == 0xc0 && (portLow & 0x02) == 0x00)  // 0xFFFD
+    if (address == 0xfffd)  // 0xFFFD
     {
         return AySound::getRegisterData();
     }
 
-    // if (portLow == 0xff) { // 0xFF -> Floating bus
-    //     return VIDEO::getFloatBusData();
-    // }
-
-    // THIS IS FROM SPECCY. SEEMS NEEDED BY FUSETEST. ALSO PORT 3FFD. STUDY:
-    //
-    // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
-    // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
-    // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
-    // if ((port & 0x8002) == 0 && spectrumModel == MachineTypes.SPECTRUM128K) {
-    //     memory.setPort7ffd(floatbus);
-    //     // Si ha cambiado la pantalla visible hay que invalidar
-    //     if ((port7ffd & 0x08) != (floatbus & 0x08)) {
-    //         invalidateScreen(true);
-    //     }
-    //     // En el 128k las páginas impares son contended
-    //     contendedRamPage[3] = contendedIOPage[3] = (floatbus & 0x01) != 0;
-    //     port7ffd = floatbus;
-    // }
-
     uint8_t data = VIDEO::getFloatBusData();
     
-    if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
+    // if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
+    if ((address == 0x7ffd) && (!Z80Ops::is48)) {        
 
+        // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
+        // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
+        // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
         if (!MemESP::pagingLock) {
             MemESP::pagingLock = bitRead(data, 5);
             MemESP::bankLatch = data & 0x7;
@@ -143,12 +129,11 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
             VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-            // data = VIDEO::getFloatBusData();            
         }
 
     }
 
-    return data & 0xFF;
+    return data & 0xff;
 
 }
 

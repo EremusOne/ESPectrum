@@ -1,7 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// ZX-ESPectrum - ZX Spectrum emulator for ESP32
+// ZX-ESPectrum-IDF - Sinclair ZX Spectrum emulator for ESP32 / IDF
 //
+// CPU LOOP, MEMORY CONTENTION FUNCTIONS AND Z80OPS FUNCTIONS
+//
+// Copyright (c) 2023 Víctor Iborra [EremusOne]
+// https://github.com/EremusOne/ZX-ESPectrum-IDF
+//
+// Based on ZX-ESPectrum-Wiimote
 // Copyright (c) 2020, 2021 David Crespo [dcrespo3d]
 // https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 //
@@ -37,17 +43,9 @@
 #include "Video.h"
 #include "Z80_JLS/z80.h"
 
-//#pragma GCC optimize ("O3")
-#pragma GCC optimize ("O2")
+#pragma GCC optimize ("O3")
 
 static bool createCalled = false;
-// static bool interruptPending = false;
-
-///////////////////////////////////////////////////////////////////////////////
-
-// machine tstates  f[MHz]   micros
-//   48K:   69888 / 3.5    = 19968
-//  128K:   70908 / 3.5469 = 19992
 
 uint32_t CPU::statesPerFrame()
 {
@@ -60,8 +58,6 @@ uint32_t CPU::microsPerFrame()
     if (Config::getArch() == "48K") return 19968;
     else                            return 19992;
 }
-
-///////////////////////////////////////////////////////////////////////////////
 
 uint32_t CPU::tstates = 0;
 uint64_t CPU::global_tstates = 0;
@@ -155,12 +151,16 @@ void IRAM_ATTR CPU::loop()
 
 void CPU::FlushOnHalt() {
         
-    VIDEO::Flush(); // Draw the rest of the frame
+
 
     tstates &= 0x00FFFFFF;
     global_tstates &= 0x00FFFFFF;
 
     uint32_t pre_tstates = tstates;        
+
+    VIDEO::Flush(); // Draw the rest of the frame
+
+    tstates = pre_tstates;
 
     uint8_t page = (Z80::getRegPC() + 1) >> 14;
     if ((page == 1) || ((page == 3) && (!Z80Ops::is48) && (MemESP::bankLatch & 0x01))) {
@@ -474,11 +474,5 @@ bool IRAM_ATTR Z80Ops::isActiveINT(void) {
     int tmp = CPU::tstates;
     if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
     return ((tmp >= 0) && (tmp < (is48 ? 32 : 36)));
-
-    // return ((CPU::tstates >= 0) && (CPU::tstates < (is48 ? 32 : 36)));
-    
-    // if (!interruptPending) return false;
-    // interruptPending = false;
-    // return true;
 
 }

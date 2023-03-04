@@ -472,7 +472,18 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     while (1) {
         ESPectrum::readKbd(&Menukey);
         if (!Menukey.down) continue;
-        if (Menukey.vk == fabgl::VK_UP) {
+        // // Search first ocurrence of letter if we're not on that letter yet
+        // if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
+        //     uint8_t dif;
+        //     if (Menukey.vk<=fabgl::VK_9) dif = 46;
+        //         else if (Menukey.vk<=fabgl::VK_z) dif = 75;
+        //             else if (Menukey.vk<=fabgl::VK_Z) dif = 17;
+        //     uint8_t letra = rowGet(menu,focus).at(0);
+        //     if (letra != Menukey.vk + dif) { 
+        //             // TO DO: Position on first ocurrence of letra
+        //             filemenuRedraw(title);
+        //     }
+        /*} else*/ if (Menukey.vk == fabgl::VK_UP) {
             if (focus == 1 and begin_row > 1) {
                 // filemenuScroll(DOWN);
                 if (begin_row > 1) {

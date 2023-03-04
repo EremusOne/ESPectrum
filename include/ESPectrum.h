@@ -39,8 +39,8 @@ using namespace std;
 #define ESP_AUDIO_OVERSAMPLES 4432 // For 48K we get 4368 samples per frame, for 128K we get 4432
 #define ESP_AUDIO_FREQ_48 27300
 #define ESP_AUDIO_FREQ_128 27700
-#define ESP_AUDIO_SAMPLES 554 // For 48K we get 546 samples per frame, for 128K we get 554
-#define ESP_AUDIO_TSTATES 128
+#define ESP_AUDIO_SAMPLES_48  546 
+#define ESP_AUDIO_SAMPLES_128 554 
 
 class ESPectrum
 {
@@ -57,7 +57,7 @@ public:
     static fabgl::PS2Controller PS2Controller;
 
     // Audio
-    static uint8_t audioBuffer[ESP_AUDIO_SAMPLES];
+    static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_128];
     static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES];
     static signed char aud_volume;
     static uint32_t audbufcnt;
@@ -73,7 +73,7 @@ public:
 
     static uint32_t target;
 
-    static int ESPoffset; // Testing
+    // static int ESPoffset; // Testing
     
 private:
 

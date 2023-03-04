@@ -407,18 +407,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     string arch_menu = getArchMenu();
                     uint8_t arch_num = menuRun(arch_menu);
                     if (arch_num) {
-                        string romset_menu = getRomsetMenu((arch_num==1 ? "48K" : "128K"));
-                        uint8_t romset_num = menuRun(romset_menu);
-                        if (romset_num > 0) {
+                        // string romset_menu = getRomsetMenu((arch_num==1 ? "48K" : "128K"));
+                        // uint8_t romset_num = menuRun(romset_menu);
+                        // if (romset_num > 0) {
                             string arch = (arch_num==1 ? "48K" : "128K");
-                            string romSet = rowGet(romset_menu, romset_num);
-                            Config::requestMachine(arch, romSet, true);
+                        // string romSet = rowGet(romset_menu, romset_num);
+                            Config::requestMachine(arch, "SINCLAIR", true);
+                            // Config::requestMachine(arch, romSet, true);
                             Config::ram_file = "none";
                             vTaskDelay(2);
                             Config::save();
                             vTaskDelay(2);
                             ESPectrum::reset();
-                        }
+                        //}
                     }
                 }
                 else if (options_num == 3) {

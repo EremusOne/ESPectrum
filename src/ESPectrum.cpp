@@ -59,8 +59,7 @@
 using namespace std;
 
 // works, but not needed for now
-//#pragma GCC optimize ("O3")
-#pragma GCC optimize ("O2")
+#pragma GCC optimize ("O3")
 
 //=======================================================================================
 // KEYBOARD
@@ -70,14 +69,14 @@ fabgl::PS2Controller PS2Controller;
 //=======================================================================================
 // AUDIO
 //=======================================================================================
-uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES];
+uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_128];
 uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES];
 signed char ESPectrum::aud_volume = -8;
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
 int ESPectrum::lastaudioBit = 0;
 int ESPectrum::faudioBit = 0;
-int ESPectrum::samplesPerFrame = 546; // 48k value
+int ESPectrum::samplesPerFrame = ESP_AUDIO_SAMPLES_48;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
 
@@ -132,7 +131,7 @@ uint32_t ESPectrum::target;
 // LOGGING / TESTING
 //=======================================================================================
 
-int ESPectrum::ESPoffset = 64; // Testing
+// int ESPectrum::ESPoffset = 64; // Testing
 
 void showMemInfo(char* caption = "ZX-ESPectrum-IDF") {
 
@@ -260,11 +259,11 @@ void ESPectrum::setup()
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
-        samplesPerFrame=546; 
+        samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
-        samplesPerFrame=554;
+        samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
     }
@@ -356,11 +355,11 @@ void ESPectrum::reset()
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
-        samplesPerFrame=546; 
+        samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
-        samplesPerFrame=554;
+        samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
     }
@@ -631,17 +630,17 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             #ifdef PS2_ARROWKEYS_AS_CURSOR
 
                 if (KeytoESP == fabgl::VK_KP_DOWN) {
-                    bitWrite(Ports::base[4], 3, !Kdown);
+                    bitWrite(Ports::base[4], 4, !Kdown);
                     continue;
                 }
 
                 if (KeytoESP == fabgl::VK_KP_CENTER) {
-                    bitWrite(Ports::base[4], 3, !Kdown);
+                    bitWrite(Ports::base[4], 4, !Kdown);
                     continue;
                 }
 
                 if (KeytoESP == fabgl::VK_KP_UP) {
-                    bitWrite(Ports::base[4], 4, !Kdown);
+                    bitWrite(Ports::base[4], 3, !Kdown);
                 continue;
                 }
 
@@ -754,8 +753,6 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);        
-        
         pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
@@ -814,15 +811,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
                 beeper +=  overSamplebuf[i+7];
-                mix = (beeper >> 3) - 128;
-                #ifdef AUDIO_MIX_CLAMP
-                mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
-                #else
-                mix >>= 1;
-                #endif
-                // add 128 to recover original range (0 to 255)
-                mix += 128;
-                audioBuffer[i>>3] = mix;
+                audioBuffer[i >> 3] = beeper >> 3;
             }
 
         }
@@ -858,6 +847,7 @@ void ESPectrum::audioFrameEnd() {
     
     faudbufcnt = audbufcnt;
     faudioBit = lastaudioBit;
+
     xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
 }
@@ -912,11 +902,13 @@ for(;;) {
 
         if (elapsed < 100000) {
     
-            // printf("===========================================================================\n");
-            // printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
-            // printf("[Audio] Volume: %d\n", aud_volume);
-            // printf("[Framecnt] %u; [Seconds] %.2f; [FPS] %.2f; [FPS (no delay)] %.2f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            #ifdef LOG_DEBUG_TIMING
+            printf("===========================================================================\n");
+            printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
+            printf("[Audio] Volume: %d\n", aud_volume);
+            printf("[Framecnt] %u; [Seconds] %.2f; [FPS] %.2f; [FPS (no delay)] %.2f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
             // printf("[ESPoffset] %d\n", ESPoffset);
+            #endif
 
             sprintf((char *)linea1,"CPU: %.5u / IDL: %.5d ", elapsed, idle);
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    

@@ -15,15 +15,12 @@
 //... v1.0.0 (13/02/2017)
 //    quick & dirty conversion by dddddd (AKA deesix)
 
-//... compile with $ g++ -m32 -std=c++14
-//... put the zen*bin files in the same directory.
 #ifndef Z80CPP_H
 #define Z80CPP_H
 
 #include <stdint.h>
 
-//#pragma GCC optimize ("O3")
-#pragma GCC optimize ("O2")
+#pragma GCC optimize ("O3")
 
 #define Z80CPP_IS_LITTLE_ENDIAN 1
 

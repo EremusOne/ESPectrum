@@ -17,8 +17,7 @@
 
 #include "Z80_JLS/z80.h"
 
-// #pragma GCC optimize ("Ofast")
-#pragma GCC optimize ("O2")
+#pragma GCC optimize ("O3")
 
 ///////////////////////////////////////////////////////////////////////////////
 // miembros estáticos
@@ -938,7 +937,7 @@ void Z80::nmi(void) {
 
 void Z80::checkINT(void) {
 
-    // Ahora se comprueba si está activada la señal INT
+    // Comprueba si está activada la señal INT
     if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
         interrupt();
     }
@@ -998,9 +997,9 @@ void Z80::execute(void) {
     }
 #endif
     
-    // // Primero se comprueba NMI
-    // // Si se activa NMI no se comprueba INT porque la siguiente
-    // // instrucción debe ser la de 0x0066.
+    // Primero se comprueba NMI
+    // Si se activa NMI no se comprueba INT porque la siguiente
+    // instrucción debe ser la de 0x0066.
     // if (activeNMI) {
     //     activeNMI = false;
     //     lastFlagQ = false;

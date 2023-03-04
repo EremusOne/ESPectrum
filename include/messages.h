@@ -116,14 +116,14 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
 #define MENU_OPTIONS_EN \
     "Options menu\n"\
     "Storage\t>\n"\
-    "ROM\t>\n"\
+    "Machine\t>\n"\
     "Aspect ratio\t>\n"\
     "Language\t>\n"\
     "Other\t>\n"
 #define MENU_OPTIONS_ES \
     "Menu opciones\n"\
     "Almacenamiento\t>\n"\
-    "ROM\t>\n"\
+    "Modelo\t>\n"\
     "Rel. aspecto\t>\n"\
     "Idioma\t>\n"\
     "Otros\t>\n"
@@ -199,12 +199,12 @@ static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
     "No\t[N]\n"
 static const char *MENU_AY48[2] = { MENU_AY48_EN, MENU_AY48_ES };
 
-#define MENU_ARCH_EN "Select arch.\n"\
-    "48K\t>\n"\
-    "128K\t>\n"
+#define MENU_ARCH_EN "Select machine\n"\
+    "ZX Spectrum 48K\n"\
+    "ZX Spectrum 128K\n"
 #define MENU_ARCH_ES "Elija modelo\n"\
-    "48K\t>\n"\
-    "128K\t>\n"
+    "ZX Spectrum 48K\n"\
+    "ZX Spectrum 128K\n"
 static const char *MENU_ARCH[2] = { MENU_ARCH_EN, MENU_ARCH_ES };
 
 #define MENU_ROMSET48_EN "Select ROM\n"\
