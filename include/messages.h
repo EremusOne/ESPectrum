@@ -118,6 +118,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Storage\t>\n"\
     "Machine\t>\n"\
     "Aspect ratio\t>\n"\
+    "Joystick\t>\n"\
     "Language\t>\n"\
     "Other\t>\n"
 #define MENU_OPTIONS_ES \
@@ -125,6 +126,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Almacenamiento\t>\n"\
     "Modelo\t>\n"\
     "Rel. aspecto\t>\n"\
+    "Joystick\t>\n"\    
     "Idioma\t>\n"\
     "Otros\t>\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
@@ -238,6 +240,12 @@ static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
     "Ingles\t[ ]\n"\
     "Espanol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
+
+#define MENU_JOY_EN "Joystick\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"
+#define MENU_JOY_ES MENU_JOY_EN
+static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 
 #define MENU_KBD_LAYOUT_EN "Select language\n"\
     "US English\t[US]\n"\

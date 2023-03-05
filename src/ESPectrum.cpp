@@ -626,9 +626,20 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 continue;
             }
 
-            // Cursor keys
-            #ifdef PS2_ARROWKEYS_AS_CURSOR
+            // Joystick emulation
+            if (Config::joystick) {
 
+                // Kempston
+                Ports::base[0x1f] = 0;
+                bitWrite(Ports::base[0x1f], 0, keyboard->isVKDown(fabgl::VK_KP_RIGHT));
+                bitWrite(Ports::base[0x1f], 1, keyboard->isVKDown(fabgl::VK_KP_LEFT));
+                bitWrite(Ports::base[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN) || keyboard->isVKDown(fabgl::VK_KP_CENTER));
+                bitWrite(Ports::base[0x1f], 3, keyboard->isVKDown(fabgl::VK_KP_UP));
+                bitWrite(Ports::base[0x1f], 4, keyboard->isVKDown(fabgl::VK_RALT));
+        
+            } else {
+
+                // Cursor
                 if (KeytoESP == fabgl::VK_KP_DOWN) {
                     bitWrite(Ports::base[4], 4, !Kdown);
                     continue;
@@ -641,7 +652,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
                 if (KeytoESP == fabgl::VK_KP_UP) {
                     bitWrite(Ports::base[4], 3, !Kdown);
-                continue;
+                    continue;
                 }
 
                 if (KeytoESP == fabgl::VK_KP_LEFT) {
@@ -659,7 +670,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                     continue;
                 }
 
-            #endif // PS2_ARROWKEYS_AS_CURSOR
+            }
 
             //bitWrite(Ports::base[0], 0, !keyboard->isVKDown(fabgl::VK_LCTRL)); // CAPS SHIFT
             bitWrite(Ports::base[0], 1, (!keyboard->isVKDown(fabgl::VK_Z)) & (!keyboard->isVKDown(fabgl::VK_z)));
@@ -708,16 +719,6 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             bitWrite(Ports::base[7], 2, (!keyboard->isVKDown(fabgl::VK_M)) & (!keyboard->isVKDown(fabgl::VK_m)));
             bitWrite(Ports::base[7], 3, (!keyboard->isVKDown(fabgl::VK_N)) & (!keyboard->isVKDown(fabgl::VK_n)));
             bitWrite(Ports::base[7], 4, (!keyboard->isVKDown(fabgl::VK_B)) & (!keyboard->isVKDown(fabgl::VK_b)));
-
-            // Kempston joystick
-            #ifdef PS2_ARROWKEYS_AS_KEMPSTON
-                Ports::base[0x1f] = 0;
-                bitWrite(Ports::base[0x1f], 0, keyboard->isVKDown(fabgl::VK_KP_RIGHT));
-                bitWrite(Ports::base[0x1f], 1, keyboard->isVKDown(fabgl::VK_KP_LEFT));
-                bitWrite(Ports::base[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN) || keyboard->isVKDown(fabgl::VK_KP_CENTER));
-                bitWrite(Ports::base[0x1f], 3, keyboard->isVKDown(fabgl::VK_KP_UP));
-                bitWrite(Ports::base[0x1f], 4, keyboard->isVKDown(fabgl::VK_RALT));
-            #endif // PS2_ARROWKEYS_AS_KEMPSTON    
 
         }
 

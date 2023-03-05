@@ -65,19 +65,6 @@
 // #define LOG_DEBUG_TIMING
 
 ///////////////////////////////////////////////////////////////////////////////
-// PS/2 Keyboard
-// define NONE or ONE of this
-// PS2_ARROWKEYS_AS_CURSOR will use keypad
-// arrow keys as cursor joystick directions
-// with Right Alt as 0 key
-// PS2_ARROWKEYS_AS_KEMPSTON will use keypad 
-// arrow keys as kempston joystick directions
-// with Right Alt as fire button.
-///////////////////////////////////////////////////////////////////////////////
-// #define PS2_ARROWKEYS_AS_CURSOR
-#define PS2_ARROWKEYS_AS_KEMPSTON
-
-///////////////////////////////////////////////////////////////////////////////
 // Audio I/O
 //
 // define AUDIO_MIX_CLAMP to use clamping on mix of beeper and AY sound data

@@ -35,6 +35,7 @@
 #include "CPU.h"
 #include "Z80_JLS/z80.h"
 #include "Video.h"
+#include "Config.h"
 
 // Ports
 volatile uint8_t Ports::base[128];
@@ -77,11 +78,7 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
     ALUContentEarly(address);
     ALUContentLate(address);
 
-    #ifdef PS2_ARROWKEYS_AS_KEMPSTON
-    if (portLow == 0x1f) return base[0x1f]; // Kempston port
-    #else
-    if (portLow == 0x1f) return 0; // No Kempston connected
-    #endif
+    if ((portLow == 0x1f) && (Config::joystick)) return base[0x1f]; // Kempston port
 
     if (portLow == 0xfe) // ULA PORT
     {

@@ -50,6 +50,7 @@ uint8_t  Config::esp32rev = 0;
 string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
+uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -139,7 +140,13 @@ void Config::load() {
             erase_cntrl(line);
             trim(line);
             AY48 = (line == "true");
-        } 
+        } else if (line.find("joystick:") != string::npos) {
+            string sjoy = line.substr(line.find(':') + 1);
+            erase_cntrl(sjoy);
+            trim(sjoy);
+            Config::joystick = stoi(sjoy);
+        }
+
 
     }
     fclose(f);
@@ -259,6 +266,9 @@ void Config::save() {
 
     // AY emulation on 48K mode
     fputs(AY48 ? "AY48:true\n" : "AY48:false\n",f);
+
+    // Joystick
+    fputs(("joystick:" + std::to_string(Config::joystick) + "\n").c_str(),f);
 
     fclose(f);
     

@@ -447,7 +447,28 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     }
                 }
                 else if (options_num == 4) {
-                    // aspect ratio
+                    // joystick
+                    string Mnustr = MENU_JOY[Config::lang];
+                    std::size_t pos = Mnustr.find("[",0);
+                    int nfind = 0;
+                    while (pos != string::npos) {
+                        if (nfind == Config::joystick) {
+                            Mnustr.replace(pos,2,"[*");
+                            break;
+                        }
+                        pos = Mnustr.find("[",pos + 1);
+                        nfind++;
+                    }
+                    uint8_t opt2 = menuRun(Mnustr);
+                    if (opt2) {
+                        if (Config::joystick != (opt2 - 1)) {
+                            Config::joystick = opt2 - 1;
+                            Config::save();
+                        }
+                    }
+                }
+                else if (options_num == 5) {
+                    // language
                     uint8_t opt2;
                     opt2 = menuRun(MENU_LANGUAGE[Config::lang]);
                     if (opt2) {
@@ -517,7 +538,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         }
                     }
                 }
-                else if (options_num == 5) {
+                else if (options_num == 6) {
                     // Other
                     uint8_t options_num = menuRun(MENU_OTHER[Config::lang]);
                     if (options_num > 0) {
