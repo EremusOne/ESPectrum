@@ -166,7 +166,7 @@ void CPU::FlushOnHalt() {
         // printf("Contend on flushonhalt!\n");
 
         while (tstates < statesInFrame ) {
-            tstates += Z80Ops::delayContention(tstates) + 4;
+            tstates += Z80Ops::delayContention() + 4;
             Z80::incRegR(1);
         }
 
@@ -192,12 +192,17 @@ void CPU::FlushOnHalt() {
 
 static const unsigned char wait_states[8] = { 6, 5, 4, 3, 2, 1, 0, 0 }; // sequence of wait states
 
-unsigned char (*Z80Ops::delayContention)(unsigned int currentTstates);
+//unsigned char (*Z80Ops::delayContention)(unsigned int currentTstates);
+unsigned char (*Z80Ops::delayContention)();
 
-unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
+// unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
+unsigned char IRAM_ATTR Z80Ops::delayContention48() {
     
+    // // delay states one t-state BEFORE the first pixel to be drawn
+    // currentTstates++;
+
     // delay states one t-state BEFORE the first pixel to be drawn
-    currentTstates++;
+    uint32_t currentTstates = CPU::tstates + 1;
 
 	// each line spans 224 t-states
 	unsigned short int line = currentTstates / 224; // int line
@@ -213,9 +218,12 @@ unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
 
 }
 
-unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) {
-    
-    currentTstates+=3;
+//unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) {
+unsigned char IRAM_ATTR Z80Ops::delayContention128() {    
+
+    // currentTstates+=3;
+
+    uint32_t currentTstates = CPU::tstates + 3;
 
     unsigned short int line = currentTstates / 228; // int line
 	if (line < 63 || line >= 255) return 0;
@@ -260,7 +268,7 @@ uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
 
     uint8_t page = address >> 14;
     if (MemESP::ramContended[page])
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 4);
+        VIDEO::Draw(Z80Ops::delayContention() + 4);
     else
         VIDEO::Draw(4);
 
@@ -299,7 +307,7 @@ uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
 
     uint8_t page = address >> 14;
     if (MemESP::ramContended[page])
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+        VIDEO::Draw(Z80Ops::delayContention() + 3);
     else
         VIDEO::Draw(3);
 
@@ -340,7 +348,7 @@ void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
     if (page == 0) { VIDEO::Draw(3); return; }    
    
     if (MemESP::ramContended[page])
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+        VIDEO::Draw(Z80Ops::delayContention() + 3);
     else
         VIDEO::Draw(3);
 
@@ -384,8 +392,8 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
         uint8_t page = address >> 14;
         if (MemESP::ramContended[page]) {
-            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);            
+            VIDEO::Draw(Z80Ops::delayContention() + 3);
+            VIDEO::Draw(Z80Ops::delayContention() + 3);            
         } else
             VIDEO::Draw(6);
 
@@ -442,8 +450,8 @@ void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
         if (page == 0) { VIDEO::Draw(6); return; }
         
         if (MemESP::ramContended[page]) {
-            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);            
+            VIDEO::Draw(Z80Ops::delayContention() + 3);
+            VIDEO::Draw(Z80Ops::delayContention() + 3);            
         } else
             VIDEO::Draw(6);
 
@@ -500,7 +508,7 @@ void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
 
     if (MemESP::ramContended[address >> 14]) {
         for (int idx = 0; idx < wstates; idx++)
-            VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);  
+            VIDEO::Draw(Z80Ops::delayContention() + 1);  
     } else {
         VIDEO::Draw(wstates);
     }

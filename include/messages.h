@@ -47,7 +47,7 @@
 
 // OSD
 #define OSD_TITLE  "  ZX-ESPectrum-IDF - powered by ESP32   "
-#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS    v1.0beta3 "
+#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS    v1.0beta4 "
 
 #define OSD_PAUSE_EN " --=[PAUSED]=-- "
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"

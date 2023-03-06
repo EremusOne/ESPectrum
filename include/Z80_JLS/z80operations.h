@@ -47,9 +47,13 @@ public:
     /* Signal HALT in tstates */
     static void IRAM_ATTR signalHalt();
 
-    static unsigned char (*delayContention)(unsigned int currentTstates);
-    static unsigned char IRAM_ATTR delayContention48(unsigned int currentTstates);
-    static unsigned char IRAM_ATTR delayContention128(unsigned int currentTstates);
+    // static unsigned char (*delayContention)(unsigned int currentTstates);
+    // static unsigned char IRAM_ATTR delayContention48(unsigned int currentTstates);
+    // static unsigned char IRAM_ATTR delayContention128(unsigned int currentTstates);
+
+    static unsigned char (*delayContention)();
+    static unsigned char IRAM_ATTR delayContention48();
+    static unsigned char IRAM_ATTR delayContention128();
 
     static bool is48;
 

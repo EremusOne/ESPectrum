@@ -47,7 +47,7 @@ static void ALUContentEarly( uint16_t port )
 {
     uint8_t page = port >> 14;
     if ((page == 1) || ((!Z80Ops::is48) && (page == 3) && (MemESP::bankLatch & 0x01 != 0)))
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(Z80Ops::delayContention() + 1);
     else
         VIDEO::Draw(1);
 }
@@ -56,13 +56,13 @@ static void ALUContentLate( uint16_t port )
 {
 
   if( (port & 0x0001) == 0x00) {
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
+        VIDEO::Draw(Z80Ops::delayContention() + 3);
   } else {
     uint8_t page = port >> 14;   
     if ((page == 1) || ((!Z80Ops::is48) && (page == 3) && (MemESP::bankLatch & 0x01 != 0))) {
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
-        VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);
+        VIDEO::Draw(Z80Ops::delayContention() + 1);
+        VIDEO::Draw(Z80Ops::delayContention() + 1);
+        VIDEO::Draw(Z80Ops::delayContention() + 1);
     } else {
         VIDEO::Draw(3);
 	}
