@@ -41,6 +41,8 @@ uint8_t* MemESP::ram5 = NULL;
 uint8_t* MemESP::ram6 = NULL;
 uint8_t* MemESP::ram7 = NULL;
 uint8_t* MemESP::ram[8];
+uint8_t* MemESP::ramCurrent[4];
+bool MemESP::ramContended[4];
 
 volatile uint8_t MemESP::bankLatch = 0;
 volatile uint8_t MemESP::videoLatch = 0;

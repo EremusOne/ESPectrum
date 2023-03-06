@@ -54,6 +54,9 @@ public:
 
     static uint8_t* ram[8];
 
+    static uint8_t* ramCurrent[4];    
+    static bool ramContended[4];
+
     static volatile uint8_t bankLatch;
     static volatile uint8_t videoLatch;
     static volatile uint8_t romLatch;

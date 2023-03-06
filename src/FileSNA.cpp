@@ -263,6 +263,16 @@ bool FileSNA::load(string sna_fn)
         Z80Ops::is48 = false;
     }
 
+    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
+    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
+    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+
+    MemESP::ramContended[0] = false;
+    MemESP::ramContended[1] = true;
+    MemESP::ramContended[2] = false;
+    MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
+
     Tape::tapeFileName = "none";
     Tape::tapeStatus = TAPE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;

@@ -122,10 +122,13 @@ uint8_t Ports::input(uint8_t portLow, uint8_t portHigh)
         if (!MemESP::pagingLock) {
             MemESP::pagingLock = bitRead(data, 5);
             MemESP::bankLatch = data & 0x7;
+            MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+            MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
             MemESP::videoLatch = bitRead(data, 3);
             VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];            
         }
 
     }
@@ -176,11 +179,18 @@ void Ports::output(uint8_t portLow, uint8_t portHigh, uint8_t data) {
         if (MemESP::pagingLock) return;
 
         MemESP::pagingLock = bitRead(data, 5);
+        
         MemESP::bankLatch = data & 0x7;
+        MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+        MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+
         MemESP::videoLatch = bitRead(data, 3);
+        
         VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
+        
         MemESP::romLatch = bitRead(data, 4);
         bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+        MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
 
     }
    
