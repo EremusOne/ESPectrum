@@ -4,14 +4,6 @@ This is an emulator of the Sinclair ZX Spectrum computer running on a Lilygo TTG
 
 Just connect a VGA monitor, a PS/2 keyboard, a SD Card (optional) and power via microUSB.
 
-Quick start from PlatformIO:
-- Clone this repo and Open from VSCode/PlatFormIO
-- Execute task: Upload File System Image
-- Execute task: Upload
-- Enjoy
-
-You can also flash the binaries directly to the board if do not want to mess with code and compilers. Check the [releases section](https://github.com/EremusOne/ZX-ESPectrum-IDF/releases)
-
 This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote) which is a fork of the [ZX-ESPectrum](https://github.com/rampa069/ZX-ESPectrum) project by Rampa and Queru.
 
 ## Features
@@ -39,7 +31,17 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 - Better AY-3-8912 emulation (128K sound is still a little dirty).
 
+## Installing
+
+You can flash the binaries directly to the board if do not want to mess with code and compilers. Check the [releases section](https://github.com/EremusOne/ZX-ESPectrum-IDF/releases)
+
 ## Compiling and installing
+
+Quick start from PlatformIO:
+- Clone this repo and Open from VSCode/PlatFormIO
+- Execute task: Upload File System Image
+- Execute task: Upload
+- Enjoy
 
 Windows, GNU/Linux and MacOS/X. This version has been developed using PlatformIO.
 
