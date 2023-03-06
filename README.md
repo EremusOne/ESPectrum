@@ -8,7 +8,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 ## Features
 
-- Spectrum 48/128/+2 architecture emulation (no PSRAM needed).
+- Spectrum 48K and 128K emulation (no PSRAM needed).
 - Accurate Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
 - VGA output (6 bpp, BRIGHT attribute kept) with good emulation of Spectrum screen.
 - Support for two aspect ratios: 16:9 or 4:3 monitors (using 360x200 or 320x240 modes)
@@ -16,10 +16,11 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Border effects emulated (Aquaplane, The Sentinel, Overscan demo).
 - Floating bus effect emulation (Arkanoid, Sidewize).
 - Contended memory and contended I/O emulation.
-- 48K sound: beeper digital output.
-- AY-3-8912 sound emulation working but still incomplete.
+- Beeper sound emulation.
+- Partial AY-3-8912 sound emulation.
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
 - International kbd layout support: US, ES, DE, FR and UK.
+- Kempston and Cursor type Joystick emulation.
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
 - SNA and Z80 snapshot loading.
@@ -58,7 +59,7 @@ PlatformIO now autodetects port, so there is no need to specify it (unless autod
 
 Default aspect ratio is 16:9, so if your monitor has this, you don't need to change anything.
 
-(If you change aspect ratio to 4:3 and get no image, re-upload file system image to roll back to default settings).
+(If you change aspect ratio to 4:3 and get no image, re-flash board or re-upload file system image to roll back to default settings).
 
 #### Upload the data filesystem
 
