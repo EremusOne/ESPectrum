@@ -16,8 +16,16 @@
 //    quick & dirty conversion by dddddd (AKA deesix)
 
 #include "Z80_JLS/z80.h"
+#include "Ports.h"
+#include "Video.h"
+#include "MemESP.h"
+#include "CPU.h"
 
 #pragma GCC optimize ("O3")
+
+uint8_t page;
+#define FETCH_OPCODE(result,address) page = address >> 14; VIDEO::Draw(4,MemESP::ramContended[page]); result = MemESP::ramCurrent[page][address & 0x3fff];
+// #define PEEK8(result,address) page = address >> 14; VIDEO::Draw(3,MemESP::ramContended[page]); result = MemESP::ramCurrent[page][address & 0x3fff];
 
 ///////////////////////////////////////////////////////////////////////////////
 // miembros estáticos
@@ -629,7 +637,10 @@ void Z80::push(uint16_t word) {
 
 // LDI
 void Z80::ldi(void) {
+
     uint8_t work8 = Z80Ops::peek8(REG_HL);
+    // PEEK8(uint8_t work8,REG_HL);
+
     Z80Ops::poke8(REG_DE, work8);
     Z80Ops::addressOnBus(REG_DE, 2);
     REG_HL++;
@@ -652,6 +663,8 @@ void Z80::ldi(void) {
 // LDD
 void Z80::ldd(void) {
     uint8_t work8 = Z80Ops::peek8(REG_HL);
+    // PEEK8(uint8_t work8,REG_HL);
+
     Z80Ops::poke8(REG_DE, work8);
     Z80Ops::addressOnBus(REG_DE, 2);
     REG_HL--;
@@ -674,6 +687,8 @@ void Z80::ldd(void) {
 // CPI
 void Z80::cpi(void) {
     uint8_t memHL = Z80Ops::peek8(REG_HL);
+    // PEEK8(uint8_t memHL,REG_HL);
+
     bool carry = carryFlag; // lo guardo porque cp lo toca
     cp(memHL);
     carryFlag = carry;
@@ -698,6 +713,8 @@ void Z80::cpi(void) {
 // CPD
 void Z80::cpd(void) {
     uint8_t memHL = Z80Ops::peek8(REG_HL);
+    // PEEK8(uint8_t memHL,REG_HL);
+
     bool carry = carryFlag; // lo guardo porque cp lo toca
     cp(memHL);
     carryFlag = carry;
@@ -723,7 +740,7 @@ void Z80::cpd(void) {
 void Z80::ini(void) {
     REG_WZ = REG_BC;
     Z80Ops::addressOnBus(getPairIR().word, 1);
-    uint8_t work8 = Z80Ops::inPort(REG_WZ++);
+    uint8_t work8 = Ports::input(REG_WZ++);
     Z80Ops::poke8(REG_HL, work8);
 
     REG_B--;
@@ -754,7 +771,7 @@ void Z80::ini(void) {
 void Z80::ind(void) {
     REG_WZ = REG_BC;
     Z80Ops::addressOnBus(getPairIR().word, 1);
-    uint8_t work8 = Z80Ops::inPort(REG_WZ--);
+    uint8_t work8 = Ports::input(REG_WZ--);
     Z80Ops::poke8(REG_HL, work8);
 
     REG_B--;
@@ -790,7 +807,9 @@ void Z80::outi(void) {
     REG_WZ = REG_BC;
 
     uint8_t work8 = Z80Ops::peek8(REG_HL);
-    Z80Ops::outPort(REG_WZ++, work8);
+    // PEEK8(uint8_t work8,REG_HL);
+
+    Ports::output(REG_WZ++, work8);
 
     REG_HL++;
 
@@ -822,7 +841,9 @@ void Z80::outd(void) {
     REG_WZ = REG_BC;
 
     uint8_t work8 = Z80Ops::peek8(REG_HL);
-    Z80Ops::outPort(REG_WZ--, work8);
+    // PEEK8(uint8_t work8,REG_HL);
+
+    Ports::output(REG_WZ--, work8);
 
     REG_HL--;
 
@@ -899,7 +920,8 @@ void Z80::interrupt(void) {
         REG_PC++;
     }
 
-    Z80Ops::interruptHandlingTime(7);
+    // Z80Ops::interruptHandlingTime(7);
+    VIDEO::Draw(7, false);
 
     regR++;
 
@@ -923,8 +945,13 @@ void Z80::nmi(void) {
     // Esta lectura consigue dos cosas:
     //      1.- La lectura del opcode del M1 que se descarta
     //      2.- Si estaba en un HALT esperando una INT, lo saca de la espera
-    Z80Ops::fetchOpcode(REG_PC);
-    Z80Ops::interruptHandlingTime(1);
+    
+    // Z80Ops::fetchOpcode(REG_PC);
+    FETCH_OPCODE(uint8_t opCode, REG_PC);
+
+    // Z80Ops::interruptHandlingTime(1);
+    VIDEO::Draw(1, false);    
+
     if (halted) {
         halted = false;
         REG_PC++;
@@ -952,7 +979,8 @@ void Z80::incRegR(uint8_t inc) {
 
 void Z80::execute(void) {
 
-    opCode = Z80Ops::fetchOpcode(REG_PC);
+    // opCode = Z80Ops::fetchOpcode(REG_PC);
+    FETCH_OPCODE(opCode,REG_PC);
     regR++;
 
 #ifdef WITH_BREAKPOINT_SUPPORT
@@ -1054,6 +1082,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x06:
         { /* LD B,n */
             REG_B = Z80Ops::peek8(REG_PC);
+            // PEEK8(REG_B,REG_PC);
             REG_PC++;
             break;
         }
@@ -1088,6 +1117,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x0A:
         { /* LD A,(BC) */
             regA = Z80Ops::peek8(REG_BC);
+            // PEEK8(regA,REG_BC);
             REG_WZ = REG_BC + 1;
             break;
         }
@@ -1110,6 +1140,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x0E:
         { /* LD C,n */
             REG_C = Z80Ops::peek8(REG_PC);
+            // PEEK8(REG_C,REG_PC);            
             REG_PC++;
             break;
         }
@@ -1128,6 +1159,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         { /* DJNZ e */
             Z80Ops::addressOnBus(getPairIR().word, 1);
             int8_t offset = Z80Ops::peek8(REG_PC);
+            // PEEK8(int8_t offset,REG_PC);            
             if (--REG_B != 0) {
                 Z80Ops::addressOnBus(REG_PC, 5);
                 REG_PC = REG_WZ = REG_PC + offset + 1;
@@ -1169,6 +1201,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x16:
         { /* LD D,n */
             REG_D = Z80Ops::peek8(REG_PC);
+            // PEEK8(REG_D,REG_PC);                        
             REG_PC++;
             break;
         }
@@ -1187,6 +1220,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x18:
         { /* JR e */
             int8_t offset = Z80Ops::peek8(REG_PC);
+            // PEEK8(int8_t offset,REG_PC);                                    
             Z80Ops::addressOnBus(REG_PC, 5);
             REG_PC = REG_WZ = REG_PC + offset + 1;
             break;
@@ -1200,6 +1234,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x1A:
         { /* LD A,(DE) */
             regA = Z80Ops::peek8(REG_DE);
+            // PEEK8(regA,REG_DE);
             REG_WZ = REG_DE + 1;
             break;
         }
@@ -1222,6 +1257,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x1E:
         { /* LD E,n */
             REG_E = Z80Ops::peek8(REG_PC);
+            // PEEK8(REG_E,REG_PC);            
             REG_PC++;
             break;
         }
@@ -1240,6 +1276,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x20:
         { /* JR NZ,e */
             int8_t offset = Z80Ops::peek8(REG_PC);
+            // PEEK8(int8_t offset,REG_PC);
             if ((sz5h3pnFlags & ZERO_MASK) == 0) {
                 Z80Ops::addressOnBus(REG_PC, 5);
                 REG_PC += offset;
@@ -1281,6 +1318,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x26:
         { /* LD H,n */
             REG_H = Z80Ops::peek8(REG_PC);
+            // PEEK8(REG_H, REG_PC);
             REG_PC++;
             break;
         }
@@ -1333,6 +1371,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x2E:
         { /* LD L,n */
             REG_L = Z80Ops::peek8(REG_PC);
+            // PEEK8(REG_L, REG_PC);
             REG_PC++;
             break;
         }
@@ -1347,6 +1386,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x30:
         { /* JR NC,e */
             int8_t offset = Z80Ops::peek8(REG_PC);
+            // PEEK8(int8_t offset, REG_PC);            
             if (!carryFlag) {
                 Z80Ops::addressOnBus(REG_PC, 5);
                 REG_PC += offset;
@@ -1408,6 +1448,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x38:
         { /* JR C,e */
             int8_t offset = Z80Ops::peek8(REG_PC);
+            // PEEK8(int8_t offset, REG_PC);                        
             if (carryFlag) {
                 Z80Ops::addressOnBus(REG_PC, 5);
                 REG_PC += offset;
@@ -1724,8 +1765,12 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x76:
         { /* HALT */
             REG_PC--;
+            
             // Signal HALT to CPU Loop
-            Z80Ops::signalHalt();
+            // Z80Ops::signalHalt();
+            
+            CPU::tstates |= 0xFF000000;
+            
             halted = true;
             break;
         }
@@ -2240,7 +2285,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
             uint8_t work8 = Z80Ops::peek8(REG_PC);
             REG_PC++;
             REG_WZ = regA << 8;
-            Z80Ops::outPort(REG_WZ | work8, regA);
+            Ports::output(REG_WZ | work8, regA);
             REG_WZ |= (work8 + 1);
             break;
         }
@@ -2315,7 +2360,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
             REG_Z = Z80Ops::peek8(REG_PC);
             //REG_WZ = (regA << 8) | Z80Ops::peek8(REG_PC);
             REG_PC++;
-            regA = Z80Ops::inPort(REG_WZ);
+            regA = Ports::input(REG_WZ);
             REG_WZ++;
             break;
         }
@@ -2333,7 +2378,9 @@ void Z80::decodeOpcode(uint8_t opCode) {
         }
         case 0xDD:
         { /* Subconjunto de instrucciones */
-            opCode = Z80Ops::fetchOpcode(REG_PC++);
+            // opCode = Z80Ops::fetchOpcode(REG_PC++);
+            FETCH_OPCODE(opCode,REG_PC);
+            REG_PC++;
             regR++;
             decodeDDFD(opCode, regIX);
             break;
@@ -2439,7 +2486,9 @@ void Z80::decodeOpcode(uint8_t opCode) {
             REG_PC = REG_PC + 2;
             break;
         case 0xED: /*Subconjunto de instrucciones*/
-            opCode = Z80Ops::fetchOpcode(REG_PC++);
+            // opCode = Z80Ops::fetchOpcode(REG_PC++);
+            FETCH_OPCODE(opCode,REG_PC);
+            REG_PC++;
             regR++;
             decodeED(opCode);
             break;
@@ -2528,7 +2577,9 @@ void Z80::decodeOpcode(uint8_t opCode) {
             REG_PC = REG_PC + 2;
             break;
         case 0xFD: /* Subconjunto de instrucciones */
-            opCode = Z80Ops::fetchOpcode(REG_PC++);
+            // opCode = Z80Ops::fetchOpcode(REG_PC++);
+            FETCH_OPCODE(opCode,REG_PC);
+            REG_PC++;
             regR++;
             decodeDDFD(opCode, regIY);
             break;
@@ -2546,7 +2597,10 @@ void Z80::decodeOpcode(uint8_t opCode) {
 //Subconjunto de instrucciones 0xCB
 
 void Z80::decodeCB(void) {
-    uint8_t opCode = Z80Ops::fetchOpcode(REG_PC++);
+    // uint8_t opCode = Z80Ops::fetchOpcode(REG_PC++);
+    FETCH_OPCODE(uint8_t opCode, REG_PC);
+    REG_PC++;
+
     regR++;
     switch (opCode) {
         case 0x00:
@@ -4997,7 +5051,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x40:
         { /* IN B,(C) */
             REG_WZ = REG_BC;
-            REG_B = Z80Ops::inPort(REG_WZ);
+            REG_B = Ports::input(REG_WZ);
             REG_WZ++;
             sz5h3pnFlags = sz53pn_addTable[REG_B];
             flagQ = true;
@@ -5006,7 +5060,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x41:
         { /* OUT (C),B */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ, REG_B);
+            Ports::output(REG_WZ, REG_B);
             REG_WZ++;
             break;
         }
@@ -5073,7 +5127,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x48:
         { /* IN C,(C) */
             REG_WZ = REG_BC;
-            REG_C = Z80Ops::inPort(REG_WZ);
+            REG_C = Ports::input(REG_WZ);
             REG_WZ++;
             sz5h3pnFlags = sz53pn_addTable[REG_C];
             flagQ = true;
@@ -5082,7 +5136,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x49:
         { /* OUT (C),C */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ, REG_C);
+            Ports::output(REG_WZ, REG_C);
             REG_WZ++;
             break;
         }
@@ -5113,7 +5167,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x50:
         { /* IN D,(C) */
             REG_WZ = REG_BC;
-            REG_D = Z80Ops::inPort(REG_WZ);
+            REG_D = Ports::input(REG_WZ);
             REG_WZ++;
             sz5h3pnFlags = sz53pn_addTable[REG_D];
             flagQ = true;
@@ -5122,7 +5176,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x51:
         { /* OUT (C),D */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ++, REG_D);
+            Ports::output(REG_WZ++, REG_D);
             break;
         }
         case 0x52:
@@ -5158,7 +5212,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x58:
         { /* IN E,(C) */
             REG_WZ = REG_BC;
-            REG_E = Z80Ops::inPort(REG_WZ++);
+            REG_E = Ports::input(REG_WZ++);
             sz5h3pnFlags = sz53pn_addTable[REG_E];
             flagQ = true;
             break;
@@ -5166,7 +5220,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x59:
         { /* OUT (C),E */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ++, REG_E);
+            Ports::output(REG_WZ++, REG_E);
             break;
         }
         case 0x5A:
@@ -5202,7 +5256,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x60:
         { /* IN H,(C) */
             REG_WZ = REG_BC;
-            REG_H = Z80Ops::inPort(REG_WZ++);
+            REG_H = Ports::input(REG_WZ++);
             sz5h3pnFlags = sz53pn_addTable[REG_H];
             flagQ = true;
             break;
@@ -5210,7 +5264,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x61:
         { /* OUT (C),H */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ++, REG_H);
+            Ports::output(REG_WZ++, REG_H);
             break;
         }
         case 0x62:
@@ -5247,7 +5301,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x68:
         { /* IN L,(C) */
             REG_WZ = REG_BC;
-            REG_L = Z80Ops::inPort(REG_WZ++);
+            REG_L = Ports::input(REG_WZ++);
             sz5h3pnFlags = sz53pn_addTable[REG_L];
             flagQ = true;
             break;
@@ -5255,7 +5309,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x69:
         { /* OUT (C),L */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ++, REG_L);
+            Ports::output(REG_WZ++, REG_L);
             break;
         }
         case 0x6A:
@@ -5292,7 +5346,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x70:
         { /* IN (C) */
             REG_WZ = REG_BC;
-            uint8_t inPort = Z80Ops::inPort(REG_WZ++);
+            uint8_t inPort = Ports::input(REG_WZ++);
             sz5h3pnFlags = sz53pn_addTable[inPort];
             flagQ = true;
             break;
@@ -5300,7 +5354,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x71:
         { /* OUT (C),0 */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ++, 0x00);
+            Ports::output(REG_WZ++, 0x00);
             break;
         }
         case 0x72:
@@ -5319,7 +5373,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x78:
         { /* IN A,(C) */
             REG_WZ = REG_BC;
-            regA = Z80Ops::inPort(REG_WZ++);
+            regA = Ports::input(REG_WZ++);
             sz5h3pnFlags = sz53pn_addTable[regA];
             flagQ = true;
             break;
@@ -5327,7 +5381,7 @@ void Z80::decodeED(uint8_t opCode) {
         case 0x79:
         { /* OUT (C),A */
             REG_WZ = REG_BC;
-            Z80Ops::outPort(REG_WZ++, regA);
+            Ports::output(REG_WZ++, regA);
             break;
         }
         case 0x7A:

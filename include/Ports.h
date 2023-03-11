@@ -35,15 +35,9 @@
 class Ports
 {
 public:
-    // keyboard ports read from PS2 keyboard
-    static volatile uint8_t base[128];
-
-    // read port
-    static uint8_t input(uint8_t portLow, uint8_t portHigh);
-
-    // write port
-    static void output(uint8_t portLow, uint8_t portHigh, uint8_t data);
-
+    static uint8_t port[128];
+    static uint8_t input(uint16_t address);
+    static void output(uint16_t address, uint8_t data);
 };
 
 

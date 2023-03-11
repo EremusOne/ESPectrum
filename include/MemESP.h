@@ -57,10 +57,16 @@ public:
     static uint8_t* ramCurrent[4];    
     static bool ramContended[4];
 
-    static volatile uint8_t bankLatch;
-    static volatile uint8_t videoLatch;
-    static volatile uint8_t romLatch;
-    static volatile uint8_t pagingLock;
+    // static volatile uint8_t bankLatch;
+    // static volatile uint8_t videoLatch;
+    // static volatile uint8_t romLatch;
+    // static volatile uint8_t pagingLock;
+
+    static uint8_t bankLatch;
+    static uint8_t videoLatch;
+    static uint8_t romLatch;
+    static uint8_t pagingLock;
+
     static uint8_t modeSP3;
     static uint8_t romSP3;
     static uint8_t romInUse;

@@ -40,6 +40,8 @@
 #include "OSDMain.h"
 #include "hardconfig.h"
 #include "hardpins.h"
+#include "Z80_JLS/z80.h"
+#include "Z80_JLS/z80operations.h"
 
 VGA6Bit VIDEO::vga;
 uint8_t VIDEO::borderColor = 0;
@@ -55,14 +57,14 @@ uint8_t* VIDEO::grmem;
 
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
-#ifdef NOVIDEO
-void (*VIDEO::Draw)(unsigned int) = &VIDEO::NoVideo;
+#ifdef NO_VIDEO
+void (*VIDEO::Draw)(unsigned int, bool) = &VIDEO::NoVideo;
 #else
-void (*VIDEO::Draw)(unsigned int) = &VIDEO::Blank;
+void (*VIDEO::Draw)(unsigned int, bool) = &VIDEO::Blank;
 #endif
 
-void (*VIDEO::DrawOSD43)(unsigned int) = &VIDEO::BottomBorder;
-void (*VIDEO::DrawOSD169)(unsigned int) = &VIDEO::MainScreen;
+void (*VIDEO::DrawOSD43)(unsigned int, bool) = &VIDEO::BottomBorder;
+void (*VIDEO::DrawOSD169)(unsigned int, bool) = &VIDEO::MainScreen;
 
 void precalcColors() {
     for (int i = 0; i < NUM_SPECTRUM_COLORS; i++) {
@@ -171,7 +173,7 @@ void VIDEO::Init() {
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
     }
 
-    #ifdef NOVIDEO
+    #ifdef NO_VIDEO
         Draw = &NoVideo;
     #else
         Draw = &Blank;
@@ -198,7 +200,7 @@ void VIDEO::Reset() {
 
     grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
 
-    #ifdef NOVIDEO
+    #ifdef NO_VIDEO
         Draw = &NoVideo;
     #else
         Draw = &Blank;
@@ -210,37 +212,29 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData48() {
 
     unsigned int currentTstates = CPU::tstates;
 
-	// each line spans 224 t-states
 	unsigned short int line = currentTstates / 224; // int line
-    // only the 192 lines between 64 and 255 have graphic data, the rest is border
 	if (line < 64 || line >= 256) return 0xFF;
 
-    // only the first 128 t-states of each line correspond to a graphic data transfer
-	// the remaining 96 t-states correspond to border
 	unsigned char halfpix = currentTstates % 224;
 	if (halfpix >= 128) return 0xFF;
 
     switch (halfpix & 0x07) {
         case 3: { // Bitmap
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 64];
             int hpoffset = (halfpix - 3) >> 2;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 4: { // Attr
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 64];
             int hpoffset = (halfpix - 3) >> 2;
             return(grmem[attOffset + hpoffset]);
         }
         case 5: { // Bitmap + 1
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 64];
             int hpoffset = ((halfpix - 3) >> 2) + 1;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 6: { // Attr + 1
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 64];
             int hpoffset = ((halfpix - 3) >> 2) + 1;
             return(grmem[attOffset + hpoffset]);
@@ -257,37 +251,29 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
 
     currentTstates--;
 
-	// each line spans 224 t-states
 	unsigned short int line = currentTstates / 228; // int line
-    // only the 192 lines between 64 and 255 have graphic data, the rest is border
 	if (line < 63 || line >= 255) return 0xFF;
 
-    // only the first 128 t-states of each line correspond to a graphic data transfer
-	// the remaining 96 t-states correspond to border
 	unsigned char halfpix = currentTstates % 228;
 	if (halfpix >= 128) return 0xFF;
 
     switch (halfpix & 0x07) {
         case 0: { // Bitmap
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 63];
             int hpoffset = (halfpix) >> 2;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 1: { // Attr
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 63];
             int hpoffset = (halfpix) >> 2;
             return(grmem[attOffset + hpoffset]);
         }
         case 2: { // Bitmap + 1
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int bmpOffset = offBmp[line - 63];
             int hpoffset = ((halfpix) >> 2) + 1;
             return(grmem[bmpOffset + hpoffset]);
         }
         case 3: { // Attr + 1
-            // grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             unsigned int attOffset = offAtt[line - 63];
             int hpoffset = ((halfpix) >> 2) + 1;
             return(grmem[attOffset + hpoffset]);
@@ -302,11 +288,9 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
 //  VIDEO DRAW FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
-void IRAM_ATTR VIDEO::NoVideo(unsigned int statestoadd) {
-   CPU::tstates += statestoadd;
-}
+void IRAM_ATTR VIDEO::NoVideo(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
 
-void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -317,12 +301,12 @@ void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd) {
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
         Draw = &TopBorder;
-        Draw(0);
+        Draw(0,contended);
     }
 
 }
 
-void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -339,7 +323,7 @@ void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd) {
 
 }
 
-void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {
     
     CPU::tstates += statestoadd;
 
@@ -351,15 +335,41 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd) {
         coldraw_cnt = 0;
         bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
         attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24)];
-        Draw = DrawOSD169;
-        Draw(0);
+        Draw = MainScreenLB;
+        Draw(0,contended);
     }
 
 }    
 
-void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
+  
+    if (contended)
+        statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
 
+    CPU::tstates += statestoadd;
+    statestoadd += video_rest;
+    video_rest = statestoadd & 0x03; // Mod 4
+
+    for (int i=0; i < (statestoadd >> 2); i++) {    
+        *lineptr32++ = brd;
+        *lineptr32++ = brd;
+        if (++coldraw_cnt > 3) {      
+            Draw = DrawOSD169;
+            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
+            Draw(0,false);
+            return;
+        }
+    }
+    
+}
+
+
+void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
+  
     uint8_t att, bmp;
+    
+    if (contended)
+        statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
 
     CPU::tstates += statestoadd;
     
@@ -368,35 +378,43 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd) {
 
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
-        if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
-            att = grmem[attOffset++];       // get attribute byte
-            if (att & flashing) {
-                bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
-            } else 
-                bmp = grmem[bmpOffset++];   // get bitmap byte
+        // if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
+        // if (coldraw_cnt<36) {
 
+            att = grmem[attOffset++];       // get attribute byte
+            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
             *lineptr32++ = AluBytes[bmp >> 4][att];
             *lineptr32++ = AluBytes[bmp & 0xF][att];
 
-        } else {
+        // } else {
 
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
+        //     *lineptr32++ = brd;
+        //     *lineptr32++ = brd;
 
-        }
+        // }
 
-        if (++coldraw_cnt == 40) {      
-            Draw = ++linedraw_cnt == (is169 ? 196 : 216) ? &BottomBorder_Blank : &MainScreen_Blank;
+        if (++coldraw_cnt > 35) {      
+            Draw = MainScreenRB;
+            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
+            Draw(0,false);
             return;
         }
+
+        // if (++coldraw_cnt == 40) {      
+        //     Draw = ++linedraw_cnt == (is169 ? 196 : 216) ? &BottomBorder_Blank : &MainScreen_Blank;
+        //     return;
+        // }
 
     }
 
 }
 
-void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
+    
+    if (contended)
+        statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
 
     CPU::tstates += statestoadd;
 
@@ -414,11 +432,7 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd) {
 
         if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
             att = grmem[attOffset++];       // get attribute byte
-            if (att & flashing) {
-                bmp = ~grmem[bmpOffset++];  // get inverted bitmap byte
-            } else 
-                bmp = grmem[bmpOffset++];   // get bitmap byte
-
+            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
             *lineptr32++ = AluBytes[bmp >> 4][att];
             *lineptr32++ = AluBytes[bmp & 0xF][att];
         } else {
@@ -430,11 +444,34 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd) {
             Draw = ++linedraw_cnt == 196 ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
         }
+
     }
 
 }
 
-void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
+
+    if (contended)
+        statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
+
+    CPU::tstates += statestoadd;
+    statestoadd += video_rest;
+    video_rest = statestoadd & 0x03; // Mod 4
+
+    for (int i=0; i < (statestoadd >> 2); i++) {
+        *lineptr32++ = brd;
+        *lineptr32++ = brd;
+
+        if (++coldraw_cnt == 40) {
+            Draw = ++linedraw_cnt == (is169 ? 196 : 216) ? &BottomBorder_Blank : &MainScreen_Blank;
+            return;
+        }
+
+    }
+
+}
+
+void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -445,18 +482,20 @@ void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd) {
         if (is169) lineptr32 += 5;        
         coldraw_cnt = 0;
         Draw = DrawOSD43;
-        Draw(0);
+        Draw(0,contended);
     }
 
 }
 
-void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
     statestoadd += video_rest;
+
     video_rest = statestoadd & 0x03; // Mod 4
     for (int i=0; i < (statestoadd >> 2); i++) {    
+
         *lineptr32++ = brd;
         *lineptr32++ = brd;
         if (++coldraw_cnt == 40) {
@@ -466,11 +505,12 @@ void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd) {
     }
 }
 
-void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
     statestoadd += video_rest;
+
     video_rest = statestoadd & 0x03; // Mod 4
     for (int i=0; i < (statestoadd >> 2); i++) {    
         
@@ -492,7 +532,7 @@ void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd) {
 
 }
 
-void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd) {
+void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -510,7 +550,7 @@ void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd) {
 void VIDEO::Flush() {
 
     while (CPU::tstates < CPU::statesInFrame) {
-        Draw(tStatesPerLine);
+        Draw(tStatesPerLine,false);
     }
 
     // return;

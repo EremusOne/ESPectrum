@@ -43,15 +43,14 @@
 #define SPEC_W 256
 #define SPEC_H 192
 
-// TO DO: Defines per arch (48, 128, etc..)
 #define TSTATES_PER_LINE 224
 #define TSTATES_PER_LINE_128 228
 
-#define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 40, -16 FROM BORDER
-#define TS_SCREEN_320x240_128 8874  // START OF VISIBLE ULA DRAW @ 320x240, SCANLINE 39, -16 FROM BORDER
+#define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW 48K @ 320x240, SCANLINE 40, -16 FROM BORDER
+#define TS_SCREEN_320x240_128 8874  // START OF VISIBLE ULA DRAW 128K @ 320x240, SCANLINE 39, -16 FROM BORDER
 
-#define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 60, -16 FROM BORDER
-#define TS_SCREEN_360x200_128 13434 // START OF VISIBLE ULA DRAW @ 360x200, SCANLINE 59, -16 FROM BORDER
+#define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW 48K @ 360x200, SCANLINE 60, -16 FROM BORDER
+#define TS_SCREEN_360x200_128 13434 // START OF VISIBLE ULA DRAW 128K @ 360x200, SCANLINE 59, -16 FROM BORDER
 
 class VIDEO
 {
@@ -64,24 +63,26 @@ public:
     static void Reset();
 
     // Video draw functions
-    static void IRAM_ATTR TopBorder_Blank(unsigned int statestoadd);
-    static void IRAM_ATTR TopBorder(unsigned int statestoadd);
-    static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd);
-    static void IRAM_ATTR MainScreen(unsigned int statestoadd);
-    static void IRAM_ATTR MainScreen_OSD(unsigned int statestoadd);
-    static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd);
-    static void IRAM_ATTR BottomBorder(unsigned int statestoadd);
-    static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd);    
-    static void IRAM_ATTR Blank(unsigned int statestoadd);
-    static void IRAM_ATTR NoVideo(unsigned int statestoadd);
-
+    static void IRAM_ATTR TopBorder_Blank(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR TopBorder(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR MainScreen(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR MainScreen_OSD(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR BottomBorder(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd, bool contended);    
+    static void IRAM_ATTR Blank(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR MainScreenLB(unsigned int statestoadd, bool contended);
+    static void IRAM_ATTR MainScreenRB(unsigned int statestoadd, bool contended);    
+    static void IRAM_ATTR NoVideo(unsigned int statestoadd, bool contended);
+    
     static uint8_t (*getFloatBusData)();
     static uint8_t IRAM_ATTR getFloatBusData48();
     static uint8_t IRAM_ATTR getFloatBusData128();    
 
-    static void (*Draw)(unsigned int);
-    static void (*DrawOSD43)(unsigned int);
-    static void (*DrawOSD169)(unsigned int);
+    static void (*Draw)(unsigned int, bool contended);
+    static void (*DrawOSD43)(unsigned int, bool contended);
+    static void (*DrawOSD169)(unsigned int, bool contended);
 
     static uint8_t* grmem;
 

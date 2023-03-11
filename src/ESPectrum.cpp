@@ -283,10 +283,9 @@ void ESPectrum::setup()
     // START Z80
     CPU::setup();
 
-    int i;
-    for (i = 0; i < 128; i++) {
-        Ports::base[i] = 0x1F;
-    }
+    // Ports
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
@@ -325,11 +324,12 @@ void ESPectrum::setup()
 //=======================================================================================
 void ESPectrum::reset()
 {
-    int i;
-    for (i = 0; i < 128; i++) {
-        Ports::base[i] = 0x1F;
-    }
 
+    // Ports
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
+
+    // Memory
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
     MemESP::romLatch = 0;
@@ -476,163 +476,173 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 continue;
             }
 
+            if (KeytoESP == fabgl::VK_RETURN) {
+                bitWrite(Ports::port[6], 0, !Kdown); // ENTER
+                continue;
+            }
+
             if (KeytoESP == fabgl::VK_LCTRL) {
-                bitWrite(Ports::base[0], 0, !Kdown); // CAPS SHIFT
+                bitWrite(Ports::port[0], 0, !Kdown); // CAPS SHIFT                
+                continue;
+            }
+
+            if (KeytoESP == fabgl::VK_RCTRL) {
+                bitWrite(Ports::port[7], 1, !Kdown); // SYMBOL SHIFT
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_SPACE) {
-                bitWrite(Ports::base[7], 0, !Kdown); // SPACE
+                bitWrite(Ports::port[7], 0, !Kdown); // SPACE
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_BACKSPACE) {
-                bitWrite(Ports::base[0], 0, !Kdown); // CAPS SHIFT
-                bitWrite(Ports::base[4], 0, !Kdown);
+                bitWrite(Ports::port[0], 0, !Kdown); // CAPS SHIFT
+                bitWrite(Ports::port[4], 0, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_COMMA) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[7], 3, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[7], 3, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_PERIOD) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[7], 2, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[7], 2, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_PLUS) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[6], 2, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[6], 2, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_MINUS) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[6], 3, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[6], 3, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_QUOTE) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[4], 3, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[4], 3, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_QUOTEDBL) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[5], 0, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[5], 0, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_LEFTPAREN) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[4], 2, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[4], 2, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_RIGHTPAREN) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[4], 1, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[4], 1, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_EQUALS) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[6], 1, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[6], 1, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_COLON) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[0], 1, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[0], 1, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_SEMICOLON) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[5], 1, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[5], 1, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_SLASH) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[0], 4, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[0], 4, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_EXCLAIM) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[3], 0, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[3], 0, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_AT) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[3], 1, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[3], 1, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_HASH) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[3], 2, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[3], 2, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_DOLLAR) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[3], 3, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[3], 3, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_PERCENT) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[3], 4, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[3], 4, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_AMPERSAND) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[4], 4, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[4], 4, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_UNDERSCORE) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[4], 0, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[4], 0, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_LESS) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[2], 3, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[2], 3, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_GREATER) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[2], 4, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[2], 4, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_ASTERISK) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[7], 4, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[7], 4, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_QUESTION) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[0], 3, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[0], 3, !Kdown);
                 continue;
             }
 
             if (KeytoESP == fabgl::VK_POUND) {
-                bitWrite(Ports::base[7], 1, !Kdown);
-                bitWrite(Ports::base[0], 2, !Kdown);
+                bitWrite(Ports::port[7], 1, !Kdown);
+                bitWrite(Ports::port[0], 2, !Kdown);
                 continue;
             }
 
@@ -640,95 +650,98 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             if (Config::joystick) {
 
                 // Kempston
-                Ports::base[0x1f] = 0;
-                bitWrite(Ports::base[0x1f], 0, keyboard->isVKDown(fabgl::VK_KP_RIGHT));
-                bitWrite(Ports::base[0x1f], 1, keyboard->isVKDown(fabgl::VK_KP_LEFT));
-                bitWrite(Ports::base[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN) || keyboard->isVKDown(fabgl::VK_KP_CENTER));
-                bitWrite(Ports::base[0x1f], 3, keyboard->isVKDown(fabgl::VK_KP_UP));
-                bitWrite(Ports::base[0x1f], 4, keyboard->isVKDown(fabgl::VK_RALT));
+                Ports::port[0x1f] = 0;
+
+                bitWrite(Ports::port[0x1f], 0, keyboard->isVKDown(fabgl::VK_KP_RIGHT));
+                bitWrite(Ports::port[0x1f], 1, keyboard->isVKDown(fabgl::VK_KP_LEFT));
+                bitWrite(Ports::port[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN) || keyboard->isVKDown(fabgl::VK_KP_CENTER));
+                bitWrite(Ports::port[0x1f], 3, keyboard->isVKDown(fabgl::VK_KP_UP));
+                bitWrite(Ports::port[0x1f], 4, keyboard->isVKDown(fabgl::VK_RALT));
         
             } else {
 
                 // Cursor
                 if (KeytoESP == fabgl::VK_KP_DOWN) {
-                    bitWrite(Ports::base[4], 4, !Kdown);
+                    bitWrite(Ports::port[4], 4, !Kdown);
                     continue;
                 }
 
                 if (KeytoESP == fabgl::VK_KP_CENTER) {
-                    bitWrite(Ports::base[4], 4, !Kdown);
+                    bitWrite(Ports::port[4], 4, !Kdown);
                     continue;
                 }
 
                 if (KeytoESP == fabgl::VK_KP_UP) {
-                    bitWrite(Ports::base[4], 3, !Kdown);
+                    bitWrite(Ports::port[4], 3, !Kdown);
                     continue;
                 }
 
                 if (KeytoESP == fabgl::VK_KP_LEFT) {
-                    bitWrite(Ports::base[3], 4, !Kdown);
+                    bitWrite(Ports::port[3], 4, !Kdown);
                     continue;
                 }
 
                 if (KeytoESP == fabgl::VK_KP_RIGHT) {
-                    bitWrite(Ports::base[4], 2, !Kdown);
+                    bitWrite(Ports::port[4], 2, !Kdown);
                     continue;
                 }
 
                 if (KeytoESP == fabgl::VK_RALT) {
-                    bitWrite(Ports::base[4], 0, !Kdown);
+                    bitWrite(Ports::port[4], 0, !Kdown);
                     continue;
                 }
 
             }
 
-            //bitWrite(Ports::base[0], 0, !keyboard->isVKDown(fabgl::VK_LCTRL)); // CAPS SHIFT
-            bitWrite(Ports::base[0], 1, (!keyboard->isVKDown(fabgl::VK_Z)) & (!keyboard->isVKDown(fabgl::VK_z)));
-            bitWrite(Ports::base[0], 2, (!keyboard->isVKDown(fabgl::VK_X)) & (!keyboard->isVKDown(fabgl::VK_x)));
-            bitWrite(Ports::base[0], 3, (!keyboard->isVKDown(fabgl::VK_C)) & (!keyboard->isVKDown(fabgl::VK_c)));
-            bitWrite(Ports::base[0], 4, (!keyboard->isVKDown(fabgl::VK_V)) & (!keyboard->isVKDown(fabgl::VK_v)));
+            // TO DO: CONVERT ALL THIS STUFF TO A TABLE WITH KEY -> PORT,BITS RELATIONSHIPS
+            
+            //bitWrite(Ports::port[0], 0, !keyboard->isVKDown(fabgl::VK_LCTRL)); // CAPS SHIFT
+            bitWrite(Ports::port[0], 1, (!keyboard->isVKDown(fabgl::VK_Z)) & (!keyboard->isVKDown(fabgl::VK_z)));
+            bitWrite(Ports::port[0], 2, (!keyboard->isVKDown(fabgl::VK_X)) & (!keyboard->isVKDown(fabgl::VK_x)));
+            bitWrite(Ports::port[0], 3, (!keyboard->isVKDown(fabgl::VK_C)) & (!keyboard->isVKDown(fabgl::VK_c)));
+            bitWrite(Ports::port[0], 4, (!keyboard->isVKDown(fabgl::VK_V)) & (!keyboard->isVKDown(fabgl::VK_v)));
 
-            bitWrite(Ports::base[1], 0, (!keyboard->isVKDown(fabgl::VK_A)) & (!keyboard->isVKDown(fabgl::VK_a)));    
-            bitWrite(Ports::base[1], 1, (!keyboard->isVKDown(fabgl::VK_S)) & (!keyboard->isVKDown(fabgl::VK_s)));
-            bitWrite(Ports::base[1], 2, (!keyboard->isVKDown(fabgl::VK_D)) & (!keyboard->isVKDown(fabgl::VK_d)));
-            bitWrite(Ports::base[1], 3, (!keyboard->isVKDown(fabgl::VK_F)) & (!keyboard->isVKDown(fabgl::VK_f)));
-            bitWrite(Ports::base[1], 4, (!keyboard->isVKDown(fabgl::VK_G)) & (!keyboard->isVKDown(fabgl::VK_g)));
+            bitWrite(Ports::port[1], 0, (!keyboard->isVKDown(fabgl::VK_A)) & (!keyboard->isVKDown(fabgl::VK_a)));    
+            bitWrite(Ports::port[1], 1, (!keyboard->isVKDown(fabgl::VK_S)) & (!keyboard->isVKDown(fabgl::VK_s)));
+            bitWrite(Ports::port[1], 2, (!keyboard->isVKDown(fabgl::VK_D)) & (!keyboard->isVKDown(fabgl::VK_d)));
+            bitWrite(Ports::port[1], 3, (!keyboard->isVKDown(fabgl::VK_F)) & (!keyboard->isVKDown(fabgl::VK_f)));
+            bitWrite(Ports::port[1], 4, (!keyboard->isVKDown(fabgl::VK_G)) & (!keyboard->isVKDown(fabgl::VK_g)));
 
-            bitWrite(Ports::base[2], 0, (!keyboard->isVKDown(fabgl::VK_Q)) & (!keyboard->isVKDown(fabgl::VK_q)));    
-            bitWrite(Ports::base[2], 1, (!keyboard->isVKDown(fabgl::VK_W)) & (!keyboard->isVKDown(fabgl::VK_w)));
-            bitWrite(Ports::base[2], 2, (!keyboard->isVKDown(fabgl::VK_E)) & (!keyboard->isVKDown(fabgl::VK_e)));
-            bitWrite(Ports::base[2], 3, (!keyboard->isVKDown(fabgl::VK_R)) & (!keyboard->isVKDown(fabgl::VK_r)));
-            bitWrite(Ports::base[2], 4, (!keyboard->isVKDown(fabgl::VK_T)) & (!keyboard->isVKDown(fabgl::VK_t)));
+            bitWrite(Ports::port[2], 0, (!keyboard->isVKDown(fabgl::VK_Q)) & (!keyboard->isVKDown(fabgl::VK_q)));    
+            bitWrite(Ports::port[2], 1, (!keyboard->isVKDown(fabgl::VK_W)) & (!keyboard->isVKDown(fabgl::VK_w)));
+            bitWrite(Ports::port[2], 2, (!keyboard->isVKDown(fabgl::VK_E)) & (!keyboard->isVKDown(fabgl::VK_e)));
+            bitWrite(Ports::port[2], 3, (!keyboard->isVKDown(fabgl::VK_R)) & (!keyboard->isVKDown(fabgl::VK_r)));
+            bitWrite(Ports::port[2], 4, (!keyboard->isVKDown(fabgl::VK_T)) & (!keyboard->isVKDown(fabgl::VK_t)));
 
-            bitWrite(Ports::base[3], 0, !keyboard->isVKDown(fabgl::VK_1));
-            bitWrite(Ports::base[3], 1, !keyboard->isVKDown(fabgl::VK_2));
-            bitWrite(Ports::base[3], 2, !keyboard->isVKDown(fabgl::VK_3));
-            bitWrite(Ports::base[3], 3, !keyboard->isVKDown(fabgl::VK_4));
-            bitWrite(Ports::base[3], 4, !keyboard->isVKDown(fabgl::VK_5));
+            bitWrite(Ports::port[3], 0, !keyboard->isVKDown(fabgl::VK_1));
+            bitWrite(Ports::port[3], 1, !keyboard->isVKDown(fabgl::VK_2));
+            bitWrite(Ports::port[3], 2, !keyboard->isVKDown(fabgl::VK_3));
+            bitWrite(Ports::port[3], 3, !keyboard->isVKDown(fabgl::VK_4));
+            bitWrite(Ports::port[3], 4, !keyboard->isVKDown(fabgl::VK_5));
 
-            bitWrite(Ports::base[4], 0, !keyboard->isVKDown(fabgl::VK_0));
-            bitWrite(Ports::base[4], 1, !keyboard->isVKDown(fabgl::VK_9));
-            bitWrite(Ports::base[4], 2, !keyboard->isVKDown(fabgl::VK_8));
-            bitWrite(Ports::base[4], 3, !keyboard->isVKDown(fabgl::VK_7));
-            bitWrite(Ports::base[4], 4, !keyboard->isVKDown(fabgl::VK_6));
+            bitWrite(Ports::port[4], 0, !keyboard->isVKDown(fabgl::VK_0));
+            bitWrite(Ports::port[4], 1, !keyboard->isVKDown(fabgl::VK_9));
+            bitWrite(Ports::port[4], 2, !keyboard->isVKDown(fabgl::VK_8));
+            bitWrite(Ports::port[4], 3, !keyboard->isVKDown(fabgl::VK_7));
+            bitWrite(Ports::port[4], 4, !keyboard->isVKDown(fabgl::VK_6));
 
-            bitWrite(Ports::base[5], 0, (!keyboard->isVKDown(fabgl::VK_P)) & (!keyboard->isVKDown(fabgl::VK_p)));
-            bitWrite(Ports::base[5], 1, (!keyboard->isVKDown(fabgl::VK_O)) & (!keyboard->isVKDown(fabgl::VK_o)));
-            bitWrite(Ports::base[5], 2, (!keyboard->isVKDown(fabgl::VK_I)) & (!keyboard->isVKDown(fabgl::VK_i)));
-            bitWrite(Ports::base[5], 3, (!keyboard->isVKDown(fabgl::VK_U)) & (!keyboard->isVKDown(fabgl::VK_u)));
-            bitWrite(Ports::base[5], 4, (!keyboard->isVKDown(fabgl::VK_Y)) & (!keyboard->isVKDown(fabgl::VK_y)));
+            bitWrite(Ports::port[5], 0, (!keyboard->isVKDown(fabgl::VK_P)) & (!keyboard->isVKDown(fabgl::VK_p)));
+            bitWrite(Ports::port[5], 1, (!keyboard->isVKDown(fabgl::VK_O)) & (!keyboard->isVKDown(fabgl::VK_o)));
+            bitWrite(Ports::port[5], 2, (!keyboard->isVKDown(fabgl::VK_I)) & (!keyboard->isVKDown(fabgl::VK_i)));
+            bitWrite(Ports::port[5], 3, (!keyboard->isVKDown(fabgl::VK_U)) & (!keyboard->isVKDown(fabgl::VK_u)));
+            bitWrite(Ports::port[5], 4, (!keyboard->isVKDown(fabgl::VK_Y)) & (!keyboard->isVKDown(fabgl::VK_y)));
 
-            bitWrite(Ports::base[6], 0, !keyboard->isVKDown(fabgl::VK_RETURN));
-            bitWrite(Ports::base[6], 1, (!keyboard->isVKDown(fabgl::VK_L)) & (!keyboard->isVKDown(fabgl::VK_l)));
-            bitWrite(Ports::base[6], 2, (!keyboard->isVKDown(fabgl::VK_K)) & (!keyboard->isVKDown(fabgl::VK_k)));
-            bitWrite(Ports::base[6], 3, (!keyboard->isVKDown(fabgl::VK_J)) & (!keyboard->isVKDown(fabgl::VK_j)));
-            bitWrite(Ports::base[6], 4, (!keyboard->isVKDown(fabgl::VK_H)) & (!keyboard->isVKDown(fabgl::VK_h)));
+            // bitWrite(Ports::port[6], 0, !keyboard->isVKDown(fabgl::VK_RETURN));
+            bitWrite(Ports::port[6], 1, (!keyboard->isVKDown(fabgl::VK_L)) & (!keyboard->isVKDown(fabgl::VK_l)));
+            bitWrite(Ports::port[6], 2, (!keyboard->isVKDown(fabgl::VK_K)) & (!keyboard->isVKDown(fabgl::VK_k)));
+            bitWrite(Ports::port[6], 3, (!keyboard->isVKDown(fabgl::VK_J)) & (!keyboard->isVKDown(fabgl::VK_j)));
+            bitWrite(Ports::port[6], 4, (!keyboard->isVKDown(fabgl::VK_H)) & (!keyboard->isVKDown(fabgl::VK_h)));
 
-            // bitWrite(Ports::base[7], 0, !keyboard->isVKDown(fabgl::VK_SPACE));
-            bitWrite(Ports::base[7], 1, !keyboard->isVKDown(fabgl::VK_RCTRL)); // SYMBOL SHIFT
-            bitWrite(Ports::base[7], 2, (!keyboard->isVKDown(fabgl::VK_M)) & (!keyboard->isVKDown(fabgl::VK_m)));
-            bitWrite(Ports::base[7], 3, (!keyboard->isVKDown(fabgl::VK_N)) & (!keyboard->isVKDown(fabgl::VK_n)));
-            bitWrite(Ports::base[7], 4, (!keyboard->isVKDown(fabgl::VK_B)) & (!keyboard->isVKDown(fabgl::VK_b)));
+            // bitWrite(Ports::port[7], 0, !keyboard->isVKDown(fabgl::VK_SPACE));
+            // bitWrite(Ports::port[7], 1, !keyboard->isVKDown(fabgl::VK_RCTRL)); // SYMBOL SHIFT
+            bitWrite(Ports::port[7], 2, (!keyboard->isVKDown(fabgl::VK_M)) & (!keyboard->isVKDown(fabgl::VK_m)));
+            bitWrite(Ports::port[7], 3, (!keyboard->isVKDown(fabgl::VK_N)) & (!keyboard->isVKDown(fabgl::VK_n)));
+            bitWrite(Ports::port[7], 4, (!keyboard->isVKDown(fabgl::VK_B)) & (!keyboard->isVKDown(fabgl::VK_b)));
 
         }
 
@@ -770,7 +783,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         // // Finish fill of oversampled audio buffer
         if (faudbufcnt < ESP_AUDIO_OVERSAMPLES) {
-            int signal = faudioBit ? 255: 0;
+            int signal = faudioBit ? 254: 0;
             for (int i=faudbufcnt; i < ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i] = signal;
         }
 
@@ -794,17 +807,17 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 aymix += AySound::_channel[1].getSample();
                 aymix += AySound::_channel[2].getSample();
                 // mix must be centered around 0:
-                // aymix is centered (ranges from -128 to 127), but
-                // beeper is not centered (ranges from 0 to 255),
-                // so we need to substract 128 from beeper.
-                mix = ((beeper >> 3) - 128) + (aymix / 3);
+                // aymix is centered (ranges from -127 to 127), but
+                // beeper is not centered (ranges from 0 to 254),
+                // so we need to substract 127 from beeper.
+                mix = ((beeper >> 3) - 127) + (aymix / 3);
                 #ifdef AUDIO_MIX_CLAMP
-                mix = (mix < -128 ? 128 : (mix > 127 ? 127 : mix));
+                mix = (mix < -127 ? -127 : (mix > 127 ? 127 : mix));
                 #else
                 mix >>= 1;
                 #endif
-                // add 128 to recover original range (0 to 255)
-                mix += 128;
+                // add 127 to recover original range (0 to 254)
+                mix += 127;
                 audioBuffer[i>>3] = mix;
             }
 
@@ -844,7 +857,7 @@ void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
     if (Audiobit != lastaudioBit) {
         // Audio buffer generation (oversample)
         uint32_t audbufpos = CPU::tstates >> 4;
-        int signal = lastaudioBit ? 255: 0;
+        int signal = lastaudioBit ? 254: 0;
         for (int i=audbufcnt;i<audbufpos;i++) {
             overSamplebuf[i] = signal;
         }
