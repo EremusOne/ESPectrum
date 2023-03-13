@@ -36,7 +36,8 @@
 
 using namespace std;
 
-#define ESP_AUDIO_OVERSAMPLES 4432 // For 48K we get 4368 samples per frame, for 128K we get 4432
+#define ESP_AUDIO_OVERSAMPLES_48 4368
+#define ESP_AUDIO_OVERSAMPLES_128 4432
 
 #define ESP_AUDIO_FREQ_48 27300
 #define ESP_AUDIO_FREQ_128 27700
@@ -60,7 +61,7 @@ public:
 
     // Audio
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_128];
-    static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES];
+    static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES_128];
     static signed char aud_volume;
     static uint32_t audbufcnt;
     static uint32_t faudbufcnt;    
@@ -69,6 +70,7 @@ public:
     static void audioFrameStart();
     static void IRAM_ATTR audioGetSample(int Audiobit);
     static void audioFrameEnd();
+    static int overSamplesPerFrame;
     static int samplesPerFrame;
     static bool AY_emu;
     static int Audio_freq;

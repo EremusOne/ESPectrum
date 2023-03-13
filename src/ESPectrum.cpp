@@ -69,14 +69,15 @@ fabgl::PS2Controller PS2Controller;
 //=======================================================================================
 // AUDIO
 //=======================================================================================
-uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_128];
-uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES];
+uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_128] = { 0 };
+uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES_128] = { 0 };
 signed char ESPectrum::aud_volume = -8;
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
 int ESPectrum::lastaudioBit = 0;
 int ESPectrum::faudioBit = 0;
 int ESPectrum::samplesPerFrame = ESP_AUDIO_SAMPLES_48;
+int ESPectrum::overSamplesPerFrame = ESP_AUDIO_OVERSAMPLES_48;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
 
@@ -259,10 +260,12 @@ void ESPectrum::setup()
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
+        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
+        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
@@ -359,16 +362,19 @@ void ESPectrum::reset()
 
     pwm_audio_stop();
 
-    // Empty oversample audio buffer
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i]=0;
+    // Empty audio buffers
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128;i++) overSamplebuf[i]=0;
+    for (int i=0;i<ESP_AUDIO_SAMPLES_128;i++) audioBuffer[i]=0;
     lastaudioBit=0;
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
+        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
+        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
@@ -775,19 +781,18 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
     // xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-    // FILE *f = fopen("/sd/c/audioout.wav", "w");
+    // FILE *f = fopen("/sd/c/audioout.raw", "w");
     // if (f==NULL)
     // {
     //     printf("Error opening file for write.\n");
     // }
-
-    uint32_t fpart = 0;
+    // uint32_t fpart = 0;
 
     for (;;) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
+        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
 
         // if (fpart!=1001) fpart++;
         // if (fpart<1000) {
@@ -800,14 +805,14 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         //     }            
         // }
 
-        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        // // Finish fill of oversampled audio buffer
-        if (faudbufcnt < ESP_AUDIO_OVERSAMPLES) {
+        // Finish fill of oversampled audio buffer
+        if (faudbufcnt < overSamplesPerFrame) {
             int signal = faudioBit ? 255: 0;
-            for (int i=faudbufcnt; i < ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i] = signal;
+            for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
         }
 
         // Downsample beeper (median) and mix AY channels to output buffer
@@ -815,7 +820,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         
         if (AY_emu) {
 
-            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i += 4) {
+            for (int i=0;i<overSamplesPerFrame;i += 4) {
 
                 // Downsample
                 beeper  =  overSamplebuf[i];
@@ -834,7 +839,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
             }
 
-            for (int i=0;i<ESP_AUDIO_OVERSAMPLES >> 2; i += 2) {    
+            for (int i=0;i<overSamplesPerFrame >> 2; i += 2) {    
                 // Downsample
                 beeper  =  overSamplebuf[i];
                 beeper +=  overSamplebuf[i + 1];
@@ -845,7 +850,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         } else {
 
-            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
+            for (int i=0;i<overSamplesPerFrame;i+=8) {    
                 // Downsample (median)
                 beeper  =  overSamplebuf[i];
                 beeper +=  overSamplebuf[i+1];
@@ -923,15 +928,15 @@ for(;;) {
 
     CPU::loop();
 
-    audioFrameEnd();
-
-    processKeyboard();
+    // Draw stats, if activated, every 32 frames
+    if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
 
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
 
-    // Draw stats, if activated, every 32 frames
-    if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
+    processKeyboard();
+    
+    audioFrameEnd();
 
     elapsed = micros() - ts_start;
     idle = target - elapsed;

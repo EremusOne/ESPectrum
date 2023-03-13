@@ -361,16 +361,19 @@ bool FileZ80::load(string z80_fn)
 
     pwm_audio_stop();
 
-    // Empty oversample audio buffer
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i++) ESPectrum::overSamplebuf[i]=0;
+    // Empty audio buffers
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128;i++) ESPectrum::overSamplebuf[i]=0;
+    for (int i=0;i<ESP_AUDIO_SAMPLES_128;i++) ESPectrum::audioBuffer[i]=0;
     ESPectrum::lastaudioBit=0;
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
+        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         ESPectrum::AY_emu = Config::AY48;
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
+        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         ESPectrum::AY_emu = true;        
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
