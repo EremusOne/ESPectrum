@@ -56,7 +56,7 @@ uint32_t CPU::statesPerFrame()
 uint32_t CPU::microsPerFrame()
 {
     if (Config::getArch() == "48K") return 19968;
-    else                            return 19992;
+    else                            return 20000; // 19992 is the right value. We add 8 microseconds for audio sync issues.
 }
 
 uint32_t CPU::tstates = 0;

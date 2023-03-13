@@ -38,14 +38,11 @@ using namespace std;
 
 #define ESP_AUDIO_OVERSAMPLES 4432 // For 48K we get 4368 samples per frame, for 128K we get 4432
 
-// #define ESP_AUDIO_FREQ_48 27300
-// #define ESP_AUDIO_FREQ_128 27700
+#define ESP_AUDIO_FREQ_48 27300
+#define ESP_AUDIO_FREQ_128 27700
 
-#define ESP_AUDIO_FREQ_48 27344
-#define ESP_AUDIO_FREQ_128 27711
-
-#define ESP_AUDIO_SAMPLES_48  546 
-#define ESP_AUDIO_SAMPLES_128 554 
+#define ESP_AUDIO_SAMPLES_48  546
+#define ESP_AUDIO_SAMPLES_128 554
 
 class ESPectrum
 {

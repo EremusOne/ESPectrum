@@ -168,7 +168,8 @@ int SquareWaveformGenerator::getSample() {
   }
 
   uint32_t index = m_phaseAcc >> 11;
-  int sample = (index <= m_dutyCycle ? 127 : -127);
+  // int sample = (index <= m_dutyCycle ? 127 : -127);
+  int sample = (index <= m_dutyCycle ? 255 : 0);
 
   // process volume
   sample = sample * volume() / 127;

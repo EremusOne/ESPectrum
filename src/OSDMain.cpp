@@ -250,10 +250,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
     }    
     // else if (KeytoESP == fabgl::VK_F9) {
-    //     // ESPectrum::ESPoffset = ESPectrum::ESPoffset >> 1;
+    //     ESPectrum::ESPoffset -= 10;
     // }
     // else if (KeytoESP == fabgl::VK_F10) {
-    //     // ESPectrum::ESPoffset = ESPectrum::ESPoffset << 1;
+    //     ESPectrum::ESPoffset += 10;
     // }
     else if (KeytoESP == fabgl::VK_F12) {
         

@@ -131,7 +131,7 @@ uint32_t ESPectrum::target;
 // LOGGING / TESTING
 //=======================================================================================
 
-// int ESPectrum::ESPoffset = 64; // Testing
+// int ESPectrum::ESPoffset = 0; // Testing
 
 void showMemInfo(char* caption = "ZX-ESPectrum-IDF") {
 
@@ -276,9 +276,9 @@ void ESPectrum::setup()
     // AY Sound
     AySound::initialize();
     // // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(Audio_freq);
-    AySound::_channel[1].setSampleRate(Audio_freq);
-    AySound::_channel[2].setSampleRate(Audio_freq);
+    AySound::_channel[0].setSampleRate(Audio_freq << 1);
+    AySound::_channel[1].setSampleRate(Audio_freq << 1);
+    AySound::_channel[2].setSampleRate(Audio_freq << 1);
 
     // START Z80
     CPU::setup();
@@ -380,9 +380,9 @@ void ESPectrum::reset()
     AySound::reset();
 
     // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(Audio_freq);
-    AySound::_channel[1].setSampleRate(Audio_freq);
-    AySound::_channel[2].setSampleRate(Audio_freq);
+    AySound::_channel[0].setSampleRate(Audio_freq << 1);
+    AySound::_channel[1].setSampleRate(Audio_freq << 1);
+    AySound::_channel[2].setSampleRate(Audio_freq << 1);
 
     pwm_audio_start();
 
@@ -773,54 +773,74 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 
+    // xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
+
+    // FILE *f = fopen("/sd/c/audioout.wav", "w");
+    // if (f==NULL)
+    // {
+    //     printf("Error opening file for write.\n");
+    // }
+
+    uint32_t fpart = 0;
+
     for (;;) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
+
+        // if (fpart!=1001) fpart++;
+        // if (fpart<1000) {
+        //     uint8_t* buffer = audioBuffer;
+        //     fwrite(&buffer[0],samplesPerFrame,1,f);
+        // } else {
+        //     if (fpart==1000) {
+        //         fclose(f);
+        //         printf("Audio dumped!\n");
+        //     }            
+        // }
+
+        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
         // // Finish fill of oversampled audio buffer
         if (faudbufcnt < ESP_AUDIO_OVERSAMPLES) {
-            int signal = faudioBit ? 254: 0;
+            int signal = faudioBit ? 255: 0;
             for (int i=faudbufcnt; i < ESP_AUDIO_OVERSAMPLES;i++) overSamplebuf[i] = signal;
         }
 
         // Downsample beeper (median) and mix AY channels to output buffer
-        int beeper, aymix, mix;
+        int beeper, aymix;
         
         if (AY_emu) {
 
-            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i+=8) {    
-                // Downsample (median)
+            for (int i=0;i<ESP_AUDIO_OVERSAMPLES;i += 4) {
+
+                // Downsample
                 beeper  =  overSamplebuf[i];
                 beeper +=  overSamplebuf[i+1];
                 beeper +=  overSamplebuf[i+2];
                 beeper +=  overSamplebuf[i+3];
-                beeper +=  overSamplebuf[i+4];
-                beeper +=  overSamplebuf[i+5];
-                beeper +=  overSamplebuf[i+6];
-                beeper +=  overSamplebuf[i+7];
+
                 // Mix AY Channels
                 aymix = AySound::_channel[0].getSample();
                 aymix += AySound::_channel[1].getSample();
                 aymix += AySound::_channel[2].getSample();
-                // mix must be centered around 0:
-                // aymix is centered (ranges from -127 to 127), but
-                // beeper is not centered (ranges from 0 to 254),
-                // so we need to substract 127 from beeper.
-                mix = ((beeper >> 3) - 127) + (aymix / 3);
-                #ifdef AUDIO_MIX_CLAMP
-                mix = (mix < -127 ? -127 : (mix > 127 ? 127 : mix));
-                #else
-                mix >>= 1;
-                #endif
-                // add 127 to recover original range (0 to 254)
-                mix += 127;
-                audioBuffer[i>>3] = mix;
+
+                beeper = (beeper >> 2) + (aymix / 3);
+                
+                overSamplebuf[i >> 2] = beeper > 255 ? 255 : beeper; // Clamp
+
             }
 
+            for (int i=0;i<ESP_AUDIO_OVERSAMPLES >> 2; i += 2) {    
+                // Downsample
+                beeper  =  overSamplebuf[i];
+                beeper +=  overSamplebuf[i + 1];
+                audioBuffer[i>>1] = beeper >> 1;
+            }
+            
             AySound::update();
 
         } else {
@@ -857,7 +877,7 @@ void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
     if (Audiobit != lastaudioBit) {
         // Audio buffer generation (oversample)
         uint32_t audbufpos = CPU::tstates >> 4;
-        int signal = lastaudioBit ? 254: 0;
+        int signal = lastaudioBit ? 255: 0;
         for (int i=audbufcnt;i<audbufpos;i++) {
             overSamplebuf[i] = signal;
         }
@@ -893,18 +913,19 @@ int32_t idle;
 // VIDEO::LineDraw = LINEDRAW_FPS;
 // VIDEO::BottomDraw = BOTTOMBORDER_FPS;
 
+// xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
 for(;;) {
 
     ts_start = micros();
-
-    processKeyboard();
 
     audioFrameStart();
 
     CPU::loop();
 
     audioFrameEnd();
+
+    processKeyboard();
 
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
@@ -948,6 +969,7 @@ for(;;) {
     #ifdef VIDEO_FRAME_TIMING    
     elapsed = micros() - ts_start;
     idle = target - elapsed;
+    // idle += ESPoffset;
     if (idle > 0) delayMicroseconds(idle);
     #endif
 
