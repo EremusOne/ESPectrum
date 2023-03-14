@@ -388,7 +388,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
 
-    file = fopen(sna_file.c_str(), "w");
+    file = fopen(sna_file.c_str(), "wb");
     if (file==NULL)
     {
         printf("FileSNA: Error opening %s for writing",sna_file.c_str());

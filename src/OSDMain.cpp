@@ -40,6 +40,7 @@
 #include "Tape.h"
 #include "pwm_audio.h"
 
+#ifndef ESP32_SDL2_WRAPPER
 #include "esp_system.h"
 #include "esp_ota_ops.h"
 #include "fabgl.h"
@@ -50,6 +51,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#endif
 
 #include <string>
 
@@ -84,12 +86,14 @@ unsigned short OSD::osdInsideY() { return scrAlignCenterY(OSD_H) + OSD_MARGIN; }
 
 void esp_hard_reset() {
     // RESTART ESP32 (This is the most similar way to hard resetting it)
-    rtc_wdt_protect_off();   
+#ifndef ESP32_SDL2_WRAPPER
+    rtc_wdt_protect_off();
     rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
     rtc_wdt_set_time(RTC_WDT_STAGE0, 100);
     rtc_wdt_enable();
     rtc_wdt_protect_on();
     while (true);
+#endif
 }
 
 // // Cursor to OSD first row,col
@@ -144,7 +148,7 @@ void OSD::drawStats(char *line1, char *line2) {
 
 static void persistSave(uint8_t slotnumber)
 {
-    char persistfname[strlen(DISK_PSNA_FILE) + 6];
+    char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO, 0);
     if (!FileSNA::save(FileUtils::MountPoint + persistfname)) {
@@ -156,7 +160,7 @@ static void persistSave(uint8_t slotnumber)
 
 static void persistLoad(uint8_t slotnumber)
 {
-    char persistfname[strlen(DISK_PSNA_FILE) + 6];
+    char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);

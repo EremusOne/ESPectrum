@@ -203,7 +203,7 @@ void Tape::Save() {
 	uint8_t dato;
 	int longitud;
 
-    fichero = fopen("/sd/tap/cinta1.tap", "a");
+    fichero = fopen("/sd/tap/cinta1.tap", "ab");
     if (fichero == NULL)
     {
         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);

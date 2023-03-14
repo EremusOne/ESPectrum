@@ -126,7 +126,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Almacenamiento\t>\n"\
     "Modelo\t>\n"\
     "Rel. aspecto\t>\n"\
-    "Joystick\t>\n"\    
+    "Joystick\t>\n"\
     "Idioma\t>\n"\
     "Otros\t>\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
@@ -263,7 +263,7 @@ static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES
 
 #define OSD_ABOUT_EN \
     " (C)2023 Victor Iborra AKA Eremus\n"\
-    " https://github.com/eremusOne\n"\    
+    " https://github.com/eremusOne\n"\
     "\n"\
     " Based on ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
@@ -273,15 +273,15 @@ static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES
     " Original (C) 2019 Rampa & Queru\n"\
     " https://github.com/rampa069\n"\
     "\n"\
-    " Z80 emulation by JL Sanchez\n"\        
-    " VGA driver by BitLuni\n"\    
+    " Z80 emulation by JL Sanchez\n"\
+    " VGA driver by BitLuni\n"\
     " PS2 driver by Fabrizio di Vittorio\n"\
     " Greetings to http://retrowiki.es and\n"\
     " his people (Hi ackerman!) for the\n"\
     " support and inspiration.\n"    
 #define OSD_ABOUT_ES \
     " (C)2023 Victor Iborra AKA Eremus\n"\
-    " https://github.com/eremusOne\n"\   
+    " https://github.com/eremusOne\n"\
     "\n"\
     " Basado en ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
@@ -291,8 +291,8 @@ static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES
     " Original (C) 2019 Rampa & Queru\n"\
     " https://github.com/rampa069\n"\
     "\n"\
-    " Emulacion Z80 por JL Sanchez\n"\        
-    " Driver VGA por BitLuni\n"\    
+    " Emulacion Z80 por JL Sanchez\n"\
+    " Driver VGA por BitLuni\n"\
     " Driver PS2 por Fabrizio di Vittorio\n"\
     " Saludos a http://retrowiki.es y\n"\
     " su gente (Hola ackerman!) por su\n"\

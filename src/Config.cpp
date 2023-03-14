@@ -226,7 +226,7 @@ void Config::save() {
     FILE *f = fopen(DISK_BOOT_FILENAME, "w");
     if (f==NULL)
     {
-        printf("Error opening %s",DISK_BOOT_FILENAME);
+        printf("Error opening %s\n",DISK_BOOT_FILENAME);
         return;
     }
 

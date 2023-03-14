@@ -94,7 +94,7 @@ void CaptureToBmp()
     std::string fullfn = (string) MOUNT_POINT_SD + DISK_SCR_DIR + "/" + filename;
 
     // open file for writing
-    FILE* pf = fopen(fullfn.c_str(), "w");
+    FILE* pf = fopen(fullfn.c_str(), "wb");
     if (NULL == pf) {
         delete[] linebuf;
         printf("Capture BMP: unable to open file %s for writing\n", fullfn.c_str());

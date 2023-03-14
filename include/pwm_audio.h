@@ -14,6 +14,7 @@
 
 #ifndef _PWM_AUDIO_H_
 #define _PWM_AUDIO_H_
+#ifndef ESP32_SDL2_WRAPPER
 #include "esp_err.h"
 #include "driver/ledc.h"
 #include "driver/timer.h"
@@ -200,6 +201,10 @@ esp_err_t pwm_audio_get_status(pwm_audio_status_t *status);
 
 #ifdef __cplusplus
 }
+#endif
+
+#else   // ESP32_SDL2_WRAPPER is defined
+#include "wrap_pwm_audio.h"
 #endif
 
 #endif
