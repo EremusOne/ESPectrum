@@ -47,6 +47,7 @@
 #include "pwm_audio.h"
 #include "fabgl.h"
 
+#ifndef ESP32_SDL2_WRAPPER
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/timer.h"
@@ -55,6 +56,7 @@
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+#endif
 
 using namespace std;
 
@@ -90,7 +92,12 @@ static uint8_t *param;
 // ARDUINO FUNCTIONS
 //=======================================================================================
 
+#ifndef ESP32_SDL2_WRAPPER
 #define NOP() asm volatile ("nop")
+#else
+#define NOP() {for(int i=0;i<1000;i++){}}
+#endif
+
 
 unsigned long IRAM_ATTR micros()
 {
@@ -135,8 +142,9 @@ uint32_t ESPectrum::target;
 
 // int ESPectrum::ESPoffset = 0; // Testing
 
-void showMemInfo(char* caption = "ZX-ESPectrum-IDF") {
+void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 
+#ifndef ESP32_SDL2_WRAPPER
   multi_heap_info_t info;
 
   heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
@@ -148,7 +156,7 @@ void showMemInfo(char* caption = "ZX-ESPectrum-IDF") {
   printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
   printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   printf("=========================================================================\n\n");
-
+#endif
 }
 
 //=======================================================================================
@@ -164,6 +172,7 @@ void ESPectrum::setup()
     Config::loadSnapshotLists();
     Config::loadTapLists();
     
+#ifndef ESP32_SDL2_WRAPPER
     // Get chip information
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
@@ -187,7 +196,7 @@ void ESPectrum::setup()
         showMemInfo();
 
     }
-
+#endif
     //=======================================================================================
     // KEYBOARD
     //=======================================================================================
@@ -490,12 +499,12 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 continue;
             }
 
-            if (KeytoESP == fabgl::VK_LCTRL) {
+            if (KeytoESP == fabgl::VK_LSHIFT || KeytoESP == fabgl::VK_RSHIFT) {
                 bitWrite(Ports::port[0], 0, !Kdown); // CAPS SHIFT                
                 continue;
             }
 
-            if (KeytoESP == fabgl::VK_RCTRL) {
+            if (KeytoESP == fabgl::VK_LCTRL || KeytoESP == fabgl::VK_RCTRL) {
                 bitWrite(Ports::port[7], 1, !Kdown); // SYMBOL SHIFT
                 continue;
             }
@@ -781,7 +790,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
     // xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-    // FILE *f = fopen("/sd/c/audioout.raw", "w");
+    // FILE *f = fopen("/sd/c/audioout.raw", "wb");
     // if (f==NULL)
     // {
     //     printf("Error opening file for write.\n");

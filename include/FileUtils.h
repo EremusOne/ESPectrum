@@ -70,11 +70,16 @@ private:
     static sdmmc_card_t *card;    
 };
 
+#ifndef ESP32_SDL2_WRAPPER
 #define MOUNT_POINT_SPIFFS "/data"
 #define MOUNT_POINT_SD "/sd"
+#else
+#define MOUNT_POINT_SPIFFS "./data"
+#define MOUNT_POINT_SD "./sd"
+#endif
 
 // Use internal spiffs first
-#define DISK_BOOT_FILENAME "/data/boot.cfg"
+#define DISK_BOOT_FILENAME MOUNT_POINT_SPIFFS##"/boot.cfg"
 #define DISK_ROM_DIR "/r"
 #define DISK_SNA_DIR "/s"
 #define DISK_TAP_DIR "/t"
