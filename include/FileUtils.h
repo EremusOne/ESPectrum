@@ -79,7 +79,11 @@ private:
 #endif
 
 // Use internal spiffs first
-#define DISK_BOOT_FILENAME MOUNT_POINT_SPIFFS##"/boot.cfg"
+#ifndef ESP32_SDL2_WRAPPER
+#define DISK_BOOT_FILENAME "/data/boot.cfg"
+#else
+#define DISK_BOOT_FILENAME "./data/boot.cfg"
+#endif
 #define DISK_ROM_DIR "/r"
 #define DISK_SNA_DIR "/s"
 #define DISK_TAP_DIR "/t"
