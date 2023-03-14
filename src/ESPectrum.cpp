@@ -80,6 +80,7 @@ int ESPectrum::samplesPerFrame = ESP_AUDIO_SAMPLES_48;
 int ESPectrum::overSamplesPerFrame = ESP_AUDIO_OVERSAMPLES_48;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+// bool ESPectrum::Audio_restart = false;
 
 static QueueHandle_t audioTaskQueue;
 static TaskHandle_t audioTaskHandle;
@@ -279,9 +280,9 @@ void ESPectrum::setup()
     // AY Sound
     AySound::initialize();
     // // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(Audio_freq << 1);
-    AySound::_channel[1].setSampleRate(Audio_freq << 1);
-    AySound::_channel[2].setSampleRate(Audio_freq << 1);
+    AySound::_channel[0].setSampleRate(Audio_freq);
+    AySound::_channel[1].setSampleRate(Audio_freq);
+    AySound::_channel[2].setSampleRate(Audio_freq);
 
     // START Z80
     CPU::setup();
@@ -386,11 +387,13 @@ void ESPectrum::reset()
     AySound::reset();
 
     // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(Audio_freq << 1);
-    AySound::_channel[1].setSampleRate(Audio_freq << 1);
-    AySound::_channel[2].setSampleRate(Audio_freq << 1);
+    AySound::_channel[0].setSampleRate(Audio_freq);
+    AySound::_channel[1].setSampleRate(Audio_freq);
+    AySound::_channel[2].setSampleRate(Audio_freq);
 
     pwm_audio_start();
+    
+    // ESPectrum::Audio_restart = true;
 
     // Video sync
     target = CPU::microsPerFrame();
@@ -658,36 +661,31 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 // Kempston
                 Ports::port[0x1f] = 0;
 
-                bitWrite(Ports::port[0x1f], 0, keyboard->isVKDown(fabgl::VK_KP_RIGHT));
-                bitWrite(Ports::port[0x1f], 1, keyboard->isVKDown(fabgl::VK_KP_LEFT));
-                bitWrite(Ports::port[0x1f], 2, keyboard->isVKDown(fabgl::VK_KP_DOWN) || keyboard->isVKDown(fabgl::VK_KP_CENTER));
-                bitWrite(Ports::port[0x1f], 3, keyboard->isVKDown(fabgl::VK_KP_UP));
+                bitWrite(Ports::port[0x1f], 0, keyboard->isVKDown(fabgl::VK_RIGHT) || keyboard->isVKDown(fabgl::VK_KP_RIGHT));
+                bitWrite(Ports::port[0x1f], 1, keyboard->isVKDown(fabgl::VK_LEFT) || keyboard->isVKDown(fabgl::VK_KP_LEFT));
+                bitWrite(Ports::port[0x1f], 2, keyboard->isVKDown(fabgl::VK_DOWN) || keyboard->isVKDown(fabgl::VK_KP_DOWN) || keyboard->isVKDown(fabgl::VK_KP_CENTER));
+                bitWrite(Ports::port[0x1f], 3, keyboard->isVKDown(fabgl::VK_UP) || keyboard->isVKDown(fabgl::VK_KP_UP));
                 bitWrite(Ports::port[0x1f], 4, keyboard->isVKDown(fabgl::VK_RALT));
         
             } else {
 
                 // Cursor
-                if (KeytoESP == fabgl::VK_KP_DOWN) {
+                if (KeytoESP == fabgl::VK_DOWN || KeytoESP == fabgl::VK_KP_CENTER || KeytoESP == fabgl::VK_KP_DOWN) {
                     bitWrite(Ports::port[4], 4, !Kdown);
                     continue;
                 }
 
-                if (KeytoESP == fabgl::VK_KP_CENTER) {
-                    bitWrite(Ports::port[4], 4, !Kdown);
-                    continue;
-                }
-
-                if (KeytoESP == fabgl::VK_KP_UP) {
+                if (KeytoESP == fabgl::VK_UP || KeytoESP == fabgl::VK_KP_UP) {
                     bitWrite(Ports::port[4], 3, !Kdown);
                     continue;
                 }
 
-                if (KeytoESP == fabgl::VK_KP_LEFT) {
+                if (KeytoESP == fabgl::VK_LEFT || KeytoESP == fabgl::VK_KP_LEFT) {
                     bitWrite(Ports::port[3], 4, !Kdown);
                     continue;
                 }
 
-                if (KeytoESP == fabgl::VK_KP_RIGHT) {
+                if (KeytoESP == fabgl::VK_RIGHT || KeytoESP == fabgl::VK_KP_RIGHT) {
                     bitWrite(Ports::port[4], 2, !Kdown);
                     continue;
                 }
@@ -774,6 +772,8 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pac.timer_num          = TIMER_0;
     pac.ringbuf_len        = 1024 * 8;
 
+    // for (;;) {
+    
     pwm_audio_init(&pac);
     pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
@@ -792,7 +792,15 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
+        // // Deinit audio to reinit with changed parameters
+        // if (ESPectrum::Audio_restart) {
+        //     ESPectrum::Audio_restart = false;
+        //     pwm_audio_stop();
+        //     pwm_audio_deinit();
+        //     break;
+        // }
+
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
 
         // if (fpart!=1001) fpart++;
         // if (fpart<1000) {
@@ -805,7 +813,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         //     }            
         // }
 
-        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
+        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portTICK_PERIOD_MS << 3);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
@@ -820,37 +828,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         
         if (AY_emu) {
 
-            for (int i=0;i<overSamplesPerFrame;i += 4) {
-
-                // Downsample
-                beeper  =  overSamplebuf[i];
-                beeper +=  overSamplebuf[i+1];
-                beeper +=  overSamplebuf[i+2];
-                beeper +=  overSamplebuf[i+3];
-
-                // Mix AY Channels
-                aymix = AySound::_channel[0].getSample();
-                aymix += AySound::_channel[1].getSample();
-                aymix += AySound::_channel[2].getSample();
-
-                beeper = (beeper >> 2) + (aymix / 3);
-                
-                overSamplebuf[i >> 2] = beeper > 255 ? 255 : beeper; // Clamp
-
-            }
-
-            for (int i=0;i<overSamplesPerFrame >> 2; i += 2) {    
-                // Downsample
-                beeper  =  overSamplebuf[i];
-                beeper +=  overSamplebuf[i + 1];
-                audioBuffer[i>>1] = beeper >> 1;
-            }
-            
-            AySound::update();
-
-        } else {
-
-            for (int i=0;i<overSamplesPerFrame;i+=8) {    
+            for (int i=0;i<overSamplesPerFrame; i += 7) {    
                 // Downsample (median)
                 beeper  =  overSamplebuf[i];
                 beeper +=  overSamplebuf[i+1];
@@ -859,13 +837,38 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
-                beeper +=  overSamplebuf[i+7];
-                audioBuffer[i >> 3] = beeper >> 3;
+
+                // Mix AY Channels
+                aymix = AySound::_channel[0].getSample();
+                aymix += AySound::_channel[1].getSample();
+                aymix += AySound::_channel[2].getSample();
+
+                beeper = (beeper / 7) + (aymix / 3);
+                audioBuffer[ i / 7] = beeper > 255 ? 255 : beeper; // Clamp
+
+            }
+
+            AySound::update();
+
+        } else {
+
+            for (int i=0;i<overSamplesPerFrame; i += 7) {    
+                // Downsample (median)
+                beeper  =  overSamplebuf[i];
+                beeper +=  overSamplebuf[i+1];
+                beeper +=  overSamplebuf[i+2];
+                beeper +=  overSamplebuf[i+3];
+                beeper +=  overSamplebuf[i+4];
+                beeper +=  overSamplebuf[i+5];
+                beeper +=  overSamplebuf[i+6];
+                audioBuffer[ i / 7] = beeper / 7;
             }
 
         }
 
     }
+
+    // }
 
 }
 

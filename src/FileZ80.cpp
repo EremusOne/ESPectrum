@@ -385,11 +385,13 @@ bool FileZ80::load(string z80_fn)
     AySound::reset();
 
     // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(ESPectrum::Audio_freq << 1);
-    AySound::_channel[1].setSampleRate(ESPectrum::Audio_freq << 1);
-    AySound::_channel[2].setSampleRate(ESPectrum::Audio_freq << 1);
+    AySound::_channel[0].setSampleRate(ESPectrum::Audio_freq);
+    AySound::_channel[1].setSampleRate(ESPectrum::Audio_freq);
+    AySound::_channel[2].setSampleRate(ESPectrum::Audio_freq);
 
     pwm_audio_start();
+
+    // ESPectrum::Audio_restart = true;
 
     // Video sync
     ESPectrum::target = CPU::microsPerFrame();
