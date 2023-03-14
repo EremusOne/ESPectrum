@@ -81,7 +81,7 @@ uint8_t Ports::input(uint16_t address)
     
     // Sound (AY-3-8912)
     if (ESPectrum::AY_emu) {
-        if (address & 0xc002 == 0xc000) // 0xFFFD
+        if ( (((address >> 8) & 0xC0) == 0xC0) && (((address & 0xff) & 0x02) == 0x00) )
             return AySound::getRegisterData();
     }
 
