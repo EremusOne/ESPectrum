@@ -60,19 +60,19 @@ public:
     static void load();
     static void save();
 
-    // list of snapshot file names
-    static string   sna_file_list;
-    // list of snapshot display names
-    static string   sna_name_list;
-    // load lists of snapshots
-    static void loadSnapshotLists();
+    // // list of snapshot file names
+    // static string   sna_file_list;
+    // // list of snapshot display names
+    // static string   sna_name_list;
+    // // load lists of snapshots
+    // static void loadSnapshotLists();
 
-    // list of TAP file names
-    static string   tap_file_list;
-    // list of TAP display names
-    static string   tap_name_list;
-    // load lists of TAP files
-    static void loadTapLists();
+    // // list of TAP file names
+    // static string   tap_file_list;
+    // // list of TAP display names
+    // static string   tap_name_list;
+    // // load lists of TAP files
+    // static void loadTapLists();
 
 private:
     static string   arch;

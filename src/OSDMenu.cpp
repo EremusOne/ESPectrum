@@ -244,77 +244,81 @@ unsigned short OSD::menuRun(string new_menu) {
 
     newMenu(new_menu);
     while (1) {
-        ESPectrum::readKbd(&Menukey);
-        if (!Menukey.down) continue;
-        if (Menukey.vk == fabgl::VK_UP) {
-            if (focus == 1 and begin_row > 1) {
-                menuScroll(DOWN);
-            } else {
-                last_focus = focus;
-                focus--;
-                if (focus < 1) {
-                    focus = virtual_rows - 1;
-                    last_begin_row = begin_row;
-                    begin_row = real_rows - virtual_rows + 1;
+        if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+            if (ESPectrum::readKbd(&Menukey)) {
+                if (!Menukey.down) continue;
+                if (Menukey.vk == fabgl::VK_UP) {
+                    if (focus == 1 and begin_row > 1) {
+                        menuScroll(DOWN);
+                    } else {
+                        last_focus = focus;
+                        focus--;
+                        if (focus < 1) {
+                            focus = virtual_rows - 1;
+                            last_begin_row = begin_row;
+                            begin_row = real_rows - virtual_rows + 1;
+                            menuRedraw();
+                            menuPrintRow(focus, IS_FOCUSED);
+                        }
+                        else {
+                            menuPrintRow(focus, IS_FOCUSED);
+                            menuPrintRow(last_focus, IS_NORMAL);
+                        }
+                    }
+                } else if (Menukey.vk == fabgl::VK_DOWN) {
+                    if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {                
+                        menuScroll(UP);
+                    } else {
+                        last_focus = focus;
+                        focus++;
+                        if (focus > virtual_rows - 1) {
+                            focus = 1;
+                            last_begin_row = begin_row;
+                            begin_row = 1;
+                            menuRedraw();
+                            menuPrintRow(focus, IS_FOCUSED);
+                        }
+                        else {
+                            menuPrintRow(focus, IS_FOCUSED);
+                            menuPrintRow(last_focus, IS_NORMAL);                
+                        }
+                    }
+                } else if (Menukey.vk == fabgl::VK_PAGEUP) {
+                    if (begin_row > virtual_rows) {
+                        focus = 1;
+                        begin_row -= virtual_rows;
+                    } else {
+                        focus = 1;
+                        begin_row = 1;
+                    }
                     menuRedraw();
-                    menuPrintRow(focus, IS_FOCUSED);
-                }
-                else {
-                    menuPrintRow(focus, IS_FOCUSED);
-                    menuPrintRow(last_focus, IS_NORMAL);
-                }
-            }
-        } else if (Menukey.vk == fabgl::VK_DOWN) {
-            if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {                
-                menuScroll(UP);
-            } else {
-                last_focus = focus;
-                focus++;
-                if (focus > virtual_rows - 1) {
+                } else if (Menukey.vk == fabgl::VK_PAGEDOWN) {
+                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                        focus = 1;
+                        begin_row += virtual_rows - 1;
+                    } else {
+                        focus = virtual_rows - 1;
+                        begin_row = real_rows - virtual_rows + 1;
+                    }
+                    menuRedraw();
+                } else if (Menukey.vk == fabgl::VK_HOME) {
                     focus = 1;
-                    last_begin_row = begin_row;
                     begin_row = 1;
                     menuRedraw();
-                    menuPrintRow(focus, IS_FOCUSED);
+                } else if (Menukey.vk == fabgl::VK_END) {
+                    focus = virtual_rows - 1;
+                    begin_row = real_rows - virtual_rows + 1;
+                    menuRedraw();
+                } else if (Menukey.vk == fabgl::VK_RETURN) {
+                    if (!menuIsSub(focus)) menu_level=0; 
+                    return menuRealRowFor(focus);
+                } else if ((Menukey.vk == fabgl::VK_ESCAPE) || (Menukey.vk == fabgl::VK_F1)) {
+                    menu_level=0;
+                    return 0;
                 }
-                else {
-                    menuPrintRow(focus, IS_FOCUSED);
-                    menuPrintRow(last_focus, IS_NORMAL);                
-                }
             }
-        } else if (Menukey.vk == fabgl::VK_PAGEUP) {
-            if (begin_row > virtual_rows) {
-                focus = 1;
-                begin_row -= virtual_rows;
-            } else {
-                focus = 1;
-                begin_row = 1;
-            }
-            menuRedraw();
-        } else if (Menukey.vk == fabgl::VK_PAGEDOWN) {
-            if (real_rows - begin_row  - virtual_rows > virtual_rows) {
-                focus = 1;
-                begin_row += virtual_rows - 1;
-            } else {
-                focus = virtual_rows - 1;
-                begin_row = real_rows - virtual_rows + 1;
-            }
-            menuRedraw();
-        } else if (Menukey.vk == fabgl::VK_HOME) {
-            focus = 1;
-            begin_row = 1;
-            menuRedraw();
-        } else if (Menukey.vk == fabgl::VK_END) {
-            focus = virtual_rows - 1;
-            begin_row = real_rows - virtual_rows + 1;
-            menuRedraw();
-        } else if (Menukey.vk == fabgl::VK_RETURN) {
-            if (!menuIsSub(focus)) menu_level=0; 
-            return menuRealRowFor(focus);
-        } else if ((Menukey.vk == fabgl::VK_ESCAPE) || (Menukey.vk == fabgl::VK_F1)) {
-            menu_level=0;
-            return 0;
         }
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 
@@ -470,89 +474,92 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     menuDraw();
 
     while (1) {
-        ESPectrum::readKbd(&Menukey);
-        if (!Menukey.down) continue;
-        // // Search first ocurrence of letter if we're not on that letter yet
-        // if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
-        //     uint8_t dif;
-        //     if (Menukey.vk<=fabgl::VK_9) dif = 46;
-        //         else if (Menukey.vk<=fabgl::VK_z) dif = 75;
-        //             else if (Menukey.vk<=fabgl::VK_Z) dif = 17;
-        //     uint8_t letra = rowGet(menu,focus).at(0);
-        //     if (letra != Menukey.vk + dif) { 
-        //             // TO DO: Position on first ocurrence of letra
-        //             filemenuRedraw(title);
-        //     }
-        /*} else*/ if (Menukey.vk == fabgl::VK_UP) {
-            if (focus == 1 and begin_row > 1) {
-                // filemenuScroll(DOWN);
-                if (begin_row > 1) {
-                    last_begin_row = begin_row;
-                    begin_row--;
-                }
-                filemenuRedraw(title);
-            } else if (focus > 1) {
-                last_focus = focus;
-                focus--;
-                filemenuPrintRow(focus, IS_FOCUSED);
-                if (focus + 1 < virtual_rows) {
-                    filemenuPrintRow(focus + 1, IS_NORMAL);
+        if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+            if (ESPectrum::readKbd(&Menukey)) {
+                if (!Menukey.down) continue;
+                // // Search first ocurrence of letter if we're not on that letter yet
+                // if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
+                //     uint8_t dif;
+                //     if (Menukey.vk<=fabgl::VK_9) dif = 46;
+                //         else if (Menukey.vk<=fabgl::VK_z) dif = 75;
+                //             else if (Menukey.vk<=fabgl::VK_Z) dif = 17;
+                //     uint8_t letra = rowGet(menu,focus).at(0);
+                //     if (letra != Menukey.vk + dif) { 
+                //             // TO DO: Position on first ocurrence of letra
+                //             filemenuRedraw(title);
+                //     }
+                /*} else*/ if (Menukey.vk == fabgl::VK_UP) {
+                    if (focus == 1 and begin_row > 1) {
+                        // filemenuScroll(DOWN);
+                        if (begin_row > 1) {
+                            last_begin_row = begin_row;
+                            begin_row--;
+                        }
+                        filemenuRedraw(title);
+                    } else if (focus > 1) {
+                        last_focus = focus;
+                        focus--;
+                        filemenuPrintRow(focus, IS_FOCUSED);
+                        if (focus + 1 < virtual_rows) {
+                            filemenuPrintRow(focus + 1, IS_NORMAL);
+                        }
+                    }
+                } else if (Menukey.vk == fabgl::VK_DOWN) {
+                    if (focus == virtual_rows - 1) {
+                        if ((begin_row + virtual_rows - 1) < real_rows) {
+                            last_begin_row = begin_row;
+                            begin_row++;
+                        }
+                        filemenuRedraw(title);
+                    } else if (focus < virtual_rows - 1) {
+                        last_focus = focus;
+                        focus++;
+                        filemenuPrintRow(focus, IS_FOCUSED);
+                        if (focus - 1 > 0) {
+                            filemenuPrintRow(focus - 1, IS_NORMAL);
+                        }
+                    }
+                } else if (Menukey.vk == fabgl::VK_PAGEUP) {
+                    if (begin_row > virtual_rows) {
+                        focus = 1;
+                        begin_row -= virtual_rows;
+                    } else {
+                        focus = 1;
+                        begin_row = 1;
+                    }
+                    filemenuRedraw(title);
+                } else if (Menukey.vk == fabgl::VK_PAGEDOWN) {
+                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                        focus = 1;
+                        begin_row += virtual_rows - 1;
+                    } else {
+                        focus = virtual_rows - 1;
+                        begin_row = real_rows - virtual_rows + 1;
+                    }
+                    filemenuRedraw(title);
+                } else if (Menukey.vk == fabgl::VK_HOME) {
+                    focus = 1;
+                    begin_row = 1;
+                    filemenuRedraw(title);
+                } else if (Menukey.vk == fabgl::VK_END) {
+                    focus = virtual_rows - 1;
+                    begin_row = real_rows - virtual_rows + 1;
+                    filemenuRedraw(title);
+                } else if (Menukey.vk == fabgl::VK_RETURN) {
+                    if (!menuIsSub(focus)) menu_level=0; 
+                    fclose(dirfile);
+                    filedir = rowGet(menu,focus);
+                    rtrim(filedir);
+                    return filedir;
+                } else if (Menukey.vk == fabgl::VK_ESCAPE) {
+                    menu_level=0;
+                    fclose(dirfile);
+                    return "";
                 }
             }
-        } else if (Menukey.vk == fabgl::VK_DOWN) {
-            if (focus == virtual_rows - 1) {
-                if ((begin_row + virtual_rows - 1) < real_rows) {
-                    last_begin_row = begin_row;
-                    begin_row++;
-                }
-                filemenuRedraw(title);
-            } else if (focus < virtual_rows - 1) {
-                last_focus = focus;
-                focus++;
-                filemenuPrintRow(focus, IS_FOCUSED);
-                if (focus - 1 > 0) {
-                    filemenuPrintRow(focus - 1, IS_NORMAL);
-                }
-            }
-        } else if (Menukey.vk == fabgl::VK_PAGEUP) {
-            if (begin_row > virtual_rows) {
-                focus = 1;
-                begin_row -= virtual_rows;
-            } else {
-                focus = 1;
-                begin_row = 1;
-            }
-            filemenuRedraw(title);
-        } else if (Menukey.vk == fabgl::VK_PAGEDOWN) {
-            if (real_rows - begin_row  - virtual_rows > virtual_rows) {
-                focus = 1;
-                begin_row += virtual_rows - 1;
-            } else {
-                focus = virtual_rows - 1;
-                begin_row = real_rows - virtual_rows + 1;
-            }
-            filemenuRedraw(title);
-        } else if (Menukey.vk == fabgl::VK_HOME) {
-            focus = 1;
-            begin_row = 1;
-            filemenuRedraw(title);
-        } else if (Menukey.vk == fabgl::VK_END) {
-            focus = virtual_rows - 1;
-            begin_row = real_rows - virtual_rows + 1;
-            filemenuRedraw(title);
-        } else if (Menukey.vk == fabgl::VK_RETURN) {
-            if (!menuIsSub(focus)) menu_level=0; 
-            fclose(dirfile);
-            filedir = rowGet(menu,focus);
-            rtrim(filedir);
-            return filedir;
-        } else if (Menukey.vk == fabgl::VK_ESCAPE) {
-            menu_level=0;
-            fclose(dirfile);
-            return "";
         }
+        vTaskDelay(5 / portTICK_PERIOD_MS);        
     }
-
 }
 
 // Print a virtual row

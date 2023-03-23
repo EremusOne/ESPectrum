@@ -182,8 +182,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     if (KeytoESP == fabgl::VK_PAUSE) {
         osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 0);
         while (1) {
-            ESPectrum::readKbd(&Nextkey);
-            if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
+            if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {        
+                if (ESPectrum::readKbd(&Nextkey))
+                    if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
+            }
             vTaskDelay(5 / portTICK_PERIOD_MS);
         }
     }
@@ -254,10 +256,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
     }    
     // else if (KeytoESP == fabgl::VK_F9) {
-    //     ESPectrum::ESPoffset -= 10;
+    //     ESPectrum::ESPoffset -= 5;
     // }
     // else if (KeytoESP == fabgl::VK_F10) {
-    //     ESPectrum::ESPoffset += 10;
+    //     ESPectrum::ESPoffset += 5;
     // }
     else if (KeytoESP == fabgl::VK_F12) {
         
@@ -580,9 +582,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_ABOUT[Config::lang]);
             while (1) {
-                ESPectrum::readKbd(&Nextkey);
-                if(!Nextkey.down) continue;
-                if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
+                if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+                    if (ESPectrum::readKbd(&Nextkey)) {
+                        if(!Nextkey.down) continue;
+                        if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
+                    }
+                }
                 vTaskDelay(5 / portTICK_PERIOD_MS);
             }
         }        
