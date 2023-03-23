@@ -14,7 +14,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Support for two aspect ratios: 16:9 or 4:3 monitors (using 360x200 or 320x240 modes)
 - Multicolor attribute effects emulated (Bifrost*2, Nirvana and Nirvana+ engines).
 - Border effects emulated (Aquaplane, The Sentinel, Overscan demo).
-- Floating bus effect emulation (Arkanoid, Sidewize).
+- Floating bus effect emulated (Arkanoid, Sidewize).
 - Contended memory and contended I/O emulation.
 - Beeper sound emulation.
 - Partial AY-3-8912 sound emulation.
