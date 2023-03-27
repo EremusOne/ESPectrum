@@ -80,6 +80,11 @@ public:
 static uint8_t DRAM_ATTR staticMemPage0[0x4000] = { 0 };
 static uint8_t DRAM_ATTR staticMemPage1[0x4000] = { 0 };
 static uint8_t DRAM_ATTR staticMemPage2[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage3[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage4[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage5[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage6[0x4000] = { 0 };
+static uint8_t DRAM_ATTR staticMemPage7[0x4000] = { 0 };
 
 ///////////////////////////////////////////////////////////////////////////////
 //

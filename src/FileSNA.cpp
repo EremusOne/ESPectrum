@@ -299,12 +299,11 @@ bool FileSNA::load(string sna_fn)
     pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
 
     // Reset AY emulation
+    ayemu_init(&ESPectrum::ay);
+    ayemu_set_sound_format (&ESPectrum::ay, ESPectrum::Audio_freq, 1, 8);
+    ayemu_set_stereo(&ESPectrum::ay, AYEMU_MONO, NULL);
     AySound::reset();
-
-    // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(ESPectrum::Audio_freq);
-    AySound::_channel[1].setSampleRate(ESPectrum::Audio_freq);
-    AySound::_channel[2].setSampleRate(ESPectrum::Audio_freq);
+    ESPectrum::bufcount=0;
 
     pwm_audio_start();
 

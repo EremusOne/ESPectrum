@@ -40,10 +40,6 @@
 string   Config::arch = "48K";
 string   Config::ram_file = NO_RAM_FILE;
 string   Config::romSet = "SINCLAIR";
-// string   Config::sna_file_list; // list of file names
-// string   Config::sna_name_list; // list of names (without ext, '_' -> ' ')
-// string   Config::tap_file_list; // list of file names
-// string   Config::tap_name_list; // list of names (without ext, '_' -> ' ')
 bool     Config::slog_on = false;
 bool     Config::aspect_16_9 = true;
 uint8_t  Config::esp32rev = 0;
@@ -152,71 +148,6 @@ void Config::load() {
     fclose(f);
 
 }
-
-// void Config::loadSnapshotLists()
-// {
-    
-//     int n;
-
-//     sna_file_list = (string) MENU_SNA_TITLE[Config::lang] + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_SNA_DIR);
-//     sna_name_list = sna_file_list;
-    
-//     // printf((sna_name_list + "\n").c_str());
-
-//     // std::string::size_type n = 0;
-//     n = 0;
-//     while ( ( n = sna_name_list.find( ".sna", n ) ) != std::string::npos )
-//     {
-//         sna_name_list.replace( n, 4, "" );
-//         n++;
-//     }
-
-//     n = 0;
-//     while ( ( n = sna_name_list.find( ".SNA", n ) ) != std::string::npos )
-//     {
-//         sna_name_list.replace( n, 4, "" );
-//         n++;
-//     }
-
-//     n = 0;
-//     while ( ( n = sna_name_list.find( ".z80", n ) ) != std::string::npos )
-//     {
-//         sna_name_list.replace( n, 4, "" );
-//         n++;
-//     }
-
-//     n = 0;
-//     while ( ( n = sna_name_list.find( ".Z80", n ) ) != std::string::npos )
-//     {
-//         sna_name_list.replace( n, 4, "" );
-//         n++;
-//     }
-
-// }
-
-// void Config::loadTapLists()
-// {
-
-//     tap_file_list = (string) MENU_TAP_TITLE[Config::lang] + "\n" + FileUtils::getSortedFileList(FileUtils::MountPoint + DISK_TAP_DIR);
-//     tap_name_list = tap_file_list;
-    
-//     // printf((tap_name_list + "\n").c_str());
-
-//     std::string::size_type n = 0;
-//     while ( ( n = tap_name_list.find( ".TAP", n ) ) != std::string::npos )
-//     {
-//         tap_name_list.replace( n, 4, "" );
-//         n++;
-//     }
-
-//     n = 0;
-//     while ( ( n = tap_name_list.find( ".tap", n ) ) != std::string::npos )
-//     {
-//         tap_name_list.replace( n, 4, "" );
-//         n++;
-//     }
-
-// }
 
 // Dump actual config to FS
 void Config::save() {

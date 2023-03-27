@@ -33,12 +33,9 @@
 #include "hardpins.h"
 #include "CaptureBMP.h"
 #include "fabgl.h"
+#include "ayemu.h"
 
 using namespace std;
-
-
-
-
 
 #define ESP_AUDIO_OVERSAMPLES_48 4368
 #define ESP_AUDIO_FREQ_48 31250 // ESP_AUDIO_SAMPLES_48 * 50,0801282 frames per second
@@ -77,11 +74,15 @@ public:
     static int samplesPerFrame;
     static bool AY_emu;
     static int Audio_freq;
+    
     // static bool Audio_restart;
 
     static uint32_t target;
 
     // static int ESPoffset; // Testing
+
+    static ayemu_ay_t ay;
+    static int bufcount;    
     
 private:
 
@@ -93,5 +94,16 @@ private:
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
+
+unsigned long IRAM_ATTR micros();
+
+unsigned long IRAM_ATTR millis();
+
+inline void IRAM_ATTR delay(uint32_t ms)
+{
+    vTaskDelay(ms / portTICK_PERIOD_MS);
+}
+
+void IRAM_ATTR delayMicroseconds(uint32_t us);
 
 #endif

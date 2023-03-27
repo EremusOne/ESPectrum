@@ -46,7 +46,6 @@
 VGA6Bit VIDEO::vga;
 uint8_t VIDEO::borderColor = 0;
 uint32_t VIDEO::brd;
-unsigned int VIDEO::lastBorder[312] = { 0 };
 uint32_t VIDEO::border32[8];
 uint8_t VIDEO::flashing = 0;
 uint8_t VIDEO::flash_ctr= 0;
@@ -66,19 +65,15 @@ void (*VIDEO::Draw)(unsigned int, bool) = &VIDEO::Blank;
 void (*VIDEO::DrawOSD43)(unsigned int, bool) = &VIDEO::BottomBorder;
 void (*VIDEO::DrawOSD169)(unsigned int, bool) = &VIDEO::MainScreen;
 
+static uint16_t specfast_colors[128]; // Array for faster color calc in Draw
+
 void precalcColors() {
+    
     for (int i = 0; i < NUM_SPECTRUM_COLORS; i++) {
         spectrum_colors[i] = (spectrum_colors[i] & VIDEO::vga.RGBAXMask) | VIDEO::vga.SBits;
     }
-}
 
-void precalcAluBytes() {
-
-    uint16_t specfast_colors[128]; // Array for faster color calc in Draw
-
-    unsigned int pal[2],b0,b1,b2,b3;
-
-    // Calc array for faster color calcs in Draw
+   // Calc array for faster color calcs in ALU_video
     for (int i = 0; i < (NUM_SPECTRUM_COLORS >> 1); i++) {
         // Normal
         specfast_colors[i] = spectrum_colors[i];
@@ -88,33 +83,55 @@ void precalcAluBytes() {
         specfast_colors[(i << 3) | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
     }
 
-    // Alloc ALUbytes
-    AluBytes = new uint32_t*[16];
-    for (int i = 0; i < 16; i++) {
-        AluBytes[i] = new uint32_t[256];
-    }
+}
 
-    for (int i = 0; i < 16; i++) {
-        for (int n = 0; n < 256; n++) {
-            pal[0] = specfast_colors[n & 0x78];
-            pal[1] = specfast_colors[n & 0x47];
-            b0 = pal[(i >> 3) & 0x01];
-            b1 = pal[(i >> 2) & 0x01];
-            b2 = pal[(i >> 1) & 0x01];
-            b3 = pal[i & 0x01];
-            AluBytes[i][n]=b2 | (b3<<8) | (b0<<16) | (b1<<24);
-        }
-    }    
+void precalcAluBytes() {
+
+    return;
+
+    // uint16_t specfast_colors[128]; // Array for faster color calc in Draw
+
+    // unsigned int pal[2],b0,b1,b2,b3;
+
+    // // Calc array for faster color calcs in Draw
+    // for (int i = 0; i < (NUM_SPECTRUM_COLORS >> 1); i++) {
+    //     // Normal
+    //     specfast_colors[i] = spectrum_colors[i];
+    //     specfast_colors[i << 3] = spectrum_colors[i];
+    //     // Bright
+    //     specfast_colors[i | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
+    //     specfast_colors[(i << 3) | 0x40] = spectrum_colors[i + (NUM_SPECTRUM_COLORS >> 1)];
+    // }
+
+    // // Alloc ALUbytes
+    // AluBytes = new uint32_t*[16];
+    // for (int i = 0; i < 16; i++) {
+    //     AluBytes[i] = new uint32_t[256];
+    // }
+
+    // for (int i = 0; i < 16; i++) {
+    //     for (int n = 0; n < 256; n++) {
+    //         pal[0] = specfast_colors[n & 0x78];
+    //         pal[1] = specfast_colors[n & 0x47];
+    //         b0 = pal[(i >> 3) & 0x01];
+    //         b1 = pal[(i >> 2) & 0x01];
+    //         b2 = pal[(i >> 1) & 0x01];
+    //         b3 = pal[i & 0x01];
+    //         AluBytes[i][n]=b2 | (b3<<8) | (b0<<16) | (b1<<24);
+    //     }
+    // }    
 
 }
 
 void deallocAluBytes() {
 
-    // For dealloc
-    for (int i = 0; i < 16; i++) {
-        delete[] AluBytes[i];
-    }
-    delete[] AluBytes;
+    return;
+
+    // // For dealloc
+    // for (int i = 0; i < 16; i++) {
+    //     delete[] AluBytes[i];
+    // }
+    // delete[] AluBytes;
 
 };
 
@@ -159,7 +176,6 @@ void VIDEO::Init() {
 
     precalcborder32();  // Precalc border 32 bits values
 
-    for (int i=0;i<312;i++) lastBorder[i]=8; // 8 -> Force repaint of border
     borderColor = 0;
     brd = border32[0];
 
@@ -183,7 +199,6 @@ void VIDEO::Init() {
 
 void VIDEO::Reset() {
 
-    for (int i=0;i<312;i++) lastBorder[i]=8; // 8 -> Force repaint of border
     borderColor = 7;
     brd = border32[7];    
 
@@ -367,6 +382,9 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
 void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
   
     uint8_t att, bmp;
+
+    unsigned int palette[2]; //0 backcolor 1 Forecolor
+    unsigned int a0,a1,a2,a3;    
     
     if (contended)
         statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
@@ -381,10 +399,40 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
         // if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
         // if (coldraw_cnt<36) {
 
-            att = grmem[attOffset++];       // get attribute byte
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+            // att = grmem[attOffset++];       // get attribute byte
+            // bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+            
+            // *lineptr32++ = AluBytes[bmp >> 4][att];
+            // *lineptr32++ = AluBytes[bmp & 0xF][att];
+
+
+            // Faster color calc
+            att = grmem[attOffset];  // get attribute byte
+
+            if (att & flashing) {
+                palette[0] = specfast_colors[att & 0x47];
+                palette[1] = specfast_colors[att & 0x78];
+            } else {
+                palette[0] = specfast_colors[att & 0x78];
+                palette[1] = specfast_colors[att & 0x47];
+            }
+
+            bmp = grmem[bmpOffset];  // get bitmap byte
+
+            a0 = palette[(bmp >> 7) & 0x01];
+            a1 = palette[(bmp >> 6) & 0x01];
+            a2 = palette[(bmp >> 5) & 0x01];
+            a3 = palette[(bmp >> 4) & 0x01];
+            *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
+
+            a0 = palette[(bmp >> 3) & 0x01];
+            a1 = palette[(bmp >> 2) & 0x01];
+            a2 = palette[(bmp >> 1) & 0x01];
+            a3 = palette[bmp & 0x01];
+            *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
+
+            attOffset++;
+            bmpOffset++;
 
         // } else {
 
@@ -412,6 +460,9 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
+
+    unsigned int palette[2]; //0 backcolor 1 Forecolor
+    unsigned int a0,a1,a2,a3;    
     
     if (contended)
         statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
@@ -431,10 +482,40 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
         }
 
         if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
-            att = grmem[attOffset++];       // get attribute byte
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+
+            // att = grmem[attOffset++];       // get attribute byte
+            // bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+            // *lineptr32++ = AluBytes[bmp >> 4][att];
+            // *lineptr32++ = AluBytes[bmp & 0xF][att];
+
+            // Faster color calc
+            att = grmem[attOffset];  // get attribute byte
+
+            if (att & flashing) {
+                palette[0] = specfast_colors[att & 0x47];
+                palette[1] = specfast_colors[att & 0x78];
+            } else {
+                palette[0] = specfast_colors[att & 0x78];
+                palette[1] = specfast_colors[att & 0x47];
+            }
+
+            bmp = grmem[bmpOffset];  // get bitmap byte
+
+            a0 = palette[(bmp >> 7) & 0x01];
+            a1 = palette[(bmp >> 6) & 0x01];
+            a2 = palette[(bmp >> 5) & 0x01];
+            a3 = palette[(bmp >> 4) & 0x01];
+            *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
+
+            a0 = palette[(bmp >> 3) & 0x01];
+            a1 = palette[(bmp >> 2) & 0x01];
+            a2 = palette[(bmp >> 1) & 0x01];
+            a3 = palette[bmp & 0x01];
+            *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
+
+            attOffset++;
+            bmpOffset++;
+
         } else {
             *lineptr32++ = brd;
             *lineptr32++ = brd;

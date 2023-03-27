@@ -83,6 +83,7 @@ void CPU::setup()
         Z80Ops::is48 = false;
     }
 
+    tstates = 0;
     global_tstates = 0;
 
 }
@@ -103,6 +104,7 @@ void CPU::reset() {
         Z80Ops::is48 = false;
     }
 
+    tstates = 0;
     global_tstates = 0;
 
 }

@@ -31,47 +31,23 @@
 #define AySound_h
 
 #include "hardconfig.h"
-#include "fabgl.h"
+#include <inttypes.h>
 
 class AySound
 {
 public:
-    static void initialize();
 
     static void update();
-
     static void reset();
-
-    static void disable();
-    static void enable();
-
     static uint8_t getRegisterData();
     static void selectRegister(uint8_t data);
     static void setRegisterData(uint8_t data);
 
-    static SquareWaveformGenerator _channel[3];
-
 private:
-    static uint8_t finePitchChannelA;
-    static uint8_t coarsePitchChannelA;
-    static uint8_t finePitchChannelB;
-    static uint8_t coarsePitchChannelB;
-    static uint8_t finePitchChannelC;
-    static uint8_t coarsePitchChannelC;
-    static uint8_t noisePitch;
-    static uint8_t mixer;
-    static uint8_t volumeChannelA;
-    static uint8_t volumeChannelB;
-    static uint8_t volumeChannelC;
-    static uint8_t envelopeFineDuration;
-    static uint8_t envelopeCoarseDuration;
-    static uint8_t envelopeShape;
-    static uint8_t ioPortA;
 
-    // Status
+    static uint8_t regs[15];
     static uint8_t selectedRegister;
-    static uint8_t channelVolume[3];
-    static uint16_t channelFrequency[3];
+
 };
 
 #endif // AySound_h

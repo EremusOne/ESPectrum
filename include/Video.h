@@ -94,7 +94,6 @@ public:
     static uint8_t borderColor;
     static uint32_t border32[8];
     static uint32_t brd;
-    static unsigned lastBorder[312];
 
     static uint8_t tStatesPerLine;
     static int tStatesScreen;
@@ -136,9 +135,7 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
 };
 
-// static uint32_t DRAM_ATTR ulabytes[16][256] = { 0 };
-
-static uint32_t** AluBytes;
+// static uint32_t** AluBytes;
 
 static unsigned char DrawStatus;
 

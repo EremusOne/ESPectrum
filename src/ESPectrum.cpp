@@ -46,6 +46,7 @@
 #include "Z80_JLS/z80.h"
 #include "pwm_audio.h"
 #include "fabgl.h"
+#include "ayemu.h"
 
 #ifndef ESP32_SDL2_WRAPPER
 #include "freertos/FreeRTOS.h"
@@ -83,11 +84,12 @@ int ESPectrum::overSamplesPerFrame = ESP_AUDIO_OVERSAMPLES_48;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
 // bool ESPectrum::Audio_restart = false;
+ayemu_ay_t ESPectrum::ay;
+int ESPectrum::bufcount = 0;
 
 QueueHandle_t audioTaskQueue;
 TaskHandle_t audioTaskHandle;
 uint8_t *param;
-// SemaphoreHandle_t xSemaphore = NULL;
 
 //=======================================================================================
 // ARDUINO FUNCTIONS
@@ -99,7 +101,6 @@ uint8_t *param;
 #define NOP() {for(int i=0;i<1000;i++){}}
 #endif
 
-
 unsigned long IRAM_ATTR micros()
 {
     return (unsigned long) (esp_timer_get_time());
@@ -110,10 +111,10 @@ unsigned long IRAM_ATTR millis()
     return (unsigned long) (esp_timer_get_time() / 1000ULL);
 }
 
-inline void IRAM_ATTR delay(uint32_t ms)
-{
-    vTaskDelay(ms / portTICK_PERIOD_MS);
-}
+// inline void IRAM_ATTR delay(uint32_t ms)
+// {
+//     vTaskDelay(ms / portTICK_PERIOD_MS);
+// }
 
 void IRAM_ATTR delayMicroseconds(uint32_t us)
 {
@@ -170,9 +171,6 @@ void ESPectrum::setup()
     //=======================================================================================
     FileUtils::initFileSystem();
     Config::load();
-    
-    // Config::loadSnapshotLists();
-    // Config::loadTapLists();
     
 #ifndef ESP32_SDL2_WRAPPER
     // Get chip information
@@ -241,12 +239,18 @@ void ESPectrum::setup()
     MemESP::ram0 = staticMemPage1;
     MemESP::ram2 = staticMemPage2;
 
-    MemESP::ram1 = (unsigned char *)calloc(1,0x4000);
-    MemESP::ram3 = (unsigned char *)calloc(1,0x4000);
-    MemESP::ram4 = (unsigned char *)calloc(1,0x4000);
-    MemESP::ram6 = (unsigned char *)calloc(1,0x4000);
-    MemESP::ram7 = (unsigned char *)calloc(1,0x4000);
-    
+    MemESP::ram1 = staticMemPage3;
+    MemESP::ram3 = staticMemPage4;
+    MemESP::ram4 = staticMemPage5;
+    MemESP::ram6 = staticMemPage6;            
+    MemESP::ram7 = staticMemPage7;
+
+    // MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    // MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    // MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    // MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    // MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+
     if (Config::slog_on) {
         if (MemESP::ram1 == NULL) printf("ERROR! Unable to allocate ram1\n");        
         if (MemESP::ram3 == NULL) printf("ERROR! Unable to allocate ram3\n");        
@@ -284,17 +288,16 @@ void ESPectrum::setup()
     }
 
     // Create Audio task
-    // xSemaphore = xSemaphoreCreateBinary();
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 4096, NULL, 5, &audioTaskHandle, 1);
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, 5, &audioTaskHandle, 1);
 
-    // AY Sound
-    AySound::initialize();
-    // // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(Audio_freq);
-    AySound::_channel[1].setSampleRate(Audio_freq);
-    AySound::_channel[2].setSampleRate(Audio_freq);
+    // // AY Sound
+    ayemu_init(&ESPectrum::ay);
+    ayemu_set_sound_format (&ESPectrum::ay, Audio_freq, 1, 8);
+    ayemu_set_stereo(&ay, AYEMU_MONO, NULL);
+    AySound::reset();
+    bufcount = 0;
 
     // START Z80
     CPU::setup();
@@ -396,12 +399,11 @@ void ESPectrum::reset()
     pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
 
     // Reset AY emulation
+    ayemu_init(&ESPectrum::ay);
+    ayemu_set_sound_format (&ESPectrum::ay, Audio_freq, 1, 8);
+    ayemu_set_stereo(&ay, AYEMU_MONO, NULL);
     AySound::reset();
-
-    // Set AY channels samplerate to match pwm_audio's
-    AySound::_channel[0].setSampleRate(Audio_freq);
-    AySound::_channel[1].setSampleRate(Audio_freq);
-    AySound::_channel[2].setSampleRate(Audio_freq);
+    bufcount = 0;
 
     pwm_audio_start();
     
@@ -465,6 +467,10 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             
             heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
             // heap_caps_dump(MALLOC_CAP_INTERNAL);
+
+            UBaseType_t wm;
+            wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
+            printf("Stack HWM: %u\n", wm);
             
             r = false;
         }    
@@ -491,7 +497,10 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             Kdown = NextKey.down;
 
             if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE))) {
+                vTaskDelay(50 / portTICK_PERIOD_MS); // Generous delay to let audio task to flush or finish processing buffer if needed
+                vTaskSuspend(audioTaskHandle);
                 OSD::do_OSD(KeytoESP);
+                vTaskResume(audioTaskHandle);
                 continue;
             }
 
@@ -500,7 +509,8 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 continue;
             }
 
-            if (KeytoESP == fabgl::VK_LSHIFT || KeytoESP == fabgl::VK_RSHIFT) {
+            if (KeytoESP == fabgl::VK_LSHIFT) {
+            // if (KeytoESP == fabgl::VK_LSHIFT || KeytoESP == fabgl::VK_RSHIFT) {
                 bitWrite(Ports::port[0], 0, !Kdown); // CAPS SHIFT                
                 continue;
             }
@@ -763,13 +773,11 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
 }
 
+
 //=======================================================================================
 // AUDIO
 //=======================================================================================
 void IRAM_ATTR ESPectrum::audioTask(void *unused) {
-
-    static int count = 0;    
-    static uint8_t audBufRest[3];
 
     size_t written;
 
@@ -803,6 +811,8 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
+        // printf("Receive 1\n");
+
         // // Deinit audio to reinit with changed parameters
         // if (ESPectrum::Audio_restart) {
         //     ESPectrum::Audio_restart = false;
@@ -811,7 +821,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         //     break;
         // }
         
-        if ((Z80Ops::is48) || (count==0)) {
+        if ((Z80Ops::is48) || (bufcount==0)) {
             pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
         }
 
@@ -828,17 +838,28 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
+        // printf("Receive 2\n");
+
         // Finish fill of oversampled audio buffer
         if (faudbufcnt < overSamplesPerFrame) {
-            int signal = faudioBit ? 255: 0;
+            int signal = faudioBit ? 127: 0;
             for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
         }
 
         // Downsample beeper (median) and mix AY channels to output buffer
-        int beeper, aymix;
+        int beeper;
         
         if (Z80Ops::is48) {
 
+            if (AY_emu) {
+                
+                // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
+
+                ayemu_gen_sound(&ay, audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
+
+            }
+
+            int n = 0;
             for (int i=0;i<overSamplesPerFrame; i += 7) {    
                 // Downsample (median)
                 beeper  =  overSamplebuf[i];
@@ -848,85 +869,24 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
-                if (AY_emu) {
-                    // Mix AY Channels
-                    aymix = AySound::_channel[0].getSample();
-                    aymix += AySound::_channel[1].getSample();
-                    aymix += AySound::_channel[2].getSample();
-                    beeper = (beeper / 7) + (aymix / 3);
-                    audioBuffer[ i / 7] = beeper > 255 ? 255 : beeper; // Clamp
-                } else {
-                    audioBuffer[ i / 7] = beeper / 7;
-                }
-            }
 
-            if (AY_emu) AySound::update();
+                beeper = AY_emu ? (beeper / 7) + (audioBuffer[n]) : beeper / 7;
+
+                audioBuffer[n] = beeper > 255 ? 255 : beeper; // Clamp
+
+                n++;
+
+            }
 
         } else {
 
-            // switch (count) {
-            //     case 0:
-            //         break;
-            //     case 1:
-            //         audioBuffer[0] = audBufRest[0];
-            //         break;
-            //     case 2:
-            //         audioBuffer[0] = audBufRest[0];
-            //         audioBuffer[1] = audBufRest[1];
-            //         break;
-            //     case 3:
-            //         audioBuffer[0] = audBufRest[0];
-            //         audioBuffer[1] = audBufRest[1];
-            //         audioBuffer[2] = audBufRest[2];
-            //         break;
-            // }
+            // In 128K mode we send two frames per buffer to obtain 622 * 2 = 1244 samples.
             
-            // for (int i=0;i<overSamplesPerFrame; i += 7) {    
-            //     // Downsample (median)
-            //     beeper  =  overSamplebuf[i];
-            //     beeper +=  overSamplebuf[i+1];
-            //     beeper +=  overSamplebuf[i+2];
-            //     beeper +=  overSamplebuf[i+3];
-            //     beeper +=  overSamplebuf[i+4];
-            //     beeper +=  overSamplebuf[i+5];
-            //     beeper +=  overSamplebuf[i+6];
+            // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
 
-            //     // Mix AY Channels
-            //     aymix = AySound::_channel[0].getSample();
-            //     aymix += AySound::_channel[1].getSample();
-            //     aymix += AySound::_channel[2].getSample();
-            //     beeper = (beeper / 7) + (aymix / 3);
-            //     audioBuffer[ (i / 7) + count] = beeper > 255 ? 255 : beeper; // Clamp
+            ayemu_gen_sound(&ay, audioBuffer, (ESP_AUDIO_SAMPLES_128 >> 1), bufcount);
 
-            // }
-
-            // switch (count) {
-            //     case 0:
-            //         samplesPerFrame = 632;
-            //         audBufRest[0] = audioBuffer[632];
-            //         break;
-            //     case 1:
-            //         samplesPerFrame = 632;
-            //         audBufRest[0] = audioBuffer[632];
-            //         audBufRest[1] = audioBuffer[633];
-            //         break;
-            //     case 2:
-            //         samplesPerFrame = 632;
-            //         audBufRest[0] = audioBuffer[632];
-            //         audBufRest[1] = audioBuffer[633];
-            //         audBufRest[2] = audioBuffer[634];
-            //         break;
-            //     case 3:
-            //         samplesPerFrame = 636;
-            //         break;
-            // }
-
-            // if (count == 4) count = 0;
-
-            // printf("Sample 631 -> %u; Sample 632 -> %u\n",audioBuffer[631], audioBuffer[632]);
-
-            // TWO FRAMES PER BUFFER
-
+            int m = bufcount;
             for (int i=0;i<overSamplesPerFrame; i += 6) {
 
                 // Downsample (median)
@@ -937,19 +897,15 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
 
-                // Mix AY Channels
-                aymix = AySound::_channel[0].getSample();
-                aymix += AySound::_channel[1].getSample();
-                aymix += AySound::_channel[2].getSample();
-                beeper = (beeper / 6) + (aymix / 3);
-                
-                audioBuffer[ (i / 6) + count] = beeper > 255 ? 255 : beeper; // Clamp
+                beeper = (beeper / 6) + (audioBuffer[m]);                
+
+                audioBuffer[m] = beeper > 255 ? 255 : beeper; // Clamp
+
+                m++;
 
             }
 
-            if (count==0) count=622; else count=0; 
-
-            AySound::update();
+            if (bufcount==0) bufcount=(ESP_AUDIO_SAMPLES_128 >> 1); else bufcount=0; 
 
         }
 
@@ -969,32 +925,15 @@ void ESPectrum::audioFrameStart() {
 
 void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
 
-    if (Z80Ops::is48) {
-    
-        if (Audiobit != lastaudioBit) {
-            // Audio buffer generation (oversample)
-            uint32_t audbufpos = CPU::tstates >> 4;
-            int signal = lastaudioBit ? 255: 0;
-            for (int i=audbufcnt;i<audbufpos;i++) {
-                overSamplebuf[i] = signal;
-            }
-            audbufcnt = audbufpos;
-            lastaudioBit = Audiobit;
+    if (Audiobit != lastaudioBit) {
+        // Audio buffer generation (oversample)
+        uint32_t audbufpos = Z80Ops::is48 ? CPU::tstates >> 4 : CPU::tstates / 19;
+        int signal = lastaudioBit ? 127: 0;
+        for (int i=audbufcnt;i<audbufpos;i++) {
+            overSamplebuf[i] = signal;
         }
-
-    } else {
-    
-        if (Audiobit != lastaudioBit) {
-            // Audio buffer generation (oversample)
-            uint32_t audbufpos = CPU::tstates / 19;
-            int signal = lastaudioBit ? 255: 0;
-            for (int i=audbufcnt;i<audbufpos;i++) {
-                overSamplebuf[i] = signal;
-            }
-            audbufcnt = audbufpos;
-            lastaudioBit = Audiobit;
-        }
-    
+        audbufcnt = audbufpos;
+        lastaudioBit = Audiobit;
     }
 
 }
@@ -1021,15 +960,15 @@ static double totalsecondsnodelay = 0;
 uint32_t ts_start, elapsed;
 int32_t idle;
 
-// // Testing/Profiling: Start with stats on
+// For Testing/Profiling: Start with stats on
 // VIDEO::LineDraw = LINEDRAW_FPS;
 // VIDEO::BottomDraw = BOTTOMBORDER_FPS;
-
-// xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
 for(;;) {
 
     ts_start = micros();
+
+    // processKeyboard();
 
     audioFrameStart();
 
@@ -1041,16 +980,27 @@ for(;;) {
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
 
+    // if (AY_emu) {
+
+    //     // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
+        
+    //     if (Z80Ops::is48)
+    //         ayemu_gen_sound(&ay, audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
+    //     else
+    //         ayemu_gen_sound(&ay, audioBuffer, (ESP_AUDIO_SAMPLES_128 >> 1), count);
+
+    // }
+
     audioFrameEnd();
 
-    processKeyboard();
+    if ((Z80Ops::is48) || (bufcount!=0)) processKeyboard();
     
     elapsed = micros() - ts_start;
     idle = target - elapsed;
     if (idle < 0) idle = 0;
 
     #ifdef VIDEO_FRAME_TIMING
-    totalseconds += idle ;
+    totalseconds += idle;
     #endif
     
     totalseconds += elapsed;
@@ -1068,8 +1018,7 @@ for(;;) {
             showMemInfo();
             #endif
 
-            // sprintf((char *)linea1,"CPU: %.5u / ESP: %.5d ", elapsed, ESPoffset);
-            sprintf((char *)linea1,"CPU: %.5u / IDL: %.5d ", elapsed, idle);
+            sprintf((char *)linea1,"CPU: %05u / IDL: %05d ", elapsed, idle);
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
 
         }
@@ -1087,7 +1036,8 @@ for(;;) {
     if (idle > 0) delayMicroseconds(idle);
     #endif
 
-}
+    vTaskDelay(0);
 
 }
 
+}

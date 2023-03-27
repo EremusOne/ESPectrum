@@ -421,9 +421,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             Config::requestMachine(arch, "SINCLAIR", true);
                             // Config::requestMachine(arch, romSet, true);
                             Config::ram_file = "none";
-                            vTaskDelay(2);
+                            vTaskDelay(2 / portTICK_PERIOD_MS);
                             Config::save();
-                            vTaskDelay(2);
+                            vTaskDelay(2 / portTICK_PERIOD_MS);
                             ESPectrum::reset();
                         //}
                     }
