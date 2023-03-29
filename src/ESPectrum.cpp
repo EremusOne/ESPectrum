@@ -536,10 +536,10 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             Kdown = NextKey.down;
 
             if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE))) {
-                vTaskDelay(50 / portTICK_PERIOD_MS); // Generous delay to let audio task to flush or finish processing buffer if needed
-                // vTaskSuspend(audioTaskHandle);
+                // vTaskDelay(50 / portTICK_PERIOD_MS); // Generous delay to let audio task to flush or finish processing buffer if needed
+                vTaskSuspend(audioTaskHandle);
                 OSD::do_OSD(KeytoESP);
-                // vTaskResume(audioTaskHandle);
+                vTaskResume(audioTaskHandle);
                 continue;
             }
 
@@ -1114,30 +1114,9 @@ for(;;) {
 
     ts_start = micros();
 
-    // if ((Z80Ops::is48) || (bufcount!=0)) {
-        processKeyboard();
-    // }
-
-    // Draw stats, if activated, every 32 frames
-    if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
-
-    // Flashing flag change
-    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
-
     audioFrameStart();
 
     CPU::loop();
-
-    // if (AY_emu) {
-
-    //     // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
-        
-    //     if (Z80Ops::is48)
-    //         ayemu_gen_sound(&ay, audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
-    //     else
-    //         ayemu_gen_sound(&ay, audioBuffer, (ESP_AUDIO_SAMPLES_128 >> 1), count);
-
-    // }
 
     audioFrameEnd();
 
@@ -1152,9 +1131,13 @@ for(;;) {
     //     }            
     // }
 
-    // if ((Z80Ops::is48) || (bufcount!=0)) {
-    //     processKeyboard();
-    // }
+    // Draw stats, if activated, every 32 frames
+    if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
+
+    // Flashing flag change
+    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
+
+    processKeyboard();
     
     elapsed = micros() - ts_start;
     idle = target - elapsed;
