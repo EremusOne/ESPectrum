@@ -73,7 +73,7 @@ fabgl::PS2Controller ESPectrum::PS2Controller;
 //=======================================================================================
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_48] = { 0 };
 uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES_48] = { 0 };
-signed char ESPectrum::aud_volume = 0; // -8;
+signed char ESPectrum::aud_volume = -8;
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
 int ESPectrum::lastaudioBit = 0;
