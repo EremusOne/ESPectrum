@@ -83,7 +83,6 @@ int ESPectrum::overSamplesPerFrame = ESP_AUDIO_OVERSAMPLES_48;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
 // bool ESPectrum::Audio_restart = false;
-// ayemu_ay_t ESPectrum::ay;
 int ESPectrum::bufcount = 0;
 
 QueueHandle_t audioTaskQueue;
@@ -193,6 +192,8 @@ void ESPectrum::setup()
         printf("IDF Version: %s\n",esp_get_idf_version());
         printf("\n");
 
+        if (Config::slog_on) printf("Executing on core: %u\n", xPortGetCoreID());
+
         showMemInfo();
 
     }
@@ -206,9 +207,6 @@ void ESPectrum::setup()
 
     if (Config::slog_on) showMemInfo("VGA started");
 
-    // Active graphic bank pointer
-    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-
     //=======================================================================================
     // MEMORY SETUP
     //=======================================================================================
@@ -217,23 +215,17 @@ void ESPectrum::setup()
     MemESP::ram0 = staticMemPage1;
     MemESP::ram2 = staticMemPage2;
 
-    // MemESP::ram1 = staticMemPage3;
-    // MemESP::ram3 = staticMemPage4;
-    // MemESP::ram4 = staticMemPage5;
-    // MemESP::ram6 = staticMemPage6;            
-    // MemESP::ram7 = staticMemPage7;
-
     // MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     // MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     // MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     // MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     // MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 
-    MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_8BIT);
-    MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_8BIT);
-    MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_8BIT);
-    MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_8BIT);
-    MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_8BIT);
+    MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+    MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+    MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+    MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+    MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
 
     if (Config::slog_on) {
         if (MemESP::ram1 == NULL) printf("ERROR! Unable to allocate ram1\n");        
@@ -331,8 +323,6 @@ void ESPectrum::setup()
     // Init tape
     Tape::Init();
 
-    if (Config::slog_on) printf("Executing on core: %u\n", xPortGetCoreID());
-
     // START Z80
     CPU::setup();
 
@@ -349,6 +339,9 @@ void ESPectrum::setup()
     MemESP::modeSP3 = 0;
     MemESP::romSP3 = 0;
     MemESP::romInUse = 0;
+
+    // Active graphic bank pointer
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
 
     Tape::tapeFileName = "none";
     Tape::tapeStatus = TAPE_STOPPED;
@@ -495,21 +488,42 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
         }
         #ifdef DEV_STUFF 
         else if (Nextkey->vk == fabgl::VK_DEGREE) { // Show mem info
-            // multi_heap_info_t info;
-            // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+            multi_heap_info_t info;
+            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
             printf("=========================================================================\n");
-            // printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
-            // printf("Minimum free ever: %d\n", info.minimum_free_bytes);
-            // printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
-            // printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-            // printf("=========================================================================\n\n");
-            
-            heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-            // heap_caps_dump(MALLOC_CAP_INTERNAL);
+            printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
+            printf("Minimum free ever: %d\n", info.minimum_free_bytes);
+            printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
+            printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 
-            // UBaseType_t wm;
-            // wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-            // printf("Stack HWM: %u\n", wm);
+            printf("=========================================================================\n\n");
+            heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
+
+            printf("=========================================================================\n");
+            heap_caps_print_heap_info(MALLOC_CAP_8BIT);            
+            
+            printf("=========================================================================\n");
+            heap_caps_print_heap_info(MALLOC_CAP_32BIT);                        
+
+            printf("=========================================================================\n");
+            heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
+            printf("=========================================================================\n");
+            heap_caps_print_heap_info(MALLOC_CAP_DMA);            
+
+            printf("=========================================================================\n");
+            heap_caps_print_heap_info(MALLOC_CAP_EXEC);            
+
+            printf("=========================================================================\n");
+            heap_caps_print_heap_info(MALLOC_CAP_IRAM_8BIT);            
+            
+            printf("=========================================================================\n");
+            heap_caps_dump_all();
+
+            printf("=========================================================================\n");
+            UBaseType_t wm;
+            wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
+            printf("Stack HWM: %u\n", wm);
             
             r = false;
         }    
@@ -524,8 +538,6 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     fabgl::VirtualKeyItem NextKey;
     fabgl::VirtualKey KeytoESP;
     bool Kdown;
-
-    //auto keyboard = PS2Controller.keyboard();
 
     while (PS2Controller.keyboard()->virtualKeyAvailable()) {
 
@@ -548,13 +560,12 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 continue;
             }
 
-            if (KeytoESP == fabgl::VK_LSHIFT) {
-            // if (KeytoESP == fabgl::VK_LSHIFT || KeytoESP == fabgl::VK_RSHIFT) {
+            if (KeytoESP == fabgl::VK_LCTRL) {
                 bitWrite(Ports::port[0], 0, !Kdown); // CAPS SHIFT                
                 continue;
             }
 
-            if (KeytoESP == fabgl::VK_LCTRL || KeytoESP == fabgl::VK_RCTRL) {
+            if (KeytoESP == fabgl::VK_RCTRL) {
                 bitWrite(Ports::port[7], 1, !Kdown); // SYMBOL SHIFT
                 continue;
             }
@@ -838,18 +849,9 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 
-    // FILE *f = fopen("/sd/c/audioout.raw", "wb");
-    // if (f==NULL)
-    // {
-    //     printf("Error opening file for write.\n");
-    // }
-    // uint32_t fpart = 0;
-
     for (;;) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
-
-        // printf("Receive 1\n");
 
         // // Deinit audio to reinit with changed parameters
         // if (ESPectrum::Audio_restart) {
@@ -863,20 +865,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
             pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
         }
 
-        // if (fpart!=1001) fpart++;
-        // if (fpart<1000) {
-        //     uint8_t* buffer = audioBuffer;
-        //     fwrite(&buffer[0],samplesPerFrame,1,f);
-        // } else {
-        //     if (fpart==1000) {
-        //         fclose(f);
-        //         printf("Audio dumped!\n");
-        //     }            
-        // }
-
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
-
-        // printf("Receive 2\n");
 
         int i = 0;
         
@@ -885,8 +874,6 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
             int signal = faudioBit ? 127: 0;
             for (i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
         }
-        
-        // if (i != 4368) printf("I -> %d\n",i);
         
         // Downsample beeper (median) and mix AY channels to output buffer
         int beeper;
@@ -897,7 +884,6 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 
                 // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
 
-                // ayemu_gen_sound(&ay, audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
                 AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
 
             }
@@ -927,7 +913,6 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
             
             // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
 
-            // ayemu_gen_sound(&ay, audioBuffer, (ESP_AUDIO_SAMPLES_128 >> 1), bufcount);
             AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_128, 0);
             
             int n = 0;
@@ -949,8 +934,6 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
             }
 
-            // if (bufcount==0) bufcount=(ESP_AUDIO_SAMPLES_128 >> 1); else bufcount=0; 
-
         }
 
     }
@@ -961,14 +944,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
 void ESPectrum::audioFrameStart() {
     
-    // size_t written;
-
     xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
-
-    // if ((Z80Ops::is48) || (bufcount==0)) {
-    //     pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
-    //     // pwm_audio_write(audioBuffer[buffertoplay], samplesPerFrame, &written, 1 / portTICK_PERIOD_MS);        
-    // }
 
     audbufcnt = 0;
 
@@ -995,91 +971,6 @@ void ESPectrum::audioFrameEnd() {
     faudioBit = lastaudioBit;
 
     xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
-
-    // int i = 0;
-    
-    // // Finish fill of oversampled audio buffer
-    // if (faudbufcnt < overSamplesPerFrame) {
-    //     int signal = faudioBit ? 127: 0;
-    //     for (i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
-    // }
-    
-    // // if (i != 4368) printf("I -> %d\n",i);
-    
-    // // Downsample beeper (median) and mix AY channels to output buffer
-    // int beeper;
-    
-    // if (Z80Ops::is48) {
-
-    //     if (AY_emu) {
-            
-    //         // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
-
-    //         // ayemu_gen_sound(&ay, audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
-    //         AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
-
-    //     }
-
-    //     int n = 0;
-    //     for (int i=0;i<overSamplesPerFrame; i += 7) {    
-
-    //         // Downsample (median)
-    //         beeper  =  overSamplebuf[i];
-    //         beeper +=  overSamplebuf[i+1];
-    //         beeper +=  overSamplebuf[i+2];
-    //         beeper +=  overSamplebuf[i+3];
-    //         beeper +=  overSamplebuf[i+4];
-    //         beeper +=  overSamplebuf[i+5];
-    //         beeper +=  overSamplebuf[i+6];
-
-    //         beeper = AY_emu ? (beeper / 7) + (audioBuffer[n]) : beeper / 7;
-
-    //         // audioBuffer[n] = beeper > 255 ? 255 : beeper; // Clamp
-
-    //         audioBuffer[n] = beeper > 127 ? 127 : beeper; // Clamp
-
-    //         n++;
-
-    //     }
-        
-    //     // printf("N -> %d\n",n);
-
-    // } else {
-
-    //     // In 128K mode we send two frames per buffer to obtain 622 * 2 = 1244 samples.
-        
-    //     // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
-
-    //     // ayemu_gen_sound(&ay, audioBuffer, (ESP_AUDIO_SAMPLES_128 >> 1), bufcount);
-    //     // AySound::gen_sound(audioBuffer, (ESP_AUDIO_SAMPLES_128 >> 1), bufcount);
-
-    //     AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_128, 0);
-        
-    //     // int m = bufcount;
-    //     int m = 0; 
-    //     for (int i=0;i<overSamplesPerFrame; i += 6) {
-
-    //         // Downsample (median)
-    //         beeper  =  overSamplebuf[i];
-    //         beeper +=  overSamplebuf[i+1];
-    //         beeper +=  overSamplebuf[i+2];
-    //         beeper +=  overSamplebuf[i+3];
-    //         beeper +=  overSamplebuf[i+4];
-    //         beeper +=  overSamplebuf[i+5];
-
-    //         beeper = (beeper / 6) + (audioBuffer[m]);                
-
-    //         // audioBuffer[m] = beeper > 255 ? 255 : beeper; // Clamp
-
-    //         audioBuffer[m] = beeper > 127 ? 127 : beeper; // Clamp
-            
-    //         m++;
-
-    //     }
-
-    //     // if (bufcount==0) bufcount=(ESP_AUDIO_SAMPLES_128 >> 1); else bufcount=0; 
-
-    // }
 
 }
 

@@ -104,9 +104,8 @@ void precalcAluBytes() {
     }
 
     // Alloc ALUbytes
-    AluBytes = new uint32_t*[16];
     for (int i = 0; i < 16; i++) {
-        AluBytes[i] = new uint32_t[256];
+        AluBytes[i] = (uint32_t *) heap_caps_malloc(0x400,MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
     }
 
     for (int i = 0; i < 16; i++) {
@@ -123,17 +122,15 @@ void precalcAluBytes() {
 
 }
 
-void deallocAluBytes() {
+// void deallocAluBytes() {
 
-    // return;
+//     // For dealloc
+//     for (int i = 0; i < 16; i++) {
+//         delete[] AluBytes[i];
+//     }
+//     delete[] AluBytes;
 
-    // For dealloc
-    for (int i = 0; i < 16; i++) {
-        delete[] AluBytes[i];
-    }
-    delete[] AluBytes;
-
-};
+// };
 
 uint16_t zxColor(uint8_t color, uint8_t bright) {
     if (bright) color += 8;
@@ -383,9 +380,6 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
   
     uint8_t att, bmp;
 
-    unsigned int palette[2]; //0 backcolor 1 Forecolor
-    unsigned int a0,a1,a2,a3;    
-    
     if (contended)
         statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
 
@@ -396,49 +390,11 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
-        // if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
-        // if (coldraw_cnt<36) {
-
             att = grmem[attOffset++];       // get attribute byte
             bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
             
             *lineptr32++ = AluBytes[bmp >> 4][att];
             *lineptr32++ = AluBytes[bmp & 0xF][att];
-
-            // // Faster color calc
-            // att = grmem[attOffset];  // get attribute byte
-
-            // if (att & flashing) {
-            //     palette[0] = specfast_colors[att & 0x47];
-            //     palette[1] = specfast_colors[att & 0x78];
-            // } else {
-            //     palette[0] = specfast_colors[att & 0x78];
-            //     palette[1] = specfast_colors[att & 0x47];
-            // }
-
-            // bmp = grmem[bmpOffset];  // get bitmap byte
-
-            // a0 = palette[(bmp >> 7) & 0x01];
-            // a1 = palette[(bmp >> 6) & 0x01];
-            // a2 = palette[(bmp >> 5) & 0x01];
-            // a3 = palette[(bmp >> 4) & 0x01];
-            // *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
-
-            // a0 = palette[(bmp >> 3) & 0x01];
-            // a1 = palette[(bmp >> 2) & 0x01];
-            // a2 = palette[(bmp >> 1) & 0x01];
-            // a3 = palette[bmp & 0x01];
-            // *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
-
-            // attOffset++;
-            // bmpOffset++;
-
-        // } else {
-
-        //     *lineptr32++ = brd;
-        //     *lineptr32++ = brd;
-
-        // }
 
         if (++coldraw_cnt > 35) {      
             Draw = MainScreenRB;
@@ -446,11 +402,6 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
             Draw(0,false);
             return;
         }
-
-        // if (++coldraw_cnt == 40) {      
-        //     Draw = ++linedraw_cnt == (is169 ? 196 : 216) ? &BottomBorder_Blank : &MainScreen_Blank;
-        //     return;
-        // }
 
     }
 
@@ -460,9 +411,6 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
 
-    unsigned int palette[2]; //0 backcolor 1 Forecolor
-    unsigned int a0,a1,a2,a3;    
-    
     if (contended)
         statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
 
@@ -484,36 +432,9 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
             att = grmem[attOffset++];       // get attribute byte
             bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+
             *lineptr32++ = AluBytes[bmp >> 4][att];
             *lineptr32++ = AluBytes[bmp & 0xF][att];
-
-            // // Faster color calc
-            // att = grmem[attOffset];  // get attribute byte
-
-            // if (att & flashing) {
-            //     palette[0] = specfast_colors[att & 0x47];
-            //     palette[1] = specfast_colors[att & 0x78];
-            // } else {
-            //     palette[0] = specfast_colors[att & 0x78];
-            //     palette[1] = specfast_colors[att & 0x47];
-            // }
-
-            // bmp = grmem[bmpOffset];  // get bitmap byte
-
-            // a0 = palette[(bmp >> 7) & 0x01];
-            // a1 = palette[(bmp >> 6) & 0x01];
-            // a2 = palette[(bmp >> 5) & 0x01];
-            // a3 = palette[(bmp >> 4) & 0x01];
-            // *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
-
-            // a0 = palette[(bmp >> 3) & 0x01];
-            // a1 = palette[(bmp >> 2) & 0x01];
-            // a2 = palette[(bmp >> 1) & 0x01];
-            // a3 = palette[bmp & 0x01];
-            // *lineptr32++ = a2 | (a3<<8) | (a0<<16) | (a1<<24);
-
-            // attOffset++;
-            // bmpOffset++;
 
         } else {
             *lineptr32++ = brd;

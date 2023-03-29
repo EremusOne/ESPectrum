@@ -420,12 +420,12 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
     rc = stat((filedir + "/.d").c_str(), &stat_buf);
     if (rc < 0) {
-        deallocAluBytes();
+        // deallocAluBytes();
         OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO);
         int chunks = FileUtils::DirToFile(filedir, extensions); // Prepare sna filelist
         if (chunks) FileUtils::Mergefiles(filedir,chunks); // Merge files
         OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
-        precalcAluBytes();
+        // precalcAluBytes();
         rc = stat((filedir + "/.d").c_str(), &stat_buf);
     }
     

@@ -16,8 +16,8 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Border effects emulated (Aquaplane, The Sentinel, Overscan demo).
 - Floating bus effect emulated (Arkanoid, Sidewize).
 - Contended memory and contended I/O emulation.
+- AY-3-8912 sound emulation.
 - Beeper sound emulation.
-- Partial AY-3-8912 sound emulation.
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
 - International kbd layout support: US, ES, DE, FR and UK.
 - Kempston and Cursor type Joystick emulation.
@@ -30,7 +30,9 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 ## Work in progress
 
-- Better AY-3-8912 emulation (128K sound is still a little dirty).
+- TZX Support
+- Being able to use SAVE command to save to SPIFFS and/or SD Card.
+- Fast tape load.
 
 ## Installing
 
@@ -99,6 +101,7 @@ Pin assignment in `hardpins.h` is set to match the TTGo VGA32, use it as-is, or 
 - [Ackerman](https://github.com/rpsubc8/ESP32TinyZXSpectrum) for his code and ideas.
 - Azesmbog for testing and providing very valuable info to make the emu more precise.
 - VGA Driver from [ESP32Lib by BitLuni](https://github.com/bitluni/ESP32Lib).
+- AY-3-8912 emulation from [libayemu by Alexander Sashnov](https://asashnov.github.io/libayemu.html).
 - PS2 Driver from Fabrizio di Vittorio for his [FabGL library](https://github.com/fdivitto/FabGL).
 - Z80 Emulation derived from [z80cpp](https://github.com/jsanchezv/z80cpp), authored by José Luis Sánchez.
 - [Amstrad PLC](http://www.amstrad.com) for the ZX-Spectrum ROM binaries [liberated for emulation purposes](http://www.worldofspectrum.org/permits/amstrad-roms.txt).

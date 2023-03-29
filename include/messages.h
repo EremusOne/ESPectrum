@@ -47,7 +47,7 @@
 
 // OSD
 #define OSD_TITLE  "  ZX-ESPectrum-IDF - powered by ESP32   "
-#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS    v1.0beta4 "
+#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS    v1.0beta5 "
 
 #define OSD_PAUSE_EN " --=[PAUSED]=-- "
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"
@@ -275,6 +275,7 @@ static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES
     "\n"\
     " Z80 emulation by JL Sanchez\n"\
     " VGA driver by BitLuni\n"\
+    " AY-3-8912 library by A. Sashnov\n"\
     " PS2 driver by Fabrizio di Vittorio\n"\
     " Greetings to http://retrowiki.es and\n"\
     " his people (Hi ackerman!) for the\n"\
@@ -293,6 +294,7 @@ static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES
     "\n"\
     " Emulacion Z80 por JL Sanchez\n"\
     " Driver VGA por BitLuni\n"\
+    " Libreria AY-3-8912 por A. Sashnov\n"\
     " Driver PS2 por Fabrizio di Vittorio\n"\
     " Saludos a http://retrowiki.es y\n"\
     " su gente (Hola ackerman!) por su\n"\

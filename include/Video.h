@@ -135,7 +135,7 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
 };
 
-static uint32_t** AluBytes;
+static uint32_t* AluBytes[16];
 
 static unsigned char DrawStatus;
 
@@ -152,6 +152,6 @@ static unsigned int attOffset;  // offset for attrib in graphic memory
 
 void precalcAluBytes();
 
-void deallocAluBytes();
+// void deallocAluBytes();
 
 #endif // VIDEO_h
