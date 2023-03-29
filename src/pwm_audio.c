@@ -147,8 +147,8 @@ static ringbuf_handle_t *rb_create(uint32_t size)
     do {
         bool _success =
             (
-                (rb             = heap_caps_malloc(sizeof(ringbuf_handle_t), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL)) &&
-                (buf            = heap_caps_malloc(size, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL))   &&
+                (rb             = heap_caps_malloc(sizeof(ringbuf_handle_t), MALLOC_CAP_8BIT /*| MALLOC_CAP_INTERNAL*/)) &&
+                (buf            = heap_caps_malloc(size, MALLOC_CAP_8BIT /*| MALLOC_CAP_INTERNAL*/))   &&
                 (rb->semaphore_rb   = xSemaphoreCreateBinary())
 
             );
@@ -291,62 +291,62 @@ static void IRAM_ATTR timer_group_isr(void *para)
     /**
      * It is believed that the channel configured with GPIO needs to output sound
     */
-    if (handle->channel_mask & CHANNEL_LEFT_MASK) {
-        if (handle->config.duty_resolution > 8) {
-            if (rb_get_count(rb) > 1) {
-                rb_read_byte(rb, &wave_l);
-                rb_read_byte(rb, &wave_h);
-                value = ((wave_h << 8) | wave_l);
-                ledc_set_left_duty_fast(value);/**< set the PWM duty */
-            }
-        } else {
+    // if (handle->channel_mask & CHANNEL_LEFT_MASK) {
+    //     if (handle->config.duty_resolution > 8) {
+    //         if (rb_get_count(rb) > 1) {
+    //             rb_read_byte(rb, &wave_l);
+    //             rb_read_byte(rb, &wave_h);
+    //             value = ((wave_h << 8) | wave_l);
+    //             ledc_set_left_duty_fast(value);/**< set the PWM duty */
+    //         }
+    //     } else {
             if (ESP_OK == rb_read_byte(rb, &wave_h)) {
                 ledc_set_left_duty_fast(wave_h);/**< set the PWM duty */
             }
-        }
-    }
+    //     }
+    // }
 
     /**
      * If two gpios are configured, but the audio data has only one channel, copy the data to the right channel
      * Instead, the right channel data is discarded
     */
-    if (handle->channel_mask & CHANNEL_RIGHT_MASK) {
-        if (handle->channel_set_num == 1) {
-            if (handle->config.duty_resolution > 8) {
-                ledc_set_right_duty_fast(value);/**< set the PWM duty */
-            } else {
-                ledc_set_right_duty_fast(wave_h);/**< set the PWM duty */
-            }
-        } else {
-            if (handle->config.duty_resolution > 8) {
-                if (rb_get_count(rb) > 1) {
-                    rb_read_byte(rb, &wave_l);
-                    rb_read_byte(rb, &wave_h);
-                    value = ((wave_h << 8) | wave_l);
-                    ledc_set_right_duty_fast(value);/**< set the PWM duty */
-                }
-            } else {
-                if (ESP_OK == rb_read_byte(rb, &wave_h)) {
-                    ledc_set_right_duty_fast(wave_h);/**< set the PWM duty */
-                }
-            }
-        }
-    } else {
-        if (handle->channel_set_num == 2) {
-            /**
-             * Discard the right channel data only if the right channel is configured but the audio data is stereo
-             * Read buffer but do nothing
-             */
-            if (handle->config.duty_resolution > 8) {
-                if (rb_get_count(rb) > 1) {
-                    rb_read_byte(rb, &wave_h);
-                    rb_read_byte(rb, &wave_h);
-                }
-            } else {
-                rb_read_byte(rb, &wave_h);
-            }
-        }
-    }
+    // if (handle->channel_mask & CHANNEL_RIGHT_MASK) {
+    //     if (handle->channel_set_num == 1) {
+    //         if (handle->config.duty_resolution > 8) {
+    //             ledc_set_right_duty_fast(value);/**< set the PWM duty */
+    //         } else {
+    //             ledc_set_right_duty_fast(wave_h);/**< set the PWM duty */
+    //         }
+    //     } else {
+    //         if (handle->config.duty_resolution > 8) {
+    //             if (rb_get_count(rb) > 1) {
+    //                 rb_read_byte(rb, &wave_l);
+    //                 rb_read_byte(rb, &wave_h);
+    //                 value = ((wave_h << 8) | wave_l);
+    //                 ledc_set_right_duty_fast(value);/**< set the PWM duty */
+    //             }
+    //         } else {
+    //             if (ESP_OK == rb_read_byte(rb, &wave_h)) {
+    //                 ledc_set_right_duty_fast(wave_h);/**< set the PWM duty */
+    //             }
+    //         }
+    //     }
+    // } else {
+    //     if (handle->channel_set_num == 2) {
+    //         /**
+    //          * Discard the right channel data only if the right channel is configured but the audio data is stereo
+    //          * Read buffer but do nothing
+    //          */
+    //         if (handle->config.duty_resolution > 8) {
+    //             if (rb_get_count(rb) > 1) {
+    //                 rb_read_byte(rb, &wave_h);
+    //                 rb_read_byte(rb, &wave_h);
+    //             }
+    //         } else {
+    //             rb_read_byte(rb, &wave_h);
+    //         }
+    //     }
+    // }
 
     /**
      * Send semaphore when buffer free is more than BUFFER_MIN_SIZE
@@ -599,13 +599,15 @@ esp_err_t IRAM_ATTR pwm_audio_write(uint8_t *inbuf, size_t inbuf_len, size_t *by
 {
     esp_err_t res = ESP_OK;
     pwm_audio_data_t *handle = g_pwm_audio_handle;
-    PWM_AUDIO_CHECK(NULL != handle, PWM_AUDIO_NOT_INITIALIZED, ESP_ERR_INVALID_STATE);
-    PWM_AUDIO_CHECK(inbuf != NULL && bytes_written != NULL, "Invalid pointer", ESP_ERR_INVALID_ARG);
-    PWM_AUDIO_CHECK(inbuf_len != 0, "Length should not be zero", ESP_ERR_INVALID_ARG);
+    
+    // PWM_AUDIO_CHECK(NULL != handle, PWM_AUDIO_NOT_INITIALIZED, ESP_ERR_INVALID_STATE);
+    // PWM_AUDIO_CHECK(inbuf != NULL && bytes_written != NULL, "Invalid pointer", ESP_ERR_INVALID_ARG);
+    // PWM_AUDIO_CHECK(inbuf_len != 0, "Length should not be zero", ESP_ERR_INVALID_ARG);
 
     *bytes_written = 0;
     ringbuf_handle_t *rb = handle->ringbuf;
-    TickType_t start_ticks = xTaskGetTickCount();
+    
+    // TickType_t start_ticks = xTaskGetTickCount();
 
     while (inbuf_len) {
         uint32_t free = rb_get_free(rb);
@@ -616,34 +618,34 @@ esp_err_t IRAM_ATTR pwm_audio_write(uint8_t *inbuf, size_t inbuf_len, size_t *by
                 bytes_can_write = free;
             }
 
-            bytes_can_write &= 0xfffffffc;/**< Aligned data, bytes_can_write should be an integral multiple of 4 */
+            // bytes_can_write &= 0xfffffffc;/**< Aligned data, bytes_can_write should be an integral multiple of 4 */
 
-            if (0 == bytes_can_write) {
-                *bytes_written += inbuf_len;  /**< Discard the last misaligned bytes of data directly */
-                return ESP_OK;
-            }
+            // if (0 == bytes_can_write) {
+            //     *bytes_written += inbuf_len;  /**< Discard the last misaligned bytes of data directly */
+            //     return ESP_OK;
+            // }
 
             /**< Get the difference between PWM resolution and audio samplewidth */
-            int8_t shift = handle->bits_per_sample - handle->config.duty_resolution;
+            // int8_t shift = handle->bits_per_sample - handle->config.duty_resolution;
             uint32_t len = bytes_can_write;
 
-            switch (handle->bits_per_sample) {
-            case 8: {
-                if (shift < 0) {
-                    /**< When the PWM resolution is greater than 8 bits, the value needs to be expanded */
-                    uint16_t value;
-                    uint8_t temp;
-                    shift = -shift;
-                    len >>= 1;
-                    bytes_can_write >>= 1;
+            // switch (handle->bits_per_sample) {
+            // case 8: {
+            //     if (shift < 0) {
+            //         /**< When the PWM resolution is greater than 8 bits, the value needs to be expanded */
+            //         uint16_t value;
+            //         uint8_t temp;
+            //         shift = -shift;
+            //         len >>= 1;
+            //         bytes_can_write >>= 1;
 
-                    for (size_t i = 0; i < len; i++) {
-                        temp = (inbuf[i] * handle->volume / VOLUME_0DB) + 0x7f; /**< offset */
-                        value = temp << shift;
-                        rb_write_byte(rb, value);
-                        rb_write_byte(rb, value >> 8);
-                    }
-                } else {
+            //         for (size_t i = 0; i < len; i++) {
+            //             temp = (inbuf[i] * handle->volume / VOLUME_0DB) + 0x7f; /**< offset */
+            //             value = temp << shift;
+            //             rb_write_byte(rb, value);
+            //             rb_write_byte(rb, value >> 8);
+            //         }
+            //     } else {
                     uint8_t value;
 
                     // // Original code
@@ -658,73 +660,73 @@ esp_err_t IRAM_ATTR pwm_audio_write(uint8_t *inbuf, size_t inbuf_len, size_t *by
                         rb_write_byte(rb, value);
                     }
 
-                }
-            }
-            break;
+            //     }
+            // }
+            // break;
 
-            case 16: {
-                len >>= 1;
-                uint16_t *buf_16b = (uint16_t *)inbuf;
-                static uint16_t value_16b;
-                int16_t temp;
+            // case 16: {
+            //     len >>= 1;
+            //     uint16_t *buf_16b = (uint16_t *)inbuf;
+            //     static uint16_t value_16b;
+            //     int16_t temp;
 
-                if (handle->config.duty_resolution > 8) {
-                    for (size_t i = 0; i < len; i++) {
-                        temp = buf_16b[i];
-                        temp = temp * handle->volume / VOLUME_0DB;
-                        value_16b = temp + 0x7fff; /**< offset */
-                        value_16b >>= shift;
-                        rb_write_byte(rb, value_16b);
-                        rb_write_byte(rb, value_16b >> 8);
-                    }
-                } else {
-                    /**
-                     * When the PWM resolution is 8 bit, only one byte is transmitted
-                     */
-                    for (size_t i = 0; i < len; i++) {
-                        temp = buf_16b[i];
-                        temp = temp * handle->volume / VOLUME_0DB;
-                        value_16b = temp + 0x7fff; /**< offset */
-                        value_16b >>= shift;
-                        rb_write_byte(rb, value_16b);
-                    }
-                }
-            }
-            break;
+            //     if (handle->config.duty_resolution > 8) {
+            //         for (size_t i = 0; i < len; i++) {
+            //             temp = buf_16b[i];
+            //             temp = temp * handle->volume / VOLUME_0DB;
+            //             value_16b = temp + 0x7fff; /**< offset */
+            //             value_16b >>= shift;
+            //             rb_write_byte(rb, value_16b);
+            //             rb_write_byte(rb, value_16b >> 8);
+            //         }
+            //     } else {
+            //         /**
+            //          * When the PWM resolution is 8 bit, only one byte is transmitted
+            //          */
+            //         for (size_t i = 0; i < len; i++) {
+            //             temp = buf_16b[i];
+            //             temp = temp * handle->volume / VOLUME_0DB;
+            //             value_16b = temp + 0x7fff; /**< offset */
+            //             value_16b >>= shift;
+            //             rb_write_byte(rb, value_16b);
+            //         }
+            //     }
+            // }
+            // break;
 
-            case 32: {
-                len >>= 2;
-                uint32_t *buf_32b = (uint32_t *)inbuf;
-                uint32_t value;
-                int32_t temp;
+            // case 32: {
+            //     len >>= 2;
+            //     uint32_t *buf_32b = (uint32_t *)inbuf;
+            //     uint32_t value;
+            //     int32_t temp;
 
-                if (handle->config.duty_resolution > 8) {
-                    for (size_t i = 0; i < len; i++) {
-                        temp = buf_32b[i];
-                        temp = temp * handle->volume / VOLUME_0DB;
-                        value = temp + 0x7fffffff; /**< offset */
-                        value >>= shift;
-                        rb_write_byte(rb, value);
-                        rb_write_byte(rb, value >> 8);
-                    }
-                } else {
-                    /**
-                     * When the PWM resolution is 8 bit, only one byte is transmitted
-                     */
-                    for (size_t i = 0; i < len; i++) {
-                        temp = buf_32b[i];
-                        temp = temp * handle->volume / VOLUME_0DB;
-                        value = temp + 0x7fffffff; /**< offset */
-                        value >>= shift;
-                        rb_write_byte(rb, value);
-                    }
-                }
-            }
-            break;
+            //     if (handle->config.duty_resolution > 8) {
+            //         for (size_t i = 0; i < len; i++) {
+            //             temp = buf_32b[i];
+            //             temp = temp * handle->volume / VOLUME_0DB;
+            //             value = temp + 0x7fffffff; /**< offset */
+            //             value >>= shift;
+            //             rb_write_byte(rb, value);
+            //             rb_write_byte(rb, value >> 8);
+            //         }
+            //     } else {
+            //         /**
+            //          * When the PWM resolution is 8 bit, only one byte is transmitted
+            //          */
+            //         for (size_t i = 0; i < len; i++) {
+            //             temp = buf_32b[i];
+            //             temp = temp * handle->volume / VOLUME_0DB;
+            //             value = temp + 0x7fffffff; /**< offset */
+            //             value >>= shift;
+            //             rb_write_byte(rb, value);
+            //         }
+            //     }
+            // }
+            // break;
 
-            default:
-                break;
-            }
+            // default:
+            //     break;
+            // }
 
             inbuf += bytes_can_write;
             inbuf_len -= bytes_can_write;
@@ -735,9 +737,10 @@ esp_err_t IRAM_ATTR pwm_audio_write(uint8_t *inbuf, size_t inbuf_len, size_t *by
             ESP_LOGD(TAG, "tg config=%x\n", handle->timg_dev->hw_timer[handle->config.timer_num].config.val);
         }
 
-        if ((xTaskGetTickCount() - start_ticks) >= ticks_to_wait) {
-            return res;
-        }
+        // if ((xTaskGetTickCount() - start_ticks) >= ticks_to_wait) {
+        //     return res;
+        // }
+
     }
 
     return res;

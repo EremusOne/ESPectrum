@@ -33,7 +33,6 @@
 #include "hardpins.h"
 #include "CaptureBMP.h"
 #include "fabgl.h"
-#include "ayemu.h"
 
 using namespace std;
 
@@ -43,7 +42,7 @@ using namespace std;
 
 #define ESP_AUDIO_OVERSAMPLES_128 3732
 #define ESP_AUDIO_FREQ_128 31112
-#define ESP_AUDIO_SAMPLES_128 1244
+#define ESP_AUDIO_SAMPLES_128 622
 
 class ESPectrum
 {
@@ -60,7 +59,7 @@ public:
     static fabgl::PS2Controller PS2Controller;
 
     // Audio
-    static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_128];
+    static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_48];
     static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES_48];
     static signed char aud_volume;
     static uint32_t audbufcnt;
@@ -74,14 +73,14 @@ public:
     static int samplesPerFrame;
     static bool AY_emu;
     static int Audio_freq;
-    
+
     // static bool Audio_restart;
 
-    static uint32_t target;
+    static int64_t target;
 
     // static int ESPoffset; // Testing
 
-    static ayemu_ay_t ay;
+    // static ayemu_ay_t ay;
     static int bufcount;    
     
 private:
@@ -95,7 +94,7 @@ private:
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
 
-unsigned long IRAM_ATTR micros();
+int64_t IRAM_ATTR micros();
 
 unsigned long IRAM_ATTR millis();
 
@@ -104,6 +103,6 @@ inline void IRAM_ATTR delay(uint32_t ms)
     vTaskDelay(ms / portTICK_PERIOD_MS);
 }
 
-void IRAM_ATTR delayMicroseconds(uint32_t us);
+void IRAM_ATTR delayMicroseconds(int64_t us);
 
 #endif

@@ -135,7 +135,7 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
 };
 
-// static uint32_t** AluBytes;
+static uint32_t** AluBytes;
 
 static unsigned char DrawStatus;
 

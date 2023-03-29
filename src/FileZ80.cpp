@@ -362,8 +362,10 @@ bool FileZ80::load(string z80_fn)
     pwm_audio_stop();
 
     // Empty audio buffers
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128;i++) ESPectrum::overSamplebuf[i]=0;
-    for (int i=0;i<ESP_AUDIO_SAMPLES_128;i++) ESPectrum::audioBuffer[i]=0;
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
+    for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
+        ESPectrum::audioBuffer[i]=0;
+    }
     ESPectrum::lastaudioBit=0;
 
     // Set samples per frame and AY_emu flag depending on arch
@@ -382,9 +384,12 @@ bool FileZ80::load(string z80_fn)
     pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
 
     // // Reset AY emulation
-    ayemu_init(&ESPectrum::ay);
-    ayemu_set_sound_format (&ESPectrum::ay, ESPectrum::Audio_freq, 1, 8);
-    ayemu_set_stereo(&ESPectrum::ay, AYEMU_MONO, NULL);
+    AySound::init();
+    AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
+    AySound::set_stereo(AYEMU_MONO,NULL);
+    // ayemu_init(&ESPectrum::ay);
+    // ayemu_set_sound_format (&ESPectrum::ay, ESPectrum::Audio_freq, 1, 8);
+    // ayemu_set_stereo(&ESPectrum::ay, AYEMU_MONO, NULL);
     AySound::reset();
     ESPectrum::bufcount=0;    
 
