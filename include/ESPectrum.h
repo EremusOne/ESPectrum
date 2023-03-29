@@ -80,9 +80,6 @@ public:
 
     // static int ESPoffset; // Testing
 
-    // static ayemu_ay_t ay;
-    static int bufcount;    
-    
 private:
 
     static void IRAM_ATTR audioTask(void* unused);

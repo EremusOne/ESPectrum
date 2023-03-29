@@ -83,7 +83,6 @@ int ESPectrum::overSamplesPerFrame = ESP_AUDIO_OVERSAMPLES_48;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
 // bool ESPectrum::Audio_restart = false;
-int ESPectrum::bufcount = 0;
 
 QueueHandle_t audioTaskQueue;
 TaskHandle_t audioTaskHandle;
@@ -263,36 +262,13 @@ void ESPectrum::setup()
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
     xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, 5, &audioTaskHandle, 1);
-    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048, NULL, 5, &audioTaskHandle, 1);    
-
-    // // PWM Audio Init
-    // pwm_audio_config_t pac;
-    // pac.duty_resolution    = LEDC_TIMER_8_BIT;
-    // pac.gpio_num_left      = SPEAKER_PIN;
-    // pac.ledc_channel_left  = LEDC_CHANNEL_0;
-    // pac.gpio_num_right     = -1;
-    // pac.ledc_channel_right = LEDC_CHANNEL_1;
-    // pac.ledc_timer_sel     = LEDC_TIMER_0;
-    // pac.tg_num             = TIMER_GROUP_0;
-    // pac.timer_num          = TIMER_0;
-    // pac.ringbuf_len        = 1024 * 8;
-   
-    // pwm_audio_init(&pac);
-    // pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
-    // pwm_audio_start();
-    // // pwm_audio_set_volume(aud_volume);
 
     // AY Sound
     AySound::init();
     AySound::set_sound_format(Audio_freq,1,8);
     AySound::set_stereo(AYEMU_MONO,NULL);
     
-    // ayemu_init(&ESPectrum::ay);
-    // ayemu_set_sound_format (&ESPectrum::ay, Audio_freq, 1, 8);
-    // ayemu_set_stereo(&ay, AYEMU_MONO, NULL);
-    
     AySound::reset();
-    bufcount = 0;
 
     //=======================================================================================
     // KEYBOARD
@@ -431,11 +407,7 @@ void ESPectrum::reset()
     AySound::init();
     AySound::set_sound_format(Audio_freq,1,8);
     AySound::set_stereo(AYEMU_MONO,NULL);
-    // ayemu_init(&ESPectrum::ay);
-    // ayemu_set_sound_format (&ESPectrum::ay, Audio_freq, 1, 8);
-    // ayemu_set_stereo(&ay, AYEMU_MONO, NULL);
     AySound::reset();
-    bufcount = 0;
 
     pwm_audio_start();
     
@@ -861,9 +833,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         //     break;
         // }
         
-        if ((Z80Ops::is48) || (bufcount==0)) {
-            pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
-        }
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 

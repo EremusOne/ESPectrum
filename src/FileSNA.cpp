@@ -304,11 +304,7 @@ bool FileSNA::load(string sna_fn)
     AySound::init();
     AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
     AySound::set_stereo(AYEMU_MONO,NULL);
-    // ayemu_init(&ESPectrum::ay);
-    // ayemu_set_sound_format (&ESPectrum::ay, ESPectrum::Audio_freq, 1, 8);
-    // ayemu_set_stereo(&ESPectrum::ay, AYEMU_MONO, NULL);
     AySound::reset();
-    ESPectrum::bufcount=0;
 
     pwm_audio_start();
 
