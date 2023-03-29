@@ -879,8 +879,6 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         } else {
 
-            // In 128K mode we send two frames per buffer to obtain 622 * 2 = 1244 samples.
-            
             // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
 
             AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_128, 0);
