@@ -52,61 +52,61 @@
     The codes of stereo types used for generage sound. */
 typedef enum
 {
-  AYEMU_MONO = 0,
-  AYEMU_ABC,
-  AYEMU_ACB,
-  AYEMU_BAC,
-  AYEMU_BCA,
-  AYEMU_CAB,
-  AYEMU_CBA,
-  AYEMU_STEREO_CUSTOM = 255
+    AYEMU_MONO = 0,
+    AYEMU_ABC,
+    AYEMU_ACB,
+    AYEMU_BAC,
+    AYEMU_BCA,
+    AYEMU_CAB,
+    AYEMU_CBA,
+    AYEMU_STEREO_CUSTOM = 255
 } ayemu_stereo_t;
 
 /** Sound chip type.
     Constant for identify used chip for emulation */
 typedef enum {
-  AYEMU_AY,			/**< default AY chip (lion17 for now) */
-  AYEMU_YM,			/**< default YM chip (lion17 for now) */
-  AYEMU_AY_LION17,		/**< emulate AY with Lion17 table */
-  AYEMU_YM_LION17,		/**< emulate YM with Lion17 table */
-  AYEMU_AY_KAY,			/**< emulate AY with HACKER KAY table */
-  AYEMU_YM_KAY,			/**< emulate YM with HACKER KAY table */
-  AYEMU_AY_LOG,			/**< emulate AY with logariphmic table */
-  AYEMU_YM_LOG,			/**< emulate YM with logariphmic table */
-  AYEMU_AY_CUSTOM,		/**< use AY with custom table. */
-  AYEMU_YM_CUSTOM		/**< use YM with custom table. */
+    AYEMU_AY,            /**< default AY chip (lion17 for now) */
+    AYEMU_YM,            /**< default YM chip (lion17 for now) */
+    AYEMU_AY_LION17,     /**< emulate AY with Lion17 table */
+    AYEMU_YM_LION17,     /**< emulate YM with Lion17 table */
+    AYEMU_AY_KAY,        /**< emulate AY with HACKER KAY table */
+    AYEMU_YM_KAY,        /**< emulate YM with HACKER KAY table */
+    AYEMU_AY_LOG,        /**< emulate AY with logariphmic table */
+    AYEMU_YM_LOG,        /**< emulate YM with logariphmic table */
+    AYEMU_AY_CUSTOM,     /**< use AY with custom table. */
+    AYEMU_YM_CUSTOM      /**< use YM with custom table. */
 } ayemu_chip_t;
 
 /** parsed by #ayemu_set_regs() AY registers data \internal */
 typedef struct
 {
-  int tone_a;           /**< R0, R1 */
-  int tone_b;		/**< R2, R3 */	
-  int tone_c;		/**< R4, R5 */
-  int noise;		/**< R6 */
-  int R7_tone_a;	/**< R7 bit 0 */
-  int R7_tone_b;	/**< R7 bit 1 */
-  int R7_tone_c;	/**< R7 bit 2 */
-  int R7_noise_a;	/**< R7 bit 3 */
-  int R7_noise_b;	/**< R7 bit 4 */
-  int R7_noise_c;	/**< R7 bit 5 */
-  int vol_a;		/**< R8 bits 3-0 */
-  int vol_b;		/**< R9 bits 3-0 */
-  int vol_c;		/**< R10 bits 3-0 */
-  int env_a;		/**< R8 bit 4 */
-  int env_b;		/**< R9 bit 4 */
-  int env_c;		/**< R10 bit 4 */
-  int env_freq;		/**< R11, R12 */
-  int env_style;	/**< R13 */
+    int tone_a;       /**< R0, R1 */
+    int tone_b;       /**< R2, R3 */    
+    int tone_c;       /**< R4, R5 */
+    int noise;        /**< R6 */
+    int R7_tone_a;    /**< R7 bit 0 */
+    int R7_tone_b;    /**< R7 bit 1 */
+    int R7_tone_c;    /**< R7 bit 2 */
+    int R7_noise_a;   /**< R7 bit 3 */
+    int R7_noise_b;   /**< R7 bit 4 */
+    int R7_noise_c;   /**< R7 bit 5 */
+    int vol_a;        /**< R8 bits 3-0 */
+    int vol_b;        /**< R9 bits 3-0 */
+    int vol_c;        /**< R10 bits 3-0 */
+    int env_a;        /**< R8 bit 4 */
+    int env_b;        /**< R9 bit 4 */
+    int env_c;        /**< R10 bit 4 */
+    int env_freq;     /**< R11, R12 */
+    int env_style;    /**< R13 */
 }
 ayemu_regdata_t;
 
 /** Output sound format \internal */
 typedef struct
 {
-  int freq;			/**< sound freq */
-  int channels;			/**< channels (1-mono, 2-stereo) */
-  int bpc;			/**< bits (8 or 16) */
+  int freq;           /**< sound freq */
+  int channels;       /**< channels (1-mono, 2-stereo) */
+  int bpc;            /**< bits (8 or 16) */
 }
 ayemu_sndfmt_t;
 
@@ -132,38 +132,38 @@ public:
 private:
 
     /* emulator settings */
-    static int table[32];		/**< table of volumes for chip */
-    static ayemu_chip_t type;		/**< general chip type (\b AYEMU_AY or \b AYEMU_YM) */
-    static int ChipFreq;			/**< chip emulator frequency */
-    static int eq[6];			/**< volumes for channels.
-                    Array contains 6 elements: 
-                    A left, A right, B left, B right, C left and C right;
-                    range -100...100 */
-    static ayemu_regdata_t ayregs;		/**< parsed registers data */
-    static ayemu_sndfmt_t sndfmt;	/**< output sound format */
+    static int table[32];                   /**< table of volumes for chip */
+    static ayemu_chip_t type;               /**< general chip type (\b AYEMU_AY or \b AYEMU_YM) */
+    static int ChipFreq;                    /**< chip emulator frequency */
+    static int eq[6];                       /**< volumes for channels.
+                                            Array contains 6 elements: 
+                                            A left, A right, B left, B right, C left and C right;
+                                            range -100...100 */
+    static ayemu_regdata_t ayregs;          /**< parsed registers data */
+    static ayemu_sndfmt_t sndfmt;           /**< output sound format */
 
     // flags
-    static int default_chip_flag;	/**< =1 after init, resets in #ayemu_set_chip_type() */
-    static int default_stereo_flag;	/**< =1 after init, resets in #ayemu_set_stereo() */
-    static int default_sound_format_flag; /**< =1 after init, resets in #ayemu_set_sound_format() */
-    static int dirty;			/**< dirty flag. Sets if any emulator properties changed */
+    static int default_chip_flag;           /**< =1 after init, resets in #ayemu_set_chip_type() */
+    static int default_stereo_flag;         /**< =1 after init, resets in #ayemu_set_stereo() */
+    static int default_sound_format_flag;   /**< =1 after init, resets in #ayemu_set_sound_format() */
+    static int dirty;                       /**< dirty flag. Sets if any emulator properties changed */
 
-    static int bit_a;			/**< state of channel A generator */
-    static int bit_b;			/**< state of channel B generator */
-    static int bit_c;			/**< state of channel C generator */
-    static int bit_n;			/**< current generator state */
-    static int cnt_a;			/**< back counter of A */
-    static int cnt_b;			/**< back counter of B */
-    static int cnt_c;			/**< back counter of C */
-    static int cnt_n;			/**< back counter of noise generator */
-    static int cnt_e;			/**< back counter of envelop generator */
-    static int ChipTacts_per_outcount;   /**< chip's counts per one sound signal count */
-    static int Amp_Global;		/**< scale factor for amplitude */
-    static int vols[6][32];              /**< stereo type (channel volumes) and chip table.
-                    This cache calculated by #table and #eq  */
-    static int EnvNum;		        /**< number of current envilopment (0...15) */
-    static int env_pos;			/**< current position in envelop (0...127) */
-    static int Cur_Seed;		        /**< random numbers counter */
+    static int bit_a;                       /**< state of channel A generator */
+    static int bit_b;                       /**< state of channel B generator */
+    static int bit_c;                       /**< state of channel C generator */
+    static int bit_n;                       /**< current generator state */
+    static int cnt_a;                       /**< back counter of A */
+    static int cnt_b;                       /**< back counter of B */
+    static int cnt_c;                       /**< back counter of C */
+    static int cnt_n;                       /**< back counter of noise generator */
+    static int cnt_e;                       /**< back counter of envelop generator */
+    static int ChipTacts_per_outcount;      /**< chip's counts per one sound signal count */
+    static int Amp_Global;                  /**< scale factor for amplitude */
+    static int vols[6][32];                 /**< stereo type (channel volumes) and chip table.
+                                            This cache calculated by #table and #eq  */
+    static int EnvNum;                      /**< number of current envilopment (0...15) */
+    static int env_pos;                     /**< current position in envelop (0...127) */
+    static int Cur_Seed;                    /**< random numbers counter */
 
     static uint8_t regs[15];
     static uint8_t selectedRegister;
