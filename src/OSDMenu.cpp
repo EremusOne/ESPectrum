@@ -6,7 +6,7 @@
 // https://github.com/EremusOne/ZX-ESPectrum-IDF
 //
 // Based on ZX-ESPectrum-Wiimote
-// Copyright (c) 2020, 2021 David Crespo [dcrespo3d]
+// Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
 // https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 //
 // Based on previous work by Ramón Martinez and Jorge Fuertes
