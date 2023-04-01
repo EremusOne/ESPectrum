@@ -1,12 +1,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// ZX-ESPectrum - ZX Spectrum emulator for ESP32
+// ZX-ESPectrum-IDF - Sinclair ZX Spectrum emulator for ESP32 / IDF
 //
+// CPU LOOP, MEMORY CONTENTION FUNCTIONS AND Z80OPS FUNCTIONS
+//
+// Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+// https://github.com/EremusOne/ZX-ESPectrum-IDF
+//
+// Based on ZX-ESPectrum-Wiimote
 // Copyright (c) 2020, 2021 David Crespo [dcrespo3d]
 // https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 //
-// Based on previous work by Ramón Martinez, Jorge Fuertes and many others
+// Based on previous work by Ramón Martinez and Jorge Fuertes
 // https://github.com/rampa069/ZX-ESPectrum
+//
+// Original project by Pete Todd
+// https://github.com/retrogubbins/paseVGA
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to

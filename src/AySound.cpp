@@ -7,15 +7,18 @@
 // Based on libayemu by:
 // Sashnov Alexander <sashnov@ngs.ru> and Roman Scherbakov <v_soft@nm.ru> 
 //
-// Copyright (c) 2023 Víctor Iborra [EremusOne]
+// Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
 // https://github.com/EremusOne/ZX-ESPectrum-IDF
 //
 // Based on ZX-ESPectrum-Wiimote
 // Copyright (c) 2020, 2021 David Crespo [dcrespo3d]
 // https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 //
-// Based on previous work by Ramón Martinez, Jorge Fuertes and many others
+// Based on previous work by Ramón Martinez and Jorge Fuertes
 // https://github.com/rampa069/ZX-ESPectrum
+//
+// Original project by Pete Todd
+// https://github.com/retrogubbins/paseVGA
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
