@@ -214,12 +214,6 @@ void ESPectrum::setup()
     MemESP::ram0 = staticMemPage1;
     MemESP::ram2 = staticMemPage2;
 
-    // MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    // MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    // MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    // MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    // MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000,MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-
     MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
     MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
     MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
@@ -294,10 +288,12 @@ void ESPectrum::setup()
         showMemInfo("Keyboard started");
     }
 
-    // printf("Kbd layout: %s\n",Config::kbd_layout.c_str());
-
     // Init tape
     Tape::Init();
+    Tape::tapeFileName = "none";
+    Tape::tapeStatus = TAPE_STOPPED;
+    Tape::SaveStatus = SAVE_STOPPED;
+    Tape::romLoading = false;
 
     // START Z80
     CPU::setup();
@@ -306,23 +302,27 @@ void ESPectrum::setup()
     for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
+    MemESP::modeSP3 = 0;
+    MemESP::romSP3 = 0;
+    MemESP::romInUse = 0;
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
     MemESP::romLatch = 0;
 
-    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
+    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
+    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
 
-    MemESP::modeSP3 = 0;
-    MemESP::romSP3 = 0;
-    MemESP::romInUse = 0;
+    MemESP::ramContended[0] = false;
+    MemESP::ramContended[1] = true;
+    MemESP::ramContended[2] = false;
+    MemESP::ramContended[3] = false;
 
     // Active graphic bank pointer
     VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
 
-    Tape::tapeFileName = "none";
-    Tape::tapeStatus = TAPE_STOPPED;
-    Tape::SaveStatus = SAVE_STOPPED;
-    Tape::romLoading = false;
+    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
 
     // Video sync
     target = CPU::microsPerFrame();
@@ -852,9 +852,9 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
             if (AY_emu) {
                 
-                // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
+                AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
 
-                AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_48, 0);
+                AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_48);
 
             }
 
@@ -879,10 +879,10 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         } else {
 
-            // AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
+            AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
 
-            AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_128, 0);
-            
+            AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_128);
+
             int n = 0;
             for (int i=0;i<overSamplesPerFrame; i += 6) {
 

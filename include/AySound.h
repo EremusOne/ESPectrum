@@ -43,7 +43,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-typedef unsigned char ayemu_ay_reg_frame_t[14];
+// typedef unsigned char ayemu_ay_reg_frame_t[14];
 
 /** Types of stereo.
     The codes of stereo types used for generage sound. */
@@ -123,9 +123,8 @@ public:
     static void set_chip_freq(int chipfreq);
     static int set_stereo(ayemu_stereo_t stereo, int *custom_eq);
     static int set_sound_format(int freq, int chans, int bits);
-    static void set_regs(ayemu_ay_reg_frame_t regs);
     static void prepare_generation();
-    static void gen_sound(unsigned char *buff, size_t bufsize, unsigned int desp);    
+    static void gen_sound(unsigned char *buff, size_t bufsize);
 
 private:
 
@@ -140,13 +139,11 @@ private:
     static ayemu_regdata_t ayregs;		/**< parsed registers data */
     static ayemu_sndfmt_t sndfmt;	/**< output sound format */
 
-    /* flags */
-    // int magic;			/**< structure initialized flag */
+    // flags
     static int default_chip_flag;	/**< =1 after init, resets in #ayemu_set_chip_type() */
     static int default_stereo_flag;	/**< =1 after init, resets in #ayemu_set_stereo() */
     static int default_sound_format_flag; /**< =1 after init, resets in #ayemu_set_sound_format() */
     static int dirty;			/**< dirty flag. Sets if any emulator properties changed */
-    static int verbose;			/**< output warnings to stderr it not null */
 
     static int bit_a;			/**< state of channel A generator */
     static int bit_b;			/**< state of channel B generator */
