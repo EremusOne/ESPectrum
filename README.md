@@ -90,6 +90,21 @@ First time the emulator access sna or tape directories, it will create and index
 
 Run these tasks (`Upload` also does a `Build`) whenever you make any change in the code.
 
+## Keyboard functions
+
+F1 Main menu
+F2 Load .sna, .z80
+F3 Load snapshot
+F4 Save snapshot
+F5 Select .tap file
+F6 Play/Pause tap
+F7 Stop tap
+F9 Volume down
+F10 Volume up
+F12 Reset ESP32
+Pause Pause
+ImprPant BMP screen capture (Folder /c at SDCard)
+
 ## Hardware configuration and pinout
 
 Pin assignment in `hardpins.h` is set to match the TTGo VGA32, use it as-is, or change it to your own preference. It is already set for the [TTGo version 1.4](http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=1083&FId=t3:50033:3).
