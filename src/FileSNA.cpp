@@ -294,11 +294,13 @@ bool FileSNA::load(string sna_fn)
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
+        ESPectrum::ESPoffset = ESP_OFFSET_48;
         ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         ESPectrum::AY_emu = Config::AY48;
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
+        ESPectrum::ESPoffset = ESP_OFFSET_128;
         ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         ESPectrum::AY_emu = true;        

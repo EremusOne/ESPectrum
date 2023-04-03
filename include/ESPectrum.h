@@ -44,12 +44,14 @@
 using namespace std;
 
 #define ESP_AUDIO_OVERSAMPLES_48 4368
-#define ESP_AUDIO_FREQ_48 31250 // ESP_AUDIO_SAMPLES_48 * 50,0801282 frames per second
+#define ESP_AUDIO_FREQ_48 31250 // In 48K calcs are perfect :) -> ESP_AUDIO_SAMPLES_48 * 50,0801282 frames per second = 31250 Hz
 #define ESP_AUDIO_SAMPLES_48  624
+#define ESP_OFFSET_48 0;
 
 #define ESP_AUDIO_OVERSAMPLES_128 3732
-#define ESP_AUDIO_FREQ_128 31112
+#define ESP_AUDIO_FREQ_128 31112 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz. 
 #define ESP_AUDIO_SAMPLES_128 622
+#define ESP_OFFSET_128 90;
 
 class ESPectrum
 {
@@ -85,7 +87,7 @@ public:
 
     static int64_t target;
 
-    // static int ESPoffset; // Testing
+    static int ESPoffset; // Testing
 
 private:
 

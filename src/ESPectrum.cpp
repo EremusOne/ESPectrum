@@ -147,7 +147,7 @@ int64_t ESPectrum::target;
 // LOGGING / TESTING
 //=======================================================================================
 
-// int ESPectrum::ESPoffset = 0; // Testing
+int ESPectrum::ESPoffset = ESP_OFFSET_48;
 
 void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 
@@ -248,11 +248,13 @@ void ESPectrum::setup()
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
+        ESPoffset = ESP_OFFSET_48;
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
+        ESPoffset = ESP_OFFSET_128;
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
@@ -262,7 +264,8 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, 5, &audioTaskHandle, 1);
+    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, 5, &audioTaskHandle, 1);
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);    
 
     // AY Sound
     AySound::init();
@@ -328,6 +331,8 @@ void ESPectrum::setup()
 
     // Active graphic bank pointer
     VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+
+    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
 
     if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
 
@@ -397,11 +402,13 @@ void ESPectrum::reset()
 
     // Set samples per frame and AY_emu flag depending on arch
     if (Config::getArch() == "48K") {
+        ESPoffset = ESP_OFFSET_48;
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
     } else {
+        ESPoffset = ESP_OFFSET_128;
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
@@ -840,16 +847,22 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         //     break;
         // }
         
-        pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
+        // pwm_audio_write(audioBuffer, samplesPerFrame, &written, portMAX_DELAY);
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, 5 / portTICK_PERIOD_MS);
+        // if (written != samplesPerFrame) {
+        //     printf("Dif: %d\n", samplesPerFrame - written);
+        //     ESPoffset++;
+        // } else {
+        //     if (ESPoffset>0) ESPoffset--;
+            
+        // }
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        int i = 0;
-        
         // Finish fill of oversampled audio buffer
         if (faudbufcnt < overSamplesPerFrame) {
             int signal = faudioBit ? 127: 0;
-            for (i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
+            for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
         }
         
         // Downsample beeper (median) and mix AY channels to output buffer
@@ -1028,7 +1041,8 @@ for(;;) {
             showMemInfo();
             #endif
 
-            sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+            // sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+            sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(ESPoffset));
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
 
         }
@@ -1042,8 +1056,13 @@ for(;;) {
     #ifdef VIDEO_FRAME_TIMING    
     elapsed = micros() - ts_start;
     idle = target - elapsed;
-    if (!Z80Ops::is48) idle -= 90;
-    if (idle > 0) delayMicroseconds(idle);
+    if (idle > 0) { 
+        delayMicroseconds(idle - ESPoffset);
+    }
+
+    int rbdif = pwm_audio_rbstats();
+    if (rbdif<64) ESPoffset+=8; else if (rbdif>64) ESPoffset-=8;
+
     #endif
 
 }
