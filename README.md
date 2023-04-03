@@ -92,18 +92,18 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 
 ## Keyboard functions
 
-F1 Main menu
-F2 Load .sna, .z80
-F3 Load snapshot
-F4 Save snapshot
-F5 Select .tap file
-F6 Play/Pause tap
-F7 Stop tap
-F9 Volume down
-F10 Volume up
-F12 Reset ESP32
-Pause Pause
-ImprPant BMP screen capture (Folder /c at SDCard)
+- F1 Main menu
+- F2 Load .sna, .z80
+- F3 Load snapshot
+- F4 Save snapshot
+- F5 Select .tap file
+- F6 Play/Pause tap
+- F7 Stop tap
+- F9 Volume down
+- F10 Volume up
+- F12 Reset ESP32
+- Pause Pause
+- ImprPant BMP screen capture (Folder /c at SDCard)
 
 ## Hardware configuration and pinout
 
