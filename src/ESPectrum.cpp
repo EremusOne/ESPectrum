@@ -1061,7 +1061,7 @@ for(;;) {
     }
 
     int rbdif = pwm_audio_rbstats();
-    if (rbdif<64) ESPoffset+=8; else if (rbdif>64) ESPoffset-=8;
+    if (rbdif < 64) ESPoffset+=8; else if (rbdif > 64) ESPoffset-=8;
 
     #endif
 
