@@ -99,6 +99,7 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 - F5 Select .tap file
 - F6 Play/Pause tap
 - F7 Stop tap
+- F8 Stats OSD ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
 - F9 Volume down
 - F10 Volume up
 - F12 Reset ESP32
