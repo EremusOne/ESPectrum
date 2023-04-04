@@ -826,7 +826,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pac.ledc_timer_sel     = LEDC_TIMER_0;
     pac.tg_num             = TIMER_GROUP_0;
     pac.timer_num          = TIMER_0;
-    pac.ringbuf_len        = 1024 * 8;
+    pac.ringbuf_len        = 1024 * 4;
 
     // for (;;) {
     
@@ -975,6 +975,9 @@ static double totalsecondsnodelay = 0;
 int64_t ts_start, elapsed;
 int64_t idle;
 
+// int ESPmedian = 0;
+int Synccnt = 0;
+
 // For Testing/Profiling: Start with stats on
 // VIDEO::LineDraw = LINEDRAW_FPS;
 // VIDEO::BottomDraw = BOTTOMBORDER_FPS;
@@ -1041,8 +1044,8 @@ for(;;) {
             showMemInfo();
             #endif
 
-            // sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-            sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(ESPoffset));
+            sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+            // sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(ESPmedian/50));
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
 
         }
@@ -1050,6 +1053,8 @@ for(;;) {
         totalseconds = 0;
         totalsecondsnodelay = 0;
         CPU::framecnt = 0;
+
+        // ESPmedian = 0;
 
     }
     
@@ -1060,8 +1065,19 @@ for(;;) {
         delayMicroseconds(idle - ESPoffset);
     }
 
-    int rbdif = pwm_audio_rbstats();
-    if (rbdif < 64) ESPoffset+=8; else if (rbdif > 64) ESPoffset-=8;
+    if (Synccnt++ & 0x0f) {
+        
+        // uint32_t rbdif = pwm_audio_rbstats();
+        // if (rbdif < 128) ESPoffset +=2; else if (rbdif > 128) ESPoffset -=2;
+        // ESPoffset = 128 - rbdif;
+        // printf("ESPoffset: %d\n", ESPoffset);
+
+        ESPoffset = 128 - pwm_audio_rbstats();
+
+        Synccnt = 0;
+    }
+
+    // ESPmedian += ESPoffset;
 
     #endif
 

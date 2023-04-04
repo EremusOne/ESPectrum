@@ -807,14 +807,17 @@ esp_err_t pwm_audio_stop(void)
 
 int pwm_audio_rbstats(void)
 {
-  pwm_audio_data_t *handle = g_pwm_audio_handle;
-  ringbuf_handle_t *rb = handle->ringbuf;
-
-  int dif = rb->head - rb->tail;
   
-  // printf("Head: %u; Tail: %u; Dif: %u\n",rb->head,rb->tail,rb->head - rb->tail);
+    pwm_audio_data_t *handle = g_pwm_audio_handle;
 
-  return dif;
+    // ringbuf_handle_t *rb = handle->ringbuf;
+    // uint32_t dif = rb_get_count(handle->ringbuf);
+  
+    // printf("Head: %u; Tail: %u; Dif: %u\n",rb->head ,rb->tail ,dif);
+
+    // return dif;
+
+    return rb_get_count(handle->ringbuf);
 
 }
 
