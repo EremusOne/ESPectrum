@@ -382,15 +382,15 @@ bool FileZ80::load(string z80_fn)
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         ESPectrum::AY_emu = Config::AY48;
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+        pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1,16);
     } else {
         ESPectrum::ESPoffset = ESP_OFFSET_128;
         ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         ESPectrum::AY_emu = true;        
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
+        pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1,4);
     }
-
-    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
 
     // // Reset AY emulation
     AySound::init();

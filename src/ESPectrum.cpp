@@ -407,15 +407,15 @@ void ESPectrum::reset()
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
+        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1,16);
     } else {
         ESPoffset = ESP_OFFSET_128;
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
+        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1,4);
     }
-
-    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
 
     // Reset AY emulation
     AySound::init();
@@ -831,7 +831,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     // for (;;) {
     
     pwm_audio_init(&pac);
-    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
+    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1,Config::getArch()=="48K" ? 16 : 4);
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 

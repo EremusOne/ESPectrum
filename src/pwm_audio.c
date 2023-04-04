@@ -521,7 +521,7 @@ esp_err_t pwm_audio_init(const pwm_audio_config_t *cfg)
     timer_isr_register(handle->config.tg_num, handle->config.timer_num, timer_group_isr, NULL, ESP_INTR_FLAG_IRAM, NULL);
 
     /**< set a initial parameter */
-    res = pwm_audio_set_param(16000, 8, 2);
+    res = pwm_audio_set_param(16000, 8, 2, 16);
     PWM_AUDIO_CHECK(ESP_OK == res, "Set parameter failed", ESP_FAIL);
 
     pwm_audio_set_volume(0);
@@ -531,7 +531,7 @@ esp_err_t pwm_audio_init(const pwm_audio_config_t *cfg)
     return res;
 }
 
-esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch)
+esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch, uint32_t tdiv)
 {
     esp_err_t res = ESP_OK;
 
@@ -545,6 +545,9 @@ esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch)
     handle->framerate = rate;
     handle->bits_per_sample = bits;
     handle->channel_set_num = ch;
+
+    // Set divider depending on arch
+    timer_set_divider(handle->config.tg_num, handle->config.timer_num, tdiv);
 
     // timer_disable_intr(handle->config.tg_num, handle->config.timer_num);
     /* Timer's counter will initially start from value below.
