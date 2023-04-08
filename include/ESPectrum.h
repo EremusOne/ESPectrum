@@ -51,7 +51,7 @@ using namespace std;
 #define ESP_AUDIO_OVERSAMPLES_128 3732
 #define ESP_AUDIO_FREQ_128 31112 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz. 
 #define ESP_AUDIO_SAMPLES_128 622
-#define ESP_OFFSET_128 128; // 90;
+#define ESP_OFFSET_128 128;
 
 class ESPectrum
 {

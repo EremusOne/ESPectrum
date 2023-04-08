@@ -115,6 +115,6 @@
 // Activate sections of code for testing / profiling
 ///////////////////////////////////////////////////////////////////////////////
 
-// #define DEV_STUFF
+#define DEV_STUFF
 
 #endif // ESPectrum_config_h

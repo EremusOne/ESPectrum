@@ -102,7 +102,10 @@ uint8_t AySound::selectedRegister = 0xFF;
 
 /* Max amplitude value for stereo signal for avoiding for possible
         following SSRC for clipping */
-#define AYEMU_MAX_AMP 24575
+// #define AYEMU_MAX_AMP 24575
+// #define AYEMU_MAX_AMP 45300 // This gives 179 as max value
+#define AYEMU_MAX_AMP 40000; // 158
+// #define AYEMU_MAX_AMP 41000; // 162
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
 /* sound chip volume envelops (will calculated by gen_env()) */
@@ -438,22 +441,21 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize)
                 //     (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1); 
                 // bit_n = ((Cur_Seed >> 16) & 1);
 
-                // The algorithm is explained in the Fuse source:
-                // The Random Number Generator of the 8910 is a 17-bit shift
-                // register. The input to the shift register is bit0 XOR bit3
-                // (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips.
-                // The following is a fast way to compute bit17 = bit0^bit3
-                // Instead of doing all the logic operations, we only check
-                // bit0, relying on the fact that after three shifts of the
-                // register, what now is bit3 will become bit0, and will
-                // invert, if necessary, bit14, which previously was bit17
-
-                if ((Cur_Seed & 1) == 1)
-                {
-                    Cur_Seed ^= 0x24000;
-                }
-                Cur_Seed >>= 1;
-                bit_n = Cur_Seed & 1;
+// The algorithm is explained in the Fuse source:
+// The Random Number Generator of the 8910 is a 17-bit shift
+// register. The input to the shift register is bit0 XOR bit3
+// (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips.
+// The following is a fast way to compute bit17 = bit0^bit3
+// Instead of doing all the logic operations, we only check
+// bit0, relying on the fact that after three shifts of the
+// register, what now is bit3 will become bit0, and will
+// invert, if necessary, bit14, which previously was bit17
+if ((Cur_Seed & 1) == 1)
+{
+    Cur_Seed ^= 0x24000;
+}
+Cur_Seed >>= 1;
+bit_n = Cur_Seed & 1;
 
             }
             

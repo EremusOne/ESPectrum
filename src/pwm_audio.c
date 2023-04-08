@@ -507,7 +507,7 @@ esp_err_t pwm_audio_init(const pwm_audio_config_t *cfg)
      * Select and initialize basic parameters of the timer
      */
     timer_config_t config = {0};
-    config.divider = 16;
+    config.divider = 3; // 16;
     config.counter_dir = TIMER_COUNT_UP;
     config.counter_en = TIMER_PAUSE;
     config.alarm_en = TIMER_ALARM_EN;
@@ -521,7 +521,8 @@ esp_err_t pwm_audio_init(const pwm_audio_config_t *cfg)
     timer_isr_register(handle->config.tg_num, handle->config.timer_num, timer_group_isr, NULL, ESP_INTR_FLAG_IRAM, NULL);
 
     /**< set a initial parameter */
-    res = pwm_audio_set_param(16000, 8, 2, 16);
+    // res = pwm_audio_set_param(16000, 8, 2, 16);
+    res = pwm_audio_set_param(16000, 8, 2, 0);    
     PWM_AUDIO_CHECK(ESP_OK == res, "Set parameter failed", ESP_FAIL);
 
     pwm_audio_set_volume(0);
@@ -531,7 +532,7 @@ esp_err_t pwm_audio_init(const pwm_audio_config_t *cfg)
     return res;
 }
 
-esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch, uint32_t tdiv)
+esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch, int tdiv)
 {
     esp_err_t res = ESP_OK;
 
@@ -547,7 +548,7 @@ esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch, uint32_t 
     handle->channel_set_num = ch;
 
     // Set divider depending on arch
-    timer_set_divider(handle->config.tg_num, handle->config.timer_num, tdiv);
+    // timer_set_divider(handle->config.tg_num, handle->config.timer_num, tdiv);
 
     // timer_disable_intr(handle->config.tg_num, handle->config.timer_num);
     /* Timer's counter will initially start from value below.
@@ -556,7 +557,9 @@ esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch, uint32_t 
 
     /* Configure the alarm value and the interrupt on alarm. */
     uint32_t divider = timer_ll_get_clock_prescale(handle->timg_dev, handle->config.timer_num);
-    timer_set_alarm_value(handle->config.tg_num, handle->config.timer_num, (TIMER_BASE_CLK / divider) / handle->framerate);
+    uint64_t alarm_val = ((TIMER_BASE_CLK / divider) / handle->framerate) - 1; //tdiv;
+    timer_set_alarm_value(handle->config.tg_num, handle->config.timer_num, alarm_val);
+    // timer_set_alarm_value(handle->config.tg_num, handle->config.timer_num, (TIMER_BASE_CLK / divider) / handle->framerate);
     // timer_enable_intr(handle->config.tg_num, handle->config.timer_num);
     return res;
 }

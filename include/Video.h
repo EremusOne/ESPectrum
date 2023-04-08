@@ -155,6 +155,4 @@ static unsigned int attOffset;  // offset for attrib in graphic memory
 
 void precalcAluBytes();
 
-// void deallocAluBytes();
-
 #endif // VIDEO_h

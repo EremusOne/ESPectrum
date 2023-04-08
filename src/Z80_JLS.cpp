@@ -25,7 +25,6 @@
 
 uint8_t page;
 #define FETCH_OPCODE(result,address) page = address >> 14; VIDEO::Draw(4,MemESP::ramContended[page]); result = MemESP::ramCurrent[page][address & 0x3fff];
-// #define PEEK8(result,address) page = address >> 14; VIDEO::Draw(3,MemESP::ramContended[page]); result = MemESP::ramCurrent[page][address & 0x3fff];
 
 ///////////////////////////////////////////////////////////////////////////////
 // miembros estáticos
@@ -1767,8 +1766,6 @@ void Z80::decodeOpcode(uint8_t opCode) {
             REG_PC--;
             
             // Signal HALT to CPU Loop
-            // Z80Ops::signalHalt();
-            
             CPU::tstates |= 0xFF000000;
             
             halted = true;

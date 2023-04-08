@@ -137,7 +137,7 @@ esp_err_t pwm_audio_write(uint8_t *inbuf, size_t len, size_t *bytes_written, Tic
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch, uint32_t tdiv);
+esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch, int tdiv);
 
 /**
  * @brief Set sample rate

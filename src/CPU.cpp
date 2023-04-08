@@ -164,8 +164,6 @@ void CPU::FlushOnHalt() {
     uint8_t page = (Z80::getRegPC() + 1) >> 14;
     if ((page == 1) || ((page == 3) && (!Z80Ops::is48) && (MemESP::bankLatch & 0x01))) {
 
-        // printf("Contend on flushonhalt!\n");
-
         if (Z80Ops::is48) {
 
             while (tstates < statesInFrame ) {
@@ -208,368 +206,59 @@ void CPU::FlushOnHalt() {
 
 }
 
-// static const unsigned char wait_states[8] = { 6, 5, 4, 3, 2, 1, 0, 0 }; // sequence of wait states
-
-// //unsigned char (*Z80Ops::delayContention)(unsigned int currentTstates);
-// unsigned char (*Z80Ops::delayContention)();
-
-// // unsigned char IRAM_ATTR Z80Ops::delayContention48(unsigned int currentTstates) {
-// unsigned char IRAM_ATTR Z80Ops::delayContention48() {
-    
-//     // // delay states one t-state BEFORE the first pixel to be drawn
-//     // currentTstates++;
-
-//     // delay states one t-state BEFORE the first pixel to be drawn
-//     uint32_t currentTstates = CPU::tstates + 1;
-
-// 	// each line spans 224 t-states
-// 	unsigned short int line = currentTstates / 224; // int line
-
-//     // only the 192 lines between 64 and 255 have graphic data, the rest is border
-// 	if (line < 64 || line >= 256) return 0;
-
-// 	// only the first 128 t-states of each line correspond to a graphic data transfer
-// 	// the remaining 96 t-states correspond to border
-// 	unsigned char halfpix = currentTstates % 224; // int halfpix
-
-// 	// if (halfpix >= 128) return 0;
-
-//     // return(wait_states[halfpix & 0x07]);
-
-//     return(wait_st[halfpix]);
-
-// }
-
-// //unsigned char IRAM_ATTR Z80Ops::delayContention128(unsigned int currentTstates) {
-// unsigned char IRAM_ATTR Z80Ops::delayContention128() {    
-
-//     // currentTstates+=3;
-
-//     uint32_t currentTstates = CPU::tstates + 3;
-
-//     unsigned short int line = currentTstates / 228; // int line
-// 	if (line < 63 || line >= 255) return 0;
-
-// 	unsigned char halfpix = currentTstates % 228; // int halfpix
-// 	// if (halfpix >= 128) return 0;
-
-//     // return(wait_states[halfpix & 0x07]);
-
-//     return(wait_st[halfpix]);
-
-// }
-
 ///////////////////////////////////////////////////////////////////////////////
 // Z80Ops
 ///////////////////////////////////////////////////////////////////////////////
-// /* Read opcode from RAM */
-// uint8_t IRAM_ATTR Z80Ops::fetchOpcode(uint16_t address) {
-
-//     // uint8_t page = address >> 14;
-//     // switch (page) {
-//     // case 0:
-//     //     VIDEO::Draw(4);
-//     //     return MemESP::rom[MemESP::romInUse][address & 0x3fff];
-//     // case 1:
-//     //     VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 4);
-//     //     return MemESP::ram5[address & 0x3fff];
-//     // case 2:
-//     //     VIDEO::Draw(4);
-//     //     return MemESP::ram2[address & 0x3fff];
-//     // case 3:
-//     //     if (is48)
-//     //         VIDEO::Draw(4);
-//     //     else
-//     //         if (MemESP::bankLatch & 0x01 == 1)
-//     //             VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 4);
-//     //         else
-//     //             VIDEO::Draw(4);
-//     //     return MemESP::ram[MemESP::bankLatch][address & 0x3fff];
-//     // // default:
-//     // //     VIDEO::Draw(4);
-//     // //     return MemESP::rom[MemESP::romInUse][address];
-//     // }
-
-//     uint8_t page = address >> 14;
-
-//     // if (MemESP::ramContended[page])
-//     //     VIDEO::Draw(Z80Ops::delayContention() + 4, false);
-//     // else
-//     //     VIDEO::Draw(4, false);
-
-//     VIDEO::Draw(4, MemESP::ramContended[page]);
-
-//     return MemESP::ramCurrent[page][address & 0x3fff];        
-
-
-// }
 
 /* Read byte from RAM */
 uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
-
-    // uint8_t page = address >> 14;
-    // switch (page) {
-    // case 0:
-    //     VIDEO::Draw(3);
-    //     return MemESP::rom[MemESP::romInUse][address & 0x3fff];
-    // case 1:
-    //     VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-    //     return MemESP::ram5[address & 0x3fff];
-    // case 2:
-    //     VIDEO::Draw(3);
-    //     return MemESP::ram2[address & 0x3fff];
-    // case 3:
-    //     if (is48)
-    //         VIDEO::Draw(3);
-    //     else
-    //         if (MemESP::bankLatch & 0x01 == 1)
-    //             VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-    //         else
-    //             VIDEO::Draw(3);
-    //     return MemESP::ram[MemESP::bankLatch][address & 0x3fff];
-    // // default:
-    // //     VIDEO::Draw(3);
-    // //     return MemESP::rom[MemESP::romInUse][address & 0x3fff];
-    // }
-
     uint8_t page = address >> 14;
-
-    // if (MemESP::ramContended[page])
-    //     VIDEO::Draw(Z80Ops::delayContention() + 3, false);
-    // else
-    //     VIDEO::Draw(3, false);
-
     VIDEO::Draw(3,MemESP::ramContended[page]);
-
     return MemESP::ramCurrent[page][address & 0x3fff];        
-
 }
 
 /* Write byte to RAM */
 void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
-
-    // uint8_t page = address >> 14;
-    // switch (page) {
-    // case 0:
-    //     VIDEO::Draw(3);        
-    //     return;
-    // case 1:
-    //     VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-    //     MemESP::ram5[address - 0x4000] = value;
-    //     return;
-    // case 2:
-    //     VIDEO::Draw(3);        
-    //     MemESP::ram2[address - 0x8000] = value;
-    //     return;
-    // case 3:
-    //     if (is48)
-    //         VIDEO::Draw(3);
-    //     else
-    //         if (MemESP::bankLatch & 0x01 == 1)
-    //             VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-    //         else
-    //             VIDEO::Draw(3);
-    //     MemESP::ram[MemESP::bankLatch][address - 0xC000] = value;
-    //     return;
-    // }
-
     uint8_t page = address >> 14;
-
-    // if (page == 0) { VIDEO::Draw(3, false); return; }    
-   
-    // if (MemESP::ramContended[page])
-    //     VIDEO::Draw(Z80Ops::delayContention() + 3, false);
-    // else
-    //     VIDEO::Draw(3, false);
-
     VIDEO::Draw(3, MemESP::ramContended[page]);
-    
-    if (page != 0)
-        MemESP::ramCurrent[page][address & 0x3fff] = value;
-    
+    if (page != 0) MemESP::ramCurrent[page][address & 0x3fff] = value;
     return;
-
 }
 
 /* Read/Write word from/to RAM */
 uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
-    // Check if address is between two different pages
-    // if ((address >> 14) == ((address + 1) >> 14)) {
- 
-        // uint8_t page = address >> 14;
-        // switch (page) {
-        // case 0:
-        //     VIDEO::Draw(6);
-        //     return ((MemESP::rom[MemESP::romInUse][address + 1] << 8) | MemESP::rom[MemESP::romInUse][address]);
-        // case 1:
-        //     VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //     VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //     return ((MemESP::ram5[address - 0x3FFF] << 8) | MemESP::ram5[address - 0x4000]);
-        // case 2:
-        //     VIDEO::Draw(6);
-        //     return ((MemESP::ram2[address - 0x7FFF] << 8) | MemESP::ram2[address - 0x8000]);
-        // case 3:
-        //     if (is48)
-        //         VIDEO::Draw(6);
-        //     else
-        //         if (MemESP::bankLatch & 0x01 == 1) {
-        //             VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //             VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //         } else
-        //             VIDEO::Draw(6);
-        //     return ((MemESP::ram[MemESP::bankLatch][address - 0xBFFF] << 8) | MemESP::ram[MemESP::bankLatch][address - 0xC000]);
-        // default:
-        //     VIDEO::Draw(6);
-        //     return ((MemESP::rom[MemESP::romInUse][address + 1] << 8) | MemESP::rom[MemESP::romInUse][address]);
-        // }
+    uint8_t page = address >> 14;
 
-        uint8_t page = address >> 14;
+    if (MemESP::ramContended[page]) {
+        VIDEO::Draw(3, true);
+        VIDEO::Draw(3, true);            
+    } else
+        VIDEO::Draw(6, false);
 
-        // if (MemESP::ramContended[page]) {
-        //     VIDEO::Draw(Z80Ops::delayContention() + 3, false);
-        //     VIDEO::Draw(Z80Ops::delayContention() + 3, false);            
-        // } else
-        //     VIDEO::Draw(6, false);
-
-        if (MemESP::ramContended[page]) {
-            VIDEO::Draw(3, true);
-            VIDEO::Draw(3, true);            
-        } else
-            VIDEO::Draw(6, false);
-
-        return ((MemESP::ramCurrent[page][(address & 0x3fff) + 1] << 8) | MemESP::ramCurrent[page][address & 0x3fff]);
-
-    // } else {
-
-    //     // Order matters, first read lsb, then read msb, don't "optimize"
-    //     uint8_t lsb = Z80Ops::peek8(address);
-    //     uint8_t msb = Z80Ops::peek8(address + 1);
-    //     return (msb << 8) | lsb;
-
-    //     printf("Interpaged Peek16!\n");
-
-    // }
+    return ((MemESP::ramCurrent[page][(address & 0x3fff) + 1] << 8) | MemESP::ramCurrent[page][address & 0x3fff]);
 
 }
 
 void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
-    // Check if address is between two different pages
-    // if ((address >> 14) == ((address + 1) >> 14)) {
+    uint8_t page = address >> 14;
+    
+    if (MemESP::ramContended[page]) {
+        VIDEO::Draw(3, true);
+        VIDEO::Draw(3, true);            
+    } else
+        VIDEO::Draw(6, false);
 
-        // uint8_t page = address >> 14;
-        // switch (page) {
-        // case 0:
-        //     VIDEO::Draw(6);        
-        //     return;
-        // case 1:
-        //     VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //     VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //     MemESP::ram5[address - 0x4000] = word.byte8.lo;
-        //     MemESP::ram5[address - 0x3fff] = word.byte8.hi;
-        //     return;
-        // case 2:
-        //     VIDEO::Draw(6);        
-        //     MemESP::ram2[address - 0x8000] = word.byte8.lo;
-        //     MemESP::ram2[address - 0x7fff] = word.byte8.hi;
-        //     return;
-        // case 3:
-        //     if (is48)
-        //         VIDEO::Draw(6);
-        //     else
-        //         if (MemESP::bankLatch & 0x01 == 1) {
-        //             VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //             VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 3);
-        //         } else
-        //             VIDEO::Draw(6);
-        //     MemESP::ram[MemESP::bankLatch][address - 0xC000] = word.byte8.lo;
-        //     MemESP::ram[MemESP::bankLatch][address - 0xbfff] = word.byte8.hi;
-        //     return;
-        // }
-
-        uint8_t page = address >> 14;
-        
-        // if (page == 0) { VIDEO::Draw(6, false); return; }
-        
-        // if (MemESP::ramContended[page]) {
-        //     VIDEO::Draw(Z80Ops::delayContention() + 3, false);
-        //     VIDEO::Draw(Z80Ops::delayContention() + 3, false);            
-        // } else
-        //     VIDEO::Draw(6, false);
-      
-        if (MemESP::ramContended[page]) {
-            VIDEO::Draw(3, true);
-            VIDEO::Draw(3, true);            
-        } else
-            VIDEO::Draw(6, false);
-
-        if (page != 0) {
-            MemESP::ramCurrent[page][address & 0x3fff] = word.byte8.lo;
-            MemESP::ramCurrent[page][(address & 0x3fff) + 1] = word.byte8.hi;
-        }
-
-    // } else {
-    //     // // Order matters, first write lsb, then write msb, don't "optimize"
-    //     Z80Ops::poke8(address, word.byte8.lo);
-    //     Z80Ops::poke8(address + 1, word.byte8.hi);
-
-    //     printf("Interpaged Poke16!\n");
-
-    // }
+    if (page != 0) {
+        MemESP::ramCurrent[page][address & 0x3fff] = word.byte8.lo;
+        MemESP::ramCurrent[page][(address & 0x3fff) + 1] = word.byte8.hi;
+    }
 
 }
 
-// /* In/Out byte from/to IO Bus */
-// uint8_t IRAM_ATTR Z80Ops::inPort(uint16_t port) {
-    
-//     // uint8_t hiport = port >> 8;
-//     // uint8_t loport = port & 0xFF;
-//     // return Ports::input(loport, hiport);
-
-//     return Ports::input(port);
-
-// }
-
-// void IRAM_ATTR Z80Ops::outPort(uint16_t port, uint8_t value) {
-    
-//     // uint8_t hiport = port >> 8;
-//     // uint8_t loport = port & 0xFF;
-//     // Ports::output(loport, hiport, value);
-
-//     Ports::output(port, value);
-
-// }
-
 /* Put an address on bus lasting 'tstates' cycles */
 void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
-
-    // uint8_t page = address >> 14;
-    // switch (page) {
-    // case 1:
-    //     for (int idx = 0; idx < wstates; idx++)
-    //         VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);  
-    //     return;      
-    // case 3:
-    //     if (is48)
-    //         VIDEO::Draw(wstates);
-    //     else
-    //         if (MemESP::bankLatch & 0x01 == 1) {
-    //             for (int idx = 0; idx < wstates; idx++)
-    //                 VIDEO::Draw(Z80Ops::delayContention(CPU::tstates) + 1);        
-    //         } else
-    //             VIDEO::Draw(wstates);
-    //     return;
-    // default:
-    //     VIDEO::Draw(wstates);        
-    // }
-
-    // if (MemESP::ramContended[address >> 14]) {
-    //     for (int idx = 0; idx < wstates; idx++)
-    //         VIDEO::Draw(Z80Ops::delayContention() + 1, false);  
-    // } else {
-    //     VIDEO::Draw(wstates, false);
-    // }
 
     if (MemESP::ramContended[address >> 14]) {
         for (int idx = 0; idx < wstates; idx++)
@@ -580,19 +269,11 @@ void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
 
 }
 
-// /* Clocks needed for processing INT and NMI */
-// void IRAM_ATTR Z80Ops::interruptHandlingTime(int32_t wstates) {
-//     VIDEO::Draw(wstates, false);
-// }
-
-// /* Signal HALT in tstates */
-// void IRAM_ATTR Z80Ops::signalHalt() {
-//     CPU::tstates |= 0xFF000000;
-// }
-
 /* Callback to know when the INT signal is active */
 bool IRAM_ATTR Z80Ops::isActiveINT(void) {
+
     int tmp = CPU::tstates;
     if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
     return ((tmp >= 0) && (tmp < (is48 ? 32 : 36)));
+
 }
