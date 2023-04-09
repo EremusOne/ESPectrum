@@ -47,6 +47,16 @@
 
 #pragma GCC optimize ("O3")
 
+static int TapeBit = 0;
+static int speaker = 0;
+#define SPEAKER_VOLUME 97
+int sp_volt[4]={
+    0, //(int) -SPEAKER_VOLUME;
+    (int) (SPEAKER_VOLUME * 0.04f), // (int) -(SPEAKER_VOLUME * 1.4);
+    (int) (SPEAKER_VOLUME * 0.96f),
+    SPEAKER_VOLUME
+};
+
 uint8_t Ports::port[128];
 
 uint8_t Ports::input(uint16_t address)
@@ -82,7 +92,10 @@ uint8_t Ports::input(uint16_t address)
             }
         }
 
-        if (Tape::tapeStatus==TAPE_LOADING) bitWrite(result,6,Tape::TAP_Read());
+        if (Tape::tapeStatus==TAPE_LOADING) {
+            TapeBit = Tape::TAP_Read();
+            bitWrite(result,6,TapeBit /*Tape::TAP_Read()*/);
+        }
 
         return result | (0xa0); // OR 0xa0 -> ISSUE 2
     
@@ -120,6 +133,8 @@ uint8_t Ports::input(uint16_t address)
 
 }
 
+
+
 void Ports::output(uint16_t address, uint8_t data) {    
     
     // ** I/O Contention (Early) *************************
@@ -135,13 +150,27 @@ void Ports::output(uint16_t address, uint8_t data) {
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
-        // if (Tape::SaveStatus==TAPE_SAVING)
-        //     int Tapebit = bitRead(data,3);
-        // else
+        // if (Tape::tapeStatus!=TAPE_LOADING) {
+        //     int spkMic = sp_volt[data >> 3 & 3];
+        //     if (spkMic != speaker) {
+        //         ESPectrum::audioGetSample(speaker);
+        //         speaker = spkMic;
+        //     }
+        // } else {
+        //     int spkMic = TapeBit ? sp_volt[2] : sp_volt[0];
+        //     if (spkMic != speaker) {
+        //         ESPectrum::audioGetSample(speaker);
+        //         speaker = spkMic;
+        //     }
+        // }
+
+        // // if (Tape::SaveStatus==TAPE_SAVING)
+        //     int SaveBit = bitRead(data,3);
+        // // else
             int Audiobit = bitRead(data,4);
 
-        // ESPectrum::audioGetSample(Audiobit | Tapebit);
-        ESPectrum::audioGetSample(Audiobit);        
+        ESPectrum::audioGetSample(bitRead(data,4) | TapeBit);
+        // ESPectrum::audioGetSample(Audiobit);        
 
     }
 

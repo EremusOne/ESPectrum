@@ -194,7 +194,7 @@ uint8_t Tape::TAP_Read()
         return 0;
     } 
     
-    ESPectrum::audioGetSample(tapeEarBit);
+    // ESPectrum::audioGetSample(tapeEarBit);
     
     return tapeEarBit;
 }

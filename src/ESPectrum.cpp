@@ -452,14 +452,14 @@ void ESPectrum::reset()
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
-        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1,0);
+        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     } else {
         ESPoffset = ESP_OFFSET_128;
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
-        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1,0);
+        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     }
 
     // Reset AY emulation
@@ -875,7 +875,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
     pac.ringbuf_len        = /* 1024 * 8;*/ 2560;
 
     pwm_audio_init(&pac);
-    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1,0);
+    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 
@@ -889,8 +889,9 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         // Finish fill of oversampled audio buffer
         if (faudbufcnt < overSamplesPerFrame) {
-            int signal = faudioBit ? 97: 0;
-            for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
+            // int signal = faudioBit ? 97: 0;
+            // for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
+            for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = faudioBit;
         }
         
         // Downsample beeper (median) and mix AY channels to output buffer
@@ -954,9 +955,10 @@ void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
     if (Audiobit != lastaudioBit) {
         // Audio buffer generation (oversample)
         uint32_t audbufpos = Z80Ops::is48 ? CPU::tstates >> 4 : CPU::tstates / 19;
-        int signal = lastaudioBit ? 97: 0;
+        // int signal = lastaudioBit ? 97: 0;
         for (int i=audbufcnt;i<audbufpos;i++) {
-            overSamplebuf[i] = signal;
+            // overSamplebuf[i] = signal;
+            overSamplebuf[i] = lastaudioBit;
         }
         audbufcnt = audbufpos;
         lastaudioBit = Audiobit;
