@@ -584,9 +584,9 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             Kdown = NextKey.down;
 
             if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE))) {
-                vTaskSuspend(audioTaskHandle);
+                // vTaskSuspend(audioTaskHandle);
                 OSD::do_OSD(KeytoESP);
-                vTaskResume(audioTaskHandle);
+                // vTaskResume(audioTaskHandle);
                 continue;
             }
 
