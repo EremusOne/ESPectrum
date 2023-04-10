@@ -43,7 +43,7 @@ static const char *PWM_AUDIO_TIMER_NUM_ERROR  = "PWM AUDIO TIMER NUMBER ERROR";
 #ifndef TIMER_BASE_CLK
 #define TIMER_BASE_CLK 80000000
 #endif
-#define TIMER_DIVIDER  16
+#define TIMER_DIVIDER  3 // 16
 
 /**
  * Debug Configuration
@@ -507,7 +507,7 @@ esp_err_t pwm_audio_init(const pwm_audio_config_t *cfg)
 #else
     /* Select and initialize basic parameters of the timer */
     timer_config_t config = {
-        .divider = 3, // TIMER_DIVIDER,
+        .divider = TIMER_DIVIDER,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_PAUSE,
         .alarm_en = TIMER_ALARM_EN,
@@ -562,7 +562,7 @@ esp_err_t pwm_audio_set_param(int rate, ledc_timer_bit_t bits, int ch)
     /* Timer's counter will initially start from value below. Also, if auto_reload is set, this value will be automatically reload on alarm */
     timer_set_counter_value(handle->config.tg_num, handle->config.timer_num, 0x00000000ULL);
     /* Configure the alarm value and the interrupt on alarm. */
-    res = timer_set_alarm_value(handle->config.tg_num, handle->config.timer_num, ((TIMER_BASE_CLK / 3 /*TIMER_DIVIDER*/) / handle->framerate) - 1);
+    res = timer_set_alarm_value(handle->config.tg_num, handle->config.timer_num, ((TIMER_BASE_CLK / TIMER_DIVIDER) / handle->framerate) - 1);
 #endif
     PWM_AUDIO_CHECK(ESP_OK == res, "pwm_audio set param failed", res);
     return ESP_OK;
@@ -585,7 +585,7 @@ esp_err_t pwm_audio_set_sample_rate(int rate)
     };
     res = gptimer_set_alarm_action(g_gptimer, &alarm_config);
 #else
-    res = timer_set_alarm_value(handle->config.tg_num, handle->config.timer_num, ((TIMER_BASE_CLK / 3 /*TIMER_DIVIDER*/) / handle->framerate) - 1);
+    res = timer_set_alarm_value(handle->config.tg_num, handle->config.timer_num, ((TIMER_BASE_CLK / TIMER_DIVIDER) / handle->framerate) - 1);
 #endif
     PWM_AUDIO_CHECK(ESP_OK == res, "pwm_audio set sample rate failed", res);
     return ESP_OK;
@@ -834,17 +834,10 @@ esp_err_t pwm_audio_deinit(void)
     return ESP_OK;
 }
 
-int pwm_audio_rbstats(void)
+uint32_t pwm_audio_rbstats(void)
 {
-  
+ 
     pwm_audio_data_t *handle = g_pwm_audio_handle;
-
-    // ringbuf_handle_t *rb = handle->ringbuf;
-    // uint32_t dif = rb_get_count(handle->ringbuf);
-  
-    // printf("Head: %u; Tail: %u; Dif: %u\n",rb->head ,rb->tail ,dif);
-
-    // return dif;
 
     return rb_get_count(handle->ringbuf);
 

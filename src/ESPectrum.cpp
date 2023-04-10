@@ -97,9 +97,12 @@ fabgl::PS2Controller ESPectrum::PS2Controller;
 //=======================================================================================
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_48] = { 0 };
 uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES_48] = { 0 };
+uint8_t ESPectrum::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
 signed char ESPectrum::aud_volume = -8;
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
+uint32_t ESPectrum::audbufcntAY = 0;
+uint32_t ESPectrum::faudbufcntAY = 0;
 int ESPectrum::lastaudioBit = 0;
 int ESPectrum::faudioBit = 0;
 int ESPectrum::samplesPerFrame = ESP_AUDIO_SAMPLES_48;
@@ -251,12 +254,28 @@ void ESPectrum::setup()
 #endif
 
     //=======================================================================================
-    // VIDEO
+    // KEYBOARD
     //=======================================================================================
 
-    VIDEO::Init();
+    PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
+    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
 
-    if (Config::slog_on) showMemInfo("VGA started");
+    string cfgLayout = Config::kbd_layout;
+
+    if(cfgLayout == "ES") 
+            PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
+    else if(cfgLayout == "UK") 
+            PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
+    else if(cfgLayout == "DE") 
+            PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
+    else if(cfgLayout == "FR") 
+            PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
+    else 
+            PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
+
+    if (Config::slog_on) {
+        showMemInfo("Keyboard started");
+    }
 
     //=======================================================================================
     // MEMORY SETUP
@@ -285,7 +304,37 @@ void ESPectrum::setup()
     MemESP::ram[4] = MemESP::ram4; MemESP::ram[5] = MemESP::ram5;
     MemESP::ram[6] = MemESP::ram6; MemESP::ram[7] = MemESP::ram7;
 
+    MemESP::modeSP3 = 0;
+    MemESP::romSP3 = 0;
+    MemESP::romInUse = 0;
+    MemESP::bankLatch = 0;
+    MemESP::videoLatch = 0;
+    MemESP::romLatch = 0;
+
+    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
+    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
+    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+
+    MemESP::ramContended[0] = false;
+    MemESP::ramContended[1] = true;
+    MemESP::ramContended[2] = false;
+    MemESP::ramContended[3] = false;
+
+    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+
     if (Config::slog_on) showMemInfo("RAM Initialized");
+
+    //=======================================================================================
+    // VIDEO
+    //=======================================================================================
+
+    VIDEO::Init();
+
+    // Active graphic bank pointer
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+
+    if (Config::slog_on) showMemInfo("VGA started");
 
     //=======================================================================================
     // AUDIO
@@ -316,32 +365,7 @@ void ESPectrum::setup()
     AySound::init();
     AySound::set_sound_format(Audio_freq,1,8);
     AySound::set_stereo(AYEMU_MONO,NULL);
-    
     AySound::reset();
-
-    //=======================================================================================
-    // KEYBOARD
-    //=======================================================================================
-
-    PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
-    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
-
-    string cfgLayout = Config::kbd_layout;
-
-    if(cfgLayout == "ES") 
-            PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
-    else if(cfgLayout == "UK") 
-            PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
-    else if(cfgLayout == "DE") 
-            PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
-    else if(cfgLayout == "FR") 
-            PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
-    else 
-            PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
-
-    if (Config::slog_on) {
-        showMemInfo("Keyboard started");
-    }
 
     // Init tape
     Tape::Init();
@@ -357,31 +381,7 @@ void ESPectrum::setup()
     for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
-    MemESP::modeSP3 = 0;
-    MemESP::romSP3 = 0;
-    MemESP::romInUse = 0;
-    MemESP::bankLatch = 0;
-    MemESP::videoLatch = 0;
-    MemESP::romLatch = 0;
-
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
-    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
-
-    MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = true;
-    MemESP::ramContended[2] = false;
-    MemESP::ramContended[3] = false;
-
-    // Active graphic bank pointer
-    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-
-    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
-
-    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
-
-    // Video sync
+    // Emu loop sync target
     target = CPU::microsPerFrame();
 
     Config::requestMachine(Config::getArch(), Config::getRomSet(), true);
@@ -436,12 +436,13 @@ void ESPectrum::reset()
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 
-    pwm_audio_stop();
+    // pwm_audio_stop();
 
     // Empty audio buffers
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
         audioBuffer[i]=0;
+        SamplebufAY[i]=0;
     }
     lastaudioBit=0;
 
@@ -452,15 +453,19 @@ void ESPectrum::reset()
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
-        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
+        // pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     } else {
         ESPoffset = ESP_OFFSET_128;
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
-        pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
+        // pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     }
+
+    pwm_audio_stop();
+    pwm_audio_set_sample_rate(Audio_freq);
+    pwm_audio_start();
 
     // Reset AY emulation
     AySound::init();
@@ -468,11 +473,11 @@ void ESPectrum::reset()
     AySound::set_stereo(AYEMU_MONO,NULL);
     AySound::reset();
 
-    pwm_audio_start();
+    // pwm_audio_start();
     
     // ESPectrum::Audio_restart = true;
 
-    // Video sync
+    // Emu loop sync target
     target = CPU::microsPerFrame();
 
     CPU::reset();
@@ -887,12 +892,9 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        // Finish fill of oversampled audio buffer
-        if (faudbufcnt < overSamplesPerFrame) {
-            // int signal = faudioBit ? 97: 0;
-            // for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = signal;
+        // Finish fill of oversampled audio buffers
+        if (faudbufcnt < overSamplesPerFrame) 
             for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = faudioBit;
-        }
         
         // Downsample beeper (median) and mix AY channels to output buffer
         int beeper;
@@ -900,8 +902,8 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         if (Z80Ops::is48) {
 
             if (AY_emu) {
-                AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
-                AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_48);
+                if (faudbufcntAY < ESP_AUDIO_SAMPLES_48)
+                    AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_48 - faudbufcntAY , faudbufcntAY);
             }
 
             int n = 0;
@@ -914,14 +916,14 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
-                beeper = AY_emu ? (beeper / 7) + audioBuffer[n] : beeper / 7;
+                beeper = AY_emu ? (beeper / 7) + SamplebufAY[n] : beeper / 7;
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
             }
 
         } else {
 
-            AySound::update(); // TO DO: This should be done reading a buffer of AY orders built during frame
-            AySound::gen_sound(audioBuffer, ESP_AUDIO_SAMPLES_128);
+            if (faudbufcntAY < ESP_AUDIO_SAMPLES_128) 
+                AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
 
             int n = 0;
             for (int i=0;i<overSamplesPerFrame; i += 6) {
@@ -932,10 +934,8 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+3];
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
-                beeper = (beeper / 6) + audioBuffer[n];
-                
-                // if (bmax < audioBuffer[n]) bmax = audioBuffer[n];
-                
+                beeper =  (beeper / 6) + SamplebufAY[n];
+                // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
             }
         }
@@ -947,29 +947,34 @@ void ESPectrum::audioFrameStart() {
     xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
     audbufcnt = 0;
+    audbufcntAY = 0;    
 
 }
 
-void IRAM_ATTR ESPectrum::audioGetSample(int Audiobit) {
-
+void IRAM_ATTR ESPectrum::BeeperGetSample(int Audiobit) {
     if (Audiobit != lastaudioBit) {
         // Audio buffer generation (oversample)
         uint32_t audbufpos = Z80Ops::is48 ? CPU::tstates >> 4 : CPU::tstates / 19;
-        // int signal = lastaudioBit ? 97: 0;
-        for (int i=audbufcnt;i<audbufpos;i++) {
-            // overSamplebuf[i] = signal;
+        for (int i=audbufcnt;i<audbufpos;i++)
             overSamplebuf[i] = lastaudioBit;
-        }
         audbufcnt = audbufpos;
         lastaudioBit = Audiobit;
     }
+}
 
+void IRAM_ATTR ESPectrum::AYGetSample() {
+    // AY buffer generation
+    uint32_t audbufpos = CPU::tstates / (Z80Ops::is48 ? 112 : 114);
+    AySound::gen_sound(SamplebufAY, audbufpos - audbufcntAY , audbufcntAY);
+    audbufcntAY = audbufpos;
 }
 
 void ESPectrum::audioFrameEnd() {
     
     faudbufcnt = audbufcnt;
     faudioBit = lastaudioBit;
+
+    faudbufcntAY = audbufcntAY;
 
     xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
@@ -1013,6 +1018,8 @@ for(;;) {
 
     CPU::loop();
 
+    processKeyboard();
+
     audioFrameEnd();
 
     // if (fpart!=1001) fpart++;
@@ -1032,8 +1039,7 @@ for(;;) {
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
 
-    processKeyboard();
-    
+        
     elapsed = micros() - ts_start;
     idle = target - elapsed;
     if (idle < 0) idle = 0;
@@ -1074,15 +1080,14 @@ for(;;) {
     
     #ifdef VIDEO_FRAME_TIMING    
     elapsed = micros() - ts_start;
-    idle = target - elapsed;
+    idle = target - elapsed - ESPoffset;
     if (idle > 0) { 
-        delayMicroseconds(idle - ESPoffset);
+        delayMicroseconds(idle);
     }
     
     // Audio sync
     if (sync_cnt++ & 0x0f) {
         ESPoffset = 128 - pwm_audio_rbstats();
-        // printf("ESPoffset: %d\n",ESPoffset);
         sync_cnt = 0;
     }
 

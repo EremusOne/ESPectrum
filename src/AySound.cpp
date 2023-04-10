@@ -66,6 +66,7 @@ int AySound::bit_a;                     /**< state of channel A generator */
 int AySound::bit_b;                     /**< state of channel B generator */
 int AySound::bit_c;                     /**< state of channel C generator */
 int AySound::bit_n;                     /**< current generator state */
+int AySound::period_n;                  // Noise period 
 int AySound::cnt_a;                     /**< back counter of A */
 int AySound::cnt_b;                     /**< back counter of B */
 int AySound::cnt_c;                     /**< back counter of C */
@@ -97,15 +98,15 @@ int AySound::Cur_Seed;                  /**< random numbers counter */
 // regs[14] = ioPortA;
 uint8_t AySound::regs[15] = { 0xFF };
 
+void (*AySound::updateReg[15])();
+
 // Status
 uint8_t AySound::selectedRegister = 0xFF;
 
 /* Max amplitude value for stereo signal for avoiding for possible
         following SSRC for clipping */
 // #define AYEMU_MAX_AMP 24575
-// #define AYEMU_MAX_AMP 45300 // This gives 179 as max value
 #define AYEMU_MAX_AMP 40000; // 158
-// #define AYEMU_MAX_AMP 41000; // 162
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
 /* sound chip volume envelops (will calculated by gen_env()) */
@@ -166,6 +167,22 @@ void AySound::init()
     default_sound_format_flag = 1;
     dirty = 1;
     
+    updateReg[0] = &updToneA;
+    updateReg[1] = &updToneA;
+    updateReg[2] = &updToneB;
+    updateReg[3] = &updToneB;
+    updateReg[4] = &updToneC;
+    updateReg[5] = &updToneC;
+    updateReg[6] = &updNoisePitch;
+    updateReg[7] = &updMixer;
+    updateReg[8] = &updVolA;
+    updateReg[9] = &updVolB;
+    updateReg[10] = &updVolC;
+    updateReg[11] = &updEnvFreq;
+    updateReg[12] = &updEnvFreq;
+    updateReg[13] = &updEnvType;
+    updateReg[14] = &update;
+
     ayreset();
 
 }
@@ -176,10 +193,13 @@ void AySound::ayreset()
     cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
     bit_a = bit_b = bit_c = bit_n = 0;
     env_pos = EnvNum = 0;
-    
-    Cur_Seed = 0x1ffff;
 
     // Cur_Seed = 0xffff;
+
+    // Cur_Seed = 0x1ffff;
+
+    period_n = 1;
+    Cur_Seed = 1;
 
 }
 
@@ -404,13 +424,15 @@ void AySound::prepare_generation()
 // Generate sound.
 // Fill sound buffer with current register data
 //
-void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize)
+void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 {
     int mix_l, mix_r;
     int tmpvol;
     int m;
     int snd_numcount;
     unsigned char *sound_buf = buff;
+
+    sound_buf += bufpos;
 
     prepare_generation();
 
@@ -431,34 +453,74 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize)
                 cnt_c = 0;
                 bit_c = !bit_c;
             }
-            
-            /* GenNoise (c) Hacker KAY & Sergey Bulba */
-            if (++cnt_n >= (ayregs.noise * 2)) {
+
+            // /* GenNoise (c) Hacker KAY & Sergey Bulba */
+            // if (++cnt_n >= (ayregs.noise * 2)) {
+
+            //     cnt_n = 0;
+
+            //     Cur_Seed = (Cur_Seed * 2 + 1) ^ \
+            //         (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1); 
+            //     bit_n = ((Cur_Seed >> 16) & 1);
+
+            // }
+
+            // if (++cnt_n >= (ayregs.noise * 2)) {
+
+            //     cnt_n = 0;
+
+            //     // The algorithm is explained in the Fuse source:
+            //     // The Random Number Generator of the 8910 is a 17-bit shift
+            //     // register. The input to the shift register is bit0 XOR bit3
+            //     // (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips.
+            //     // The following is a fast way to compute bit17 = bit0^bit3
+            //     // Instead of doing all the logic operations, we only check
+            //     // bit0, relying on the fact that after three shifts of the
+            //     // register, what now is bit3 will become bit0, and will
+            //     // invert, if necessary, bit14, which previously was bit17
+            //     if ((Cur_Seed & 1) == 1)
+            //     {
+            //         Cur_Seed ^= 0x24000;
+            //     }
+            //     Cur_Seed >>= 1;
+            //     bit_n = Cur_Seed & 1;
+
+            // }
+          
+            // Code borrowed from JSpeccy sources
+            if (++cnt_n >= period_n) {
 
                 cnt_n = 0;
+                 // Changes to R6 take effect only when internal counter reaches 0
+                period_n = ayregs.noise;
+                if (period_n == 0) {
+                    period_n = 1;
+                }
+                period_n <<= 1;
 
-                // Cur_Seed = (Cur_Seed * 2 + 1) ^ \
-                //     (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1); 
-                // bit_n = ((Cur_Seed >> 16) & 1);
+                // Code borrowed from MAME sources
+                /* Is noise output going to change? */
+                if (((Cur_Seed + 1) & 0x02) != 0) { /* (bit0^bit1)? */
+                    bit_n = !bit_n;
+                }
 
-// The algorithm is explained in the Fuse source:
-// The Random Number Generator of the 8910 is a 17-bit shift
-// register. The input to the shift register is bit0 XOR bit3
-// (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips.
-// The following is a fast way to compute bit17 = bit0^bit3
-// Instead of doing all the logic operations, we only check
-// bit0, relying on the fact that after three shifts of the
-// register, what now is bit3 will become bit0, and will
-// invert, if necessary, bit14, which previously was bit17
-if ((Cur_Seed & 1) == 1)
-{
-    Cur_Seed ^= 0x24000;
-}
-Cur_Seed >>= 1;
-bit_n = Cur_Seed & 1;
+                /* The Random Number Generator of the 8910 is a 17-bit shift */
+                /* register. The input to the shift register is bit0 XOR bit3 */
+                /* (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips. */
 
+                /* The following is a fast way to compute bit17 = bit0^bit3. */
+                /* Instead of doing all the logic operations, we only check */
+                /* bit0, relying on the fact that after three shifts of the */
+                /* register, what now is bit3 will become bit0, and will */
+                /* invert, if necessary, bit14, which previously was bit17. */
+                if ((Cur_Seed & 0x01) != 0) {
+                    Cur_Seed ^= 0x24000; /* This version is called the "Galois configuration". */
+                }
+                Cur_Seed >>= 1;
+                // End of Code borrowed from MAME sources
             }
-            
+            // End of Code borrowed from JSpeccy sources
+
             if (++cnt_e >= ayregs.env_freq) {
                 cnt_e = 0;
                 if (++env_pos > 127)
@@ -507,15 +569,23 @@ bit_n = Cur_Seed & 1;
 
 }
 
-void AySound::update()
-{
-     
-    ayregs.tone_a    = regs[0] + ((regs[1] & 0x0f) << 8);
-    ayregs.tone_b    = regs[2] + ((regs[3] & 0x0f) << 8);
-    ayregs.tone_c    = regs[4] + ((regs[5] & 0x0f) << 8);
+void AySound::updToneA() {
+    ayregs.tone_a = regs[0] + ((regs[1] & 0x0f) << 8);
+}
 
+void AySound::updToneB() {
+    ayregs.tone_b = regs[2] + ((regs[3] & 0x0f) << 8);
+}
+
+void AySound::updToneC() {
+    ayregs.tone_c = regs[4] + ((regs[5] & 0x0f) << 8);
+}
+
+void AySound::updNoisePitch() {
     ayregs.noise = regs[6] & 0x1f;
+}
 
+void AySound::updMixer() {
     ayregs.R7_tone_a    = !(regs[7] & 0x01);
     ayregs.R7_tone_b    = !(regs[7] & 0x02);
     ayregs.R7_tone_c    = !(regs[7] & 0x04);
@@ -523,15 +593,28 @@ void AySound::update()
     ayregs.R7_noise_a = !(regs[7] & 0x08);
     ayregs.R7_noise_b = !(regs[7] & 0x10);
     ayregs.R7_noise_c = !(regs[7] & 0x20);
+}
 
+void AySound::updVolA() {
     ayregs.vol_a = regs[8]    & 0x0f;
-    ayregs.vol_b = regs[9]    & 0x0f;
-    ayregs.vol_c = regs[10] & 0x0f;
     ayregs.env_a = regs[8]    & 0x10;
-    ayregs.env_b = regs[9]    & 0x10;
-    ayregs.env_c = regs[10] & 0x10;
-    ayregs.env_freq = regs[11] + (regs[12] << 8);
+}
 
+void AySound::updVolB() {
+    ayregs.vol_b = regs[9]    & 0x0f;
+    ayregs.env_b = regs[9]    & 0x10;
+}
+
+void AySound::updVolC() {
+    ayregs.vol_c = regs[10] & 0x0f;
+    ayregs.env_c = regs[10] & 0x10;
+}
+
+void AySound::updEnvFreq() {
+    ayregs.env_freq = regs[11] + (regs[12] << 8);
+}
+
+void AySound::updEnvType() {
     if (regs[13] != 0xff) { // R13 = 255 means continue current envelop
         int new_style = regs[13] & 0x0f;
         if (ayregs.env_style != new_style) {
@@ -539,7 +622,10 @@ void AySound::update()
             env_pos = cnt_e = 0;
         }
     }
+}
 
+void AySound::update() {
+    return;
 }
 
 uint8_t AySound::getRegisterData()
@@ -561,13 +647,15 @@ void AySound::setRegisterData(uint8_t data)
     
     if (selectedRegister < 15) {
         regs[selectedRegister] = data;    
-        // update(); // Right now it's not needed: AY gets updated at end of frame.
+        updateReg[selectedRegister]();
     }
 
 }
 
 void AySound::reset()
 {
+
+    ayreset();
 
     for (int i=0;i<15;i++) regs[i] = 0xFF;
     
@@ -578,6 +666,6 @@ void AySound::reset()
 
     selectedRegister = 0xFF;
 
-    update();
+    for(int i=0; i<15; i++) updateReg[i]();
 
 }

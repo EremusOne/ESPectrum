@@ -7,6 +7,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/ledc.h"
+
+#define PWM_AUDIO_VER_MAJOR 1
+#define PWM_AUDIO_VER_MINOR 1
+#define PWM_AUDIO_VER_PATCH 1
+
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 #include "driver/gptimer.h"
 #else
@@ -192,7 +197,7 @@ esp_err_t pwm_audio_get_param(int *rate, int *bits, int *ch);
  */
 esp_err_t pwm_audio_get_status(pwm_audio_status_t *status);
 
-int pwm_audio_rbstats(void);
+uint32_t pwm_audio_rbstats(void);
 
 #ifdef __cplusplus
 }

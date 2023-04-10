@@ -47,15 +47,10 @@
 
 #pragma GCC optimize ("O3")
 
-static int TapeBit = 0;
-static int speaker = 0;
 #define SPEAKER_VOLUME 97
-int sp_volt[4]={
-    0, //(int) -SPEAKER_VOLUME;
-    (int) (SPEAKER_VOLUME * 0.04f), // (int) -(SPEAKER_VOLUME * 1.4);
-    (int) (SPEAKER_VOLUME * 0.96f),
-    SPEAKER_VOLUME
-};
+int sp_volt[4]={ 0, (int) (SPEAKER_VOLUME * 0.11f), (int) (SPEAKER_VOLUME * 0.96f), SPEAKER_VOLUME };
+
+static int TapeBit = 0;
 
 uint8_t Ports::port[128];
 
@@ -133,8 +128,6 @@ uint8_t Ports::input(uint16_t address)
 
 }
 
-
-
 void Ports::output(uint16_t address, uint8_t data) {    
     
     // ** I/O Contention (Early) *************************
@@ -150,27 +143,10 @@ void Ports::output(uint16_t address, uint8_t data) {
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
-        // if (Tape::tapeStatus!=TAPE_LOADING) {
-        //     int spkMic = sp_volt[data >> 3 & 3];
-        //     if (spkMic != speaker) {
-        //         ESPectrum::audioGetSample(speaker);
-        //         speaker = spkMic;
-        //     }
-        // } else {
-        //     int spkMic = TapeBit ? sp_volt[2] : sp_volt[0];
-        //     if (spkMic != speaker) {
-        //         ESPectrum::audioGetSample(speaker);
-        //         speaker = spkMic;
-        //     }
-        // }
-
-        // // if (Tape::SaveStatus==TAPE_SAVING)
-        //     int SaveBit = bitRead(data,3);
-        // // else
-            int Audiobit = bitRead(data,4);
-
-        ESPectrum::audioGetSample(bitRead(data,4) | TapeBit);
-        // ESPectrum::audioGetSample(Audiobit);        
+        if (Tape::tapeStatus==TAPE_LOADING)
+            if (TapeBit) data |= 0x10;
+        
+        ESPectrum::BeeperGetSample(sp_volt[data >> 3 & 3]);
 
     }
 
@@ -178,8 +154,10 @@ void Ports::output(uint16_t address, uint8_t data) {
     if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
       if ((address & 0x4000) != 0)
         AySound::selectRegister(data);
-      else
+      else {
+        ESPectrum::AYGetSample();
         AySound::setRegisterData(data);
+      }
     }
 
     // ** I/O Contention (Late) **************************

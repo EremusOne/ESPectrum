@@ -115,6 +115,17 @@ class AySound
 public:
 
     static void update();
+    static void updToneA();
+    static void updToneB();
+    static void updToneC();
+    static void updNoisePitch();
+    static void updMixer();
+    static void updVolA();
+    static void updVolB();
+    static void updVolC();
+    static void updEnvFreq();
+    static void updEnvType();
+
     static void reset();
     static uint8_t getRegisterData();
     static void selectRegister(uint8_t data);
@@ -127,7 +138,9 @@ public:
     static int set_stereo(ayemu_stereo_t stereo, int *custom_eq);
     static int set_sound_format(int freq, int chans, int bits);
     static void prepare_generation();
-    static void gen_sound(unsigned char *buff, size_t bufsize);
+    static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
+
+    static void(*updateReg[15])();
 
 private:
 
@@ -152,6 +165,7 @@ private:
     static int bit_b;                       /**< state of channel B generator */
     static int bit_c;                       /**< state of channel C generator */
     static int bit_n;                       /**< current generator state */
+    static int period_n;                    // Noise period 
     static int cnt_a;                       /**< back counter of A */
     static int cnt_b;                       /**< back counter of B */
     static int cnt_c;                       /**< back counter of C */

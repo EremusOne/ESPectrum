@@ -46,12 +46,12 @@ using namespace std;
 #define ESP_AUDIO_OVERSAMPLES_48 4368
 #define ESP_AUDIO_FREQ_48 31250 // In 48K calcs are perfect :) -> ESP_AUDIO_SAMPLES_48 * 50,0801282 frames per second = 31250 Hz
 #define ESP_AUDIO_SAMPLES_48  624
-#define ESP_OFFSET_48 0; // 128;
+#define ESP_OFFSET_48 0 // 128
 
 #define ESP_AUDIO_OVERSAMPLES_128 3732
 #define ESP_AUDIO_FREQ_128 31112 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz. 
 #define ESP_AUDIO_SAMPLES_128 622
-#define ESP_OFFSET_128 0; // 128;
+#define ESP_OFFSET_128 0 // 128
 
 class ESPectrum
 {
@@ -70,13 +70,17 @@ public:
     // Audio
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_48];
     static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES_48];
+    static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
     static signed char aud_volume;
     static uint32_t audbufcnt;
-    static uint32_t faudbufcnt;    
+    static uint32_t audbufcntAY;
+    static uint32_t faudbufcnt;
+    static uint32_t faudbufcntAY;
     static int lastaudioBit;
     static int faudioBit;
     static void audioFrameStart();
-    static void IRAM_ATTR audioGetSample(int Audiobit);
+    static void IRAM_ATTR BeeperGetSample(int Audiobit);
+    static void IRAM_ATTR AYGetSample();
     static void audioFrameEnd();
     static int overSamplesPerFrame;
     static int samplesPerFrame;
