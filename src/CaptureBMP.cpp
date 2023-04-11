@@ -41,7 +41,7 @@
 #include "Video.h"
 #include "FileUtils.h"
 #include "messages.h"
-#include "config.h"
+#include "Config.h"
 #include "esp_vfs.h"
 
 void CaptureToBmp()
