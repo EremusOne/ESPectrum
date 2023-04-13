@@ -52,7 +52,7 @@ public:
     static void process();
 
 private:
-    static void putRows(uint8_t rows);
+    static void putRows(uint8_t row_pattern);
     static uint8_t getCols();
 };
 
