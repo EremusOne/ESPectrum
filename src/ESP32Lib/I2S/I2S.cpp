@@ -327,8 +327,8 @@ bool I2S::initParallelOutputMode(const int *pinMap, long sampleRate, const int b
 		//odir = 0;
 		if(sdm > 0xA1fff) sdm = 0xA1fff;
 
-		// rtc_clk_apll_enable(true, sdm & 255, (sdm >> 8) & 255, sdm >> 16, odir);
-
+		rtc_clk_apll_enable(true, sdm & 255, (sdm >> 8) & 255, sdm >> 16, odir);
+/*
 		// using values calculated by https://github.com/jeanthom/ESP32-APLL-cal
 		// thanks, @ackerman and @eremus!
 		if (Config::esp32rev > 0) { // ESP32 chip revision > 0
@@ -344,7 +344,7 @@ bool I2S::initParallelOutputMode(const int *pinMap, long sampleRate, const int b
 				rtc_clk_apll_enable(true, 0, 0, 6, 5);
 			else
 				rtc_clk_apll_enable(true, 0, 0, 6, 6);
-		}
+		}*/
 
 	}
 

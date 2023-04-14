@@ -12,6 +12,31 @@
 #include "VGA.h"
 
 //hfront hsync hback pixels vfront vsync vback lines divy pixelclock hpolaritynegative vpolaritynegative
+
+// #define VGA31k_MODES
+// #define TV15k_48K_MODES
+#define TV15k_128K_MODES
+
+#ifdef VGA31k_MODES
+const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 12587500, 1, 1);
+const Mode VGA::MODE360x200(8, 54, 28, 360, 11, 2, 32, 400, 2, 14161000, 1, 0);
+#endif
+
+// 48K
+#ifdef TV15k_48K_MODES
+const Mode VGA::MODE320x240(38, 32, 54, 320, 28, 3, 40, 240, 1, 7000000, 1, 1);
+const Mode VGA::MODE360x200(12, 32, 44, 360,  8, 3, 31, 270, 1, 7000000, 1, 1);
+#endif
+
+// 128K
+#ifdef TV15k_128K_MODES
+const Mode VGA::MODE320x240(42, 32, 62, 320, 28, 3, 40, 240, 1, 7093800, 1, 1);
+const Mode VGA::MODE360x200(12, 32, 52, 360,  8, 3, 30, 270, 1, 7093800, 1, 1);
+#endif
+
+
+
+/* --- unused modes ---
 const Mode VGA::MODE320x480(8, 48, 24, 320, 11, 2, 31, 480, 1, 12587500, 1, 1);
 const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 12587500, 1, 1);
 const Mode VGA::MODE320x400(8, 48, 24, 320, 12, 2, 35, 400, 1, 12587500, 1, 0);
@@ -50,6 +75,7 @@ const PinConfig VGA::VGAv01(2, 4, 12, 13, 14,  15, 16, 17, 18, 19,  21, 22, 23, 
 const PinConfig VGA::VGABlackEdition(2, 4, 12, 13, 14,  15, 16, 17, 18, 19,  21, 22, 23, 27,  32, 33,  -1);
 const PinConfig VGA::VGAWhiteEdition(5, 14, 13, 15, 2,  19, 18, 17, 4, 16,  27, 22, 12, 21,  32, 33, -1);
 const PinConfig VGA::PicoVGA(-1, -1, -1, 18, 5,  -1, -1, -1, 14, 4,  -1, -1, 27, 15,  32, 33,  -1);
+*/
 
 VGA::VGA(const int i2sIndex)
 	: I2S(i2sIndex)
