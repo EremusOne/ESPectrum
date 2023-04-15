@@ -17,7 +17,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Floating bus effect emulated (Arkanoid, Sidewize).
 - Contended memory and contended I/O emulation.
 - AY-3-8912 sound emulation.
-- Beeper sound emulation.
+- Beeper & Mic emulation (Cobra’s Arc)
 - PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
 - International kbd layout support: US, ES, DE, FR and UK.
 - Kempston and Cursor type Joystick emulation.
