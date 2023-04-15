@@ -96,16 +96,17 @@ int AySound::Cur_Seed;                  /**< random numbers counter */
 // regs[12] = envelopeCoarseDuration;
 // regs[13] = envelopeShape;
 // regs[14] = ioPortA;
-uint8_t AySound::regs[15] = { 0xFF };
+uint8_t AySound::regs[15]; /* = { 0xFF }; */
 
 void (*AySound::updateReg[15])();
 
 // Status
-uint8_t AySound::selectedRegister = 0xFF;
+uint8_t AySound::selectedRegister; /* = 0xFF; */
 
 /* Max amplitude value for stereo signal for avoiding for possible
         following SSRC for clipping */
 // #define AYEMU_MAX_AMP 24575
+
 #define AYEMU_MAX_AMP 40000; // 158
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
@@ -117,6 +118,21 @@ static int Envelope [16][128];
 static int Lion17_AY_table [16] = {
     0, 513, 828, 1239, 1923, 3238, 4926, 9110,
     10344, 17876, 24682, 30442, 38844, 47270, 56402, 65535
+};
+
+/* AY volume table (C) Rampa 2023 */
+static int Rampa_AY_table [16] = {
+    0, 521, 735, 1039, 1467, 2072, 2927, 4135,
+    5841, 8250, 11654, 16462, 23253, 32845, 46395, 65535
+};
+
+// Borrowed from SoftSpectrum48 source code:
+// Values according to: http://forum.tslabs.info/viewtopic.php?f=6&t=539
+// AmplitudeFactors = { 0.0f, 0.01f, 0.014f, 0.021f, 0.031f, 0.046f, 0.064f, 
+// 0.107f, 0.127f, 0.205f, 0.292f, 0.373f, 0.493f, 0.635f, 0.806f, 1.0f }
+static int SoftSpec48_AY_table [16] = {
+    0, 655, 917, 1376, 2032, 3015, 4194, 7012,
+    8323, 13435, 19136, 24445, 32309, 41615, 52821, 65535
 };
 
 /* make chip hardware envelop tables.
@@ -201,6 +217,8 @@ void AySound::ayreset()
     period_n = 1;
     Cur_Seed = 1;
 
+    prepare_generation();
+
 }
 
 /** Set chip type. */
@@ -217,7 +235,7 @@ int AySound::set_chip_type(ayemu_chip_t type, int *custom_table)
     // case AYEMU_AY_LION17:
     int n;
     for (n = 0; n < 32; n++)
-        table[n] = Lion17_AY_table[n / 2];
+        table[n] = Rampa_AY_table[n / 2];
     type = AYEMU_AY;
     // break;
     // case AYEMU_YM:
@@ -392,7 +410,7 @@ void AySound::prepare_generation()
 
     if (!dirty) return;
 
-    if (!bEnvGenInit) gen_env ();
+    if (!bEnvGenInit) gen_env();
 
     if (default_chip_flag) set_chip_type(AYEMU_AY, NULL);
 
@@ -433,8 +451,6 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
     unsigned char *sound_buf = buff;
 
     sound_buf += bufpos;
-
-    prepare_generation();
 
     snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
     while (snd_numcount-- > 0) {
@@ -527,22 +543,22 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
                     env_pos = 64;
             }
 
-            #define ENVVOL Envelope [ayregs.env_style][env_pos]
+            #define ENVVOL Envelope[ayregs.env_style][env_pos]
 
             if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a)) {
-                tmpvol = (ayregs.env_a)? ENVVOL : ayregs.vol_a * 2 + 1;
+                tmpvol = (ayregs.env_a) ? ENVVOL : ayregs.vol_a * 2 + 1;
                 mix_l += vols[0][tmpvol];
                 mix_r += vols[1][tmpvol];
             }
             
             if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b)) {
-                tmpvol =(ayregs.env_b)? ENVVOL :    ayregs.vol_b * 2 + 1;
+                tmpvol = (ayregs.env_b) ? ENVVOL :  ayregs.vol_b * 2 + 1;
                 mix_l += vols[2][tmpvol];
                 mix_r += vols[3][tmpvol];
             }
             
             if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c)) {
-                tmpvol = (ayregs.env_c)? ENVVOL : ayregs.vol_c * 2 + 1;
+                tmpvol = (ayregs.env_c) ? ENVVOL : ayregs.vol_c * 2 + 1;
                 mix_l += vols[4][tmpvol];
                 mix_r += vols[5][tmpvol];
             }            
@@ -616,11 +632,16 @@ void AySound::updEnvFreq() {
 
 void AySound::updEnvType() {
     if (regs[13] != 0xff) { // R13 = 255 means continue current envelop
-        int new_style = regs[13] & 0x0f;
-        if (ayregs.env_style != new_style) {
-            ayregs.env_style = new_style;
-            env_pos = cnt_e = 0;
-        }
+
+        // int new_style = regs[13] & 0x0f;
+        // if (ayregs.env_style != new_style) {
+            // ayregs.env_style = new_style;
+            // env_pos = cnt_e = 0;
+        // }
+
+        ayregs.env_style = regs[13] & 0x0f;
+        env_pos = cnt_e = 0;
+
     }
 }
 
@@ -657,12 +678,13 @@ void AySound::reset()
 
     ayreset();
 
-    for (int i=0;i<15;i++) regs[i] = 0xFF;
-    
-    // Vol = 0
-    regs[8]=0;
-    regs[9]=0;
-    regs[10]=0;
+    // for (int i=0;i<15;i++) regs[i] = 0xFF;
+    for (int i=0;i<15;i++) regs[i] = 0;
+   
+    // // Vol = 0
+    // regs[8]=0;
+    // regs[9]=0;
+    // regs[10]=0;
 
     selectedRegister = 0xFF;
 

@@ -150,6 +150,62 @@ void Ports::output(uint16_t address, uint8_t data) {
 
     }
 
+
+    //ay chip
+    /*
+    El circuito de sonido contiene dieciseis registros; para seleccionarlos, primero se escribe
+    el numero de registro en la puerta de escritura de direcciones, FFFDh (65533), y despues
+    lee el valor del registro (en la misma direccion) o se escribe en la direccion de escritura
+    de registros de datos, BFFDh (49149). Una vez seleccionado un registro, se puede realizar
+    cualquier numero de operaciones de lectura o escritura de datos. S~1o habr~ que volver
+    escribir en la puerta de escritura de direcciones cuando se necesite seleccio~ar otro registro.
+    La frecuencia de reloj basica de este circuito es 1.7734 MHz (con precision del 0.01~~o).
+    */
+        //el comportamiento de los puertos ay es con mascaras AND... esto se ve asi en juegos como chase hq
+    /*
+    Peripheral: 128K AY Register.
+    Port: 11-- ---- ---- --0-
+    Peripheral: 128K AY (Data).
+    Port: 10-- ---- ---- --0-
+    49154=1100000000000010
+    */
+
+	// // Puertos Chip AY
+	// if ( ((address & 49154) == 49152) || ((address & 49154) == 32768) ) {
+		
+    //     uint16_t puerto_final=address;
+
+	// 	if ((address & 49154) == 49152) puerto_final=65533;
+	// 	else if ((address & 49154) == 32768) puerto_final=49149;
+
+    //     if (puerto_final==65533) {
+    //         AySound::selectRegister(data);
+    //     } else
+    //     if (puerto_final==49149) {
+    //         ESPectrum::AYGetSample();
+    //         AySound::setRegisterData(data);
+    //     }
+
+	// }
+
+    // // Handle AY-commands.
+    // // Port 0xFFFD selects a AY register.
+    // // The port is partially decoded: Bit 1 must be reset and bits 14-15 set.
+    // if (ESPectrum::AY_emu) {
+    //     if ((address & 0xC002) == 0xC000)
+    //     {
+    //         AySound::selectRegister(data);
+    //     }
+    //     else
+    //     // Port 0xBFFD writes to the selected register.
+    //     // The port is partially decoded: Bit 1 must be reset and bit 15 set.
+    //     if ((address & 0x8002) == 0x8000)
+    //     {
+    //         ESPectrum::AYGetSample();
+    //         AySound::setRegisterData(data);
+    //     }
+    // }
+
     // AY ========================================================================
     if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
       if ((address & 0x4000) != 0)

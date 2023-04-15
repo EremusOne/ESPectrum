@@ -330,6 +330,140 @@ unsigned short OSD::menuRun(string new_menu) {
     }
 }
 
+
+// fabgl::VirtualKey menuVKs[] = {
+//     fabgl::VK_UP, fabgl::VK_DOWN, fabgl::VK_RETURN, fabgl::VK_ESCAPE, fabgl::VK_F1,
+//     fabgl::VK_PAGEUP, fabgl::VK_PAGEDOWN, fabgl::VK_HOME, fabgl::VK_END
+// };
+
+// #define STARTKBDREPEATMS 140 // As in real ZX Spectrum (700 ms.)
+// #define KBDREPEATMS 20 // As in real ZX Spectrum (100 ms.)
+
+// // Run a new menu
+// unsigned short OSD::menuRun_alt(string new_menu) {
+
+//     fabgl::VirtualKey Menukey;    
+
+//     int kbdDelay = STARTKBDREPEATMS;
+
+//     // Make sure no menu key keeps pressed
+//     for (int i=0; i < (sizeof(menuVKs)/sizeof(menuVKs[0])); i++) {
+//         while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//             vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//         }
+//     }
+
+//     newMenu(new_menu);
+//     while (1) {
+//         bool noKbd = true;
+//         for (int i=0; i < (sizeof(menuVKs)/sizeof(menuVKs[0])); i++) {
+
+//             if (ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+
+//                 noKbd = false;
+
+//                 Menukey = menuVKs[i];
+
+//                 if (Menukey == fabgl::VK_UP) {
+//                     if (focus == 1 and begin_row > 1) {
+//                         menuScroll(DOWN);
+//                     } else {
+//                         last_focus = focus;
+//                         focus--;
+//                         if (focus < 1) {
+//                             focus = virtual_rows - 1;
+//                             last_begin_row = begin_row;
+//                             begin_row = real_rows - virtual_rows + 1;
+//                             menuRedraw();
+//                             menuPrintRow(focus, IS_FOCUSED);
+//                         }
+//                         else {
+//                             menuPrintRow(focus, IS_FOCUSED);
+//                             menuPrintRow(last_focus, IS_NORMAL);
+//                         }
+//                     }
+//                 } else if (Menukey == fabgl::VK_DOWN) {
+//                     if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {                
+//                         menuScroll(UP);
+//                     } else {
+//                         last_focus = focus;
+//                         focus++;
+//                         if (focus > virtual_rows - 1) {
+//                             focus = 1;
+//                             last_begin_row = begin_row;
+//                             begin_row = 1;
+//                             menuRedraw();
+//                             menuPrintRow(focus, IS_FOCUSED);
+//                         }
+//                         else {
+//                             menuPrintRow(focus, IS_FOCUSED);
+//                             menuPrintRow(last_focus, IS_NORMAL);                
+//                         }
+//                     }
+//                 } else if (Menukey == fabgl::VK_PAGEUP) {
+//                     if (begin_row > virtual_rows) {
+//                         focus = 1;
+//                         begin_row -= virtual_rows;
+//                     } else {
+//                         focus = 1;
+//                         begin_row = 1;
+//                     }
+//                     menuRedraw();
+//                 } else if (Menukey == fabgl::VK_PAGEDOWN) {
+//                     if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+//                         focus = 1;
+//                         begin_row += virtual_rows - 1;
+//                     } else {
+//                         focus = virtual_rows - 1;
+//                         begin_row = real_rows - virtual_rows + 1;
+//                     }
+//                     menuRedraw();
+//                 } else if (Menukey == fabgl::VK_HOME) {
+//                     focus = 1;
+//                     begin_row = 1;
+//                     menuRedraw();
+//                 } else if (Menukey == fabgl::VK_END) {
+//                     focus = virtual_rows - 1;
+//                     begin_row = real_rows - virtual_rows + 1;
+//                     menuRedraw();
+//                 } else if (Menukey == fabgl::VK_RETURN) {
+
+//                     while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//                         vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//                     }
+
+//                     if (!menuIsSub(focus)) menu_level=0; 
+
+//                     return menuRealRowFor(focus);
+
+//                 } else if ((Menukey == fabgl::VK_ESCAPE) || (Menukey == fabgl::VK_F1)) {
+
+//                     while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//                         vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//                     }
+
+//                     menu_level=0;
+                    
+//                     return 0;
+                
+//                 }
+
+//                 // Key repeat management
+//                 int kbdDelayCnt = 0;
+//                 while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//                     vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//                     if (kbdDelayCnt++ == kbdDelay) {
+//                         kbdDelay = KBDREPEATMS;
+//                         break;
+//                     }
+//                 }
+
+//             }
+//         }
+//         if (noKbd) kbdDelay = STARTKBDREPEATMS;
+//     }
+// }
+
 // Scroll
 void OSD::menuScroll(bool dir) {
     if ((dir == DOWN) && (begin_row > 1)) {
@@ -569,6 +703,205 @@ string OSD::menuFile(string filedir, string title, string extensions) {
         vTaskDelay(5 / portTICK_PERIOD_MS);        
     }
 }
+
+
+// // Run a new file menu
+// string OSD::menuFile_alt(string filedir, string title, string extensions) {
+
+//     fabgl::VirtualKey Menukey;
+
+//     // Get dir file size and use it for calc dialog rows
+//     struct stat stat_buf;
+//     int rc;
+
+//     rc = stat((filedir + "/.d").c_str(), &stat_buf);
+//     if (rc < 0) {
+//         // deallocAluBytes();
+//         OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO);
+//         int chunks = FileUtils::DirToFile(filedir, extensions); // Prepare sna filelist
+//         if (chunks) FileUtils::Mergefiles(filedir,chunks); // Merge files
+//         OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
+//         // precalcAluBytes();
+//         rc = stat((filedir + "/.d").c_str(), &stat_buf);
+//     }
+    
+//     // Open dir file for read
+//     dirfile = fopen((filedir + "/.d").c_str(), "r");
+//     if (dirfile == NULL) {
+//         printf("Error opening dir file\n");
+//         menu_level = 0;
+//         return "";
+//     }
+
+//     real_rows = (stat_buf.st_size / 32) + 1; // Add 1 for title
+//     virtual_rows = (real_rows > 19 ? 19 : real_rows);
+//     begin_row = last_begin_row = last_focus = focus = 1;
+    
+//     printf("Real rows: %d; st_size: %d\n",real_rows,stat_buf.st_size);
+
+//     // Get first bunch of rows
+//     menu = title + "\n";
+//     for (int i = 1; i < virtual_rows; i++) {
+//         char buf[256];
+//         fgets(buf, sizeof(buf), dirfile);
+//         if (feof(dirfile)) break;
+//         menu += buf;
+//     }
+
+
+//     // Position
+//     if (menu_level == 0) {
+//         x = (Config::aspect_16_9 ? 24 : 8);
+//         y = 8;
+//     } else {
+//         // x = (Config::aspect_16_9 ? 59 : 39);
+//         // y = 40;
+//         x = x + (((cols >> 1) - 3)* 6);
+//         y = y + 16;
+//     }
+
+//     // Columns
+//     cols = 31; // 28 for filename + 2 pre and post space + 1 for scrollbar
+
+//     // Size
+//     w = (cols * OSD_FONT_W) + 2;
+//     h = (virtual_rows * OSD_FONT_H) + 2;
+
+//     int kbdDelay = STARTKBDREPEATMS;
+
+//     // Make sure no menu key keeps pressed
+//     for (int i=0; i < (sizeof(menuVKs)/sizeof(menuVKs[0])); i++) {
+//         while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//             vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//         }
+//     }
+
+//     menuDraw();
+    
+//     while (1) {
+
+//         bool noKbd = true;
+
+//         for (int i=0; i < (sizeof(menuVKs)/sizeof(menuVKs[0])); i++) {
+
+//             if (ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+
+//                 noKbd = false;
+
+//                 Menukey = menuVKs[i];
+
+//                 // SKETCH PRE-KBD CODE REVAMP
+//                 // // Search first ocurrence of letter if we're not on that letter yet
+//                 // if (((Menukey >= fabgl::VK_a) && (Menukey <= fabgl::VK_Z)) || ((Menukey >= fabgl::VK_0) && (Menukey <= fabgl::VK_9))) {
+//                 //     uint8_t dif;
+//                 //     if (Menukey<=fabgl::VK_9) dif = 46;
+//                 //         else if (Menukey<=fabgl::VK_z) dif = 75;
+//                 //             else if (Menukey<=fabgl::VK_Z) dif = 17;
+//                 //     uint8_t letter = rowGet(menu,focus).at(0);
+//                 //     if (letter != Menukey + dif) { 
+//                 //             // TO DO: Position on first ocurrence of letter
+//                 //             filemenuRedraw(title);
+//                 //     }
+//                 /*} else*/ 
+                
+//                 if (Menukey == fabgl::VK_UP) {
+//                     if (focus == 1 and begin_row > 1) {
+//                         // filemenuScroll(DOWN);
+//                         if (begin_row > 1) {
+//                             last_begin_row = begin_row;
+//                             begin_row--;
+//                         }
+//                         filemenuRedraw(title);
+//                     } else if (focus > 1) {
+//                         last_focus = focus;
+//                         focus--;
+//                         filemenuPrintRow(focus, IS_FOCUSED);
+//                         if (focus + 1 < virtual_rows) {
+//                             filemenuPrintRow(focus + 1, IS_NORMAL);
+//                         }
+//                     }
+//                 } else if (Menukey == fabgl::VK_DOWN) {
+//                     if (focus == virtual_rows - 1) {
+//                         if ((begin_row + virtual_rows - 1) < real_rows) {
+//                             last_begin_row = begin_row;
+//                             begin_row++;
+//                         }
+//                         filemenuRedraw(title);
+//                     } else if (focus < virtual_rows - 1) {
+//                         last_focus = focus;
+//                         focus++;
+//                         filemenuPrintRow(focus, IS_FOCUSED);
+//                         if (focus - 1 > 0) {
+//                             filemenuPrintRow(focus - 1, IS_NORMAL);
+//                         }
+//                     }
+//                 } else if (Menukey == fabgl::VK_PAGEUP) {
+//                     if (begin_row > virtual_rows) {
+//                         focus = 1;
+//                         begin_row -= virtual_rows;
+//                     } else {
+//                         focus = 1;
+//                         begin_row = 1;
+//                     }
+//                     filemenuRedraw(title);
+//                 } else if (Menukey == fabgl::VK_PAGEDOWN) {
+//                     if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+//                         focus = 1;
+//                         begin_row += virtual_rows - 1;
+//                     } else {
+//                         focus = virtual_rows - 1;
+//                         begin_row = real_rows - virtual_rows + 1;
+//                     }
+//                     filemenuRedraw(title);
+//                 } else if (Menukey == fabgl::VK_HOME) {
+//                     focus = 1;
+//                     begin_row = 1;
+//                     filemenuRedraw(title);
+//                 } else if (Menukey == fabgl::VK_END) {
+//                     focus = virtual_rows - 1;
+//                     begin_row = real_rows - virtual_rows + 1;
+//                     filemenuRedraw(title);
+//                 } else if (Menukey == fabgl::VK_RETURN) {
+//                     if (!menuIsSub(focus)) menu_level=0; 
+//                     fclose(dirfile);
+//                     filedir = rowGet(menu,focus);
+//                     rtrim(filedir);
+
+//                     while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//                         vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//                     }
+
+//                     return filedir;
+
+//                 } else if (Menukey == fabgl::VK_ESCAPE) {
+//                     menu_level=0;
+//                     fclose(dirfile);
+
+//                     while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//                         vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//                     }
+
+//                     return "";
+//                 }
+
+//                 // Key repeat management
+//                 int kbdDelayCnt = 0;
+//                 while(ESPectrum::PS2Controller.keyboard()->isVKDown(menuVKs[i])) {
+//                     vTaskDelay(5 / portTICK_PERIOD_MS);                    
+//                     if (kbdDelayCnt++ == kbdDelay) {
+//                         kbdDelay = KBDREPEATMS;
+//                         break;
+//                     }
+//                 }
+//             }
+
+//         }
+
+//         if (noKbd) kbdDelay = STARTKBDREPEATMS;
+
+//     }
+
+// }
 
 // Print a virtual row
 void OSD::filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
