@@ -80,33 +80,14 @@ int AySound::EnvNum;                    /**< number of current envilopment (0...
 int AySound::env_pos;                   /**< current position in envelop (0...127) */
 int AySound::Cur_Seed;                  /**< random numbers counter */
 
-// Registers
-// regs[0] = finePitchChannelA;
-// regs[1] = coarsePitchChannelA;
-// regs[2] = finePitchChannelB;
-// regs[3] = coarsePitchChannelB;
-// regs[4] = finePitchChannelC;
-// regs[5] = coarsePitchChannelC;
-// regs[6] = noisePitch;
-// regs[7] = mixer;
-// regs[8] = volumeChannelA;
-// regs[9] = volumeChannelB;
-// regs[10] = volumeChannelC;
-// regs[11] = envelopeFineDuration;
-// regs[12] = envelopeCoarseDuration;
-// regs[13] = envelopeShape;
-// regs[14] = ioPortA;
-uint8_t AySound::regs[15]; /* = { 0xFF }; */
-
-void (*AySound::updateReg[15])();
+void (*AySound::updateReg[14])(uint8_t data);
 
 // Status
-uint8_t AySound::selectedRegister; /* = 0xFF; */
+uint8_t AySound::selectedRegister;
 
 /* Max amplitude value for stereo signal for avoiding for possible
         following SSRC for clipping */
 // #define AYEMU_MAX_AMP 24575
-
 #define AYEMU_MAX_AMP 40000; // 158
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
@@ -183,29 +164,21 @@ void AySound::init()
     default_sound_format_flag = 1;
     dirty = 1;
     
-    updateReg[0] = &updToneA;
-    updateReg[1] = &updToneA;
-    updateReg[2] = &updToneB;
-    updateReg[3] = &updToneB;
-    updateReg[4] = &updToneC;
-    updateReg[5] = &updToneC;
+    updateReg[0] = &updFineToneA;
+    updateReg[1] = &updCoarseToneA;
+    updateReg[2] = &updFineToneB;
+    updateReg[3] = &updCoarseToneB;
+    updateReg[4] = &updFineToneC;
+    updateReg[5] = &updCoarseToneC;
     updateReg[6] = &updNoisePitch;
     updateReg[7] = &updMixer;
     updateReg[8] = &updVolA;
     updateReg[9] = &updVolB;
     updateReg[10] = &updVolC;
-    updateReg[11] = &updEnvFreq;
-    updateReg[12] = &updEnvFreq;
+    updateReg[11] = &updFineEnvFreq;
+    updateReg[12] = &updCoarseEnvFreq;
     updateReg[13] = &updEnvType;
-    updateReg[14] = &update;
 
-    ayreset();
-
-}
-
-void AySound::ayreset()
-{
-    
     cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
     bit_a = bit_b = bit_c = bit_n = 0;
     env_pos = EnvNum = 0;
@@ -353,56 +326,6 @@ int AySound::set_stereo(ayemu_stereo_t stereo_type, int *custom_eq)
     dirty = 1;
     return 1;
 }
-
-// #define WARN_IF_REGISTER_GREAT_THAN(r,m) \
-// if (*(sregs + r) > m) \
-//        printf("ayemu_set_regs: warning: possible bad register data- R%d > %d\n", r, m)
-
-// // Assign values for AY registers.
-// // You must pass array of char [14] to this function
-// void AySound::set_regs(ayemu_ay_reg_frame_t sregs)
-// {
-
-//     if (verbose) {
-//         WARN_IF_REGISTER_GREAT_THAN(1,15);
-//         WARN_IF_REGISTER_GREAT_THAN(3,15);
-//         WARN_IF_REGISTER_GREAT_THAN(5,15);
-//         WARN_IF_REGISTER_GREAT_THAN(8,31);
-//         WARN_IF_REGISTER_GREAT_THAN(9,31);
-//         WARN_IF_REGISTER_GREAT_THAN(10,31);
-//     }
-
-//     ayregs.tone_a    = sregs[0] + ((sregs[1]&0x0f) << 8);
-//     ayregs.tone_b    = sregs[2] + ((sregs[3]&0x0f) << 8);
-//     ayregs.tone_c    = sregs[4] + ((sregs[5]&0x0f) << 8);
-
-//     ayregs.noise = sregs[6] & 0x1f;
-
-//     ayregs.R7_tone_a    = ! (sregs[7] & 0x01);
-//     ayregs.R7_tone_b    = ! (sregs[7] & 0x02);
-//     ayregs.R7_tone_c    = ! (sregs[7] & 0x04);
-
-//     ayregs.R7_noise_a = ! (sregs[7] & 0x08);
-//     ayregs.R7_noise_b = ! (sregs[7] & 0x10);
-//     ayregs.R7_noise_c = ! (sregs[7] & 0x20);
-
-//     ayregs.vol_a = sregs[8]    & 0x0f;
-//     ayregs.vol_b = sregs[9]    & 0x0f;
-//     ayregs.vol_c = sregs[10] & 0x0f;
-//     ayregs.env_a = sregs[8]    & 0x10;
-//     ayregs.env_b = sregs[9]    & 0x10;
-//     ayregs.env_c = sregs[10] & 0x10;
-//     ayregs.env_freq = sregs[11] + (sregs[12] << 8);
-
-//     if (sregs[13] != 0xff) { // R13 = 255 means continue current envelop
-//         int new_style = sregs[13] & 0x0f;
-//         if (ayregs.env_style != new_style) {
-//             ayregs.env_style = new_style;
-//             env_pos = cnt_e = 0;
-//         }
-//     }
-
-// }
 
 void AySound::prepare_generation()
 {
@@ -585,74 +508,104 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 
 }
 
-void AySound::updToneA() {
-    ayregs.tone_a = regs[0] + ((regs[1] & 0x0f) << 8);
+void AySound::updFineToneA(uint8_t data) {
+    ayregs.tone_a = (ayregs.tone_a & 0x0f00) + data;
 }
 
-void AySound::updToneB() {
-    ayregs.tone_b = regs[2] + ((regs[3] & 0x0f) << 8);
+void AySound::updCoarseToneA(uint8_t data) {
+    ayregs.tone_a = (ayregs.tone_a & 0x00ff) + ((data & 0x0f) << 8);
 }
 
-void AySound::updToneC() {
-    ayregs.tone_c = regs[4] + ((regs[5] & 0x0f) << 8);
+void AySound::updFineToneB(uint8_t data) {
+    ayregs.tone_b = (ayregs.tone_b & 0x0f00) + data;
 }
 
-void AySound::updNoisePitch() {
-    ayregs.noise = regs[6] & 0x1f;
+void AySound::updCoarseToneB(uint8_t data) {
+    ayregs.tone_b = (ayregs.tone_b & 0x00ff) + ((data & 0x0f) << 8);
 }
 
-void AySound::updMixer() {
-    ayregs.R7_tone_a    = !(regs[7] & 0x01);
-    ayregs.R7_tone_b    = !(regs[7] & 0x02);
-    ayregs.R7_tone_c    = !(regs[7] & 0x04);
-
-    ayregs.R7_noise_a = !(regs[7] & 0x08);
-    ayregs.R7_noise_b = !(regs[7] & 0x10);
-    ayregs.R7_noise_c = !(regs[7] & 0x20);
+void AySound::updFineToneC(uint8_t data) {
+    ayregs.tone_c = (ayregs.tone_c & 0x0f00) + data;
 }
 
-void AySound::updVolA() {
-    ayregs.vol_a = regs[8]    & 0x0f;
-    ayregs.env_a = regs[8]    & 0x10;
+void AySound::updCoarseToneC(uint8_t data) {
+    ayregs.tone_c = (ayregs.tone_c & 0x00ff) + ((data & 0x0f) << 8);
 }
 
-void AySound::updVolB() {
-    ayregs.vol_b = regs[9]    & 0x0f;
-    ayregs.env_b = regs[9]    & 0x10;
+void AySound::updNoisePitch(uint8_t data) {
+    ayregs.noise = data & 0x1f;
 }
 
-void AySound::updVolC() {
-    ayregs.vol_c = regs[10] & 0x0f;
-    ayregs.env_c = regs[10] & 0x10;
+void AySound::updMixer(uint8_t data) {
+    ayregs.R7_tone_a    = !(data & 0x01);
+    ayregs.R7_tone_b    = !(data & 0x02);
+    ayregs.R7_tone_c    = !(data & 0x04);
+
+    ayregs.R7_noise_a = !(data & 0x08);
+    ayregs.R7_noise_b = !(data & 0x10);
+    ayregs.R7_noise_c = !(data & 0x20);
 }
 
-void AySound::updEnvFreq() {
-    ayregs.env_freq = regs[11] + (regs[12] << 8);
+void AySound::updVolA(uint8_t data) {
+    ayregs.vol_a = data & 0x0f;
+    ayregs.env_a = data & 0x10;
 }
 
-void AySound::updEnvType() {
-    if (regs[13] != 0xff) { // R13 = 255 means continue current envelop
+void AySound::updVolB(uint8_t data) {
+    ayregs.vol_b = data & 0x0f;
+    ayregs.env_b = data & 0x10;
+}
 
-        // int new_style = regs[13] & 0x0f;
-        // if (ayregs.env_style != new_style) {
-            // ayregs.env_style = new_style;
-            // env_pos = cnt_e = 0;
-        // }
+void AySound::updVolC(uint8_t data) {
+    ayregs.vol_c = data & 0x0f;
+    ayregs.env_c = data & 0x10;
+}
 
-        ayregs.env_style = regs[13] & 0x0f;
+void AySound::updFineEnvFreq(uint8_t data) {
+    ayregs.env_freq = (ayregs.env_freq & 0xff00) + data;
+}
+
+void AySound::updCoarseEnvFreq(uint8_t data) {
+    ayregs.env_freq = (data << 8) + (ayregs.env_freq & 0x00ff);
+}
+
+void AySound::updEnvType(uint8_t data) {
+    if (data != 0xff) { // R13 = 255 means continue current envelop
+        ayregs.env_style = data & 0x0f;
         env_pos = cnt_e = 0;
-
     }
-}
-
-void AySound::update() {
-    return;
 }
 
 uint8_t AySound::getRegisterData()
 {
 
-    if (selectedRegister < 15) return regs[selectedRegister];
+    switch(selectedRegister)
+    {
+      case 0x00: return ayregs.tone_a & 0xff;
+      case 0x01: return (ayregs.tone_a >> 8) & 0x0f;
+      case 0x02: return ayregs.tone_b & 0xff;
+      case 0x03: return (ayregs.tone_b >> 8) & 0x0f;
+      case 0x04: return ayregs.tone_c & 0xff;
+      case 0x05: return (ayregs.tone_c >> 8) & 0x0f;
+      case 0x06: return ayregs.noise & 0x1f;
+      case 0x07: {
+        uint8_t mixer = !ayregs.R7_tone_a;
+        mixer |= !ayregs.R7_tone_b << 1;
+        mixer |= !ayregs.R7_tone_c << 2;
+        mixer |= !ayregs.R7_noise_a << 3;
+        mixer |= !ayregs.R7_noise_b << 4;
+        mixer |= !ayregs.R7_noise_c << 5;
+        return mixer;
+      }
+      case 0x08: return ayregs.vol_a & 0x1f;
+      case 0x09: return ayregs.vol_b & 0x1f;
+      case 0x0a: return ayregs.vol_c & 0x1f;
+      case 0x0b: return ayregs.env_freq & 0x00ff;
+      case 0x0c: return ayregs.env_freq >> 8;
+      case 0x0d: return ayregs.env_style & 0x0f;
+      case 0x0e: return 0xff;
+      case 0x0f: return 0xff;
+    }
 
     return 0;
 
@@ -665,29 +618,25 @@ void AySound::selectRegister(uint8_t registerNumber)
 
 void AySound::setRegisterData(uint8_t data)
 {
-    
-    if (selectedRegister < 15) {
-        regs[selectedRegister] = data;    
-        updateReg[selectedRegister]();
-    }
-
+    if (selectedRegister < 14) updateReg[selectedRegister](data);
 }
 
 void AySound::reset()
 {
 
-    ayreset();
+    cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
+    bit_a = bit_b = bit_c = bit_n = 0;
+    env_pos = EnvNum = 0;
 
-    // for (int i=0;i<15;i++) regs[i] = 0xFF;
-    for (int i=0;i<15;i++) regs[i] = 0;
-   
-    // // Vol = 0
-    // regs[8]=0;
-    // regs[9]=0;
-    // regs[10]=0;
+    // Cur_Seed = 0xffff;
 
-    selectedRegister = 0xFF;
+    // Cur_Seed = 0x1ffff;
 
-    for(int i=0; i<15; i++) updateReg[i]();
+    period_n = 1;
+    Cur_Seed = 1;
+
+    for(int i=0; i<14; i++) updateReg[i](0);
+    
+    selectedRegister = 0xff;
 
 }

@@ -77,6 +77,24 @@ typedef enum {
     AYEMU_YM_CUSTOM      /**< use YM with custom table. */
 } ayemu_chip_t;
 
+// Registers
+// regs[0] = finePitchChannelA;
+// regs[1] = coarsePitchChannelA;
+// regs[2] = finePitchChannelB;
+// regs[3] = coarsePitchChannelB;
+// regs[4] = finePitchChannelC;
+// regs[5] = coarsePitchChannelC;
+// regs[6] = noisePitch;
+// regs[7] = mixer;
+// regs[8] = volumeChannelA;
+// regs[9] = volumeChannelB;
+// regs[10] = volumeChannelC;
+// regs[11] = envelopeFineDuration;
+// regs[12] = envelopeCoarseDuration;
+// regs[13] = envelopeShape;
+// regs[14] = ioPortA;
+// regs[15] = ioPortB;
+
 /** parsed by #ayemu_set_regs() AY registers data \internal */
 typedef struct
 {
@@ -114,17 +132,20 @@ class AySound
 {
 public:
 
-    static void update();
-    static void updToneA();
-    static void updToneB();
-    static void updToneC();
-    static void updNoisePitch();
-    static void updMixer();
-    static void updVolA();
-    static void updVolB();
-    static void updVolC();
-    static void updEnvFreq();
-    static void updEnvType();
+    static void updFineToneA(uint8_t data);
+    static void updCoarseToneA(uint8_t data);
+    static void updFineToneB(uint8_t data);
+    static void updCoarseToneB(uint8_t data);
+    static void updFineToneC(uint8_t data);
+    static void updCoarseToneC(uint8_t data);
+    static void updNoisePitch(uint8_t data);
+    static void updMixer(uint8_t data);
+    static void updVolA(uint8_t data);
+    static void updVolB(uint8_t data);
+    static void updVolC(uint8_t data);
+    static void updFineEnvFreq(uint8_t data);
+    static void updCoarseEnvFreq(uint8_t data);
+    static void updEnvType(uint8_t data);
 
     static void reset();
     static uint8_t getRegisterData();
@@ -132,7 +153,6 @@ public:
     static void setRegisterData(uint8_t data);
 
     static void init();
-    static void ayreset();
     static int set_chip_type(ayemu_chip_t chip, int *custom_table);
     static void set_chip_freq(int chipfreq);
     static int set_stereo(ayemu_stereo_t stereo, int *custom_eq);
@@ -140,7 +160,7 @@ public:
     static void prepare_generation();
     static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
 
-    static void(*updateReg[15])();
+    static void(*updateReg[14])(uint8_t data);
 
 private:
 
@@ -179,7 +199,7 @@ private:
     static int env_pos;                     /**< current position in envelop (0...127) */
     static int Cur_Seed;                    /**< random numbers counter */
 
-    static uint8_t regs[15];
+    // static uint8_t regs[14];
     static uint8_t selectedRegister;
 
 };
