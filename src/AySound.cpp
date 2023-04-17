@@ -87,9 +87,8 @@ uint8_t AySound::selectedRegister;
 
 /* Max amplitude value for stereo signal for avoiding for possible
         following SSRC for clipping */
-
-#define AYEMU_MAX_AMP 60000
-//#define AYEMU_MAX_AMP 40000; // 158
+// #define AYEMU_MAX_AMP 24575
+#define AYEMU_MAX_AMP 40000; // 158
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
 /* sound chip volume envelops (will calculated by gen_env()) */
@@ -108,18 +107,6 @@ static int Rampa_AY_table [16] = {
     5841, 8250, 11654, 16462, 23253, 32845, 46395, 65535
 };
 
-//static int Rampa_AY_ENV_table [32] = {0,369,438,521,619,735,
-//    874,1039,1234,1467,1744,2072,2463,2927,3479,4135,4914,5841,
-//    6942,8250,9806,11654,13851,16462,19565,23253,27636,32845,
-//    39037,46395,55141,65535
-//    };
-
-//static int Rampa_AY_ENV_table [32] = {0,1,2,2,2,3,3,4,
-//                                      5,6,7,8,10,11,14,16,
-//                                      19,23,27,32,38,45,54,64,
-//                                      76,90,108,128,152,181,215,255};
-static int Rampa_AY_ENV_table [32] = {0,0,1,1,1,1,1,1,2,2,2,2,3,3,5,5,6,6,7,9,11,13,15,17,19,22,25,29,32,36,40,45};
-
 // Borrowed from SoftSpectrum48 source code:
 // Values according to: http://forum.tslabs.info/viewtopic.php?f=6&t=539
 // AmplitudeFactors = { 0.0f, 0.01f, 0.014f, 0.021f, 0.031f, 0.046f, 0.064f, 
@@ -131,7 +118,6 @@ static int SoftSpec48_AY_table [16] = {
 
 /* make chip hardware envelop tables.
         Will execute once before first use. */
-uint8_t mixer;
 static void gen_env()
 {
     int env;
@@ -212,10 +198,40 @@ void AySound::init()
 int AySound::set_chip_type(ayemu_chip_t type, int *custom_table)
 {
 
+    // if (!(type == AYEMU_AY_CUSTOM || type == AYEMU_YM_CUSTOM) && custom_table != NULL) {
+    //     // ayemu_err = "For non-custom chip type 'custom_table' param must be NULL";
+    //     return 0;
+    // }
+
+    // switch(type) {
+    // case AYEMU_AY:
+    // case AYEMU_AY_LION17:
     int n;
     for (n = 0; n < 32; n++)
-        table[n] = Rampa_AY_ENV_table[n];
+        table[n] = Rampa_AY_table[n / 2];
     type = AYEMU_AY;
+    // break;
+    // case AYEMU_YM:
+    // case AYEMU_YM_LION17:
+    //     set_table_ym(ay, Lion17_YM_table);
+    //     break;
+    // case AYEMU_AY_KAY:
+    //     set_table_ay(ay, KAY_AY_table);
+    //     break;
+    // case AYEMU_YM_KAY:
+    //     set_table_ym(ay, KAY_YM_table);
+    //     break;
+    // case AYEMU_AY_CUSTOM:
+    //     set_table_ay(ay, custom_table);
+    //     break;
+    // case AYEMU_YM_CUSTOM:
+    //     set_table_ym(ay, custom_table);
+    //     break;
+    // default:
+        // ayemu_err = "Incorrect chip type";
+        // return 0;
+    // }
+
     default_chip_flag = 0;
     dirty = 1;
     return 1;
@@ -345,7 +361,6 @@ void AySound::prepare_generation()
     dirty = 0;
 }
 
-
 //
 // Generate sound.
 // Fill sound buffer with current register data
@@ -357,8 +372,6 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
     int m;
     int snd_numcount;
     unsigned char *sound_buf = buff;
-
-
 
     sound_buf += bufpos;
 
@@ -380,6 +393,39 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
                 bit_c = !bit_c;
             }
 
+            // /* GenNoise (c) Hacker KAY & Sergey Bulba */
+            // if (++cnt_n >= (ayregs.noise * 2)) {
+
+            //     cnt_n = 0;
+
+            //     Cur_Seed = (Cur_Seed * 2 + 1) ^ \
+            //         (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1); 
+            //     bit_n = ((Cur_Seed >> 16) & 1);
+
+            // }
+
+            // if (++cnt_n >= (ayregs.noise * 2)) {
+
+            //     cnt_n = 0;
+
+            //     // The algorithm is explained in the Fuse source:
+            //     // The Random Number Generator of the 8910 is a 17-bit shift
+            //     // register. The input to the shift register is bit0 XOR bit3
+            //     // (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips.
+            //     // The following is a fast way to compute bit17 = bit0^bit3
+            //     // Instead of doing all the logic operations, we only check
+            //     // bit0, relying on the fact that after three shifts of the
+            //     // register, what now is bit3 will become bit0, and will
+            //     // invert, if necessary, bit14, which previously was bit17
+            //     if ((Cur_Seed & 1) == 1)
+            //     {
+            //         Cur_Seed ^= 0x24000;
+            //     }
+            //     Cur_Seed >>= 1;
+            //     bit_n = Cur_Seed & 1;
+
+            // }
+          
             // Code borrowed from JSpeccy sources
             if (++cnt_n >= period_n) {
 
@@ -410,7 +456,9 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
                     Cur_Seed ^= 0x24000; /* This version is called the "Galois configuration". */
                 }
                 Cur_Seed >>= 1;
+                // End of Code borrowed from MAME sources
             }
+            // End of Code borrowed from JSpeccy sources
 
             if (++cnt_e >= ayregs.env_freq) {
                 cnt_e = 0;
@@ -437,11 +485,25 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
                 mix_l += vols[4][tmpvol];
                 mix_r += vols[5][tmpvol];
             }            
-        } 
-
-        mix_l /= 3;
-        *sound_buf++ = mix_l;
-
+        } /* end for (m=0; ...) */
+        
+        mix_l /= Amp_Global;
+        // mix_r /= Amp_Global;
+        
+        // if (ay->sndfmt.bpc == 8) {
+            mix_l = (mix_l >> 8) /*| 128*/; /* 8 bit sound */
+            // mix_r = (mix_r >> 8) /*| 128*/;
+            *sound_buf++ = mix_l;
+            // if (ay->sndfmt.channels != 1)
+            //     *sound_buf++ = mix_r;
+        // } else {
+        //     *sound_buf++ = mix_l & 0x00FF; /* 16 bit sound */
+        //     *sound_buf++ = (mix_l >> 8);
+        //     if (ay->sndfmt.channels != 1) {
+        //         *sound_buf++ = mix_r & 0x00FF;
+        //         *sound_buf++ = (mix_r >> 8);
+        //     }
+        // }
     }
 
 }
@@ -475,7 +537,6 @@ void AySound::updNoisePitch(uint8_t data) {
 }
 
 void AySound::updMixer(uint8_t data) {
-    mixer = data;
     ayregs.R7_tone_a    = !(data & 0x01);
     ayregs.R7_tone_b    = !(data & 0x02);
     ayregs.R7_tone_c    = !(data & 0x04);
@@ -487,17 +548,17 @@ void AySound::updMixer(uint8_t data) {
 
 void AySound::updVolA(uint8_t data) {
     ayregs.vol_a = data & 0x0f;
-    ayregs.env_a = data >>4;
+    ayregs.env_a = data & 0x10;
 }
 
 void AySound::updVolB(uint8_t data) {
     ayregs.vol_b = data & 0x0f;
-    ayregs.env_b = data >>4;
+    ayregs.env_b = data & 0x10;
 }
 
 void AySound::updVolC(uint8_t data) {
     ayregs.vol_c = data & 0x0f;
-    ayregs.env_c = data >>4;
+    ayregs.env_c = data & 0x10;
 }
 
 void AySound::updFineEnvFreq(uint8_t data) {
@@ -527,10 +588,18 @@ uint8_t AySound::getRegisterData()
       case 0x04: return ayregs.tone_c & 0xff;
       case 0x05: return (ayregs.tone_c >> 8) & 0x0f;
       case 0x06: return ayregs.noise & 0x1f;
-      case 0x07: return mixer;
-      case 0x08: return ayregs.env_a * 16 + ayregs.vol_a;
-      case 0x09: return ayregs.env_b * 16 + ayregs.vol_b;
-      case 0x0a: return ayregs.env_c * 16 + ayregs.vol_c;
+      case 0x07: {
+        uint8_t mixer = !ayregs.R7_tone_a;
+        mixer |= !ayregs.R7_tone_b << 1;
+        mixer |= !ayregs.R7_tone_c << 2;
+        mixer |= !ayregs.R7_noise_a << 3;
+        mixer |= !ayregs.R7_noise_b << 4;
+        mixer |= !ayregs.R7_noise_c << 5;
+        return mixer;
+      }
+      case 0x08: return ayregs.vol_a & 0x1f;
+      case 0x09: return ayregs.vol_b & 0x1f;
+      case 0x0a: return ayregs.vol_c & 0x1f;
       case 0x0b: return ayregs.env_freq & 0x00ff;
       case 0x0c: return ayregs.env_freq >> 8;
       case 0x0d: return ayregs.env_style & 0x0f;
@@ -571,5 +640,3 @@ void AySound::reset()
     selectedRegister = 0xff;
 
 }
-
-
