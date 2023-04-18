@@ -51,6 +51,8 @@ public:
     // process physical keyboard
     static void process();
 
+    static uint8_t ZXcols[8];
+
 private:
     static void putRows(uint8_t row_pattern);
     static uint8_t getCols();

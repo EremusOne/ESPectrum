@@ -2,6 +2,8 @@
 #include "ESPectrum.h"
 #include "Ports.h"
 
+uint8_t ZXKeyb::ZXcols[8];
+
 void ZXKeyb::setup()
 {
     // setup shift register pins as outputs
@@ -18,7 +20,7 @@ void ZXKeyb::setup()
 
     // set all keys as not pressed
     for (uint8_t i = 0; i < 8; i++)
-        Ports::port[i] = 1;
+        Ports::port[i] = 0x1f;
 }
 
 // row order depends on actual row association with address lines, see
@@ -44,10 +46,15 @@ void ZXKeyb::process()
         // put row pattern to 8-tap membrane connector
         // (using shift register)
         putRows(row_pattern);
+
         // read column pattern from 5-tap membrane connector
-        uint8_t cols = getCols();
-        // write column to port array at given row index
-        Ports::port[rowidx] = cols;
+        // uint8_t cols = getCols();
+        // // write column to port array at given row index
+        // Ports::port[rowidx] = cols;
+
+        // read column pattern from 5-tap membrane connector
+        ZXcols[rowidx] = getCols();
+
     }
 }
 
@@ -76,7 +83,8 @@ void ZXKeyb::putRows(uint8_t row_pattern)
         gpio_set_level((gpio_num_t)SR_DATA, row_pattern & 0x80);
 
         // just to be safe, wait just before rising edge
-        usleep(1); 
+        delayMicroseconds(1);
+        // usleep(1); 
 
         // rising edge occurs here
         gpio_set_level((gpio_num_t)SR_CLK, 1);
@@ -91,7 +99,8 @@ void ZXKeyb::putRows(uint8_t row_pattern)
 
     // this sleep is MANDATORY, do NOT remove it
     // or else (first column bits read will be wrong)
-    usleep(1);
+    delayMicroseconds(1);
+    // usleep(1);
 }
 
 // This function reads all 5 columns from the
