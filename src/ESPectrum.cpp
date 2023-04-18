@@ -55,6 +55,7 @@
 #include "fabgl.h"
 
 #ifndef ESP32_SDL2_WRAPPER
+#include "ZXKeyb.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/timer.h"
@@ -276,6 +277,12 @@ void ESPectrum::setup()
     if (Config::slog_on) {
         showMemInfo("Keyboard started");
     }
+
+    //=======================================================================================
+    // PHYSICAL KEYBOARD (SINCLAIR 8+5 MEMBRANE KEYBOARD)
+    //=======================================================================================
+
+    ZXKeyb::setup();
 
     //=======================================================================================
     // MEMORY SETUP
@@ -973,6 +980,8 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
     }
 
+    // Process physical keyboard
+    ZXKeyb::process();
 }
 
 // void IRAM_ATTR ESPectrum::processKeyboard() {
