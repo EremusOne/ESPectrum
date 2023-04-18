@@ -452,13 +452,13 @@ void AySound::updMixer() {
 }
 
 void AySound::updVolA() {
-    ayregs.vol_a = regs[8]    & 0x0f;
-    ayregs.env_a = regs[8]    & 0x10;
+    ayregs.vol_a = regs[8] & 0x0f;
+    ayregs.env_a = regs[8] & 0x10;
 }
 
 void AySound::updVolB() {
-    ayregs.vol_b = regs[9]    & 0x0f;
-    ayregs.env_b = regs[9]    & 0x10;
+    ayregs.vol_b = regs[9] & 0x0f;
+    ayregs.env_b = regs[9] & 0x10;
 }
 
 void AySound::updVolC() {
