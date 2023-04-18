@@ -132,20 +132,16 @@ class AySound
 {
 public:
 
-    static void updFineToneA(uint8_t data);
-    static void updCoarseToneA(uint8_t data);
-    static void updFineToneB(uint8_t data);
-    static void updCoarseToneB(uint8_t data);
-    static void updFineToneC(uint8_t data);
-    static void updCoarseToneC(uint8_t data);
-    static void updNoisePitch(uint8_t data);
-    static void updMixer(uint8_t data);
-    static void updVolA(uint8_t data);
-    static void updVolB(uint8_t data);
-    static void updVolC(uint8_t data);
-    static void updFineEnvFreq(uint8_t data);
-    static void updCoarseEnvFreq(uint8_t data);
-    static void updEnvType(uint8_t data);
+    static void updToneA();
+    static void updToneB();
+    static void updToneC();
+    static void updNoisePitch();
+    static void updMixer();
+    static void updVolA();
+    static void updVolB();
+    static void updVolC();
+    static void updEnvFreq();
+    static void updEnvType();
 
     static void reset();
     static uint8_t getRegisterData();
@@ -160,7 +156,7 @@ public:
     static void prepare_generation();
     static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
 
-    static void(*updateReg[14])(uint8_t data);
+    static void(*updateReg[14])();
 
 private:
 
@@ -199,7 +195,7 @@ private:
     static int env_pos;                     /**< current position in envelop (0...127) */
     static int Cur_Seed;                    /**< random numbers counter */
 
-    // static uint8_t regs[14];
+    static uint8_t regs[14];
     static uint8_t selectedRegister;
 
 };

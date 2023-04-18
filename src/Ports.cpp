@@ -47,6 +47,21 @@
 
 #pragma GCC optimize ("O3")
 
+//
+// TO DO: CONSIDER THIS VALUES IN THE FUTURE FOR SPEAKER, EAR, MIC COMBINATIONS
+//
+// reg[7:0] ula;
+// always @(*) case({ speaker, ear, mic })
+//   0: ula <= 8'h00;
+//   1: ula <= 8'h24;
+//   2: ula <= 8'h40;
+//   3: ula <= 8'h64;
+//   4: ula <= 8'hB8;
+//   5: ula <= 8'hC0;
+//   6: ula <= 8'hF8;
+//   7: ula <= 8'hFF;
+// endcase
+
 #define SPEAKER_VOLUME 97
 int sp_volt[4]={ 0, (int) (SPEAKER_VOLUME * 0.11f), (int) (SPEAKER_VOLUME * 0.96f), SPEAKER_VOLUME };
 
