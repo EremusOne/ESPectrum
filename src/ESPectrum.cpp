@@ -1055,7 +1055,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
         //printf("ZXRow: %d    ZXCol: %d\n",rowidx,ZXKeyb::ZXcols[rowidx]);
     }
     
-    //  // Detect and process physical kbd menu key combination
+    //  // Detect and process physical kbd menu key combination (values needed have changed because of variable changes done)
     //if (ZXKeyb::ZXcols[0] == 254 && ZXKeyb::ZXcols[7] == 253 && ZXKeyb::ZXcols[3] == 254) { // Caps + Symbol + 1
     //    OSD::do_OSD(fabgl::VK_F1);
     //}
