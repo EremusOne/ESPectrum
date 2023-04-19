@@ -93,7 +93,7 @@ uint8_t AySound::selectedRegister;
 
 // #define AYEMU_MAX_AMP 40000; // This results in output values between 0-158
 
-#define AYEMU_MAX_AMP 158
+#define AYEMU_MAX_AMP 140 // This results in output values between 0-158
 
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
@@ -176,15 +176,15 @@ void AySound::init()
     bit_a = bit_b = bit_c = bit_n = 0;
     env_pos = EnvNum = 0;
 
-    // /* GenNoise (c) Hacker KAY & Sergey Bulba */
-    // Cur_Seed = 0xffff;
+    /* GenNoise (c) Hacker KAY & Sergey Bulba */
+    Cur_Seed = 0xffff;
 
     // /* GenNoise (c) SoftSpectrum 48 */
     // Cur_Seed = 0x1ffff;
 
-    /* GenNoise (c) JSpeccy */
-    period_n = 1;
-    Cur_Seed = 1;
+    // /* GenNoise (c) JSpeccy */
+    // period_n = 1;
+    // Cur_Seed = 1;
 
     if (!bEnvGenInit) gen_env();
 
@@ -310,30 +310,34 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 
     snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
     while (snd_numcount-- > 0) {
+
         mix_l = 0;
         
         for (m = 0 ; m < ChipTacts_per_outcount ; m++) {
+
             if (++cnt_a >= ayregs.tone_a) {
                 cnt_a = 0;
                 bit_a = !bit_a;
             }
+
             if (++cnt_b >= ayregs.tone_b) {
                 cnt_b = 0;
                 bit_b = !bit_b;
             }
+
             if (++cnt_c >= ayregs.tone_c) {
                 cnt_c = 0;
                 bit_c = !bit_c;
             }
 
-            // /* GenNoise (c) Hacker KAY & Sergey Bulba */
-            // if (++cnt_n >= (ayregs.noise * 2)) {
-            //     cnt_n = 0;
-            //     Cur_Seed = (Cur_Seed * 2 + 1) ^ \
-            //         (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1); 
-            //     bit_n = ((Cur_Seed >> 16) & 1);
-            // }
-            // /* End of GenNoise (c) Hacker KAY & Sergey Bulba */
+            /* GenNoise (c) Hacker KAY & Sergey Bulba */
+            if (++cnt_n >= (ayregs.noise * 2)) {
+                cnt_n = 0;
+                Cur_Seed = (Cur_Seed * 2 + 1) ^ \
+                    (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1); 
+                bit_n = ((Cur_Seed >> 16) & 1);
+            }
+            /* End of GenNoise (c) Hacker KAY & Sergey Bulba */
 
             // /* GenNoise (c) SoftSpectrum 48 */
             // if (++cnt_n >= (ayregs.noise * 2)) {
@@ -356,38 +360,38 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
             // }
             // /* End of GenNoise (c) SoftSpectrum 48 */
 
-            // /* GenNoise (c) JSpeccy */
-            if (++cnt_n >= period_n) {
+            // // /* GenNoise (c) JSpeccy */
+            // if (++cnt_n >= period_n) {
 
-                cnt_n = 0;
-                 // Changes to R6 take effect only when internal counter reaches 0
-                period_n = ayregs.noise;
-                if (period_n == 0) {
-                    period_n = 1;
-                }
-                period_n <<= 1;
+            //     cnt_n = 0;
+            //      // Changes to R6 take effect only when internal counter reaches 0
+            //     period_n = ayregs.noise;
+            //     if (period_n == 0) {
+            //         period_n = 1;
+            //     }
+            //     period_n <<= 1;
 
-                // Code borrowed from MAME sources
-                /* Is noise output going to change? */
-                if (((Cur_Seed + 1) & 0x02) != 0) { /* (bit0^bit1)? */
-                    bit_n = !bit_n;
-                }
+            //     // Code borrowed from MAME sources
+            //     /* Is noise output going to change? */
+            //     if (((Cur_Seed + 1) & 0x02) != 0) { /* (bit0^bit1)? */
+            //         bit_n = !bit_n;
+            //     }
 
-                /* The Random Number Generator of the 8910 is a 17-bit shift */
-                /* register. The input to the shift register is bit0 XOR bit3 */
-                /* (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips. */
-                /* The following is a fast way to compute bit17 = bit0^bit3. */
-                /* Instead of doing all the logic operations, we only check */
-                /* bit0, relying on the fact that after three shifts of the */
-                /* register, what now is bit3 will become bit0, and will */
-                /* invert, if necessary, bit14, which previously was bit17. */
-                if ((Cur_Seed & 0x01) != 0) {
-                    Cur_Seed ^= 0x24000; /* This version is called the "Galois configuration". */
-                }
-                Cur_Seed >>= 1;
-                // End of Code borrowed from MAME sources
-            }
-            // /* End of GenNoise (c) JSpeccy */            
+            //     /* The Random Number Generator of the 8910 is a 17-bit shift */
+            //     /* register. The input to the shift register is bit0 XOR bit3 */
+            //     /* (bit0 is the output). This was verified on AY-3-8910 and YM2149 chips. */
+            //     /* The following is a fast way to compute bit17 = bit0^bit3. */
+            //     /* Instead of doing all the logic operations, we only check */
+            //     /* bit0, relying on the fact that after three shifts of the */
+            //     /* register, what now is bit3 will become bit0, and will */
+            //     /* invert, if necessary, bit14, which previously was bit17. */
+            //     if ((Cur_Seed & 0x01) != 0) {
+            //         Cur_Seed ^= 0x24000; /* This version is called the "Galois configuration". */
+            //     }
+            //     Cur_Seed >>= 1;
+            //     // End of Code borrowed from MAME sources
+            // }
+            // // /* End of GenNoise (c) JSpeccy */            
 
             if (++cnt_e >= ayregs.env_freq) {
                 cnt_e = 0;
@@ -399,27 +403,35 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 
             if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a)) {
                 tmpvol = (ayregs.env_a) ? ENVVOL : Rampa_AY_table[ayregs.vol_a];
-                // tmpvol = (ayregs.env_a) ? ENVVOL : (ayregs.vol_a * 2) + 1;
                 mix_l += vols[0][tmpvol];
 
+                // tmpvol = (ayregs.env_a) ? ENVVOL : (ayregs.vol_a * 2) + 1;
+                // mix_l += vols[0][tmpvol];
+                // mix_l += vols[0][tmpvol > 1 ? tmpvol : 0];
             }
 
             if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b)) {
                 tmpvol = (ayregs.env_b) ? ENVVOL : Rampa_AY_table[ayregs.vol_b];
-                // tmpvol = (ayregs.env_b) ? ENVVOL :  (ayregs.vol_b * 2) + 1;
                 mix_l += vols[2][tmpvol];
+
+                // tmpvol = (ayregs.env_b) ? ENVVOL :  (ayregs.vol_b * 2) + 1;
+                // mix_l += vols[2][tmpvol];
+                // mix_l += vols[2][tmpvol > 1 ? tmpvol : 0];
             }
             
             if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c)) {
                 tmpvol = (ayregs.env_c) ? ENVVOL : Rampa_AY_table[ayregs.vol_c];
-                // // tmpvol = (ayregs.env_c) ? ENVVOL : (ayregs.vol_c * 2) + 1;
                 mix_l += vols[4][tmpvol];
+
+                // tmpvol = (ayregs.env_c) ? ENVVOL : (ayregs.vol_c * 2) + 1;
+                // mix_l += vols[4][tmpvol];
+                // mix_l += vols[4][tmpvol > 1 ? tmpvol : 0];
             }            
 
         } /* end for (m=0; ...) */
         
-        mix_l /= Amp_Global;
-        *sound_buf++ = mix_l;
+        // mix_l /= Amp_Global;
+        *sound_buf++ = mix_l / Amp_Global;
 
         // mix_l /= Amp_Global;
         // mix_l >>= 8;
@@ -534,15 +546,15 @@ void AySound::reset()
     bit_a = bit_b = bit_c = bit_n = 0;
     env_pos = EnvNum = 0;
 
-    // /* GenNoise (c) Hacker KAY & Sergey Bulba */
-    // Cur_Seed = 0xffff;
+    /* GenNoise (c) Hacker KAY & Sergey Bulba */
+    Cur_Seed = 0xffff;
 
-    // /* GenNoise (c) SoftSpectrum 48 */
-    // Cur_Seed = 0x1ffff;
+    // // /* GenNoise (c) SoftSpectrum 48 */
+    // // Cur_Seed = 0x1ffff;
 
-    /* GenNoise (c) JSpeccy */
-    period_n = 1;
-    Cur_Seed = 1;
+    // /* GenNoise (c) JSpeccy */
+    // period_n = 1;
+    // Cur_Seed = 1;
 
     prepare_generation();
 

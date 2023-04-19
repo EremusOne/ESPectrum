@@ -599,6 +599,48 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 return;
             }
 
+            // Joystick emulation
+            if (Config::joystick) {
+
+                // Kempston
+                Ports::port[0x1f] = 0;
+
+                bitWrite(Ports::port[0x1f], 0, Kbd->isVKDown(fabgl::VK_RIGHT) || Kbd->isVKDown(fabgl::VK_KP_RIGHT));
+                bitWrite(Ports::port[0x1f], 1, Kbd->isVKDown(fabgl::VK_LEFT) || Kbd->isVKDown(fabgl::VK_KP_LEFT));
+                bitWrite(Ports::port[0x1f], 2, Kbd->isVKDown(fabgl::VK_DOWN) || Kbd->isVKDown(fabgl::VK_KP_DOWN) || Kbd->isVKDown(fabgl::VK_KP_CENTER));
+                bitWrite(Ports::port[0x1f], 3, Kbd->isVKDown(fabgl::VK_UP) || Kbd->isVKDown(fabgl::VK_KP_UP));
+                bitWrite(Ports::port[0x1f], 4, Kbd->isVKDown(fabgl::VK_RALT));
+        
+            } else {
+
+                // Cursor
+                if (KeytoESP == fabgl::VK_DOWN || KeytoESP == fabgl::VK_KP_CENTER || KeytoESP == fabgl::VK_KP_DOWN) {
+                    bitWrite(PS2cols[4], 4, !Kdown);
+                    continue;
+                }
+
+                if (KeytoESP == fabgl::VK_UP || KeytoESP == fabgl::VK_KP_UP) {
+                    bitWrite(PS2cols[4], 3, !Kdown);
+                    continue;
+                }
+
+                if (KeytoESP == fabgl::VK_LEFT || KeytoESP == fabgl::VK_KP_LEFT) {
+                    bitWrite(PS2cols[3], 4, !Kdown);
+                    continue;
+                }
+
+                if (KeytoESP == fabgl::VK_RIGHT || KeytoESP == fabgl::VK_KP_RIGHT) {
+                    bitWrite(PS2cols[4], 2, !Kdown);
+                    continue;
+                }
+
+                if (KeytoESP == fabgl::VK_RALT) {
+                    bitWrite(PS2cols[4], 0, !Kdown);
+                    continue;
+                }
+
+            }
+
             // Check keyboard status and map it to Spectrum Ports
             
             bitWrite(PS2cols[0], 0, (!Kbd->isVKDown(fabgl::VK_LSHIFT))
@@ -1218,9 +1260,11 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
+
                 beeper = AY_emu ? (beeper / 7) + SamplebufAY[n] : beeper / 7;
                 // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
+
             }
 
         } else {
@@ -1237,9 +1281,11 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+3];
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
+
                 beeper =  (beeper / 6) + SamplebufAY[n];
                 // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
+
             }
         }
     }
@@ -1326,9 +1372,9 @@ for(;;) {
 
     CPU::loop();
 
-    processKeyboard();
-
     audioFrameEnd();
+
+    processKeyboard();
 
     // if (fpart!=1001) fpart++;
     // if (fpart<1000) {
@@ -1346,7 +1392,6 @@ for(;;) {
 
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
-
 
     elapsed = micros() - ts_start;
     idle = target - elapsed;
