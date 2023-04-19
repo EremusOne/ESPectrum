@@ -271,6 +271,16 @@ unsigned short OSD::menuRun(string new_menu) {
             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);
             vTaskDelay(250 / portTICK_PERIOD_MS);
         }
+        if (ZXKeyb::ZXcols[4] == 27) { // PAGE DOWN
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);
+            vTaskDelay(250 / portTICK_PERIOD_MS);
+        }
+        if (ZXKeyb::ZXcols[3] == 15) { // PAGE UP
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
+            vTaskDelay(250 / portTICK_PERIOD_MS);
+        }
         if (ZXKeyb::ZXcols[6] == 30) { // ENTER
             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);
@@ -660,6 +670,16 @@ string OSD::menuFile(string filedir, string title, string extensions) {
         if (ZXKeyb::ZXcols[4] == 23) { // 7 UP (Yes, like the drink's name, I know... :D)
             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);
+            vTaskDelay(250 / portTICK_PERIOD_MS);
+        }
+        if (ZXKeyb::ZXcols[4] == 27) { // PAGE DOWN
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);
+            vTaskDelay(250 / portTICK_PERIOD_MS);
+        }
+        if (ZXKeyb::ZXcols[3] == 15) { // PAGE UP
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
             vTaskDelay(250 / portTICK_PERIOD_MS);
         }
         if (ZXKeyb::ZXcols[6] == 30) { // ENTER
