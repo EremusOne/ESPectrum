@@ -771,7 +771,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     while (Kbd->virtualKeyAvailable()) {
 
         bool r = readKbd(&NextKey);
-        
+
         if (r) {
 
             KeytoESP = NextKey.vk;
@@ -1070,7 +1070,13 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     // Combine both keyboards
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
         Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];
+        //printf("ZXRow: %d    ZXCol: %d\n",rowidx,ZXKeyb::ZXcols[rowidx]);
     }
+    
+    //  // Detect and process physical kbd menu key combination (values needed have changed because of variable changes done)
+    //if (ZXKeyb::ZXcols[0] == 254 && ZXKeyb::ZXcols[7] == 253 && ZXKeyb::ZXcols[3] == 254) { // Caps + Symbol + 1
+    //    OSD::do_OSD(fabgl::VK_F1);
+    //}
 
     #else
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
