@@ -91,9 +91,9 @@ void (*AySound::updateReg[14])() = {
 // Status
 uint8_t AySound::selectedRegister;
 
-#define AYEMU_MAX_AMP 40000; // This results in output values between 0-158
+// #define AYEMU_MAX_AMP 40000; // This results in output values between 0-158
 
-// #define AYEMU_MAX_AMP 158
+#define AYEMU_MAX_AMP 158
 
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
@@ -107,13 +107,13 @@ static int Envelope [16][128];
 //     10344, 17876, 24682, 30442, 38844, 47270, 56402, 65535
 // };
 
-/* AY volume table (C) Rampa 2023 */
-static int Rampa_AY_table [16] = {
-    0, 521, 735, 1039, 1467, 2072, 2927, 4135,
-    5841, 8250, 11654, 16462, 23253, 32845, 46395, 65535
-};
+// /* AY volume table (C) Rampa 2023 */
+// static int Rampa_AY_table [16] = {
+//     0, 521, 735, 1039, 1467, 2072, 2927, 4135,
+//     5841, 8250, 11654, 16462, 23253, 32845, 46395, 65535
+// };
 
-// static int Rampa_AY_table_8bits [16] = {0,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
+const int DRAM_ATTR Rampa_AY_table[16] = {0,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
 
 // Borrowed from SoftSpectrum48 source code:
 // Values according to: http://forum.tslabs.info/viewtopic.php?f=6&t=539
@@ -194,21 +194,21 @@ void AySound::init()
 int AySound::set_chip_type(ayemu_chip_t type, int *custom_table)
 {
 
-    // const float max_volume = float (158 / 3.0f);	// As there are three channels.
-    // float root_two = 1.414213562373095f;
+    const float max_volume = float (AYEMU_MAX_AMP / 3.0f);	// As there are three channels.
+    float root_two = 1.414213562373095f;
     
-    // for(int v = 0; v < 32; v++) {
-	// 	table[v] = int(max_volume / powf(root_two, float(v ^ 0x1f) / 3.18f));
-	// }
-    // // Tie level 0 to silence.
-	// for(int v = 31; v >= 0; --v) {
-	// 	table[v] -= table[0];
-	// }
+    for(int v = 0; v < 32; v++) {
+		table[v] = int(max_volume / powf(root_two, float(v ^ 0x1f) / 3.18f));
+	}
+    // Tie level 0 to silence.
+	for(int v = 31; v >= 0; --v) {
+		table[v] -= table[0];
+	}
 
-    for (int n = 0; n < 32; n++)
-        // table[n] = Lion17_AY_table[n / 2];
-        table[n] = Rampa_AY_table[n / 2];
-        // table[n] = SoftSpec48_AY_table[n / 2];
+    // for (int n = 0; n < 32; n++)
+    //     // table[n] = Lion17_AY_table[n / 2];
+    //     table[n] = Rampa_AY_table[n / 2];
+    //     // table[n] = SoftSpec48_AY_table[n / 2];
     
     type = AYEMU_AY;
 
@@ -292,7 +292,7 @@ void AySound::prepare_generation()
 
     dirty = 0;
 }
-       
+
 //
 // Generate sound.
 // Fill sound buffer with current register data
@@ -397,38 +397,33 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 
             #define ENVVOL Envelope[ayregs.env_style][env_pos]
 
-            // if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a) & 1 ) {
-            //     tmpvol = (ayregs.env_a) ? ENVVOL : Rampa_AY_table_8bits[ayregs.vol_a];
-            
             if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a)) {
-                tmpvol = (ayregs.env_a) ? ENVVOL : (ayregs.vol_a * 2) + 1;
+                tmpvol = (ayregs.env_a) ? ENVVOL : Rampa_AY_table[ayregs.vol_a];
+                // tmpvol = (ayregs.env_a) ? ENVVOL : (ayregs.vol_a * 2) + 1;
                 mix_l += vols[0][tmpvol];
-            }
-            
 
-            // if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b) & 1) {
-            //     tmpvol = (ayregs.env_b) ? ENVVOL :  Rampa_AY_table_8bits[ayregs.vol_b];
+            }
 
             if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b)) {
-                tmpvol = (ayregs.env_b) ? ENVVOL :  (ayregs.vol_b * 2) + 1;
+                tmpvol = (ayregs.env_b) ? ENVVOL : Rampa_AY_table[ayregs.vol_b];
+                // tmpvol = (ayregs.env_b) ? ENVVOL :  (ayregs.vol_b * 2) + 1;
                 mix_l += vols[2][tmpvol];
             }
             
-            // if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c) & 1) {
-            //     tmpvol = (ayregs.env_c) ? ENVVOL : Rampa_AY_table_8bits[ayregs.vol_c];
-
             if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c)) {
-                tmpvol = (ayregs.env_c) ? ENVVOL : (ayregs.vol_c * 2) + 1;
+                tmpvol = (ayregs.env_c) ? ENVVOL : Rampa_AY_table[ayregs.vol_c];
+                // // tmpvol = (ayregs.env_c) ? ENVVOL : (ayregs.vol_c * 2) + 1;
                 mix_l += vols[4][tmpvol];
             }            
+
         } /* end for (m=0; ...) */
         
-        // mix_l /= Amp_Global;
-        // *sound_buf++ = mix_l;
-
         mix_l /= Amp_Global;
-        mix_l >>= 8;
         *sound_buf++ = mix_l;
+
+        // mix_l /= Amp_Global;
+        // mix_l >>= 8;
+        // *sound_buf++ = mix_l;
 
     }
 
