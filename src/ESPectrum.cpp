@@ -703,7 +703,14 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                                         );
 
             bitWrite(PS2cols[7], 4, (!Kbd->isVKDown(fabgl::VK_B)) & (!Kbd->isVKDown(fabgl::VK_b)));
-
+            
+            // Replicate ZX cursor keys
+            bitWrite(PS2cols[0], 0, (!Kbd->isVKDown(fabgl::VK_DOWN) & !Kbd->isVKDown(fabgl::VK_UP) & !Kbd->isVKDown(fabgl::VK_LEFT) & !Kbd->isVKDown(fabgl::VK_RIGHT))); // CAPS SHIFT
+            bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_DOWN)));
+            bitWrite(PS2cols[4], 3, (!Kbd->isVKDown(fabgl::VK_UP)));
+            bitWrite(PS2cols[3], 4, (!Kbd->isVKDown(fabgl::VK_LEFT)));
+            bitWrite(PS2cols[4], 2, (!Kbd->isVKDown(fabgl::VK_RIGHT)));
+            
         }
         
         // bool r = readKbd(&NextKey);
@@ -1045,7 +1052,13 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     // Combine both keyboards
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
         Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];
+        //printf("ZXRow: %d    ZXCol: %d\n",rowidx,ZXKeyb::ZXcols[rowidx]);
     }
+    
+    //  // Detect and process physical kbd menu key combination
+    //if (ZXKeyb::ZXcols[0] == 254 && ZXKeyb::ZXcols[7] == 253 && ZXKeyb::ZXcols[3] == 254) { // Caps + Symbol + 1
+    //    OSD::do_OSD(fabgl::VK_F1);
+    //}
 
     #else
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
