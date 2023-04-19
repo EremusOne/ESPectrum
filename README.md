@@ -104,7 +104,7 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 - F10 Volume up
 - F12 Reset ESP32
 - Pause Pause
-- ImprPant BMP screen capture (Folder /c at SDCard)
+- PrntScr BMP screen capture (Folder /c at SDCard)
 
 ## Hardware configuration and pinout
 
