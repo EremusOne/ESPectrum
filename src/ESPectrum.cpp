@@ -987,13 +987,65 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     // Process physical keyboard
     ZXKeyb::process();
 
+    // Detect and process physical kbd menu key combinations
+    // CS+SS+N -> FN Keys
+    // F11 -> CS+SS+Q, F12 -> CS+SS+W
+    // TO DO: Add delay after special key so keys as vol up vol down or toggles like F8 doesn't get re-pressed too fast.
+    if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
+        if (!bitRead(ZXKeyb::ZXcols[3],0)) {
+            OSD::do_OSD(fabgl::VK_F1);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3],1)) {
+            OSD::do_OSD(fabgl::VK_F2);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3],2)) {
+            OSD::do_OSD(fabgl::VK_F3);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3],3)) {
+            OSD::do_OSD(fabgl::VK_F4);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3],4)) {
+            OSD::do_OSD(fabgl::VK_F5);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[4],4)) {
+            OSD::do_OSD(fabgl::VK_F6);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[4],3)) {
+            OSD::do_OSD(fabgl::VK_F7);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[4],2)) {
+            OSD::do_OSD(fabgl::VK_F8);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[4],1)) {
+            OSD::do_OSD(fabgl::VK_F9);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[4],0)) {
+            OSD::do_OSD(fabgl::VK_F10);
+            return;
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[2],0)) {
+            CaptureToBmp();
+            return;
+        }
+        if (!bitRead(ZXKeyb::ZXcols[2],1)) {
+            OSD::do_OSD(fabgl::VK_F12);
+            return;
+        }
+    }
+
     // Combine both keyboards
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
         Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];
     }
-
-    // Detect and process physical kbd menu key combinations
-    // /*TO DO*/
 
     #else
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
@@ -1167,6 +1219,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
                 beeper = AY_emu ? (beeper / 7) + SamplebufAY[n] : beeper / 7;
+                // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
             }
 
