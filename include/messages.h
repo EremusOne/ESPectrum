@@ -111,12 +111,14 @@ static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
     "Tape\t>\n"\
     "Reset\t>\n"\
     "Options\t>\n"\
+    "Help\n"\
     "About\n"
 #define MENU_MAIN_ES /*"Menu principal\n"*/ \
     "Snapshots\t>\n"\
     "Casete\t>\n"\
     "Resetear\t>\n"\
     "Opciones\t>\n"\
+    "Ayuda\n"\
     "Acerca de\n"
 static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
 
@@ -307,5 +309,43 @@ static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES
     " su gente (Hola ackerman!) por su\n"\
     " ayuda e inspiracion.\n"
 static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
+
+#define OSD_HELP_EN \
+    " [F1]     Menu\n"\
+    " [F2]     Load (SNA,Z80)\n"\
+    " [F3]     Load custom snapshot\n"\
+    " [F4]     Save custom snapshot\n"\
+    " [F5]     Select TAP file\n"\
+    " [F6]     Play/Pause tape\n"\
+    " [F7]     Stop tape\n"\
+    " [F8]     OSD Stats:\n"\
+    "           CPU: microsec. per CPU cycle\n"\
+    "           IDL: unused microsec.\n"\
+    "           FPS: Frames per second\n"\
+    "           FND: FPS without delay\n"\
+    " [F9]     Volume down\n"\
+    " [F10]    Volume up\n"\
+    " [F12]    Reset ESP32\n"\
+    " [Pause]  Pause\n"\
+    " [PrtScr] BMP screenshot (SD folder /c)\n"
+#define OSD_HELP_ES \
+    " [F1]      Menu\n"\
+    " [F2]      Cargar (SNA,Z80)\n"\
+    " [F3]      Cargar snapshot\n"\
+    " [F4]      Guardar snapshot\n"\
+    " [F5]      Elegir TAP\n"\
+    " [F6]      Play/Pausa\n"\
+    " [F7]      Stop\n"\
+    " [F8]      OSD\n"\
+    "            CPU: microsg. por ciclo CPU\n"\
+    "            IDL: microsg. sin usar\n"\
+    "            FPS: Frames por segundo\n"\
+    "            FND: FPS sin delay\n"\
+    " [F9]      Subir volumen\n"\
+    " [F10]     Bajar volumen\n"\
+    " [F12]     Resetear ESP32\n"\
+    " [Pause]   Pausa\n"\
+    " [ImpPant] Captura BMP (Carpeta SD /c)\n"
+static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
 
 #endif // ESPECTRUM_MESSAGES_h
