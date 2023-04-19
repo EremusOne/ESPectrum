@@ -193,9 +193,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 if (ESPectrum::readKbd(&Nextkey))
                     if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
             }
-          
-            // if (ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_PAUSE)) break;
-
             vTaskDelay(5 / portTICK_PERIOD_MS);
         }
     }
@@ -582,6 +579,22 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             drawOSD();
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
+            VIDEO::vga.print(OSD_HELP[Config::lang]);
+            while (1) {
+                if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+                    if (ESPectrum::readKbd(&Nextkey)) {
+                        if(!Nextkey.down) continue;
+                        if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
+                    }
+                }
+                vTaskDelay(5 / portTICK_PERIOD_MS);
+            }
+        }        
+        else if (opt == 6) {
+            // About
+            drawOSD();
+            osdAt(2, 0);
+            VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_ABOUT[Config::lang]);
             while (1) {
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -590,12 +603,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
                     }
                 }
-
-                // if ((ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_F1)) ||
-                //     (ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_ESCAPE)) ||
-                //     (ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_RETURN))
-                // ) break;                
-
                 vTaskDelay(5 / portTICK_PERIOD_MS);
             }
         }        
