@@ -259,6 +259,12 @@ unsigned short OSD::menuRun(string new_menu) {
     fabgl::VirtualKeyItem Menukey;    
 
     newMenu(new_menu);
+
+    #ifdef ZXKEYB
+    zxDelay = REPDEL;
+    lastzxKey = 0;
+    #endif
+
     while (1) {
         
         #ifdef ZXKEYB
@@ -301,6 +307,7 @@ unsigned short OSD::menuRun(string new_menu) {
         if (!bitRead(ZXKeyb::ZXcols[7], 0)) { // BREAK
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);
                 if (lastzxKey == 4)
                     zxDelay = REPPER;
                 else
@@ -311,6 +318,7 @@ unsigned short OSD::menuRun(string new_menu) {
         if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
                 if (lastzxKey == 5)
                     zxDelay = REPPER;
                 else
@@ -321,6 +329,7 @@ unsigned short OSD::menuRun(string new_menu) {
         if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);
                 if (lastzxKey == 6)
                     zxDelay = REPPER;
                 else
@@ -704,6 +713,11 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
     menuDraw();
 
+    #ifdef ZXKEYB
+    zxDelay = REPDEL;
+    lastzxKey = 0;
+    #endif
+
     while (1) {
 
         #ifdef ZXKEYB
@@ -746,6 +760,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
         if (!bitRead(ZXKeyb::ZXcols[7], 0)) { // BREAK
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
                 if (lastzxKey == 4)
                     zxDelay = REPPER;
                 else
@@ -756,6 +771,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
         if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
                 if (lastzxKey == 5)
                     zxDelay = REPPER;
                 else
@@ -766,6 +782,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
         if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
                 if (lastzxKey == 6)
                     zxDelay = REPPER;
                 else

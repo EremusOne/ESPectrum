@@ -710,8 +710,6 @@ void IRAM_ATTR ESPectrum::PS2col() {
 
 
 #ifdef ZXKEYB
-#define REPDEL 140 // As in real ZX Spectrum (700 ms.)
-#define REPPER 20 // As in real ZX Spectrum (100 ms.)
 static int zxDelay = 0;
 #endif
 
@@ -888,86 +886,65 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
     #ifdef ZXKEYB
     
-    // Process physical keyboard
-    ZXKeyb::process();
-
-    if (zxDelay > 0) zxDelay--;
+    if (zxDelay > 0)
+        zxDelay--;
+    else
+        // Process physical keyboard
+        ZXKeyb::process();
 
     // Detect and process physical kbd menu key combinations
     // CS+SS+N -> FN Keys
     // F11 -> CS+SS+Q, F12 -> CS+SS+W
     // TO DO: Add delay after special key so keys as vol up vol down or toggles like F8 doesn't get re-pressed too fast.
     if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
+
+        zxDelay = 15;
+
         if (!bitRead(ZXKeyb::ZXcols[3],0)) {
             OSD::do_OSD(fabgl::VK_F1);
-            zxDelay = REPDEL;
-            return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],1)) {
             OSD::do_OSD(fabgl::VK_F2);
-            zxDelay = REPDEL;
-            return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],2)) {
             OSD::do_OSD(fabgl::VK_F3);
-            zxDelay = REPDEL;
-            return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],3)) {
             OSD::do_OSD(fabgl::VK_F4);
-            zxDelay = REPDEL;
-            return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],4)) {
             OSD::do_OSD(fabgl::VK_F5);
-            zxDelay = REPDEL;
-            return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],4)) {
-            if (zxDelay == 0) {
-                OSD::do_OSD(fabgl::VK_F6);
-                zxDelay = REPDEL;
-                return;
-            }            
+            OSD::do_OSD(fabgl::VK_F6);
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],3)) {
             OSD::do_OSD(fabgl::VK_F7);
-            zxDelay = REPDEL;
-            return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],2)) {
-            if (zxDelay == 0) {
-                OSD::do_OSD(fabgl::VK_F8);
-                zxDelay = REPDEL;
-                return;
-            }
+            OSD::do_OSD(fabgl::VK_F8);
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],1)) {
-            if (zxDelay == 0) {
-                OSD::do_OSD(fabgl::VK_F9);
-                zxDelay = REPDEL;
-                return;
-            }
+            OSD::do_OSD(fabgl::VK_F9);
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],0)) {
-            if (zxDelay == 0) {
-                OSD::do_OSD(fabgl::VK_F10);
-                zxDelay = REPDEL;
-                return;
-            }
+            OSD::do_OSD(fabgl::VK_F10);
         } else
         if (!bitRead(ZXKeyb::ZXcols[2],0)) {
-            if (zxDelay == 0) {            
-                CaptureToBmp();
-                zxDelay = REPDEL;
-                return;
-            }
+            CaptureToBmp();
         } else
         if (!bitRead(ZXKeyb::ZXcols[2],1)) {
             OSD::do_OSD(fabgl::VK_F12);
         } else
             zxDelay = 0;
-    } else zxDelay = 0;
+
+        if (zxDelay) {
+            // Set all keys as not pressed
+            for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0x1f;
+            return;
+        }
+    
+    }
 
     // Combine both keyboards
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {

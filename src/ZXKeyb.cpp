@@ -19,8 +19,7 @@ void ZXKeyb::setup()
     gpio_set_direction((gpio_num_t)KM_COL_4, (gpio_mode_t)GPIO_MODE_INPUT);
 
     // set all keys as not pressed
-    for (uint8_t i = 0; i < 8; i++)
-        Ports::port[i] = 0x1f;
+    for (uint8_t i = 0; i < 8; i++) ZXcols[i] = 0x1f;        
 }
 
 // row order depends on actual row association with address lines, see

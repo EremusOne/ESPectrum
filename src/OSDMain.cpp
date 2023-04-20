@@ -45,6 +45,7 @@
 #include "FileZ80.h"
 #include "MemESP.h"
 #include "Tape.h"
+#include "ZXKeyb.h"
 #include "pwm_audio.h"
 
 #ifndef ESP32_SDL2_WRAPPER
@@ -179,6 +180,11 @@ static void persistLoad(uint8_t slotnumber)
     }
     OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
 }
+
+#ifdef ZXKEYB
+#define REPDEL 140 // As in real ZX Spectrum (700 ms.)
+static int zxDelay = 0;
+#endif
 
 // OSD Main Loop
 void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
@@ -582,14 +588,47 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_HELP[Config::lang]);
+
+            #ifdef ZXKEYB
+            zxDelay = REPDEL;
+            #endif
+
             while (1) {
+
+                #ifdef ZXKEYB
+        
+                ZXKeyb::process();
+
+                if (!bitRead(ZXKeyb::ZXcols[6], 0)) { // ENTER
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                        zxDelay = REPDEL;
+                    }
+                } else
+                if (!bitRead(ZXKeyb::ZXcols[7], 0)) { // BREAK
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
+                        zxDelay = REPDEL;
+                    }
+                }
+
+                #endif
+
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                     if (ESPectrum::readKbd(&Nextkey)) {
                         if(!Nextkey.down) continue;
                         if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
                     }
                 }
+
                 vTaskDelay(5 / portTICK_PERIOD_MS);
+
+                #ifdef ZXKEYB        
+                if (zxDelay > 0) zxDelay--;
+                #endif
+
             }
         }        
         else if (opt == 6) {
@@ -598,14 +637,48 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_ABOUT[Config::lang]);
+            
+            #ifdef ZXKEYB
+            zxDelay = REPDEL;
+            #endif
+            
             while (1) {
+
+                #ifdef ZXKEYB
+        
+                ZXKeyb::process();
+
+                if (!bitRead(ZXKeyb::ZXcols[6], 0)) { // ENTER
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                        zxDelay = REPDEL;
+                    }
+                } else
+                if (!bitRead(ZXKeyb::ZXcols[7], 0)) { // BREAK
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
+                        zxDelay = REPDEL;
+                    }
+                }
+
+                #endif
+
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                     if (ESPectrum::readKbd(&Nextkey)) {
                         if(!Nextkey.down) continue;
                         if ((Nextkey.vk == fabgl::VK_F1) || (Nextkey.vk == fabgl::VK_ESCAPE) || (Nextkey.vk == fabgl::VK_RETURN)) break;
                     }
                 }
+
                 vTaskDelay(5 / portTICK_PERIOD_MS);
+                
+                #ifdef ZXKEYB        
+                if (zxDelay > 0) zxDelay--;
+                #endif
+
+
             }
         }        
     }
