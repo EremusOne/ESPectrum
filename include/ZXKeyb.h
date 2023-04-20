@@ -52,6 +52,8 @@ public:
     static void process();
 
     static uint8_t ZXcols[8];
+    
+    static uint8_t PrevFkeyOSD;
 
 private:
     static void putRows(uint8_t row_pattern);
