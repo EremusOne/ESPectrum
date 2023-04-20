@@ -363,9 +363,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             else if (opt2 == 2) {
                 // Hard
                 Config::ram_file = NO_RAM_FILE;
-#ifdef SNAPSHOT_LOAD_LAST
+                #ifdef SNAPSHOT_LOAD_LAST
                 Config::save();
-#endif
+                #endif
                 ESPectrum::reset();
             }
             else if (opt2 == 3) {
@@ -735,8 +735,8 @@ void OSD::changeSnapshot(string filename)
     
     Config::ram_file = filename;
     
-#ifdef SNAPSHOT_LOAD_LAST
+    #ifdef SNAPSHOT_LOAD_LAST
     Config::save();
-#endif
+    #endif
 
 }
