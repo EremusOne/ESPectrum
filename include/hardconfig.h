@@ -121,6 +121,6 @@
 // PHYSICAL MEMBRANE KEYBOARD SUPPORT (W.I.P.)
 ///////////////////////////////////////////////////////////////////////////////
 
-#define ZXKEYB
+// #define ZXKEYB
 
 #endif // ESPectrum_config_h
