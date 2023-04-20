@@ -384,7 +384,7 @@ unsigned short OSD::menuRun(string new_menu) {
                             menuPrintRow(last_focus, IS_NORMAL);                
                         }
                     }
-                } else if (Menukey.vk == fabgl::VK_PAGEUP) {
+                } else if ((Menukey.vk == fabgl::VK_PAGEUP) || (Menukey.vk == fabgl::VK_LEFT)) {
                     if (begin_row > virtual_rows) {
                         focus = 1;
                         begin_row -= virtual_rows;
@@ -393,7 +393,7 @@ unsigned short OSD::menuRun(string new_menu) {
                         begin_row = 1;
                     }
                     menuRedraw();
-                } else if (Menukey.vk == fabgl::VK_PAGEDOWN) {
+                } else if ((Menukey.vk == fabgl::VK_PAGEDOWN) || (Menukey.vk == fabgl::VK_RIGHT)) {
                     if (real_rows - begin_row  - virtual_rows > virtual_rows) {
                         focus = 1;
                         begin_row += virtual_rows - 1;
@@ -843,7 +843,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                             filemenuPrintRow(focus - 1, IS_NORMAL);
                         }
                     }
-                } else if (Menukey.vk == fabgl::VK_PAGEUP) {
+                } else if ((Menukey.vk == fabgl::VK_PAGEUP) || (Menukey.vk == fabgl::VK_LEFT)) {
                     if (begin_row > virtual_rows) {
                         focus = 1;
                         begin_row -= virtual_rows;
@@ -852,7 +852,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                         begin_row = 1;
                     }
                     filemenuRedraw(title);
-                } else if (Menukey.vk == fabgl::VK_PAGEDOWN) {
+                } else if ((Menukey.vk == fabgl::VK_PAGEDOWN) || (Menukey.vk == fabgl::VK_RIGHT)) {
                     if (real_rows - begin_row  - virtual_rows > virtual_rows) {
                         focus = 1;
                         begin_row += virtual_rows - 1;
