@@ -55,7 +55,7 @@ uint8_t  Config::esp32rev = 0;
 string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
-uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
+uint8_t  Config::joystick = 0; // 0 -> Cursor, 1 -> Kempston
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
