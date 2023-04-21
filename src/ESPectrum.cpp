@@ -720,10 +720,11 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     fabgl::VirtualKeyItem NextKey;
     fabgl::VirtualKey KeytoESP;
     bool Kdown;
+    bool r = false;
 
     while (Kbd->virtualKeyAvailable()) {
 
-        bool r = readKbd(&NextKey);
+        r = readKbd(&NextKey);
 
         if (r) {
 
@@ -953,8 +954,11 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     }
     
     #else
-    for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
-        Ports::port[rowidx] = PS2cols[rowidx];
+
+    if (r) {
+        for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
+            Ports::port[rowidx] = PS2cols[rowidx];
+        }
     }
     #endif
 
@@ -990,7 +994,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        pwm_audio_write(audioBuffer, samplesPerFrame, &written, 5 / portTICK_PERIOD_MS);
+        pwm_audio_write(ESPectrum::audbuffertosend, samplesPerFrame, &written, 5 / portTICK_PERIOD_MS);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
@@ -1059,14 +1063,13 @@ void ESPectrum::audioFrameStart() {
 }
 
 void IRAM_ATTR ESPectrum::BeeperGetSample(int Audiobit) {
-    if (Audiobit != lastaudioBit) {
         // Audio buffer generation (oversample)
         uint32_t audbufpos = Z80Ops::is48 ? CPU::tstates >> 4 : CPU::tstates / 19;
-        for (int i=audbufcnt;i<audbufpos;i++)
-            overSamplebuf[i] = lastaudioBit;
-        audbufcnt = audbufpos;
-        lastaudioBit = Audiobit;
-    }
+        if (audbufpos != audbufcnt) {
+            for (int i=audbufcnt;i<audbufpos;i++)
+                overSamplebuf[i] = lastaudioBit;
+            audbufcnt = audbufpos;
+        }
 }
 
 void IRAM_ATTR ESPectrum::AYGetSample() {
@@ -1094,6 +1097,7 @@ void ESPectrum::audioFrameEnd() {
 //=======================================================================================
 
 int ESPectrum::sync_cnt = 0;
+uint8_t *ESPectrum::audbuffertosend = ESPectrum::audioBuffer;
 
 void IRAM_ATTR ESPectrum::loop() {
 

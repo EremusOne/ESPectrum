@@ -69,7 +69,7 @@ static int TapeBit = 0;
 
 uint8_t Ports::port[128];
 
-uint8_t Ports::input(uint16_t address)
+uint8_t IRAM_ATTR Ports::input(uint16_t address)
 {
 
     // ** I/O Contention (Early) *************************
@@ -143,7 +143,7 @@ uint8_t Ports::input(uint16_t address)
 
 }
 
-void Ports::output(uint16_t address, uint8_t data) {    
+void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {    
     
     // ** I/O Contention (Early) *************************
     VIDEO::Draw(1, MemESP::ramContended[address >> 14]);
@@ -161,7 +161,11 @@ void Ports::output(uint16_t address, uint8_t data) {
         if (Tape::tapeStatus==TAPE_LOADING)
             if (TapeBit) data |= 0x10;
         
-        ESPectrum::BeeperGetSample(sp_volt[data >> 3 & 3]);
+        int Audiobit = sp_volt[data >> 3 & 3];
+        if (Audiobit != ESPectrum::lastaudioBit) {
+            ESPectrum::BeeperGetSample(Audiobit);
+            ESPectrum::lastaudioBit = Audiobit;
+        }
 
     }
 

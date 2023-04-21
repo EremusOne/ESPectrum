@@ -40,13 +40,14 @@
 #define Ports_h
 
 #include <inttypes.h>
+#include "ESPectrum.h"
 
 class Ports
 {
 public:
     static uint8_t port[128];
-    static uint8_t input(uint16_t address);
-    static void output(uint16_t address, uint8_t data);
+    static uint8_t IRAM_ATTR input(uint16_t address);
+    static void IRAM_ATTR output(uint16_t address, uint8_t data);
 };
 
 

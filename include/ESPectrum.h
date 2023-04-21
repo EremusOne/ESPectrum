@@ -89,6 +89,7 @@ public:
     static bool AY_emu;
     static int Audio_freq;
     static int sync_cnt;    
+    static uint8_t *audbuffertosend;    
 
     // static bool Audio_restart;
 
