@@ -86,6 +86,7 @@ public:
     static int samplesPerFrame;
     static bool AY_emu;
     static int Audio_freq;
+    static int sync_cnt;    
 
     // static bool Audio_restart;
 

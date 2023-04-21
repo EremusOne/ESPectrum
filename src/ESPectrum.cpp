@@ -1092,6 +1092,8 @@ void ESPectrum::audioFrameEnd() {
 // MAIN LOOP
 //=======================================================================================
 
+int ESPectrum::sync_cnt = 0;
+
 void IRAM_ATTR ESPectrum::loop() {
 
 static char linea1[] = "CPU: 00000 / IDL: 00000 ";
@@ -1102,7 +1104,6 @@ int64_t ts_start, elapsed;
 int64_t idle;
 
 // int ESPmedian = 0;
-int sync_cnt = 0;
 
 // For Testing/Profiling: Start with stats on
 // if (Config::aspect_16_9) 
@@ -1148,7 +1149,7 @@ for(;;) {
     if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
 
     // Flashing flag change
-    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0b10000000;
+    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
 
     elapsed = micros() - ts_start;
     idle = target - elapsed;

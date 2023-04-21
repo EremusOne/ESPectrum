@@ -55,6 +55,8 @@ using namespace std;
 #include "OSDMain.h"
 #include <math.h>
 #include "ZXKeyb.h"
+#include "pwm_audio.h"
+#include "Z80_JLS/z80.h"
 
 // #include <cctype>
 // #include <algorithm>
@@ -89,6 +91,32 @@ static unsigned short begin_row;      // First real displayed row
 static uint8_t focus;                    // Focused virtual row
 static uint8_t last_focus;               // To check for changes
 static unsigned short last_begin_row; // To check for changes
+
+
+uint8_t DRAM_ATTR click48[12]={0,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x16,0};
+uint8_t DRAM_ATTR click128[116]= {  0x00,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
+                                    0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
+                                    0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
+                                    0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
+                                    0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
+                                    0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
+                                    0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
+                                    0x61,0x61,0x16,0x00
+                                };
+
+void IRAM_ATTR OSD::click() {
+
+    size_t written;
+
+    if (Z80Ops::is48) {
+        pwm_audio_write(click48, 12, &written,  5 / portTICK_PERIOD_MS);
+    } else {
+        pwm_audio_write(click128, 116, &written, 5 / portTICK_PERIOD_MS);
+    }
+
+    // printf("Written: %d\n",written);
+
+}
 
 uint16_t OSD::zxColor(uint8_t color, uint8_t bright) {
     if (bright) color += 8;
@@ -293,7 +321,7 @@ unsigned short OSD::menuRun(string new_menu) {
                 lastzxKey = 2;
             }
         } else
-        if (!bitRead(ZXKeyb::ZXcols[6], 0)) { // ENTER
+        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
@@ -366,6 +394,7 @@ unsigned short OSD::menuRun(string new_menu) {
                             menuPrintRow(last_focus, IS_NORMAL);
                         }
                     }
+                    click();
                 } else if (Menukey.vk == fabgl::VK_DOWN) {
                     if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {                
                         menuScroll(UP);
@@ -384,6 +413,7 @@ unsigned short OSD::menuRun(string new_menu) {
                             menuPrintRow(last_focus, IS_NORMAL);                
                         }
                     }
+                    click();
                 } else if ((Menukey.vk == fabgl::VK_PAGEUP) || (Menukey.vk == fabgl::VK_LEFT)) {
                     if (begin_row > virtual_rows) {
                         focus = 1;
@@ -393,6 +423,7 @@ unsigned short OSD::menuRun(string new_menu) {
                         begin_row = 1;
                     }
                     menuRedraw();
+                    click();
                 } else if ((Menukey.vk == fabgl::VK_PAGEDOWN) || (Menukey.vk == fabgl::VK_RIGHT)) {
                     if (real_rows - begin_row  - virtual_rows > virtual_rows) {
                         focus = 1;
@@ -402,19 +433,24 @@ unsigned short OSD::menuRun(string new_menu) {
                         begin_row = real_rows - virtual_rows + 1;
                     }
                     menuRedraw();
+                    click();
                 } else if (Menukey.vk == fabgl::VK_HOME) {
                     focus = 1;
                     begin_row = 1;
                     menuRedraw();
+                    click();
                 } else if (Menukey.vk == fabgl::VK_END) {
                     focus = virtual_rows - 1;
                     begin_row = real_rows - virtual_rows + 1;
                     menuRedraw();
+                    click();
                 } else if (Menukey.vk == fabgl::VK_RETURN) {
                     if (!menuIsSub(focus)) menu_level=0; 
+                    click();
                     return menuRealRowFor(focus);
                 } else if ((Menukey.vk == fabgl::VK_ESCAPE) || (Menukey.vk == fabgl::VK_F1)) {
                     menu_level=0;
+                    click();
                     return 0;
                 }
             }
@@ -746,7 +782,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                 lastzxKey = 2;
             }
         } else
-        if (!bitRead(ZXKeyb::ZXcols[6], 0)) { // ENTER
+        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
             if (zxDelay == 0) {
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
                 ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
@@ -801,6 +837,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
             if (ESPectrum::readKbd(&Menukey)) {
                 if (!Menukey.down) continue;
+
                 // // Search first ocurrence of letter if we're not on that letter yet
                 // if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
                 //     uint8_t dif;
@@ -828,6 +865,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                             filemenuPrintRow(focus + 1, IS_NORMAL);
                         }
                     }
+                    click();
                 } else if (Menukey.vk == fabgl::VK_DOWN) {
                     if (focus == virtual_rows - 1) {
                         if ((begin_row + virtual_rows - 1) < real_rows) {
@@ -843,6 +881,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                             filemenuPrintRow(focus - 1, IS_NORMAL);
                         }
                     }
+                    click();
                 } else if ((Menukey.vk == fabgl::VK_PAGEUP) || (Menukey.vk == fabgl::VK_LEFT)) {
                     if (begin_row > virtual_rows) {
                         focus = 1;
@@ -852,6 +891,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                         begin_row = 1;
                     }
                     filemenuRedraw(title);
+                    click();
                 } else if ((Menukey.vk == fabgl::VK_PAGEDOWN) || (Menukey.vk == fabgl::VK_RIGHT)) {
                     if (real_rows - begin_row  - virtual_rows > virtual_rows) {
                         focus = 1;
@@ -861,23 +901,28 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                         begin_row = real_rows - virtual_rows + 1;
                     }
                     filemenuRedraw(title);
+                    click();
                 } else if (Menukey.vk == fabgl::VK_HOME) {
                     focus = 1;
                     begin_row = 1;
                     filemenuRedraw(title);
+                    click();
                 } else if (Menukey.vk == fabgl::VK_END) {
                     focus = virtual_rows - 1;
                     begin_row = real_rows - virtual_rows + 1;
                     filemenuRedraw(title);
+                    click();
                 } else if (Menukey.vk == fabgl::VK_RETURN) {
                     if (!menuIsSub(focus)) menu_level=0; 
                     fclose(dirfile);
                     filedir = rowGet(menu,focus);
                     rtrim(filedir);
+                    click();
                     return filedir;
                 } else if (Menukey.vk == fabgl::VK_ESCAPE) {
                     menu_level=0;
                     fclose(dirfile);
+                    click();
                     return "";
                 }
             }

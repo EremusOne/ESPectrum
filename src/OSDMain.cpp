@@ -201,6 +201,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
             vTaskDelay(5 / portTICK_PERIOD_MS);
         }
+        click();
     }
     else if (KeytoESP == fabgl::VK_F2) {
         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
@@ -229,16 +230,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
     }
     else if (KeytoESP == fabgl::VK_F6) {
+
         // Start .tap reproduction
         if (Tape::tapeFileName=="none") {
             OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
         } else {
             Tape::TAP_Play();
+            click();
         }
+
     }
     else if (KeytoESP == fabgl::VK_F7) {
         // Stop .tap reproduction
         Tape::TAP_Stop();
+        click();
     }
     else if (KeytoESP == fabgl::VK_F8) {
         // Show / hide OnScreen Stats
@@ -255,17 +260,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 VIDEO::DrawOSD43  = VIDEO::BottomBorder_OSD;
             VIDEO::OSD = true;
         }    
+        click();
     }
     else if (KeytoESP == fabgl::VK_F9) { // Volume down
         if (ESPectrum::aud_volume>-16) {
                 ESPectrum::aud_volume--;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
+                click();
         }
     }
     else if (KeytoESP == fabgl::VK_F10) { // Volume up
         if (ESPectrum::aud_volume<0) {
                 ESPectrum::aud_volume++;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
+                click();                
         }
     }    
     // else if (KeytoESP == fabgl::VK_F9) {
@@ -630,6 +638,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 #endif
 
             }
+
+            click();
+
         }        
         else if (opt == 6) {
             // About
@@ -680,6 +691,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
 
             }
+
+            click();
+
         }        
     }
 }
