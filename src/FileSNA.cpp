@@ -309,7 +309,8 @@ bool FileSNA::load(string sna_fn)
     pwm_audio_stop();
     pwm_audio_set_sample_rate(ESPectrum::Audio_freq);
     pwm_audio_start();
-
+    pwm_audio_set_volume(ESPectrum::aud_volume);
+    
     // Reset AY emulation
     AySound::init();
     AySound::set_sound_format(ESPectrum::Audio_freq,1,8);

@@ -264,16 +264,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F9) { // Volume down
         if (ESPectrum::aud_volume>-16) {
+                click();
                 ESPectrum::aud_volume--;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
-                click();
         }
     }
     else if (KeytoESP == fabgl::VK_F10) { // Volume up
         if (ESPectrum::aud_volume<0) {
+                click();                
                 ESPectrum::aud_volume++;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
-                click();                
         }
     }    
     // else if (KeytoESP == fabgl::VK_F9) {

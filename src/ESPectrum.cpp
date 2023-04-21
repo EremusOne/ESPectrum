@@ -99,7 +99,7 @@ fabgl::PS2Controller ESPectrum::PS2Controller;
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_48] = { 0 };
 uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES_48] = { 0 };
 uint8_t ESPectrum::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
-signed char ESPectrum::aud_volume = -8;
+signed char ESPectrum::aud_volume = ESP_DEFAULT_VOLUME;
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
 uint32_t ESPectrum::audbufcntAY = 0;
@@ -471,6 +471,7 @@ void ESPectrum::reset()
     pwm_audio_stop();
     pwm_audio_set_sample_rate(Audio_freq);
     pwm_audio_start();
+    pwm_audio_set_volume(aud_volume);
 
     // Reset AY emulation
     AySound::init();

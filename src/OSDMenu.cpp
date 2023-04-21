@@ -108,11 +108,15 @@ void IRAM_ATTR OSD::click() {
 
     size_t written;
 
+    pwm_audio_set_volume(ESP_DEFAULT_VOLUME);
+
     if (Z80Ops::is48) {
         pwm_audio_write(click48, 12, &written,  5 / portTICK_PERIOD_MS);
     } else {
         pwm_audio_write(click128, 116, &written, 5 / portTICK_PERIOD_MS);
     }
+
+    pwm_audio_set_volume(ESPectrum::aud_volume);
 
     // printf("Written: %d\n",written);
 
