@@ -91,8 +91,6 @@ void (*AySound::updateReg[14])() = {
 // Status
 uint8_t AySound::selectedRegister;
 
-// #define AYEMU_MAX_AMP 40000; // This results in output values between 0-158
-
 #define AYEMU_MAX_AMP 140 // This results in output values between 0-158
 
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
@@ -300,20 +298,16 @@ void AySound::prepare_generation()
 void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 {
 
-    int mix_l;
     int tmpvol;
-    int m;
-    int snd_numcount;
     unsigned char *sound_buf = buff;
-
     sound_buf += bufpos;
 
-    snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
+    int snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
     while (snd_numcount-- > 0) {
 
-        mix_l = 0;
+        int mix_l = 0;
         
-        for (m = 0 ; m < ChipTacts_per_outcount ; m++) {
+        for (int m = 0 ; m < ChipTacts_per_outcount ; m++) {
 
             if (++cnt_a >= ayregs.tone_a) {
                 cnt_a = 0;
@@ -404,38 +398,21 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
             if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a)) {
                 tmpvol = (ayregs.env_a) ? ENVVOL : Rampa_AY_table[ayregs.vol_a];
                 mix_l += vols[0][tmpvol];
-
-                // tmpvol = (ayregs.env_a) ? ENVVOL : (ayregs.vol_a * 2) + 1;
-                // mix_l += vols[0][tmpvol];
-                // mix_l += vols[0][tmpvol > 1 ? tmpvol : 0];
             }
 
             if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b)) {
                 tmpvol = (ayregs.env_b) ? ENVVOL : Rampa_AY_table[ayregs.vol_b];
                 mix_l += vols[2][tmpvol];
-
-                // tmpvol = (ayregs.env_b) ? ENVVOL :  (ayregs.vol_b * 2) + 1;
-                // mix_l += vols[2][tmpvol];
-                // mix_l += vols[2][tmpvol > 1 ? tmpvol : 0];
             }
             
             if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c)) {
                 tmpvol = (ayregs.env_c) ? ENVVOL : Rampa_AY_table[ayregs.vol_c];
                 mix_l += vols[4][tmpvol];
-
-                // tmpvol = (ayregs.env_c) ? ENVVOL : (ayregs.vol_c * 2) + 1;
-                // mix_l += vols[4][tmpvol];
-                // mix_l += vols[4][tmpvol > 1 ? tmpvol : 0];
             }            
 
-        } /* end for (m=0; ...) */
+        }
         
-        // mix_l /= Amp_Global;
         *sound_buf++ = mix_l / Amp_Global;
-
-        // mix_l /= Amp_Global;
-        // mix_l >>= 8;
-        // *sound_buf++ = mix_l;
 
     }
 
@@ -488,8 +465,9 @@ void AySound::updEnvFreq() {
 
 void AySound::updEnvType() {
     
+    // This shouldn't happen on AY
     // if (regs[13] == 0xff) { // R13 = 255 means continue current envelop
-    //     printf("ENV TYPE 0xff!\n");
+    //     // printf("ENV TYPE 0xff!\n");
     //     return;
     // }
 

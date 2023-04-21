@@ -236,10 +236,10 @@ static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
 
 #define MENU_LANGUAGE_EN "Language\n"\
     "Interface\t>\n"\
-    "Keyboard\t>\n"
+    "PS2 Keyboard\t>\n"
 #define MENU_LANGUAGE_ES "Idioma\n"\
     "Interfaz\t>\n"\
-    "Teclado\t>\n"
+    "Teclado PS2\t>\n"
 static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
 
 #define MENU_INTERFACE_LANG_EN "Language\n"\
