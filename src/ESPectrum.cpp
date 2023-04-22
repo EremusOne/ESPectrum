@@ -373,7 +373,6 @@ void ESPectrum::setup()
     // AY Sound
     AySound::init();
     AySound::set_sound_format(Audio_freq,1,8);
-    AySound::set_stereo(AYEMU_MONO,NULL);
     AySound::reset();
 
     // Init tape
@@ -476,7 +475,7 @@ void ESPectrum::reset()
     // Reset AY emulation
     AySound::init();
     AySound::set_sound_format(Audio_freq,1,8);
-    AySound::set_stereo(AYEMU_MONO,NULL);
+    AySound::generateVolumeTable();
     AySound::reset();
 
     // Emu loop sync target

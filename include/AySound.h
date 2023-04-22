@@ -115,7 +115,7 @@ typedef struct
     int env_a;        /**< R8 bit 4 */
     int env_b;        /**< R9 bit 4 */
     int env_c;        /**< R10 bit 4 */
-    int env_freq;     /**< R11, R12 */
+    int env_period;     /**< R11, R12 */
     int env_style;    /**< R13 */
 }
 ayemu_regdata_t;
@@ -150,7 +150,7 @@ public:
     static void setRegisterData(uint8_t data);
 
     static void init();
-    static int set_chip_type(ayemu_chip_t chip, int *custom_table);
+    static void generateVolumeTable();
     static void set_chip_freq(int chipfreq);
     static int set_stereo(ayemu_stereo_t stereo, int *custom_eq);
     static int set_sound_format(int freq, int chans, int bits);
@@ -182,7 +182,6 @@ private:
     static int bit_b;                       /**< state of channel B generator */
     static int bit_c;                       /**< state of channel C generator */
     static int bit_n;                       /**< current generator state */
-    static int period_n;                    // Noise period 
     static int cnt_a;                       /**< back counter of A */
     static int cnt_b;                       /**< back counter of B */
     static int cnt_c;                       /**< back counter of C */
@@ -194,7 +193,7 @@ private:
                                             This cache calculated by #table and #eq  */
     static int EnvNum;                      /**< number of current envilopment (0...15) */
     static int env_pos;                     /**< current position in envelop (0...127) */
-    static int Cur_Seed;                    /**< random numbers counter */
+    static uint32_t lfsr;                   /**< random numbers counter */
 
     static uint8_t regs[14];
     static uint8_t selectedRegister;

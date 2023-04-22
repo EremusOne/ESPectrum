@@ -16,3 +16,5 @@ downloaded_fs*.bin
 /doc/**
 /releases
 /releases/**
+/build/
+*~
