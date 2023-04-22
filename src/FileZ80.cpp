@@ -397,7 +397,6 @@ bool FileZ80::load(string z80_fn)
     // Reset AY emulation
     AySound::init();
     AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
-    AySound::set_stereo(AYEMU_MONO,NULL);
     AySound::reset();
 
     // Video sync
