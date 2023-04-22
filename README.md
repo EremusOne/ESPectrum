@@ -18,8 +18,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Contended memory and contended I/O emulation.
 - AY-3-8912 sound emulation.
 - Beeper & Mic emulation (Cobra’s Arc)
-- PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
-- International kbd layout support: US, ES, DE, FR and UK.
+- PS/2 keyboard support
 - Kempston and Cursor type Joystick emulation.
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
