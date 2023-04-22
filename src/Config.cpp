@@ -52,7 +52,7 @@ string   Config::romSet = "SINCLAIR";
 bool     Config::slog_on = false;
 bool     Config::aspect_16_9 = true;
 uint8_t  Config::esp32rev = 0;
-string   Config::kbd_layout = "US";
+// string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
 uint8_t  Config::joystick = 0; // 0 -> Cursor, 1 -> Kempston
@@ -131,10 +131,10 @@ void Config::load() {
                 FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
             } else
                 FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
-        } else if (line.find("kbdlayout:") != string::npos) {
-            kbd_layout = line.substr(line.find(':') + 1);
-            erase_cntrl(kbd_layout);
-            trim(kbd_layout);
+        // } else if (line.find("kbdlayout:") != string::npos) {
+        //     kbd_layout = line.substr(line.find(':') + 1);
+        //     erase_cntrl(kbd_layout);
+        //     trim(kbd_layout);
         } else if (line.find("language:") != string::npos) {
             string slang = line.substr(line.find(':') + 1);
             erase_cntrl(slang);
@@ -198,7 +198,7 @@ void Config::save() {
 
     // KBD layout
     //printf(("kbdlayout:" + kbd_layout + "\n").c_str());
-    fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
+    // fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
 
     // Language
     //printf("language:%s\n",std::to_string(Config::lang).c_str());

@@ -234,13 +234,13 @@ static const char *MENU_ROMSET48[2] = { MENU_ROMSET48_EN, MENU_ROMSET48_ES };
     "PLUS2\n"
 static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
 
-#define MENU_LANGUAGE_EN "Language\n"\
-    "Interface\t>\n"\
-    "PS2 Keyboard\t>\n"
-#define MENU_LANGUAGE_ES "Idioma\n"\
-    "Interfaz\t>\n"\
-    "Teclado PS2\t>\n"
-static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
+// #define MENU_LANGUAGE_EN "Language\n"\
+//     "Interface\t>\n"\
+//     "PS2 Keyboard\t>\n"
+// #define MENU_LANGUAGE_ES "Idioma\n"\
+//     "Interfaz\t>\n"\
+//     "Teclado PS2\t>\n"
+// static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
 
 #define MENU_INTERFACE_LANG_EN "Language\n"\
     "English\t[ ]\n"\
@@ -256,19 +256,19 @@ static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTER
 #define MENU_JOY_ES MENU_JOY_EN
 static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 
-#define MENU_KBD_LAYOUT_EN "Select language\n"\
-    "US English\t[US]\n"\
-    "Spanish\t[ES]\n"\
-    "German\t[DE]\n"\
-    "French\t[FR]\n"\
-    "UK British\t[UK]\n"
-#define MENU_KBD_LAYOUT_ES "Elija idioma\n"\
-    "Ingles EEUU\t[US]\n"\
-    "Espanol\t[ES]\n"\
-    "Aleman\t[DE]\n"\
-    "Frances\t[FR]\n"\
-    "Ingles GB\t[UK]\n"
-static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
+// #define MENU_KBD_LAYOUT_EN "Select language\n"\
+//     "US English\t[US]\n"\
+//     "Spanish\t[ES]\n"\
+//     "German\t[DE]\n"\
+//     "French\t[FR]\n"\
+//     "UK British\t[UK]\n"
+// #define MENU_KBD_LAYOUT_ES "Elija idioma\n"\
+//     "Ingles EEUU\t[US]\n"\
+//     "Espanol\t[ES]\n"\
+//     "Aleman\t[DE]\n"\
+//     "Frances\t[FR]\n"\
+//     "Ingles GB\t[UK]\n"
+// static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
 
 #define OSD_ABOUT_EN \
     " (C)2023 Victor Iborra AKA Eremus\n"\

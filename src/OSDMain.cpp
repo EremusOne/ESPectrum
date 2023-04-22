@@ -491,9 +491,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 else if (options_num == 5) {
                     // language
                     uint8_t opt2;
-                    opt2 = menuRun(MENU_LANGUAGE[Config::lang]);
-                    if (opt2) {
-                        if (opt2 == 1) {
+                    // opt2 = menuRun(MENU_LANGUAGE[Config::lang]);
+                    // if (opt2) {
+                    //     if (opt2 == 1) {
                             string Mnustr = MENU_INTERFACE_LANG[Config::lang];                            
                             std::size_t pos = Mnustr.find("[",0);
                             int nfind = 0;
@@ -512,52 +512,52 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                     Config::save();
                                 }
                             }
-                        } else if (opt2 == 2) {
-                            string Mnustr = MENU_KBD_LAYOUT[Config::lang];
-                            Mnustr.replace(Mnustr.find("[" + Config::kbd_layout),3,"[*");
-                            std::size_t pos = Mnustr.find("[",0);
-                            while (pos != string::npos) {
-                                if (Mnustr.at(pos + 1) != (char)42) {
-                                    Mnustr.replace(pos,3,"[ ");
-                                }
-                                pos = Mnustr.find("[",pos + 1);
-                            }
-                            opt2 = menuRun(Mnustr);
-                            if (opt2) {
-                                switch (opt2) {
-                                    case 1:
-                                        Config::kbd_layout = "US";
-                                        break;
-                                    case 2:
-                                        Config::kbd_layout = "ES";
-                                        break;
-                                    case 3:
-                                        Config::kbd_layout = "DE";
-                                        break;
-                                    case 4:
-                                        Config::kbd_layout = "FR";
-                                        break;
-                                    case 5:
-                                        Config::kbd_layout = "UK";
-                                }
-                                Config::save();
+                        // } else if (opt2 == 2) {
+                        //     string Mnustr = MENU_KBD_LAYOUT[Config::lang];
+                        //     Mnustr.replace(Mnustr.find("[" + Config::kbd_layout),3,"[*");
+                        //     std::size_t pos = Mnustr.find("[",0);
+                        //     while (pos != string::npos) {
+                        //         if (Mnustr.at(pos + 1) != (char)42) {
+                        //             Mnustr.replace(pos,3,"[ ");
+                        //         }
+                        //         pos = Mnustr.find("[",pos + 1);
+                        //     }
+                        //     opt2 = menuRun(Mnustr);
+                        //     if (opt2) {
+                        //         switch (opt2) {
+                        //             case 1:
+                        //                 Config::kbd_layout = "US";
+                        //                 break;
+                        //             case 2:
+                        //                 Config::kbd_layout = "ES";
+                        //                 break;
+                        //             case 3:
+                        //                 Config::kbd_layout = "DE";
+                        //                 break;
+                        //             case 4:
+                        //                 Config::kbd_layout = "FR";
+                        //                 break;
+                        //             case 5:
+                        //                 Config::kbd_layout = "UK";
+                        //         }
+                        //         Config::save();
                                 
-                                // TO DO: Crear funcion en objeto de teclado aparte para esto
-                                string cfgLayout = Config::kbd_layout;
-                                if(cfgLayout == "ES") 
-                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
-                                else if(cfgLayout == "UK") 
-                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
-                                else if(cfgLayout == "DE") 
-                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
-                                else if(cfgLayout == "FR") 
-                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
-                                else 
-                                        ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
+                        //         // TO DO: Crear funcion en objeto de teclado aparte para esto
+                        //         string cfgLayout = Config::kbd_layout;
+                        //         if(cfgLayout == "ES") 
+                        //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
+                        //         else if(cfgLayout == "UK") 
+                        //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
+                        //         else if(cfgLayout == "DE") 
+                        //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
+                        //         else if(cfgLayout == "FR") 
+                        //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
+                        //         else 
+                        //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
 
-                            }
-                        }
-                    }
+                        //     }
+                        // }
+                    // }
                 }
                 else if (options_num == 6) {
                     // Other
