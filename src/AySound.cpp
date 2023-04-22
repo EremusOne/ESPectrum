@@ -294,7 +294,7 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
             mix_l  +=table[tmpvol];
             
         } 
-        if ((regs[7] == 0x3f)) mix_l=mix_l>>1;
+        //if ((regs[7] == 0x3f)) mix_l=mix_l>>1;
         mix_l = mix_l / ChipTacts_per_outcount;
         *sound_buf++ = (uint8_t) mix_l;
        
