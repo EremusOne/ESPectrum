@@ -113,12 +113,11 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
     
     // Sound (AY-3-8912)
     if (ESPectrum::AY_emu) {
-        if((address & 0xc002) == 0xc000) 
+        if ( (((address >> 8) & 0xC0) == 0xC0) && (((address & 0xff) & 0x02) == 0x00) )
             return AySound::getRegisterData();
     }
 
     uint8_t data = VIDEO::getFloatBusData();
-    
     
     if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
     // if ((address == 0x7ffd) && (!Z80Ops::is48)) {        
@@ -227,27 +226,14 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
     // }
 
     // AY ========================================================================
-    //if ((ESPectrum::AY_emu) && ((address & 0xC002))) {
-    //  if ((address & 0x4000) != 0)
-    //    AySound::selectRegister(data);
-    //  else {
-    //    ESPectrum::AYGetSample();
-    //    AySound::setRegisterData(data);
-    //  }
-    //
-    //}
-    if (ESPectrum::AY_emu)
-     switch(address & 0xc002) {
-		case 0xc000:
-			// Select AY register.
-			AySound::selectRegister(data);
-		break;
-		case 0x8000:
-			// Write to AY register.
-			ESPectrum::AYGetSample();
-            AySound::setRegisterData(data);
- 		break;
-	}
+    if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
+      if ((address & 0x4000) != 0)
+        AySound::selectRegister(data);
+      else {
+        ESPectrum::AYGetSample();
+        AySound::setRegisterData(data);
+      }
+    }
 
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
