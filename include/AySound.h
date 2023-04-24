@@ -156,6 +156,7 @@ public:
     static int set_sound_format(int freq, int chans, int bits);
     static void prepare_generation();
     static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
+    static void gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, int bufpos);
 
     static void(*updateReg[14])();
 

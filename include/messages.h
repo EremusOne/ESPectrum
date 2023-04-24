@@ -271,42 +271,42 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 // static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
 
 #define OSD_ABOUT_EN \
-    " (C)2023 Victor Iborra AKA Eremus\n"\
-    " https://github.com/eremusOne\n"\
+    " (C)2023 Victor Iborra 'Eremus'\n"\
+    "         David Crespo  'dcrespo3d'\n"\
     "\n"\
     " Based on ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
-    " https://github.com/dcrespo3d\n"\
-    " https://youtube.com/davidprograma\n"\
-    "\n"\
-    " Original (C) 2019 Rampa & Queru\n"\
-    " https://github.com/rampa069\n"\
+    "\n"\ 
+    " Inspired by previous projects\n"\
+    " from Pete Todd and Rampa & Queru\n"\
     "\n"\
     " Z80 emulation by JL Sanchez\n"\
     " VGA driver by BitLuni\n"\
     " AY-3-8912 library by A. Sashnov\n"\
     " PS2 driver by Fabrizio di Vittorio\n"\
-    " Greetings to http://retrowiki.es and\n"\
-    " his people (Hi ackerman!) for the\n"\
-    " support and inspiration.\n"    
+    "\n"\
+    " Greetings to Ackerman, zx81, azesmbog,\n"\
+    " Rampa, D. Carrion, A. Villena and\n"\
+    " to Retrowiki and his people\n"\
+    " for the support and inspiration.\n"    
 #define OSD_ABOUT_ES \
-    " (C)2023 Victor Iborra AKA Eremus\n"\
-    " https://github.com/eremusOne\n"\
+    " (C)2023 Victor Iborra 'Eremus'\n"\
+    "         David Crespo  'dcrespo3d'\n"\
     "\n"\
     " Basado en ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
-    " https://github.com/dcrespo3d\n"\
-    " https://youtube.com/davidprograma\n"\
-    "\n"\
-    " Original (C) 2019 Rampa & Queru\n"\
-    " https://github.com/rampa069\n"\
+    "\n"\ 
+    " Inspirado en proyectos anteriores\n"\
+    " de Pete Todd y Rampa & Queru\n"\
     "\n"\
     " Emulacion Z80 por JL Sanchez\n"\
     " Driver VGA por BitLuni\n"\
     " Libreria AY-3-8912 por A. Sashnov\n"\
     " Driver PS2 por Fabrizio di Vittorio\n"\
-    " Saludos a http://retrowiki.es y\n"\
-    " su gente (Hola ackerman!) por su\n"\
+    "\n"\
+    " Saludos a Ackerman, zx81, azesmbog,\n"\
+    " Rampa, D. Carrion, A. Villena y\n"\
+    " a Retrowiki y su gente por su\n"\
     " ayuda e inspiracion.\n"
 static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
 

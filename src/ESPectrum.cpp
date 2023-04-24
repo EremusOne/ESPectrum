@@ -818,7 +818,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
             }
 
             int n = 0;
-            for (int i=0;i<overSamplesPerFrame; i += 7) {    
+            for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48; i += 7) {    
                 // Downsample (median)
                 beeper  =  overSamplebuf[i];
                 beeper +=  overSamplebuf[i+1];
@@ -836,11 +836,16 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         } else {
 
-            if (faudbufcntAY < ESP_AUDIO_SAMPLES_128) 
-                AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
+            if (faudbufcntAY < ESP_AUDIO_SAMPLES_128) {
+                // printf("AudbufcntAY: %d\n",(int)faudbufcntAY);
+                // AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
+                for (int i=faudbufcntAY;i<ESP_AUDIO_SAMPLES_128;i++) SamplebufAY[i]=0;
+                // AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 , 0);
+            }
+
 
             int n = 0;
-            for (int i=0;i<overSamplesPerFrame; i += 6) {
+            for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128; i += 6) {
                 // Downsample (median)
                 beeper  =  overSamplebuf[i];
                 beeper +=  overSamplebuf[i+1];

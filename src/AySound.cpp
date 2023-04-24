@@ -550,13 +550,9 @@ void AySound::gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, i
     sound_buf += bufpos;
 
     while (sound_bufsize-- > 0) {
-
         // *sound_buf++ =  table[(regs[8] & 0x0f) * 2 + 1]; 
-
         *sound_buf++ = (vols[0][(regs[8] & 0x0f) * 2 + 1]) >> 8;
-
         // *sound_buf++ = (vols[0][ayregs.vol_a * 2 + 1]) >> 8;
-
         // *sound_buf++ = ayregs.vol_a << 4; 
     }
 }
