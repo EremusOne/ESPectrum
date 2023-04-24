@@ -543,3 +543,20 @@ void AySound::reset()
     for(int i=0; i<14; i++) updateReg[i]();
 
 }
+
+void AySound::gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, int bufpos)
+{
+    unsigned char *sound_buf = buff;
+    sound_buf += bufpos;
+
+    while (sound_bufsize-- > 0) {
+
+        // *sound_buf++ =  table[(regs[8] & 0x0f) * 2 + 1]; 
+
+        *sound_buf++ = (vols[0][(regs[8] & 0x0f) * 2 + 1]) >> 8;
+
+        // *sound_buf++ = (vols[0][ayregs.vol_a * 2 + 1]) >> 8;
+
+        // *sound_buf++ = ayregs.vol_a << 4; 
+    }
+}
