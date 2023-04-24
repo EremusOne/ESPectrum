@@ -1,6 +1,6 @@
 # ZX-ESPectrum-IDF
 
-This is an emulator of the Sinclair ZX Spectrum computer running on a Lilygo TTGo VGA32 board.
+This is an emulator of the Sinclair ZX Spectrum computer running on a, Espressif ESP32 SoC powered, Lilygo TTGo VGA32 board.
 
 Just connect a VGA monitor, a PS/2 keyboard, a SD Card (optional) and power via microUSB.
 
