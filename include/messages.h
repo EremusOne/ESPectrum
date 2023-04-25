@@ -271,8 +271,8 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 // static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
 
 #define OSD_ABOUT_EN \
-    " (C)2023 Victor Iborra 'Eremus'\n"\
-    "         David Crespo  'dcrespo3d'\n"\
+    " (C)2023 Victor Iborra \"Eremus\"\n"\
+    "         David Crespo  \"dcrespo3d\"\n"\
     "\n"\
     " Based on ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
@@ -290,8 +290,8 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
     " to Retrowiki and his people\n"\
     " for the support and inspiration.\n"    
 #define OSD_ABOUT_ES \
-    " (C)2023 Victor Iborra 'Eremus'\n"\
-    "         David Crespo  'dcrespo3d'\n"\
+    " (C)2023 Victor Iborra \"Eremus\"\n"\
+    "         David Crespo  \"dcrespo3d\"\n"\
     "\n"\
     " Basado en ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
