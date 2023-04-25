@@ -272,7 +272,8 @@ void ESPectrum::setup()
     // else if(cfgLayout == "FR") 
     //         PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
     // else 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
+    
+    PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
 
     if (Config::slog_on) {
         showMemInfo("Keyboard started");
@@ -582,7 +583,6 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     auto Kbd = PS2Controller.keyboard();
     fabgl::VirtualKeyItem NextKey;
     fabgl::VirtualKey KeytoESP;
-    uint8_t NkScancode;
     bool Kdown;
     bool r = false;
 
@@ -594,7 +594,6 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
             KeytoESP = NextKey.vk;
             Kdown = NextKey.down;
-            NkScancode = NextKey.scancode[0];
 
             if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE))) {
                 OSD::do_OSD(KeytoESP);
@@ -627,65 +626,66 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
                             ); // CAPS SHIFT
 
-            bitWrite(PS2cols[0], 1, (!(NkScancode == 0x1a))); // Z
-            bitWrite(PS2cols[0], 2, (!(NkScancode == 0x22))); // X
-            bitWrite(PS2cols[0], 3, (!(NkScancode == 0x21))); // C
-            bitWrite(PS2cols[0], 4, (!(NkScancode == 0x2a))); // V
+            bitWrite(PS2cols[0], 1, (!Kbd->isVKDown(fabgl::VK_Z)) & (!Kbd->isVKDown(fabgl::VK_z)));
+            bitWrite(PS2cols[0], 2, (!Kbd->isVKDown(fabgl::VK_X)) & (!Kbd->isVKDown(fabgl::VK_x)));
+            bitWrite(PS2cols[0], 3, (!Kbd->isVKDown(fabgl::VK_C)) & (!Kbd->isVKDown(fabgl::VK_c)));
+            bitWrite(PS2cols[0], 4, (!Kbd->isVKDown(fabgl::VK_V)) & (!Kbd->isVKDown(fabgl::VK_v)));
 
-            bitWrite(PS2cols[1], 0, (!(NkScancode == 0x1c))); // A
-            bitWrite(PS2cols[1], 1, (!(NkScancode == 0x1b))); // S
-            bitWrite(PS2cols[1], 2, (!(NkScancode == 0x23))); // D
-            bitWrite(PS2cols[1], 3, (!(NkScancode == 0x2b))); // F
-            bitWrite(PS2cols[1], 4, (!(NkScancode == 0x34))); // G
+            bitWrite(PS2cols[1], 0, (!Kbd->isVKDown(fabgl::VK_A)) & (!Kbd->isVKDown(fabgl::VK_a)));    
+            bitWrite(PS2cols[1], 1, (!Kbd->isVKDown(fabgl::VK_S)) & (!Kbd->isVKDown(fabgl::VK_s)));
+            bitWrite(PS2cols[1], 2, (!Kbd->isVKDown(fabgl::VK_D)) & (!Kbd->isVKDown(fabgl::VK_d)));
+            bitWrite(PS2cols[1], 3, (!Kbd->isVKDown(fabgl::VK_F)) & (!Kbd->isVKDown(fabgl::VK_f)));
+            bitWrite(PS2cols[1], 4, (!Kbd->isVKDown(fabgl::VK_G)) & (!Kbd->isVKDown(fabgl::VK_g)));
 
+            bitWrite(PS2cols[2], 0, (!Kbd->isVKDown(fabgl::VK_Q)) & (!Kbd->isVKDown(fabgl::VK_q)));
+            bitWrite(PS2cols[2], 1, (!Kbd->isVKDown(fabgl::VK_W)) & (!Kbd->isVKDown(fabgl::VK_w)));
+            bitWrite(PS2cols[2], 2, (!Kbd->isVKDown(fabgl::VK_E)) & (!Kbd->isVKDown(fabgl::VK_e)));
+            bitWrite(PS2cols[2], 3, (!Kbd->isVKDown(fabgl::VK_R)) & (!Kbd->isVKDown(fabgl::VK_r)));
+            bitWrite(PS2cols[2], 4, (!Kbd->isVKDown(fabgl::VK_T)) & (!Kbd->isVKDown(fabgl::VK_t)));
 
-            bitWrite(PS2cols[2], 0, (!(NkScancode == 0x15))); // Q
-            bitWrite(PS2cols[2], 1, (!(NkScancode == 0x1d))); // W
-            bitWrite(PS2cols[2], 2, (!(NkScancode == 0x24))); // E
-            bitWrite(PS2cols[2], 3, (!(NkScancode == 0x2d))); // R
-            bitWrite(PS2cols[2], 4, (!(NkScancode == 0x2c))); // T
+            bitWrite(PS2cols[3], 0, (!Kbd->isVKDown(fabgl::VK_1)) & (!Kbd->isVKDown(fabgl::VK_EXCLAIM)));
+            bitWrite(PS2cols[3], 1, (!Kbd->isVKDown(fabgl::VK_2)) & (!Kbd->isVKDown(fabgl::VK_AT)));
+            bitWrite(PS2cols[3], 2, (!Kbd->isVKDown(fabgl::VK_3)) & (!Kbd->isVKDown(fabgl::VK_HASH)));
+            bitWrite(PS2cols[3], 3, (!Kbd->isVKDown(fabgl::VK_4)) & (!Kbd->isVKDown(fabgl::VK_DOLLAR)));
+            bitWrite(PS2cols[3], 4, (!Kbd->isVKDown(fabgl::VK_5)) & (!Kbd->isVKDown(fabgl::VK_PERCENT))
+                & ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_LEFT)) & (!Kbd->isVKDown(fabgl::VK_KP_LEFT))));
 
-            bitWrite(PS2cols[3], 0, (!(NkScancode == 0x16)));   // 1
-            bitWrite(PS2cols[3], 1, (!(NkScancode == 0x1e)));   // 2
-            bitWrite(PS2cols[3], 2, (!(NkScancode == 0x26)));   // 3
-            bitWrite(PS2cols[3], 3, (!(NkScancode == 0x25)));   // 4
-            bitWrite(PS2cols[3], 4, (!(NkScancode == 0x2e))     // 5
-                                &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_LEFT)) & (!Kbd->isVKDown(fabgl::VK_KP_LEFT))));
-
-            bitWrite(PS2cols[4], 0, (!(NkScancode == 0x45))     // 0
+            bitWrite(PS2cols[4], 0, (!Kbd->isVKDown(fabgl::VK_0)) & (!Kbd->isVKDown(fabgl::VK_RIGHTPAREN))
                                 &   (!Kbd->isVKDown(fabgl::VK_BACKSPACE))
                                 &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RALT))));
-            bitWrite(PS2cols[4], 1, (!(NkScancode == 0x46)));   // 9
-            bitWrite(PS2cols[4], 2, (!(NkScancode == 0x3e))     // 8
+            bitWrite(PS2cols[4], 1, !Kbd->isVKDown(fabgl::VK_9) & (!Kbd->isVKDown(fabgl::VK_LEFTPAREN)));
+            bitWrite(PS2cols[4], 2, (!Kbd->isVKDown(fabgl::VK_8)) & (!Kbd->isVKDown(fabgl::VK_ASTERISK))
                                 &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RIGHT)) & (!Kbd->isVKDown(fabgl::VK_KP_RIGHT))));
-            bitWrite(PS2cols[4], 3, (!(NkScancode == 0x3d))     // 7
+            bitWrite(PS2cols[4], 3, (!Kbd->isVKDown(fabgl::VK_7)) & (!Kbd->isVKDown(fabgl::VK_AMPERSAND))
                                 &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_UP)) & (!Kbd->isVKDown(fabgl::VK_KP_UP))));
-            bitWrite(PS2cols[4], 4, (!(NkScancode == 0x36))     // 6
+            bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_6)) & (!Kbd->isVKDown(fabgl::VK_CARET))
                                 &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_DOWN)) & (!Kbd->isVKDown(fabgl::VK_KP_DOWN)) & (!Kbd->isVKDown(fabgl::VK_KP_CENTER))));
 
-            bitWrite(PS2cols[5], 0, (!(NkScancode == 0x4d))); // P
-            bitWrite(PS2cols[5], 1, (!(NkScancode == 0x44))); // O
-            bitWrite(PS2cols[5], 2, (!(NkScancode == 0x43))); // I
-            bitWrite(PS2cols[5], 3, (!(NkScancode == 0x3c))); // U
-            bitWrite(PS2cols[5], 4, (!(NkScancode == 0x35))); // Y 
+            bitWrite(PS2cols[5], 0, (!Kbd->isVKDown(fabgl::VK_P)) & (!Kbd->isVKDown(fabgl::VK_p)));
+            bitWrite(PS2cols[5], 1, (!Kbd->isVKDown(fabgl::VK_O)) & (!Kbd->isVKDown(fabgl::VK_o)));
+            bitWrite(PS2cols[5], 2, (!Kbd->isVKDown(fabgl::VK_I)) & (!Kbd->isVKDown(fabgl::VK_i)));
+            bitWrite(PS2cols[5], 3, (!Kbd->isVKDown(fabgl::VK_U)) & (!Kbd->isVKDown(fabgl::VK_u)));
+            bitWrite(PS2cols[5], 4, (!Kbd->isVKDown(fabgl::VK_Y)) & (!Kbd->isVKDown(fabgl::VK_y)));
 
             bitWrite(PS2cols[6], 0, !Kbd->isVKDown(fabgl::VK_RETURN));
-            bitWrite(PS2cols[6], 1, (!(NkScancode == 0x4b))); // L
-            bitWrite(PS2cols[6], 2, (!(NkScancode == 0x42))); // K
-            bitWrite(PS2cols[6], 3, (!(NkScancode == 0x3b))); // J
-            bitWrite(PS2cols[6], 4, (!(NkScancode == 0x33))); // H
+            bitWrite(PS2cols[6], 1, (!Kbd->isVKDown(fabgl::VK_L)) & (!Kbd->isVKDown(fabgl::VK_l)));
+            bitWrite(PS2cols[6], 2, (!Kbd->isVKDown(fabgl::VK_K)) & (!Kbd->isVKDown(fabgl::VK_k)));
+            bitWrite(PS2cols[6], 3, (!Kbd->isVKDown(fabgl::VK_J)) & (!Kbd->isVKDown(fabgl::VK_j)));
+            bitWrite(PS2cols[6], 4, (!Kbd->isVKDown(fabgl::VK_H)) & (!Kbd->isVKDown(fabgl::VK_h)));
 
             bitWrite(PS2cols[7], 0, !Kbd->isVKDown(fabgl::VK_SPACE));
-            bitWrite(PS2cols[7], 1, (!Kbd->isVKDown(fabgl::VK_LCTRL)) 
+            bitWrite(PS2cols[7], 1, (!Kbd->isVKDown(fabgl::VK_LCTRL)) // SYMBOL SHIFT
                                 &   (!Kbd->isVKDown(fabgl::VK_RCTRL))
-                                &   (!(NkScancode == 0x41)) // Comma
-                                &   (!(NkScancode == 0x49)) // Dot
+                                &   (!Kbd->isVKDown(fabgl::VK_COMMA)) // Comma
+                                &   (!Kbd->isVKDown(fabgl::VK_PERIOD)) // Period
                                 ); // SYMBOL SHIFT
-            bitWrite(PS2cols[7], 2, (!(NkScancode == 0x3a))   // M
-                                &   (!(NkScancode == 0x49))); // Dot
-            bitWrite(PS2cols[7], 3, (!(NkScancode == 0x31))   // N
-                                &   (!(NkScancode == 0x41))); // Comma                        
-            bitWrite(PS2cols[7], 4, (!(NkScancode == 0x32))); // B
+            bitWrite(PS2cols[7], 2, (!Kbd->isVKDown(fabgl::VK_M)) & (!Kbd->isVKDown(fabgl::VK_m))
+                                &   (!Kbd->isVKDown(fabgl::VK_PERIOD)) // Period
+                                );
+            bitWrite(PS2cols[7], 3, (!Kbd->isVKDown(fabgl::VK_N)) & (!Kbd->isVKDown(fabgl::VK_n))
+                                &   (!Kbd->isVKDown(fabgl::VK_COMMA)) // Comma
+                                );
+            bitWrite(PS2cols[7], 4, (!Kbd->isVKDown(fabgl::VK_B)) & (!Kbd->isVKDown(fabgl::VK_b)));
 
         }
 
