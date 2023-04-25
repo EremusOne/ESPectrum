@@ -836,13 +836,8 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
         } else {
 
-            if (faudbufcntAY < ESP_AUDIO_SAMPLES_128) {
-                // printf("AudbufcntAY: %d\n",(int)faudbufcntAY);
-                // AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
-                for (int i=faudbufcntAY;i<ESP_AUDIO_SAMPLES_128;i++) SamplebufAY[i]=0;
-                // AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 , 0);
-            }
-
+            if (faudbufcntAY < ESP_AUDIO_SAMPLES_128)
+                AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
 
             int n = 0;
             for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128; i += 6) {
@@ -876,8 +871,7 @@ void IRAM_ATTR ESPectrum::BeeperGetSample(int Audiobit) {
         // Audio buffer generation (oversample)
         uint32_t audbufpos = Z80Ops::is48 ? CPU::tstates >> 4 : CPU::tstates / 19;
         if (audbufpos != audbufcnt) {
-            for (int i=audbufcnt;i<audbufpos;i++)
-                overSamplebuf[i] = lastaudioBit;
+            for (int i=audbufcnt;i<audbufpos;i++) overSamplebuf[i] = lastaudioBit;
             audbufcnt = audbufpos;
         }
 }
