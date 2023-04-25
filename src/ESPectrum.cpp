@@ -272,8 +272,7 @@ void ESPectrum::setup()
     // else if(cfgLayout == "FR") 
     //         PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
     // else 
-    
-    PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
+    //         PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
 
     if (Config::slog_on) {
         showMemInfo("Keyboard started");
