@@ -1,6 +1,6 @@
 # ZX-ESPectrum-IDF
 
-**WARNING: First publication release 1.0 beta 5.3 contained a bug in the PS/2 keyboard code. It has been solved and binaries and source code are now correct.**
+**WARNING: First publication of release 1.0 beta 5.3 contained a bug in the PS/2 keyboard code. It has been solved and binaries and source code are now correct.**
 
 This is an emulator of the Sinclair ZX Spectrum computer running on a, Espressif ESP32 SoC powered, Lilygo TTGo VGA32 board.
 
