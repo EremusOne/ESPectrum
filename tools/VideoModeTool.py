@@ -267,9 +267,9 @@ def genModeline():
     vbak = int(vprms.bak.en.get())
 
     if scandouble.get():
-        s += str(hact) + 'x' + str(vact)
-    else:
         s += str(hact) + 'x' + str(int(vact/2))
+    else:
+        s += str(hact) + 'x' + str(vact)
     s += '('
     s += str(hfro) + ', '
     s += str(hsyn) + ', '
@@ -278,7 +278,7 @@ def genModeline():
     s += str(vfro) + ', '
     s += str(vsyn) + ', '
     s += str(vbak) + ', '
-    s += str(hact) + ', '
+    s += str(vact) + ', '
 
     if scandouble.get():
         s += '2' + ', '
