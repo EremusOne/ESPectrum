@@ -13,25 +13,31 @@
 
 //hfront hsync hback pixels vfront vsync vback lines divy pixelclock hpolaritynegative vpolaritynegative
 
-// #define VGA31k_MODES
+// #define VGA31k_60_MODES
+// #define VGA31k_50_MODES
 // #define TV15k_48K_MODES
 #define TV15k_128K_MODES
 
-#ifdef VGA31k_MODES
-const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 12587500, 1, 1);
-const Mode VGA::MODE360x200(8, 54, 28, 360, 11, 2, 32, 400, 2, 14161000, 1, 0);
+#ifdef VGA31k_60_MODES
+const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 12587500, 1, 1);  // 31440 / 60
+const Mode VGA::MODE360x200(8, 54, 28, 360, 11, 2, 32, 400, 2, 14161000, 1, 0);  // 31469 / 70.71
+#endif
+
+#ifdef VGA31k_50_MODES
+const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 10484434, 1, 1);  // 26211 / 50.02
+const Mode VGA::MODE360x200(8, 54, 28, 360, 11, 2, 32, 400, 2, 10016736, 1, 0);  // 22259 / 50.02
 #endif
 
 // 48K
 #ifdef TV15k_48K_MODES
-const Mode VGA::MODE320x240(38, 32, 58, 320, 28, 3, 40, 240, 1, 7000000, 1, 1);
-const Mode VGA::MODE360x200(12, 32, 44, 360,  8, 3, 31, 270, 1, 7000000, 1, 1);
+const Mode VGA::MODE320x240(38, 32, 58, 320, 28, 3, 40, 240, 1, 7000000, 1, 1);  // 15625 / 50.08
+const Mode VGA::MODE360x200(12, 32, 44, 360,  8, 3, 31, 270, 1, 7000000, 1, 1);  // 15625 / 50.08
 #endif
 
 // 128K
 #ifdef TV15k_128K_MODES
-const Mode VGA::MODE320x240(42, 32, 62, 320, 28, 3, 40, 240, 1, 7093800, 1, 1);
-const Mode VGA::MODE360x200(12, 32, 52, 360,  8, 3, 30, 270, 1, 7093800, 1, 1);
+const Mode VGA::MODE320x240(42, 32, 62, 320, 28, 3, 40, 240, 1, 7093800, 1, 1);  // 15557 / 50.02
+const Mode VGA::MODE360x200(12, 32, 52, 360,  8, 3, 30, 270, 1, 7093800, 1, 1);  // 15557 / 50.02
 #endif
 
 
