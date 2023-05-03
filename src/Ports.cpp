@@ -104,7 +104,7 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
 
         if (Tape::tapeStatus==TAPE_LOADING) {
             TapeBit = Tape::TAP_Read();
-            bitWrite(result,6,TapeBit /*Tape::TAP_Read()*/);
+            bitWrite(result,6,TapeBit);
         }
 
         return result | (0xa0); // OR 0xa0 -> ISSUE 2
@@ -159,7 +159,8 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
         }
     
         if (Tape::tapeStatus==TAPE_LOADING)
-            if (TapeBit) data |= 0x10;
+            if (TapeBit) data |= 0x00001000; else data &= 0b11110111;
+            // if (TapeBit) data |= 0x10;
         
         int Audiobit = sp_volt[data >> 3 & 3];
         if (Audiobit != ESPectrum::lastaudioBit) {

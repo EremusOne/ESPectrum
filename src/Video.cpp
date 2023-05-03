@@ -56,6 +56,7 @@ bool VIDEO::OSD = false;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
+uint32_t* VIDEO::SaveRect;
 
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
@@ -171,6 +172,8 @@ void VIDEO::Init() {
     precalcULASWAP();   // precalculate ULA SWAP values
 
     precalcborder32();  // Precalc border 32 bits values
+
+    SaveRect = (uint32_t *) heap_caps_malloc(0xa000,MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
 
     borderColor = 0;
     brd = border32[0];

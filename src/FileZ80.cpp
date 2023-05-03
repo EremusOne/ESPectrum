@@ -370,7 +370,7 @@ bool FileZ80::load(string z80_fn)
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
         ESPectrum::audioBuffer[i]=0;
-        ESPectrum::SamplebufAY[i]=0;        
+        AySound::SamplebufAY[i]=0;        
     }
     ESPectrum::lastaudioBit=0;
 
@@ -390,7 +390,8 @@ bool FileZ80::load(string z80_fn)
     ESPectrum::ESPoffset = 0;
 
     pwm_audio_stop();
-    pwm_audio_set_sample_rate(ESPectrum::Audio_freq);
+    // pwm_audio_set_sample_rate(ESPectrum::Audio_freq);
+    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
     pwm_audio_set_volume(ESPectrum::aud_volume);
 

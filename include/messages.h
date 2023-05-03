@@ -53,7 +53,7 @@
 #define ERR_DIR_OPEN "Cannot open directory!"
 
 // OSD
-#define OSD_TITLE  "  ZX-ESPectrum-IDF - powered by ESP32   "
+#define OSD_TITLE  " ESPectrum - The ESP32 powered emulator "
 #define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS  v1.0beta5.3 "
 
 #define OSD_PAUSE_EN " --=[PAUSED]=-- "
@@ -70,8 +70,8 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 
-#define OSD_TAPE_SELECT_ERR_EN "Please select TAP file first"
-#define OSD_TAPE_SELECT_ERR_ES "Por favor elija primero un archivo TAP"
+#define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
+#define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
 
 #define MENU_SNA_TITLE_EN "Select Snapshot"
@@ -127,7 +127,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Storage\t>\n"\
     "Machine\t>\n"\
     "Aspect ratio\t>\n"\
-    "Joystick\t>\n"\
+    "PS/2 Joystick\t>\n"\
     "Language\t>\n"\
     "Other\t>\n"
 #define MENU_OPTIONS_ES \
@@ -135,7 +135,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Almacenamiento\t>\n"\
     "Modelo\t>\n"\
     "Rel. aspecto\t>\n"\
-    "Joystick\t>\n"\
+    "Joystick PS/2\t>\n"\
     "Idioma\t>\n"\
     "Otros\t>\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
@@ -250,10 +250,12 @@ static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
     "Espanol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
 
-#define MENU_JOY_EN "Joystick\n"\
+#define MENU_JOY_EN "PS/2 Joystick\n"\
     "Cursor\t[ ]\n"\
     "Kempston\t[ ]\n"
-#define MENU_JOY_ES MENU_JOY_EN
+#define MENU_JOY_ES "Joystick PS/2\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"
 static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 
 // #define MENU_KBD_LAYOUT_EN "Select language\n"\

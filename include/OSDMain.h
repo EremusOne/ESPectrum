@@ -102,6 +102,8 @@ public:
     static void menuScrollBar();
     static void click();
     static uint8_t menu_level;
+    static bool menu_saverect;    
+    static unsigned short menu_curopt;    
 
     // // Rows
     static unsigned short rowCount(string menu);
