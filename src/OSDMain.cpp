@@ -79,6 +79,7 @@ extern Font Font6x8;
 uint8_t OSD::menu_level = 0;
 bool OSD::menu_saverect = false;
 unsigned short OSD::menu_curopt = 1;
+unsigned int OSD::SaveRectpos = 0;
 
 unsigned short OSD::scrW = 320;
 unsigned short OSD::scrH = 240;
@@ -156,31 +157,34 @@ void OSD::drawStats(char *line1, char *line2) {
 
 }
 
-static void persistSave(uint8_t slotnumber)
+static bool persistSave(uint8_t slotnumber)
 {
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO, 0);
     if (!FileSNA::save(FileUtils::MountPoint + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
-        return;
+        return false;
     }
     OSD::osdCenteredMsg(OSD_PSNA_SAVED, LEVEL_INFO);
+    return true;
 }
 
-static void persistLoad(uint8_t slotnumber)
+static bool persistLoad(uint8_t slotnumber)
 {
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
-        return;
+        return false;
     }
     OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
     if (!FileSNA::load(FileUtils::MountPoint + persistfname)) {
          OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+         return false;
     }
     OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
+    return true;
 }
 
 #ifdef ZXKEYB
@@ -337,6 +341,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     menu_level = 2;
                     menu_saverect = true;
                     if (sna_mnu == 1) {
+                        menu_curopt = 1;
                         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
                         if (mFile != "") {
                             changeSnapshot(mFile);
@@ -346,19 +351,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     else if (sna_mnu == 2) {
                         // Persist Load
                         menu_curopt = 1;
-                        uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
-                        if (opt2 > 0 && opt2<6) {
-                            persistLoad(opt2);
-                            return;
+                        while (1) {
+                            uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
+                            if (opt2 > 0 && opt2<6) {
+                                if (persistLoad(opt2)) return;
+                                menu_saverect = false;
+                                menu_curopt = opt2;
+                            } else break;
                         }
                     }
                     else if (sna_mnu == 3) {
                         // Persist Save
                         menu_curopt = 1;
-                        uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
-                        if (opt2 > 0 && opt2<6) {
-                            persistSave(opt2);
-                            return;
+                        while (1) {
+                            uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
+                            if (opt2 > 0 && opt2<6) {
+                                if (persistSave(opt2)) return;
+                                menu_saverect = false;
+                                menu_curopt = opt2;
+                            } else break;
                         }
                     }
                     menu_curopt = sna_mnu;
@@ -578,79 +589,30 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     while (1) {
                         // language
                         uint8_t opt2;
-                        // opt2 = menuRun(MENU_LANGUAGE[Config::lang]);
-                        // if (opt2) {
-                        //     if (opt2 == 1) {
-                                string Mnustr = MENU_INTERFACE_LANG[Config::lang];                            
-                                std::size_t pos = Mnustr.find("[",0);
-                                int nfind = 0;
-                                while (pos != string::npos) {
-                                    if (nfind == Config::lang) {
-                                        Mnustr.replace(pos,2,"[*");
-                                        break;
-                                    }
-                                    pos = Mnustr.find("[",pos + 1);
-                                    nfind++;
-                                }
-                                opt2 = menuRun(Mnustr);
-                                if (opt2) {
-                                    if (Config::lang != (opt2 - 1)) {
-                                        Config::lang = opt2 - 1;
-                                        Config::save();
-                                        return;
-                                    }
-                                    menu_curopt = opt2;
-                                    menu_saverect = false;
-                                } else {
-                                    menu_curopt = 5;
-                                    break;
-                                }
-                            // } else if (opt2 == 2) {
-                            //     string Mnustr = MENU_KBD_LAYOUT[Config::lang];
-                            //     Mnustr.replace(Mnustr.find("[" + Config::kbd_layout),3,"[*");
-                            //     std::size_t pos = Mnustr.find("[",0);
-                            //     while (pos != string::npos) {
-                            //         if (Mnustr.at(pos + 1) != (char)42) {
-                            //             Mnustr.replace(pos,3,"[ ");
-                            //         }
-                            //         pos = Mnustr.find("[",pos + 1);
-                            //     }
-                            //     opt2 = menuRun(Mnustr);
-                            //     if (opt2) {
-                            //         switch (opt2) {
-                            //             case 1:
-                            //                 Config::kbd_layout = "US";
-                            //                 break;
-                            //             case 2:
-                            //                 Config::kbd_layout = "ES";
-                            //                 break;
-                            //             case 3:
-                            //                 Config::kbd_layout = "DE";
-                            //                 break;
-                            //             case 4:
-                            //                 Config::kbd_layout = "FR";
-                            //                 break;
-                            //             case 5:
-                            //                 Config::kbd_layout = "UK";
-                            //         }
-                            //         Config::save();
-                                    
-                            //         // TO DO: Crear funcion en objeto de teclado aparte para esto
-                            //         string cfgLayout = Config::kbd_layout;
-                            //         if(cfgLayout == "ES") 
-                            //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
-                            //         else if(cfgLayout == "UK") 
-                            //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
-                            //         else if(cfgLayout == "DE") 
-                            //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
-                            //         else if(cfgLayout == "FR") 
-                            //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
-                            //         else 
-                            //                 ESPectrum::PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
-
-                            //     }
-                            // }
-                        // }
+                        string Mnustr = MENU_INTERFACE_LANG[Config::lang];                            
+                        std::size_t pos = Mnustr.find("[",0);
+                        int nfind = 0;
+                        while (pos != string::npos) {
+                            if (nfind == Config::lang) {
+                                Mnustr.replace(pos,2,"[*");
+                                break;
+                            }
+                            pos = Mnustr.find("[",pos + 1);
+                            nfind++;
+                        }
+                        opt2 = menuRun(Mnustr);
+                        if (opt2) {
+                            if (Config::lang != (opt2 - 1)) {
+                                Config::lang = opt2 - 1;
+                                Config::save();
+                                return;
+                            }
+                            menu_curopt = opt2;
+                            menu_saverect = false;
+                        } else {
+                            menu_curopt = 5;
+                            break;
+                        }
                     }
                 }
                 else if (options_num == 6) {
@@ -861,6 +823,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
     const unsigned short y = scrAlignCenterY(h);
     unsigned short paper;
     unsigned short ink;
+    unsigned int j;
 
     switch (warn_level) {
     case LEVEL_OK:
@@ -880,6 +843,19 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
         paper = OSD::zxColor(1, 0);
     }
 
+    // if (millispause > 0) {
+    //     // Save backbuffer data
+    //     j = SaveRectpos;
+    //     for (int  m = y; m < y + h; m++) {
+    //         uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+    //         for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+    //             VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+    //             SaveRectpos++;
+    //         }
+    //     }
+    //     // printf("Saverectpos: %d\n",SaveRectpos);
+    // }
+
     VIDEO::vga.fillRect(x, y, w, h, paper);
     // VIDEO::vga.rect(x - 1, y - 1, w + 2, h + 2, ink);
     VIDEO::vga.setTextColor(ink, paper);
@@ -887,8 +863,20 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
     VIDEO::vga.setCursor(x + OSD_FONT_W, y + OSD_FONT_H);
     VIDEO::vga.print(msg.c_str());
     
-    if (millispause > 0) vTaskDelay(millispause/portTICK_PERIOD_MS); // Pause if needed
+    if (millispause > 0) {
 
+        vTaskDelay(millispause/portTICK_PERIOD_MS); // Pause if needed
+
+        // SaveRectpos = j;
+        // for (int  m = y; m < y + h; m++) {
+        //     uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+        //     for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+        //         backbuffer32[n] = VIDEO::SaveRect[j];
+        //         j++;
+        //     }
+        // }
+
+    }
 }
 
 // // Count NL chars inside a string, useful to count menu rows

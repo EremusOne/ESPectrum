@@ -98,7 +98,7 @@ fabgl::PS2Controller ESPectrum::PS2Controller;
 //=======================================================================================
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_48] = { 0 };
 uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES_48] = { 0 };
-// uint8_t ESPectrum::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
+uint8_t ESPectrum::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
 signed char ESPectrum::aud_volume = ESP_DEFAULT_VOLUME;
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
@@ -368,7 +368,7 @@ void ESPectrum::setup()
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
     // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, 5, &audioTaskHandle, 1);
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
     AySound::init();
@@ -449,7 +449,7 @@ void ESPectrum::reset()
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
         audioBuffer[i]=0;
-        AySound::SamplebufAY[i]=0;
+        SamplebufAY[i]=0;
     }
     lastaudioBit=0;
 
@@ -814,7 +814,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
             if (AY_emu) {
                 if (faudbufcntAY < ESP_AUDIO_SAMPLES_48)
-                    AySound::gen_sound(ESP_AUDIO_SAMPLES_48 - faudbufcntAY , faudbufcntAY);
+                    AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_48 - faudbufcntAY , faudbufcntAY);
             }
 
             int n = 0;
@@ -828,7 +828,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
 
-                beeper = AY_emu ? (beeper / 7) + AySound::SamplebufAY[n] : beeper / 7;
+                beeper = AY_emu ? (beeper / 7) + SamplebufAY[n] : beeper / 7;
                 // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
 
@@ -837,7 +837,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         } else {
 
             if (faudbufcntAY < ESP_AUDIO_SAMPLES_128)
-                AySound::gen_sound(ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
+                AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
 
             int n = 0;
             for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128; i += 6) {
@@ -849,7 +849,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
 
-                beeper =  (beeper / 6) + AySound::SamplebufAY[n];
+                beeper =  (beeper / 6) + SamplebufAY[n];
                 // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
 
@@ -880,7 +880,7 @@ void IRAM_ATTR ESPectrum::AYGetSample() {
     // AY buffer generation
     uint32_t audbufpos = CPU::tstates / (Z80Ops::is48 ? 112 : 114);
     if (audbufpos != audbufcntAY) {
-        AySound::gen_sound(audbufpos - audbufcntAY , audbufcntAY);
+        AySound::gen_sound(SamplebufAY, audbufpos - audbufcntAY , audbufcntAY);
         audbufcntAY = audbufpos;
     }
 }

@@ -155,12 +155,10 @@ public:
     static int set_stereo(ayemu_stereo_t stereo, int *custom_eq);
     static int set_sound_format(int freq, int chans, int bits);
     static void prepare_generation();
-    static void gen_sound(int bufsize, int bufpos);
+    static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
     static void gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, int bufpos);
 
     static void(*updateReg[14])();
-
-    static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
 
 private:
 

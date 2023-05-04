@@ -370,7 +370,7 @@ bool FileZ80::load(string z80_fn)
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
         ESPectrum::audioBuffer[i]=0;
-        AySound::SamplebufAY[i]=0;        
+        ESPectrum::SamplebufAY[i]=0;        
     }
     ESPectrum::lastaudioBit=0;
 

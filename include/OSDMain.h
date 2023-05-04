@@ -104,6 +104,7 @@ public:
     static uint8_t menu_level;
     static bool menu_saverect;    
     static unsigned short menu_curopt;    
+    static unsigned int SaveRectpos;    
 
     // // Rows
     static unsigned short rowCount(string menu);

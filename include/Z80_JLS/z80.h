@@ -486,28 +486,28 @@ private:
     static inline void push(uint16_t word);
 
     // LDI
-    static void ldi(void);
+    static void IRAM_ATTR ldi(void);
 
     // LDD
-    static void ldd(void);
+    static void IRAM_ATTR ldd(void);
 
     // CPI
-    static void cpi(void);
+    static void IRAM_ATTR cpi(void);
 
     // CPD
-    static void cpd(void);
+    static void IRAM_ATTR cpd(void);
 
     // INI
-    static void ini(void);
+    static void IRAM_ATTR ini(void);
 
     // IND
-    static void ind(void);
+    static void IRAM_ATTR ind(void);
 
     // OUTI
-    static void outi(void);
+    static void IRAM_ATTR outi(void);
 
     // OUTD
-    static void outd(void);
+    static void IRAM_ATTR outd(void);
 
     // BIT n,r
     static inline void bitTest(uint8_t mask, uint8_t reg);
@@ -537,8 +537,8 @@ private:
     // Decode EDXX opcodes
     static void decodeED(void);
 
-    static void(*dcOpcode[256])();
-    static void(*dcCB[256])();
+    static void (*dcOpcode[256])();
+    static void (*dcCB[256])();
 
     static void decodeOpcode00(void);
     static void decodeOpcode01(void);
