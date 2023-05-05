@@ -45,6 +45,7 @@
 #include "messages.h"
 #include "ESPectrum.h"
 #include "esp_spiffs.h"
+#include "pwm_audio.h"
 
 string   Config::arch = "48K";
 string   Config::ram_file = NO_RAM_FILE;
@@ -87,7 +88,9 @@ static inline void trim(std::string &s) {
 
 // Read config from FS
 void Config::load() {
-    
+
+    pwm_audio_stop();
+
     FILE *f = fopen(DISK_BOOT_FILENAME, "r");
     if (f==NULL)
     {
@@ -156,17 +159,22 @@ void Config::load() {
     }
     fclose(f);
 
+    pwm_audio_start();
+
 }
 
 // Dump actual config to FS
 void Config::save() {
 
+    pwm_audio_stop();
+
     //printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
 
     FILE *f = fopen(DISK_BOOT_FILENAME, "w");
-    if (f==NULL)
+    if (f == NULL)
     {
         printf("Error opening %s\n",DISK_BOOT_FILENAME);
+        pwm_audio_start();
         return;
     }
 
@@ -212,9 +220,9 @@ void Config::save() {
 
     fclose(f);
     
-    vTaskDelay(5);
-
     printf("Config saved OK\n");
+
+    pwm_audio_start();
 
 }
 

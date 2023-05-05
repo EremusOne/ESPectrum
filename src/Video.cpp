@@ -173,9 +173,7 @@ void VIDEO::Init() {
 
     precalcborder32();  // Precalc border 32 bits values
 
-    // SaveRect = (uint32_t *) heap_caps_malloc(0xa000, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
     SaveRect = (uint32_t *) heap_caps_malloc(0x9000, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
-
 
     borderColor = 0;
     brd = border32[0];
@@ -208,7 +206,6 @@ void VIDEO::Reset() {
     if (Config::getArch() == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
-
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;

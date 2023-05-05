@@ -41,6 +41,7 @@
 #include "Video.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
+#include "Ports.h"
 #include "messages.h"
 #include "OSDMain.h"
 #include "FileSNA.h"
@@ -114,21 +115,24 @@ bool FileSNA::load(string sna_fn)
 {
     FILE *file;
     int sna_size;
-    
-    ESPectrum::reset();
 
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
-
+    // Stop audio
+    pwm_audio_stop();
+    
     file = fopen(sna_fn.c_str(), "rb");
     if (file==NULL)
     {
         printf("FileSNA: Error opening %s",sna_fn.c_str());
 
+        // Resume audio
+        pwm_audio_start();
         // Resume keyboard input
         ESPectrum::PS2Controller.keyboard()->resumePort();
 
         return false;
+
     }
 
     fseek(file,0,SEEK_END);
@@ -138,11 +142,15 @@ bool FileSNA::load(string sna_fn)
     if (sna_size < SNA_48K_SIZE) {
         printf("FileSNA::load: bad SNA %s: size = %d < %d\n", sna_fn.c_str(), sna_size, SNA_48K_SIZE);
 
+        // Resume audio
+        pwm_audio_start();
         // Resume keyboard input
         ESPectrum::PS2Controller.keyboard()->resumePort();
 
         return false;
     }
+
+    CPU::reset();
 
     printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
 
@@ -230,11 +238,9 @@ bool FileSNA::load(string sna_fn)
     
     fclose(file);
 
-    // just architecturey things
-    if (Config::getArch() == "128K")
-    {
-        if (snapshotArch == "48K")
-        {
+    // Arch check
+    if (Config::getArch() == "128K") {
+        if (snapshotArch == "48K") {
             #ifdef SNAPSHOT_LOAD_FORCE_ARCH
                 Config::requestMachine("48K", "SINCLAIR", true);
                 MemESP::romInUse = 0;
@@ -243,30 +249,51 @@ bool FileSNA::load(string sna_fn)
             #endif
         }
     }
-    else if (Config::getArch() == "48K")
-    {
-        if (snapshotArch == "128K")
-        {
+    else if (Config::getArch() == "48K") {
+        if (snapshotArch == "128K") {
             Config::requestMachine("128K", "SINCLAIR", true);
             MemESP::romInUse = 1;
         }
     }
 
+    // Ports
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
+
     CPU::statesInFrame = CPU::statesPerFrame();
+    ESPectrum::target = CPU::microsPerFrame();
+    ESPectrum::ESPoffset = 0;
 
     if (Config::getArch() == "48K") {
-        //printf("48K arch activated\n");
+
+        Z80Ops::is48 = true;
+
         VIDEO::tStatesPerLine = TSTATES_PER_LINE;
         VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
-        Z80Ops::is48 = true;
+
+        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
+        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
+        ESPectrum::AY_emu = Config::AY48;
+        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+
     } else {
-        //printf("128K arch activated\n");
+        
+        Z80Ops::is48 = false;
+
         VIDEO::tStatesPerLine = TSTATES_PER_LINE_128;
         VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
-        Z80Ops::is48 = false;
+
+        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
+        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
+        ESPectrum::AY_emu = true;        
+        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
+
     }
+
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+    VIDEO::Draw = &VIDEO::Blank;
 
     MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
     MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
@@ -287,40 +314,21 @@ bool FileSNA::load(string sna_fn)
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
         ESPectrum::audioBuffer[i]=0;
-        ESPectrum::SamplebufAY[i]=0;
+        AySound::SamplebufAY[i]=0;
     }
     ESPectrum::lastaudioBit=0;
 
-    // Set samples per frame and AY_emu flag depending on arch
-    if (Config::getArch() == "48K") {
-        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
-        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
-        ESPectrum::AY_emu = Config::AY48;
-        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
-    } else {
-        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
-        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
-        ESPectrum::AY_emu = true;        
-        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
-    }
-
-    ESPectrum::ESPoffset = 0;
-
-    pwm_audio_stop();
-    // pwm_audio_set_sample_rate(ESPectrum::Audio_freq);
-    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
-    pwm_audio_start();
-    pwm_audio_set_volume(ESPectrum::aud_volume);
-    
     // Reset AY emulation
     AySound::init();
     AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
     AySound::set_stereo(AYEMU_MONO,NULL);
     AySound::reset();
 
-    // Video sync
-    ESPectrum::target = CPU::microsPerFrame();
-
+    // Resume audio
+    pwm_audio_set_sample_rate(ESPectrum::Audio_freq);
+    pwm_audio_start();
+    pwm_audio_set_volume(ESPectrum::aud_volume);
+  
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
 
@@ -333,13 +341,20 @@ bool FileSNA::load(string sna_fn)
 bool FileSNA::isPersistAvailable(string filename)
 {
 
+    bool res = true;
+    
+    pwm_audio_stop();
+
     FILE *f = fopen(filename.c_str(), "rb");
+    if (f == NULL)
+        res = false;
+    else
+        fclose(f);
 
-    if (f == NULL) { return false; }
+    pwm_audio_start();
 
-    fclose(f);
+    return res;
 
-    return true;
 }
 
 // ///////////////////////////////////////////////////////////////////////////////
@@ -396,12 +411,20 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
 
+    // Stop audio
+    pwm_audio_stop();
+
     file = fopen(sna_file.c_str(), "wb");
     if (file==NULL)
     {
         printf("FileSNA: Error opening %s for writing",sna_file.c_str());
+
+        // Resume audio
+        pwm_audio_start();
+
         // Resume keyboard input
         ESPectrum::PS2Controller.keyboard()->resumePort();
+
         return false;
     }
 
@@ -447,6 +470,9 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         uint8_t page = pages[ipage];
         if (!writeMemPage(page, file, blockMode)) {
             fclose(file);
+            // Resume audio
+            pwm_audio_start();
+            // Resume keyboard input
             ESPectrum::PS2Controller.keyboard()->resumePort();
             return false;
         }
@@ -475,6 +501,9 @@ bool FileSNA::save(string sna_file, bool blockMode) {
             if (page != MemESP::bankLatch && page != 2 && page != 5) {
                 if (!writeMemPage(page, file, blockMode)) {
                     fclose(file);
+                    // Resume audio
+                    pwm_audio_start();
+                    // Resume keyboard input
                     ESPectrum::PS2Controller.keyboard()->resumePort();
                     return false;
                 }
@@ -484,6 +513,9 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
     fclose(file);
 
+    // Resume audio
+    pwm_audio_start();
+    // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
 
     return true;

@@ -514,9 +514,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             Config::requestMachine(arch, "SINCLAIR", true);
                             // Config::requestMachine(arch, romSet, true);
                             Config::ram_file = "none";
-                            vTaskDelay(2 / portTICK_PERIOD_MS);
                             Config::save();
-                            vTaskDelay(2 / portTICK_PERIOD_MS);
                             ESPectrum::reset();
                             return;
                         //}
@@ -843,18 +841,18 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
         paper = OSD::zxColor(1, 0);
     }
 
-    // if (millispause > 0) {
-    //     // Save backbuffer data
-    //     j = SaveRectpos;
-    //     for (int  m = y; m < y + h; m++) {
-    //         uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
-    //         for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-    //             VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-    //             SaveRectpos++;
-    //         }
-    //     }
-    //     // printf("Saverectpos: %d\n",SaveRectpos);
-    // }
+    if (millispause > 0) {
+        // Save backbuffer data
+        j = SaveRectpos;
+        for (int  m = y; m < y + h; m++) {
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+                SaveRectpos++;
+            }
+        }
+        // printf("Saverectpos: %d\n",SaveRectpos);
+    }
 
     VIDEO::vga.fillRect(x, y, w, h, paper);
     // VIDEO::vga.rect(x - 1, y - 1, w + 2, h + 2, ink);
@@ -867,14 +865,14 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
 
         vTaskDelay(millispause/portTICK_PERIOD_MS); // Pause if needed
 
-        // SaveRectpos = j;
-        // for (int  m = y; m < y + h; m++) {
-        //     uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
-        //     for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-        //         backbuffer32[n] = VIDEO::SaveRect[j];
-        //         j++;
-        //     }
-        // }
+        SaveRectpos = j;
+        for (int  m = y; m < y + h; m++) {
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+                backbuffer32[n] = VIDEO::SaveRect[j];
+                j++;
+            }
+        }
 
     }
 }
