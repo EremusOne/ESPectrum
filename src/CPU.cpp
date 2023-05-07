@@ -119,11 +119,7 @@ void IRAM_ATTR CPU::loop()
 
     while (tstates < statesInFrame ) {
 
-            uint32_t pre_tstates = tstates;
-
             Z80::execute();
-
-            global_tstates += (tstates - pre_tstates); // increase global Tstates
 
             //
             // PRELIMINARY TAPE SAVE TEST
@@ -143,8 +139,10 @@ void IRAM_ATTR CPU::loop()
 
 	}
 
-    // If we're halted flush screen and update registers as needed
-    if (tstates & 0xFF000000) FlushOnHalt(); else tstates -= statesInFrame;
+    if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
+
+    global_tstates += statesInFrame; // increase global Tstates
+    tstates -= statesInFrame;
 
     framecnt++;
 
@@ -153,7 +151,6 @@ void IRAM_ATTR CPU::loop()
 void CPU::FlushOnHalt() {
         
     tstates &= 0x00FFFFFF;
-    global_tstates &= 0x00FFFFFF;
 
     uint32_t pre_tstates = tstates;        
 
@@ -199,10 +196,6 @@ void CPU::FlushOnHalt() {
     }
 
     Z80::checkINT(); // I think I can put this out of the "while (tstates .. ". Study
-
-    global_tstates += (tstates - pre_tstates); // increase global Tstates
-        
-    tstates -= statesInFrame;
 
 }
 

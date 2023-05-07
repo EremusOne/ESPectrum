@@ -82,6 +82,7 @@ public:
     // Tape
     static FILE *tape;
     static string tapeFileName;
+    static uint8_t tapeEarBit;
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
     static uint8_t romLoading;
@@ -89,7 +90,7 @@ public:
     static void Init();
     static void TAP_Play();
     static void TAP_Stop();    
-    static uint8_t TAP_Read();
+    static void TAP_Read();
     static void Save();
 
 };

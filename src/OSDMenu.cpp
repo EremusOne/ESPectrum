@@ -240,7 +240,7 @@ void OSD::menuDraw() {
                     SaveRectpos++;
                 }
             }
-            printf("Saverectpos after save: %d\n",SaveRectpos);
+            //printf("Saverectpos after save: %d\n",SaveRectpos);
         }
     } else SaveRectpos = 0;
 
@@ -463,7 +463,7 @@ unsigned short OSD::menuRun(string new_menu) {
                     if (menu_level!=0) {
                         // Restore backbuffer data
                         int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
+                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
                         SaveRectpos = j - 4;
                         for (int  m = y; m < y + h; m++) {
                             uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
@@ -472,7 +472,7 @@ unsigned short OSD::menuRun(string new_menu) {
                                 j++;
                             }
                         }
-                        printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
+                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
                         menu_saverect = false;                        
                     }
 
@@ -814,7 +814,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     if (menu_level!=0) {
                         // Restore backbuffer data
                         int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
+                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
                         SaveRectpos = j - 4;
                         for (int  m = y; m < y + h; m++) {
                             uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
@@ -823,7 +823,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                                 j++;
                             }
                         }
-                        printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
+                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
                         menu_saverect = false;
                     }
 

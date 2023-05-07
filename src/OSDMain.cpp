@@ -211,6 +211,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F2) {
         menu_level = 0;
+        menu_curopt = 1;
         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
         if (mFile != "") {
             changeSnapshot(mFile);
@@ -218,6 +219,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F3) {
         menu_level = 0;
+        menu_curopt = 1;
         // Persist Load
         uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
         if (opt2 > 0 && opt2<6) {
@@ -226,6 +228,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     }
     else if (KeytoESP == fabgl::VK_F4) {
         menu_level = 0;
+        menu_curopt = 1;
         // Persist Save
         uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
         if (opt2 > 0 && opt2<6) {
@@ -233,7 +236,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
     }
     else if (KeytoESP == fabgl::VK_F5) {
-        menu_level = 0;        
+        menu_level = 0;      
+        menu_curopt = 1;
         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
         if (mFile != "") {
             Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
@@ -331,6 +335,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         uint8_t opt = menuRun("ESPectrum " + Config::getArch() + "\n" + MENU_MAIN[Config::lang]);
   
         if (opt == 1) {
+            // ***********************************************************************************
+            // SNAPSHOTS MENU
+            // ***********************************************************************************
             menu_saverect = true;
             menu_curopt = 1;
             while(1) {
@@ -380,6 +387,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         } 
         else if (opt == 2) {
+            // ***********************************************************************************
+            // TAPE MENU
+            // ***********************************************************************************
             menu_saverect = true;
             menu_curopt = 1;            
             while(1) {
@@ -390,6 +400,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     if (tap_num == 1) {
                         menu_level = 2;
                         menu_saverect = true;
+                        menu_curopt = 1;
                         // Select TAP File
                         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
                         if (mFile != "") {
@@ -419,6 +430,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         }
         else if (opt == 3) {
+            // ***********************************************************************************
+            // RESET MENU
+            // ***********************************************************************************
             menu_saverect = true;
             menu_curopt = 1;            
             while(1) {
@@ -451,6 +465,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             }
         }
         else if (opt == 4) {
+            // ***********************************************************************************
+            // OPTIONS MENU
+            // ***********************************************************************************
             menu_saverect = true;
             menu_curopt = 1;
             while(1) {

@@ -47,11 +47,8 @@
 
 #pragma GCC optimize ("O3")
 
-//
-// TO DO: CONSIDER THIS VALUES IN THE FUTURE FOR SPEAKER, EAR, MIC COMBINATIONS
-//
-// reg[7:0] ula;
-// always @(*) case({ speaker, ear, mic })
+// Values calculated for BEEPER, EAR, MIC bit mask (values 0-7)
+// Taken from FPGA values suggested by Rampa
 //   0: ula <= 8'h00;
 //   1: ula <= 8'h24;
 //   2: ula <= 8'h40;
@@ -60,12 +57,8 @@
 //   5: ula <= 8'hC0;
 //   6: ula <= 8'hF8;
 //   7: ula <= 8'hFF;
-// endcase
-
-#define SPEAKER_VOLUME 97
-int sp_volt[4]={ 0, (int) (SPEAKER_VOLUME * 0.11f), (int) (SPEAKER_VOLUME * 0.96f), SPEAKER_VOLUME };
-
-static int TapeBit = 0;
+// and adjusted for BEEPER_MAX_VOLUME = 97
+int speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
 
 uint8_t Ports::port[128];
 
@@ -103,9 +96,10 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
         }
 
         if (Tape::tapeStatus==TAPE_LOADING) {
-            TapeBit = Tape::TAP_Read();
-            bitWrite(result,6,TapeBit);
+            Tape::TAP_Read();
+            bitWrite(result,6,Tape::tapeEarBit);
         }
+
 
         return result | (0xa0); // OR 0xa0 -> ISSUE 2
     
@@ -120,7 +114,6 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
     uint8_t data = VIDEO::getFloatBusData();
     
     if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
-    // if ((address == 0x7ffd) && (!Z80Ops::is48)) {        
 
         // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
         // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
@@ -145,6 +138,8 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
 
 void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {    
     
+    int Audiobit;
+
     // ** I/O Contention (Early) *************************
     VIDEO::Draw(1, MemESP::ramContended[address >> 14]);
     // ** I/O Contention (Early) *************************
@@ -152,79 +147,21 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
     // ULA =======================================================================
     if ((address & 0x0001) == 0) {
 
+        // Border color
         if (VIDEO::borderColor != data & 0x07) {
             VIDEO::borderColor = data & 0x07;
             VIDEO::Draw(0,true);
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
-        if (Tape::tapeStatus==TAPE_LOADING)
-            if (TapeBit) data |= 0x00001000; else data &= 0b11110111;
-            // if (TapeBit) data |= 0x10;
-        
-        int Audiobit = sp_volt[data >> 3 & 3];
+        // Beeper Audio
+        Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
         if (Audiobit != ESPectrum::lastaudioBit) {
             ESPectrum::BeeperGetSample(Audiobit);
             ESPectrum::lastaudioBit = Audiobit;
         }
 
     }
-
-
-    //ay chip
-    /*
-    El circuito de sonido contiene dieciseis registros; para seleccionarlos, primero se escribe
-    el numero de registro en la puerta de escritura de direcciones, FFFDh (65533), y despues
-    lee el valor del registro (en la misma direccion) o se escribe en la direccion de escritura
-    de registros de datos, BFFDh (49149). Una vez seleccionado un registro, se puede realizar
-    cualquier numero de operaciones de lectura o escritura de datos. S~1o habr~ que volver
-    escribir en la puerta de escritura de direcciones cuando se necesite seleccio~ar otro registro.
-    La frecuencia de reloj basica de este circuito es 1.7734 MHz (con precision del 0.01~~o).
-    */
-        //el comportamiento de los puertos ay es con mascaras AND... esto se ve asi en juegos como chase hq
-    /*
-    Peripheral: 128K AY Register.
-    Port: 11-- ---- ---- --0-
-    Peripheral: 128K AY (Data).
-    Port: 10-- ---- ---- --0-
-    49154=1100000000000010
-    */
-
-	// // Puertos Chip AY
-	// if ( ((address & 49154) == 49152) || ((address & 49154) == 32768) ) {
-		
-    //     uint16_t puerto_final=address;
-
-	// 	if ((address & 49154) == 49152) puerto_final=65533;
-	// 	else if ((address & 49154) == 32768) puerto_final=49149;
-
-    //     if (puerto_final==65533) {
-    //         AySound::selectRegister(data);
-    //     } else
-    //     if (puerto_final==49149) {
-    //         ESPectrum::AYGetSample();
-    //         AySound::setRegisterData(data);
-    //     }
-
-	// }
-
-    // // Handle AY-commands.
-    // // Port 0xFFFD selects a AY register.
-    // // The port is partially decoded: Bit 1 must be reset and bits 14-15 set.
-    // if (ESPectrum::AY_emu) {
-    //     if ((address & 0xC002) == 0xC000)
-    //     {
-    //         AySound::selectRegister(data);
-    //     }
-    //     else
-    //     // Port 0xBFFD writes to the selected register.
-    //     // The port is partially decoded: Bit 1 must be reset and bit 15 set.
-    //     if ((address & 0x8002) == 0x8000)
-    //     {
-    //         ESPectrum::AYGetSample();
-    //         AySound::setRegisterData(data);
-    //     }
-    // }
 
     // AY ========================================================================
     if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {

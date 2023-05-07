@@ -193,40 +193,14 @@ void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 void ESPectrum::setup() 
 {
 
-    // esp_err_t ret;
-    // esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
-    // ret = esp_bt_controller_init(&bt_cfg);
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s enable controller failed\n", __func__);
-    //     return;
-    // }
-
-    // ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s enable controller failed\n", __func__);
-    //     return;
-    // }
-
-    // ESP_LOGI(GATTC_TAG, "%s init bluetooth\n", __func__);
-    // ret = esp_bluedroid_init();
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s init bluetooth failed\n", __func__);
-    //     return;
-    // }
-    // ret = esp_bluedroid_enable();
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s enable bluetooth failed\n", __func__);
-    //     return;
-    // }
-
     //=======================================================================================
     // FILESYSTEM
     //=======================================================================================
     FileUtils::initFileSystem();
     Config::load();
     
-#ifndef ESP32_SDL2_WRAPPER
+    #ifndef ESP32_SDL2_WRAPPER
+
     // Get chip information
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
@@ -252,7 +226,8 @@ void ESPectrum::setup()
         showMemInfo();
 
     }
-#endif
+    
+    #endif
 
     //=======================================================================================
     // KEYBOARD
@@ -261,25 +236,12 @@ void ESPectrum::setup()
     PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
     PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
 
-    // string cfgLayout = Config::kbd_layout;
-
-    // if(cfgLayout == "ES") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
-    // else if(cfgLayout == "UK") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
-    // else if(cfgLayout == "DE") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
-    // else if(cfgLayout == "FR") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
-    // else 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
-
     if (Config::slog_on) {
         showMemInfo("Keyboard started");
     }
 
     //=======================================================================================
-    // PHYSICAL KEYBOARD (SINCLAIR 8+5 MEMBRANE KEYBOARD)
+    // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
     //=======================================================================================
 
     #ifdef ZXKEYB
@@ -383,24 +345,24 @@ void ESPectrum::setup()
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 
-    // START Z80
+    // Init Z80
     CPU::setup();
 
-    // Ports
+    // Set Ports starting values
     for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
-    // Emu loop sync target
+    // Set emulation loop sync target
     target = CPU::microsPerFrame();
 
+    // Load romset
     Config::requestMachine(Config::getArch(), Config::getRomSet(), true);
 
     #ifdef SNAPSHOT_LOAD_LAST
-
+    // Load last snapshot
     if (Config::ram_file != NO_RAM_FILE) {
         OSD::changeSnapshot(Config::ram_file);
     }
-
     #endif // SNAPSHOT_LOAD_LAST
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
