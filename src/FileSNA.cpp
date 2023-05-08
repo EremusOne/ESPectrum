@@ -116,6 +116,8 @@ bool FileSNA::load(string sna_fn)
     FILE *file;
     int sna_size;
 
+    ESPectrum::reset();
+
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
     // Stop audio
@@ -149,8 +151,6 @@ bool FileSNA::load(string sna_fn)
 
         return false;
     }
-
-    CPU::reset();
 
     printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
 
@@ -325,7 +325,7 @@ bool FileSNA::load(string sna_fn)
     AySound::reset();
 
     // Resume audio
-    pwm_audio_set_sample_rate(ESPectrum::Audio_freq);
+    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
     pwm_audio_set_volume(ESPectrum::aud_volume);
   

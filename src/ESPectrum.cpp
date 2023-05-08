@@ -431,7 +431,6 @@ void ESPectrum::reset()
     ESPoffset = 0;
 
     pwm_audio_stop();
-    // pwm_audio_set_sample_rate(Audio_freq);
     pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
