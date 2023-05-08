@@ -116,8 +116,6 @@ bool FileSNA::load(string sna_fn)
     FILE *file;
     int sna_size;
 
-    ESPectrum::reset();
-
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
     // Stop audio
@@ -155,6 +153,9 @@ bool FileSNA::load(string sna_fn)
     printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
 
     string snapshotArch = "48K";
+
+    // Reset Z80
+    Z80::reset();
 
     MemESP::bankLatch = 0;
     MemESP::pagingLock = 1;
@@ -261,6 +262,8 @@ bool FileSNA::load(string sna_fn)
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     CPU::statesInFrame = CPU::statesPerFrame();
+    CPU::tstates = 0;
+    CPU::global_tstates = 0;
     ESPectrum::target = CPU::microsPerFrame();
     ESPectrum::ESPoffset = 0;
 

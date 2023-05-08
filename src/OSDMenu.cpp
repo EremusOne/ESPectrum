@@ -72,6 +72,8 @@ static uint8_t w;                        // Width in pixels
 static uint8_t h;                        // Height in pixels
 static uint8_t x;                        // X vertical position
 static uint8_t y;                        // Y horizontal position
+static uint8_t prev_y[5];                // Y prev. position
+static unsigned short menu_prevopt = 1;
 static string menu;                   // Menu string
 static unsigned short begin_row;      // First real displayed row
 static uint8_t focus;                    // Focused virtual row
@@ -126,9 +128,13 @@ void OSD::menuRecalc() {
         x = (Config::aspect_16_9 ? 24 : 8);
         y = 8;
     } else {
-//        x = (Config::aspect_16_9 ? 24 : 8) + ((((cols >> 1) - 3)* 6) * menu_level);
         x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        y = 8 + (16 * menu_level);
+        if (menu_saverect) {
+            y += (8 + (8 * menu_prevopt));
+            prev_y[menu_level] = y;
+        } else {
+            y = prev_y[menu_level];
+        }
     }
 
     // Rows
@@ -457,7 +463,8 @@ unsigned short OSD::menuRun(string new_menu) {
                     click();
                 } else if (Menukey.vk == fabgl::VK_RETURN) {
                     click();
-                    return menuRealRowFor(focus);
+                    menu_prevopt = menuRealRowFor(focus);
+                    return menu_prevopt;
                 } else if ((Menukey.vk == fabgl::VK_ESCAPE) || (Menukey.vk == fabgl::VK_F1)) {
 
                     if (menu_level!=0) {

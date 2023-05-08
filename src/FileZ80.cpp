@@ -68,8 +68,6 @@ bool FileZ80::load(string z80_fn)
 {
     FILE *file;
 
-    ESPectrum::reset(); 
-
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
     // Stop audio
@@ -91,6 +89,10 @@ bool FileZ80::load(string z80_fn)
     fseek(file,0,SEEK_END);
     uint32_t file_size = ftell(file);
     rewind (file);
+
+    // Reset Z80 and set bankLatch to default
+    MemESP::bankLatch = 0;
+    Z80::reset();
 
     uint32_t dataOffset = 0;
 
@@ -145,8 +147,8 @@ bool FileZ80::load(string z80_fn)
 
     // #define LOG_Z80_DETAILS
 
-    if (RegPC != 0)
-    {
+    if (RegPC != 0) {
+
         // version 1, the simplest, 48K only.
         uint32_t memRawLength = file_size - dataOffset;
 
@@ -186,8 +188,7 @@ bool FileZ80::load(string z80_fn)
         MemESP::pagingLock = 1;
         MemESP::videoLatch = 0;
     }
-    else
-    {
+    else {
         // read 2 more bytes
         for (uint8_t i = 30; i < 32; i++) {
             header[i] = readByteFile(file);
@@ -355,6 +356,8 @@ bool FileZ80::load(string z80_fn)
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     CPU::statesInFrame = CPU::statesPerFrame();
+    CPU::tstates = 0;
+    CPU::global_tstates = 0;
     ESPectrum::target = CPU::microsPerFrame();
     ESPectrum::ESPoffset = 0;
 

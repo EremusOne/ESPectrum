@@ -222,7 +222,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         menu_curopt = 1;
         // Persist Load
         uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
-        if (opt2 > 0 && opt2<6) {
+        if (opt2 > 0 && opt2<11) {
             persistLoad(opt2);
         }
     }
@@ -231,7 +231,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         menu_curopt = 1;
         // Persist Save
         uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
-        if (opt2 > 0 && opt2<6) {
+        if (opt2 > 0 && opt2<11) {
             persistSave(opt2);
         }
     }
@@ -476,6 +476,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 uint8_t options_num = menuRun(MENU_OPTIONS[Config::lang]);
                 if (options_num == 1) {
                     menu_saverect = true;
+                    menu_curopt = 1;
                     while (1) {
                         menu_level = 2;
                         // Storage source
@@ -506,9 +507,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                 else
                                     FileUtils::MountPoint = MOUNT_POINT_SD;
                                 Config::save();
-                                menu_saverect = false;
-                                menu_curopt = opt2;
                             }
+                            menu_curopt = opt2;
+                            menu_saverect = false;
                         } else {
                             menu_curopt = 1;                            
                             break;

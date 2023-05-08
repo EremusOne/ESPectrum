@@ -167,13 +167,23 @@ static const char *MENU_RESET[2] = { MENU_RESET_EN, MENU_RESET_ES };
     "Slot 2\n"\
     "Slot 3\n"\
     "Slot 4\n"\
-    "Slot 5\n"
+    "Slot 5\n"\
+    "Slot 6\n"\
+    "Slot 7\n"\
+    "Slot 8\n"\
+    "Slot 9\n"\
+    "Slot 10\n"
 #define MENU_PERSIST_ES \
     "Ranura 1\n"\
     "Ranura 2\n"\
     "Ranura 3\n"\
     "Ranura 4\n"\
-    "Ranura 5\n"
+    "Ranura 5\n"\
+    "Ranura 6\n"\
+    "Ranura 7\n"\
+    "Ranura 8\n"\
+    "Ranura 9\n"\
+    "Ranura 10\n"    
 #define MENU_PERSIST_SAVE_EN \
     "Save snapshot\n" MENU_PERSIST_EN
 #define MENU_PERSIST_SAVE_ES \
