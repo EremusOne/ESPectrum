@@ -190,6 +190,8 @@ void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 //=======================================================================================
 // SETUP
 //=======================================================================================
+TaskHandle_t loopTaskHandle;
+
 void ESPectrum::setup() 
 {
 
@@ -367,6 +369,8 @@ void ESPectrum::setup()
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
+    xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
+
 }
 
 //=======================================================================================
@@ -525,7 +529,9 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             printf("=========================================================================\n");
             UBaseType_t wm;
             wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-            printf("Stack HWM: %u\n", wm);
+            printf("Audio Task Stack HWM: %u\n", wm);
+            wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
+            printf("Loop Task Stack HWM: %u\n", wm);
             
             r = false;
         }    
@@ -866,7 +872,8 @@ void ESPectrum::audioFrameEnd() {
 int ESPectrum::sync_cnt = 0;
 uint8_t *ESPectrum::audbuffertosend = ESPectrum::audioBuffer;
 
-void IRAM_ATTR ESPectrum::loop() {
+void IRAM_ATTR ESPectrum::loop(void *unused) {
+// void IRAM_ATTR ESPectrum::loop() {    
 
 static char linea1[] = "CPU: 00000 / IDL: 00000 ";
 static char linea2[] = "FPS:000.00 / FND:000.00 ";    
