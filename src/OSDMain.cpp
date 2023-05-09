@@ -360,7 +360,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         menu_curopt = 1;
                         while (1) {
                             uint8_t opt2 = menuRun(MENU_PERSIST_LOAD[Config::lang]);
-                            if (opt2 > 0 && opt2<6) {
+                            if (opt2 > 0 && opt2<11) {
                                 if (persistLoad(opt2)) return;
                                 menu_saverect = false;
                                 menu_curopt = opt2;
@@ -372,7 +372,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         menu_curopt = 1;
                         while (1) {
                             uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
-                            if (opt2 > 0 && opt2<6) {
+                            if (opt2 > 0 && opt2<11) {
                                 if (persistSave(opt2)) return;
                                 menu_saverect = false;
                                 menu_curopt = opt2;
