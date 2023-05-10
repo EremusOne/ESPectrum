@@ -214,7 +214,7 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     VIDEO::vga.print(" ");
 
     if (line.substr(0,9) == "ESPectrum") {
-        VIDEO::vga.setTextColor(OSD::zxColor(2, 1), OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(ESP_ORANGE, OSD::zxColor(0, 0));
         VIDEO::vga.print("ESP");        
         VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));        
         VIDEO::vga.print(("ectrum " + Config::getArch()).c_str());
