@@ -26,6 +26,7 @@ const Mode VGA::MODE360x200(8, 54, 28, 360, 11, 2, 32, 400, 2, 14161000, 1, 0); 
 #ifdef VGA31k_50_MODES
 const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 10484434, 1, 1);  // 26211 / 50.02
 const Mode VGA::MODE360x200(8, 54, 28, 360, 11, 2, 32, 400, 2, 10016736, 1, 0);  // 22259 / 50.02
+// const Mode VGA::MODE360x200(8, 54, 28, 360, 16, 3, 48, 600, 3, 15013849, 1, 1, 78,194,5,11,0,0,5,10); 33364 / 50.02
 #endif
 
 // 48K
@@ -36,8 +37,8 @@ const Mode VGA::MODE360x200(12, 32, 44, 360,  8, 3, 31, 270, 1, 7000000, 1, 1); 
 
 // 128K
 #ifdef TV15k_128K_MODES
-const Mode VGA::MODE320x240(42, 32, 62, 320, 28, 3, 40, 240, 1, 7093800, 1, 1);  // 15557 / 50.02
-const Mode VGA::MODE360x200(12, 32, 52, 360,  8, 3, 30, 270, 1, 7093800, 1, 1);  // 15557 / 50.02
+const Mode VGA::MODE320x240(42, 32, 62, 320, 28, 3, 40, 240, 1, 7093800, 1, 1, 107,238,5,12,0,0,8,15);  // 15557 / 50.02
+const Mode VGA::MODE360x200(42, 32, 62, 320, 28, 3, 40, 240, 1, 7093800, 1, 1, 107,238,5,12,0,0,8,15);  // 15557 / 50.02
 #endif
 
 
@@ -103,7 +104,9 @@ bool VGA::init(const Mode &mode, const int *pinMap, const int bitCount, const in
 	allocateLineBuffers();
 	currentLine = 0;
 	vSyncPassed = false;
-	initParallelOutputMode(pinMap, mode.pixelClock, bitCount, clockPin);
+	// initParallelOutputMode(pinMap, mode.pixelClock, bitCount, clockPin);
+	initPrecalcParallelOutputMode(pinMap, mode, bitCount, clockPin);
+
 	startTX();
 	return true;
 }

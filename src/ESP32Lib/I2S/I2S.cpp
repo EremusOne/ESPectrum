@@ -328,6 +328,8 @@ bool I2S::initParallelOutputMode(const int *pinMap, long sampleRate, const int b
 		if(sdm > 0xA1fff) sdm = 0xA1fff;
 
 		rtc_clk_apll_enable(true, sdm & 255, (sdm >> 8) & 255, sdm >> 16, odir);
+
+		printf("APLL parameters: sdm0 %d sdm1 %d sdm2 %d odiv %d\n", sdm & 255, (sdm >> 8) & 255, sdm >> 16, odir);
 /*
 		// using values calculated by https://github.com/jeanthom/ESP32-APLL-cal
 		// thanks, @ackerman and @eremus!
@@ -350,6 +352,114 @@ bool I2S::initParallelOutputMode(const int *pinMap, long sampleRate, const int b
 
 	i2s.clkm_conf.val = 0;
 	i2s.clkm_conf.clka_en = sampleRate > 0 ? 1 : 0;
+	i2s.clkm_conf.clkm_div_num = clockN;
+	i2s.clkm_conf.clkm_div_a = clockA;
+	i2s.clkm_conf.clkm_div_b = clockB;
+	i2s.sample_rate_conf.tx_bck_div_num = clockDiv;
+
+	i2s.fifo_conf.val = 0;
+	i2s.fifo_conf.tx_fifo_mod_force_en = 1;
+	i2s.fifo_conf.tx_fifo_mod = 1;  //byte packing 0A0B_0B0C = 0, 0A0B_0C0D = 1, 0A00_0B00 = 3,
+	i2s.fifo_conf.tx_data_num = 32; //fifo length
+	i2s.fifo_conf.dscr_en = 1;		//fifo will use dma
+
+	i2s.conf1.val = 0;
+	i2s.conf1.tx_stop_en = 0;
+	i2s.conf1.tx_pcm_bypass = 1;
+
+	i2s.conf_chan.val = 0;
+	i2s.conf_chan.tx_chan_mod = 1;
+
+	//high or low (stereo word order)
+	i2s.conf.tx_right_first = 1;
+
+	i2s.timing.val = 0;
+
+	//clear serial mode flags
+	i2s.conf.tx_msb_right = 0;
+	i2s.conf.tx_msb_shift = 0;
+	i2s.conf.tx_mono = 0;
+	i2s.conf.tx_short_sync = 0;
+
+	//allocate disabled i2s interrupt
+	const int interruptSource[] = {ETS_I2S0_INTR_SOURCE, ETS_I2S1_INTR_SOURCE};
+	if(useInterrupt())
+		esp_intr_alloc(interruptSource[i2sIndex], ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_LEVEL3 | ESP_INTR_FLAG_IRAM, &interruptStatic, this, &interruptHandle);
+	return true;
+}
+
+bool I2S::initPrecalcParallelOutputMode(const int *pinMap, const Mode& mode, const int bitCount, int wordSelect, int baseClock)
+{
+	volatile i2s_dev_t &i2s = *i2sDevices[i2sIndex];
+	//route peripherals
+	//in parallel mode only upper 16 bits are interesting in this case
+	const int deviceBaseIndex[] = {I2S0O_DATA_OUT0_IDX, I2S1O_DATA_OUT0_IDX};
+	const int deviceClockIndex[] = {I2S0O_BCK_OUT_IDX, I2S1O_BCK_OUT_IDX};
+	const int deviceWordSelectIndex[] = {I2S0O_WS_OUT_IDX, I2S1O_WS_OUT_IDX};
+	const periph_module_t deviceModule[] = {PERIPH_I2S0_MODULE, PERIPH_I2S1_MODULE};
+	//works only since indices of the pads are sequential
+	for (int i = 0; i < bitCount; i++)
+		if (pinMap[i] > -1)
+		{
+			PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pinMap[i]], PIN_FUNC_GPIO);
+			gpio_set_direction((gpio_num_t)pinMap[i], (gpio_mode_t)GPIO_MODE_DEF_OUTPUT);
+			//rtc_gpio_set_drive_capability((gpio_num_t)pinMap[i], (gpio_drive_cap_t)GPIO_DRIVE_CAP_3 );
+			if(i2sIndex == 1)
+			{
+				if(bitCount == 16)
+					gpio_matrix_out(pinMap[i], deviceBaseIndex[i2sIndex] + i + 8, false, false);
+				else
+					gpio_matrix_out(pinMap[i], deviceBaseIndex[i2sIndex] + i, false, false);
+			}
+			else
+			{
+				//there is something odd going on here in the two different I2S
+				//the configuration seems to differ. Use i2s1 for high frequencies.
+				gpio_matrix_out(pinMap[i], deviceBaseIndex[i2sIndex] + i + 24 - bitCount, false, false);
+			}
+		}
+	if (baseClock > -1)
+		gpio_matrix_out(baseClock, deviceClockIndex[i2sIndex], false, false);
+	if (wordSelect > -1)
+		gpio_matrix_out(wordSelect, deviceWordSelectIndex[i2sIndex], false, false);
+
+		//enable I2S peripheral
+	periph_module_enable(deviceModule[i2sIndex]);
+
+	//reset i2s
+	i2s.conf.tx_reset = 1;
+	i2s.conf.tx_reset = 0;
+	i2s.conf.rx_reset = 1;
+	i2s.conf.rx_reset = 0;
+
+	resetFIFO();
+	resetDMA();
+
+	//parallel mode
+	i2s.conf2.val = 0;
+	i2s.conf2.lcd_en = 1;
+	//from technical datasheet figure 64
+	i2s.conf2.lcd_tx_wrx2_en = 1;
+	i2s.conf2.lcd_tx_sdx2_en = 0;
+
+	i2s.sample_rate_conf.val = 0;
+	i2s.sample_rate_conf.tx_bits_mod = bitCount;
+	//clock setup
+	int clockN = 2, clockA = 1, clockB = 0, clockDiv = 1;
+
+	if (Config::esp32rev > 0)
+	{
+		// ESP32 chip revision > 0
+		rtc_clk_apll_enable(true, mode.r1sdm0, mode.r1sdm1, mode.r1sdm2, mode.r1odiv);
+	}
+	else
+	{
+		// ESP32 chip revision > 0
+		rtc_clk_apll_enable(true, 0, 0, mode.r0sdm2, mode.r0odiv);
+	}
+
+	i2s.clkm_conf.val = 0;
+	i2s.clkm_conf.clka_en = 1;
 	i2s.clkm_conf.clkm_div_num = clockN;
 	i2s.clkm_conf.clkm_div_a = clockA;
 	i2s.clkm_conf.clkm_div_b = clockB;

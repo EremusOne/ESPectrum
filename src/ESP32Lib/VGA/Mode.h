@@ -26,8 +26,13 @@ class Mode
 	unsigned long pixelClock;
 	int hSyncPolarity;
 	int vSyncPolarity;
-	float aspect;
 	int activeLineCount;
+	int r1sdm0;
+	int r1sdm1;
+	int r1sdm2;
+	int r1odiv;
+	int r0sdm2;
+	int r0odiv;
 	Mode(
 		const int hFront = 0,
 		const int hSync = 0,
@@ -41,7 +46,14 @@ class Mode
 		const unsigned long pixelClock = 0,
 		const int hSyncPolarity = 1,
 		const int vSyncPolarity = 1,
-		const float aspect = 1.f)
+		const int r1sdm0 = 0,
+		const int r1sdm1 = 0,
+		const int r1sdm2 = 0,
+		const int r1odiv = 0,
+		const int r0sdm0 = 0,
+		const int r0sdm1 = 0,
+		const int r0sdm2 = 0,
+		const int r0odiv = 0)
 		: hFront(hFront),
 		  hSync(hSync),
 		  hBack(hBack),
@@ -54,7 +66,12 @@ class Mode
 		  pixelClock(pixelClock),
 		  hSyncPolarity(hSyncPolarity),
 		  vSyncPolarity(vSyncPolarity),
-		  aspect(aspect),
+		  r1sdm0(r1sdm0),
+		  r1sdm1(r1sdm1),
+		  r1sdm2(r1sdm2),
+		  r1odiv(r1odiv),
+		  r0sdm2(r0sdm2),
+		  r0odiv(r0odiv),
 		  activeLineCount(vRes / vDiv)
 	{
 	}
