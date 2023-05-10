@@ -236,7 +236,8 @@ def calculate():
         vprms.setFreq(vfreq)
 
 def calculateAPLL():
-    apllCalc.calcAndPrint(pixclk)
+    # APLL freq is 2 * pixelclock (?)
+    apllCalc.calcAndPrint(2*pixclk)
 
     apllfr0.sdm0.set('-')
     apllfr0.sdm1.set('-')
