@@ -213,12 +213,21 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
     VIDEO::vga.print(" ");
 
-    if (line.length() < cols - margin) {
-    VIDEO::vga.print(line.c_str());
-    for (uint8_t i = line.length(); i < (cols - margin); i++)
-        VIDEO::vga.print(" ");
+    if (line.substr(0,9) == "ESPectrum") {
+        VIDEO::vga.setTextColor(OSD::zxColor(2, 1), OSD::zxColor(0, 0));
+        VIDEO::vga.print("ESP");        
+        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));        
+        VIDEO::vga.print(("ectrum " + Config::getArch()).c_str());
+        for (uint8_t i = line.length(); i < (cols - margin); i++)
+            VIDEO::vga.print(" ");
     } else {
-        VIDEO::vga.print(line.substr(0, cols - margin).c_str());
+        if (line.length() < cols - margin) {
+        VIDEO::vga.print(line.c_str());
+        for (uint8_t i = line.length(); i < (cols - margin); i++)
+            VIDEO::vga.print(" ");
+        } else {
+            VIDEO::vga.print(line.substr(0, cols - margin).c_str());
+        }
     }
 
     VIDEO::vga.print(" ");
@@ -380,6 +389,17 @@ unsigned short OSD::menuRun(string new_menu) {
                 else
                     zxDelay = REPDEL;
                 lastzxKey = 6;
+            }
+        } else            
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+            if (zxDelay == 0) {
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                if (lastzxKey == 7)
+                    zxDelay = REPPER;
+                else
+                    zxDelay = REPDEL;
+                lastzxKey = 7;
             }
         } else
         {
@@ -722,6 +742,17 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                 else
                     zxDelay = REPDEL;
                 lastzxKey = 6;
+            }
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+            if (zxDelay == 0) {
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                if (lastzxKey == 7)
+                    zxDelay = REPPER;
+                else
+                    zxDelay = REPDEL;
+                lastzxKey = 7;
             }
         } else
         {

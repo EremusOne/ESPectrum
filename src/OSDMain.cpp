@@ -713,6 +713,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
                         zxDelay = REPDEL;
                     }
+                } else
+                if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                        zxDelay = REPDEL;
+                    }
                 }
 
                 #endif
@@ -765,6 +772,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     if (zxDelay == 0) {
                         ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
                         ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
+                        zxDelay = REPDEL;
+                    }
+                } else
+                if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
                         zxDelay = REPDEL;
                     }
                 }
