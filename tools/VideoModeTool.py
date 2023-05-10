@@ -206,7 +206,7 @@ class APLLParamFrame:
         self.sdm1 = ParamDuo(self.fr, 'sdm1', rev)
         self.sdm2 = ParamDuo(self.fr, 'sdm2', rev)
         self.odiv = ParamDuo(self.fr, 'odiv', rev)
-        self.fout = ParamDuo(self.fr, 'pixclk[Hz]', rev)
+        self.fout = ParamDuo(self.fr, 'PLL freq[Hz]', rev)
         self.fdel = ParamDuo(self.fr, '∆f [Hz]', rev)
         self.ferr = ParamDuo(self.fr, 'err (%)', rev)
         self.fr.pack(padx=5, pady=5)
