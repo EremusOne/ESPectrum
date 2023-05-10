@@ -134,6 +134,9 @@ static unsigned int DRAM_ATTR offAtt[SPEC_H];
 #define BRI_YELLOW  0xCF      // 1100 1111
 #define BRI_WHITE   0xFF      // 1111 1111
 
+// used in ESPectrum logo text
+#define ESP_ORANGE  0xC7      // 1100 0111
+
 #define NUM_SPECTRUM_COLORS 16
 static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BLACK,     BLUE,     RED,     MAGENTA,     GREEN,     CYAN,     YELLOW,     WHITE,

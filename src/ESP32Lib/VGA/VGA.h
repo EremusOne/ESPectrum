@@ -23,13 +23,15 @@ class VGA : public I2S
 	bool init(const Mode &mode, const int *pinMap, const int bitCount, const int clockPin = -1);
 	virtual bool init(const Mode &mode, const PinConfig &pinConfig) = 0;
 
-	static const Mode MODE320x480;
 	static const Mode MODE320x240;
+	static const Mode MODE360x200;
+
+/* unused modes
+	static const Mode MODE320x480;
 	static const Mode MODE320x120;
 	static const Mode MODE320x400;
 	static const Mode MODE320x200;
 	static const Mode MODE360x400;
-	static const Mode MODE360x200;
 	static const Mode MODE360x350;
 	static const Mode MODE360x175;
 
@@ -59,7 +61,7 @@ class VGA : public I2S
 	static const PinConfig VGABlackEdition;
 	static const PinConfig VGAWhiteEdition;
 	static const PinConfig PicoVGA;
-
+*/
 
 	Mode mode;
 
