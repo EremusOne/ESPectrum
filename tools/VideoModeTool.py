@@ -170,6 +170,10 @@ class HVParamFrame:
         self.fro = ParamDuo(self.fr, pfx + 'Front')
         self.syn = ParamDuo(self.fr, pfx + 'Sync')
         self.bak = ParamDuo(self.fr, pfx + 'Back')
+        if pfx == 'v':
+            self.mul = ParamDuo(self.fr, pfx + 'Div')
+        else:
+            self.mul = ParamDuo(self.fr, ' - ')
         self.fre = ParamDuo(self.fr, pfx + 'Freq', 'Hz', 12)
         self.fr.pack(padx=5, pady=5)
 
@@ -213,8 +217,6 @@ def calculate():
     global pixclk
     htot = hprms.calcsum()
     vtot = vprms.calcsum()
-    # if scandouble.get():
-    #     vtot *= 2
 
     if calcmode.get() == 0:        
         pixclk = float(pixprms.en.get())
@@ -266,11 +268,9 @@ def genModeline():
     vfro = int(vprms.fro.en.get())
     vsyn = int(vprms.syn.en.get())
     vbak = int(vprms.bak.en.get())
+    vdiv = int(vprms.mul.en.get())
 
-    if scandouble.get():
-        s += str(hact) + 'x' + str(int(vact/2))
-    else:
-        s += str(hact) + 'x' + str(vact)
+    s += str(hact) + 'x' + str(int(vact/vdiv))
     s += '('
     s += str(hfro) + ', '
     s += str(hsyn) + ', '
@@ -280,11 +280,7 @@ def genModeline():
     s += str(vsyn) + ', '
     s += str(vbak) + ', '
     s += str(vact) + ', '
-
-    if scandouble.get():
-        s += '2' + ', '
-    else:
-        s += '1' + ', '
+    s += str(vdiv) + ', '
 
     s += str(int(pixclk)) + ', '
 
@@ -303,10 +299,37 @@ def genModeline():
     except:
         s += '0, 0, 0, 0, 0, 0, 0, 0);'
 
+    s += '  // '
+    s += str(int(round(float(hprms.fre.en.get()))))
+    s += ' / '
+    s += str(0.01*round(100*float(vprms.fre.en.get())))
     modeline.set(s)
 
 def parseModeline():
-    pass
+    txt = modeline.en.get()
+    txt = txt.replace(')', '(')
+    toks = txt.split('(')
+    if len(toks) < 2: return
+    nums = toks[1]
+    svals = nums.split(',')
+    ivals = []
+    for sval in svals: ivals.append(int(sval))
+    print(ivals)
+    if len(ivals) < 12: return
+
+    hprms.fro.set(ivals[0])
+    hprms.syn.set(ivals[1])
+    hprms.bak.set(ivals[2])
+    hprms.act.set(ivals[3])
+    vprms.fro.set(ivals[4])
+    vprms.syn.set(ivals[5])
+    vprms.bak.set(ivals[6])
+    vprms.act.set(ivals[7])
+    vprms.mul.set(ivals[8])
+    pixprms.set  (ivals[9])
+    pixclk = ivals[9]
+    hsyncneg.set(ivals[10])
+    vsyncneg.set(ivals[11])
 
 hprms = HVParamFrame(None, 'h')
 vprms = HVParamFrame(None, 'v')
@@ -330,7 +353,7 @@ btncalc2.pack(padx=20,pady=1)
 btngenml = Button(calcfr, text='Generate modeline', command=genModeline)
 btngenml.pack(padx=20,pady=1)
 
-btnparse = Button(calcfr, text='Parse modeline', command=parseModeline, state=DISABLED)
+btnparse = Button(calcfr, text='Parse modeline', command=parseModeline)
 btnparse.pack(padx=20,pady=1)
 
 calcfr.pack(padx=5, pady=5, side=LEFT)
@@ -344,13 +367,10 @@ calcmode.set(0)
 rbfr.pack(side=LEFT)
 
 optfr = Frame(cntfr)
-scandouble = IntVar()
-scandouble.set(0)
 hsyncneg = IntVar()
 hsyncneg.set(0)
 vsyncneg = IntVar()
 vsyncneg.set(0)
-Checkbutton(optfr, text='ScanDouble', variable=scandouble).pack()
 Checkbutton(optfr, text='H Sync Negative', variable=hsyncneg).pack()
 Checkbutton(optfr, text='V Sync Negative', variable=vsyncneg).pack()
 optfr.pack(side=LEFT)
@@ -362,12 +382,13 @@ apllfr0 = APLLParamFrame(apllfr, 'rev0')
 apllfr1 = APLLParamFrame(apllfr, 'rev1')
 apllfr.pack()
 
-modeline = ParamCtl(None, 'Modeline for ESPectrum code', 90)
+modeline = ParamCtl(None, 'Modeline for ESPectrum code', 110)
 
 apllCalc = APLLCalc()
 
 hprms.set(320, 38, 32, 58)
 vprms.set(240, 28, 3, 41)
+vprms.mul.set(1)
 
 hprms.calcsum()
 vprms.calcsum()
