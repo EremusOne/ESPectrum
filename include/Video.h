@@ -106,6 +106,8 @@ public:
 
     static bool OSD;
 
+    static uint32_t* SaveRect;
+
 };
 
 static unsigned int is169;

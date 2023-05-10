@@ -47,14 +47,22 @@
 
 #pragma GCC optimize ("O3")
 
-#define SPEAKER_VOLUME 97
-int sp_volt[4]={ 0, (int) (SPEAKER_VOLUME * 0.11f), (int) (SPEAKER_VOLUME * 0.96f), SPEAKER_VOLUME };
-
-static int TapeBit = 0;
+// Values calculated for BEEPER, EAR, MIC bit mask (values 0-7)
+// Taken from FPGA values suggested by Rampa
+//   0: ula <= 8'h00;
+//   1: ula <= 8'h24;
+//   2: ula <= 8'h40;
+//   3: ula <= 8'h64;
+//   4: ula <= 8'hB8;
+//   5: ula <= 8'hC0;
+//   6: ula <= 8'hF8;
+//   7: ula <= 8'hFF;
+// and adjusted for BEEPER_MAX_VOLUME = 97
+int speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
 
 uint8_t Ports::port[128];
 
-uint8_t Ports::input(uint16_t address)
+uint8_t IRAM_ATTR Ports::input(uint16_t address)
 {
 
     // ** I/O Contention (Early) *************************
@@ -88,9 +96,10 @@ uint8_t Ports::input(uint16_t address)
         }
 
         if (Tape::tapeStatus==TAPE_LOADING) {
-            TapeBit = Tape::TAP_Read();
-            bitWrite(result,6,TapeBit /*Tape::TAP_Read()*/);
+            Tape::TAP_Read();
+            bitWrite(result,6,Tape::tapeEarBit);
         }
+
 
         return result | (0xa0); // OR 0xa0 -> ISSUE 2
     
@@ -105,7 +114,6 @@ uint8_t Ports::input(uint16_t address)
     uint8_t data = VIDEO::getFloatBusData();
     
     if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
-    // if ((address == 0x7ffd) && (!Z80Ops::is48)) {        
 
         // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
         // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
@@ -128,8 +136,10 @@ uint8_t Ports::input(uint16_t address)
 
 }
 
-void Ports::output(uint16_t address, uint8_t data) {    
+void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {    
     
+    int Audiobit;
+
     // ** I/O Contention (Early) *************************
     VIDEO::Draw(1, MemESP::ramContended[address >> 14]);
     // ** I/O Contention (Early) *************************
@@ -137,16 +147,19 @@ void Ports::output(uint16_t address, uint8_t data) {
     // ULA =======================================================================
     if ((address & 0x0001) == 0) {
 
+        // Border color
         if (VIDEO::borderColor != data & 0x07) {
             VIDEO::borderColor = data & 0x07;
             VIDEO::Draw(0,true);
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
-        if (Tape::tapeStatus==TAPE_LOADING)
-            if (TapeBit) data |= 0x10;
-        
-        ESPectrum::BeeperGetSample(sp_volt[data >> 3 & 3]);
+        // Beeper Audio
+        Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+        if (Audiobit != ESPectrum::lastaudioBit) {
+            ESPectrum::BeeperGetSample(Audiobit);
+            ESPectrum::lastaudioBit = Audiobit;
+        }
 
     }
 

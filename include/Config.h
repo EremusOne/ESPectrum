@@ -60,7 +60,7 @@ public:
     static uint8_t  esp32rev;
     static bool     slog_on;
     static bool     aspect_16_9;
-    static string   kbd_layout;
+    // static string   kbd_layout;
     static uint8_t  lang;
     static bool     AY48;
     static uint8_t  joystick;

@@ -56,6 +56,7 @@ bool VIDEO::OSD = false;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
+uint32_t* VIDEO::SaveRect;
 
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
@@ -172,6 +173,8 @@ void VIDEO::Init() {
 
     precalcborder32();  // Precalc border 32 bits values
 
+    SaveRect = (uint32_t *) heap_caps_malloc(0x9000, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
+
     borderColor = 0;
     brd = border32[0];
 
@@ -203,7 +206,6 @@ void VIDEO::Reset() {
     if (Config::getArch() == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
-
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
@@ -308,7 +310,7 @@ void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) 
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
         tstateDraw += tStatesPerLine;
-        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+        lineptr32 = (uint32_t *)(vga.frameBuffers[0][linedraw_cnt]);
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
         Draw = &TopBorder;
@@ -341,7 +343,7 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
         tstateDraw += tStatesPerLine;
-        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+        lineptr32 = (uint32_t *)(vga.frameBuffers[0][linedraw_cnt]);
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
         bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
@@ -478,7 +480,7 @@ void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contende
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
         tstateDraw += tStatesPerLine;
-        lineptr32 = (uint32_t *)(vga.backBuffer[linedraw_cnt]);
+        lineptr32 = (uint32_t *)(vga.frameBuffers[0][linedraw_cnt]);
         if (is169) lineptr32 += 5;        
         coldraw_cnt = 0;
         Draw = DrawOSD43;

@@ -100,7 +100,11 @@ public:
     static void filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type);
     static void menuAt(short int row, short int col);
     static void menuScrollBar();
+    static void click();
     static uint8_t menu_level;
+    static bool menu_saverect;    
+    static unsigned short menu_curopt;    
+    static unsigned int SaveRectpos;    
 
     // // Rows
     static unsigned short rowCount(string menu);

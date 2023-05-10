@@ -1,6 +1,8 @@
 # ZX-ESPectrum-IDF
 
-This is an emulator of the Sinclair ZX Spectrum computer running on a Lilygo TTGo VGA32 board.
+**WARNING: First publication of release 1.0 beta 5.3 contained a bug in the PS/2 keyboard code. It has been solved and binaries and source code are now correct.**
+
+This is an emulator of the Sinclair ZX Spectrum computer running on a, Espressif ESP32 SoC powered, Lilygo TTGo VGA32 board.
 
 Just connect a VGA monitor, a PS/2 keyboard, a SD Card (optional) and power via microUSB.
 
@@ -18,8 +20,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Contended memory and contended I/O emulation.
 - AY-3-8912 sound emulation.
 - Beeper & Mic emulation (Cobra’s Arc)
-- PS/2 keyboard used as input for Spectrum keys with all symbols mapped.
-- International kbd layout support: US, ES, DE, FR and UK.
+- PS/2 keyboard support
 - Kempston and Cursor type Joystick emulation.
 - Complete OSD menu in two languages: English & Spanish.
 - Realtime TAP file loading.
@@ -104,7 +105,7 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 - F10 Volume up
 - F12 Reset ESP32
 - Pause Pause
-- ImprPant BMP screen capture (Folder /c at SDCard)
+- PrntScr BMP screen capture (Folder /c at SDCard)
 
 ## Hardware configuration and pinout
 

@@ -53,8 +53,8 @@
 #define ERR_DIR_OPEN "Cannot open directory!"
 
 // OSD
-#define OSD_TITLE  "  ZX-ESPectrum-IDF - powered by ESP32   "
-#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS  v1.0beta5.2 "
+#define OSD_TITLE  " ESPectrum - The ESP32 powered emulator "
+#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS  v1.0beta5.3 "
 
 #define OSD_PAUSE_EN " --=[PAUSED]=-- "
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"
@@ -70,8 +70,8 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 
-#define OSD_TAPE_SELECT_ERR_EN "Please select TAP file first"
-#define OSD_TAPE_SELECT_ERR_ES "Por favor elija primero un archivo TAP"
+#define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
+#define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
 
 #define MENU_SNA_TITLE_EN "Select Snapshot"
@@ -111,12 +111,14 @@ static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
     "Tape\t>\n"\
     "Reset\t>\n"\
     "Options\t>\n"\
+    "Help\n"\
     "About\n"
 #define MENU_MAIN_ES /*"Menu principal\n"*/ \
     "Snapshots\t>\n"\
     "Casete\t>\n"\
     "Resetear\t>\n"\
     "Opciones\t>\n"\
+    "Ayuda\n"\
     "Acerca de\n"
 static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
 
@@ -125,7 +127,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Storage\t>\n"\
     "Machine\t>\n"\
     "Aspect ratio\t>\n"\
-    "Joystick\t>\n"\
+    "PS/2 Joystick\t>\n"\
     "Language\t>\n"\
     "Other\t>\n"
 #define MENU_OPTIONS_ES \
@@ -133,7 +135,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Almacenamiento\t>\n"\
     "Modelo\t>\n"\
     "Rel. aspecto\t>\n"\
-    "Joystick\t>\n"\
+    "Joystick PS/2\t>\n"\
     "Idioma\t>\n"\
     "Otros\t>\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
@@ -165,13 +167,23 @@ static const char *MENU_RESET[2] = { MENU_RESET_EN, MENU_RESET_ES };
     "Slot 2\n"\
     "Slot 3\n"\
     "Slot 4\n"\
-    "Slot 5\n"
+    "Slot 5\n"\
+    "Slot 6\n"\
+    "Slot 7\n"\
+    "Slot 8\n"\
+    "Slot 9\n"\
+    "Slot 10\n"
 #define MENU_PERSIST_ES \
     "Ranura 1\n"\
     "Ranura 2\n"\
     "Ranura 3\n"\
     "Ranura 4\n"\
-    "Ranura 5\n"
+    "Ranura 5\n"\
+    "Ranura 6\n"\
+    "Ranura 7\n"\
+    "Ranura 8\n"\
+    "Ranura 9\n"\
+    "Ranura 10\n"    
 #define MENU_PERSIST_SAVE_EN \
     "Save snapshot\n" MENU_PERSIST_EN
 #define MENU_PERSIST_SAVE_ES \
@@ -232,13 +244,13 @@ static const char *MENU_ROMSET48[2] = { MENU_ROMSET48_EN, MENU_ROMSET48_ES };
     "PLUS2\n"
 static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
 
-#define MENU_LANGUAGE_EN "Language\n"\
-    "Interface\t>\n"\
-    "Keyboard\t>\n"
-#define MENU_LANGUAGE_ES "Idioma\n"\
-    "Interfaz\t>\n"\
-    "Teclado\t>\n"
-static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
+// #define MENU_LANGUAGE_EN "Language\n"\
+//     "Interface\t>\n"\
+//     "PS2 Keyboard\t>\n"
+// #define MENU_LANGUAGE_ES "Idioma\n"\
+//     "Interfaz\t>\n"\
+//     "Teclado PS2\t>\n"
+// static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
 
 #define MENU_INTERFACE_LANG_EN "Language\n"\
     "English\t[ ]\n"\
@@ -248,64 +260,104 @@ static const char *MENU_LANGUAGE[2] = { MENU_LANGUAGE_EN, MENU_LANGUAGE_ES };
     "Espanol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
 
-#define MENU_JOY_EN "Joystick\n"\
+#define MENU_JOY_EN "PS/2 Joystick\n"\
     "Cursor\t[ ]\n"\
     "Kempston\t[ ]\n"
-#define MENU_JOY_ES MENU_JOY_EN
+#define MENU_JOY_ES "Joystick PS/2\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"
 static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 
-#define MENU_KBD_LAYOUT_EN "Select language\n"\
-    "US English\t[US]\n"\
-    "Spanish\t[ES]\n"\
-    "German\t[DE]\n"\
-    "French\t[FR]\n"\
-    "UK British\t[UK]\n"
-#define MENU_KBD_LAYOUT_ES "Elija idioma\n"\
-    "Ingles EEUU\t[US]\n"\
-    "Espanol\t[ES]\n"\
-    "Aleman\t[DE]\n"\
-    "Frances\t[FR]\n"\
-    "Ingles GB\t[UK]\n"
-static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
+// #define MENU_KBD_LAYOUT_EN "Select language\n"\
+//     "US English\t[US]\n"\
+//     "Spanish\t[ES]\n"\
+//     "German\t[DE]\n"\
+//     "French\t[FR]\n"\
+//     "UK British\t[UK]\n"
+// #define MENU_KBD_LAYOUT_ES "Elija idioma\n"\
+//     "Ingles EEUU\t[US]\n"\
+//     "Espanol\t[ES]\n"\
+//     "Aleman\t[DE]\n"\
+//     "Frances\t[FR]\n"\
+//     "Ingles GB\t[UK]\n"
+// static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
 
 #define OSD_ABOUT_EN \
-    " (C)2023 Victor Iborra AKA Eremus\n"\
-    " https://github.com/eremusOne\n"\
+    " (C)2023 Victor Iborra \"Eremus\"\n"\
+    "         David Crespo  \"dcrespo3d\"\n"\
     "\n"\
     " Based on ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
-    " https://github.com/dcrespo3d\n"\
-    " https://youtube.com/davidprograma\n"\
-    "\n"\
-    " Original (C) 2019 Rampa & Queru\n"\
-    " https://github.com/rampa069\n"\
+    "\n"\ 
+    " Inspired by previous projects\n"\
+    " from Pete Todd and Rampa & Queru\n"\
     "\n"\
     " Z80 emulation by JL Sanchez\n"\
     " VGA driver by BitLuni\n"\
     " AY-3-8912 library by A. Sashnov\n"\
     " PS2 driver by Fabrizio di Vittorio\n"\
-    " Greetings to http://retrowiki.es and\n"\
-    " his people (Hi ackerman!) for the\n"\
-    " support and inspiration.\n"    
+    "\n"\
+    " Greetings to Ackerman, zx81, azesmbog,\n"\
+    " Rampa, D. Carrion, A. Villena and\n"\
+    " to Retrowiki and his people\n"\
+    " for the support and inspiration.\n"    
 #define OSD_ABOUT_ES \
-    " (C)2023 Victor Iborra AKA Eremus\n"\
-    " https://github.com/eremusOne\n"\
+    " (C)2023 Victor Iborra \"Eremus\"\n"\
+    "         David Crespo  \"dcrespo3d\"\n"\
     "\n"\
     " Basado en ZX-ESPectrum-Wiimote\n"\
     " (C)2020-2023 David Crespo\n"\
-    " https://github.com/dcrespo3d\n"\
-    " https://youtube.com/davidprograma\n"\
-    "\n"\
-    " Original (C) 2019 Rampa & Queru\n"\
-    " https://github.com/rampa069\n"\
+    "\n"\ 
+    " Inspirado en proyectos anteriores\n"\
+    " de Pete Todd y Rampa & Queru\n"\
     "\n"\
     " Emulacion Z80 por JL Sanchez\n"\
     " Driver VGA por BitLuni\n"\
     " Libreria AY-3-8912 por A. Sashnov\n"\
     " Driver PS2 por Fabrizio di Vittorio\n"\
-    " Saludos a http://retrowiki.es y\n"\
-    " su gente (Hola ackerman!) por su\n"\
+    "\n"\
+    " Saludos a Ackerman, zx81, azesmbog,\n"\
+    " Rampa, D. Carrion, A. Villena y\n"\
+    " a Retrowiki y su gente por su\n"\
     " ayuda e inspiracion.\n"
 static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
+
+#define OSD_HELP_EN \
+    " [F1]     Menu\n"\
+    " [F2]     Load (SNA,Z80)\n"\
+    " [F3]     Load custom snapshot\n"\
+    " [F4]     Save custom snapshot\n"\
+    " [F5]     Select TAP file\n"\
+    " [F6]     Play/Pause tape\n"\
+    " [F7]     Stop tape\n"\
+    " [F8]     OSD Stats:\n"\
+    "           CPU: microsec. per CPU cycle\n"\
+    "           IDL: unused microsec.\n"\
+    "           FPS: Frames per second\n"\
+    "           FND: FPS without delay\n"\
+    " [F9]     Volume down\n"\
+    " [F10]    Volume up\n"\
+    " [F12]    Reset ESP32\n"\
+    " [Pause]  Pause\n"\
+    " [PrtScr] BMP screenshot (SD folder /c)\n"
+#define OSD_HELP_ES \
+    " [F1]      Menu\n"\
+    " [F2]      Cargar (SNA,Z80)\n"\
+    " [F3]      Cargar snapshot\n"\
+    " [F4]      Guardar snapshot\n"\
+    " [F5]      Elegir TAP\n"\
+    " [F6]      Play/Pausa\n"\
+    " [F7]      Stop\n"\
+    " [F8]      OSD\n"\
+    "            CPU: microsg. por ciclo CPU\n"\
+    "            IDL: microsg. sin usar\n"\
+    "            FPS: Frames por segundo\n"\
+    "            FND: FPS sin delay\n"\
+    " [F9]      Subir volumen\n"\
+    " [F10]     Bajar volumen\n"\
+    " [F12]     Resetear ESP32\n"\
+    " [Pause]   Pausa\n"\
+    " [ImpPant] Captura BMP (Carpeta SD /c)\n"
+static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
 
 #endif // ESPECTRUM_MESSAGES_h

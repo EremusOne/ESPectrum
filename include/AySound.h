@@ -43,6 +43,7 @@
 #define AySound_h
 
 #include "hardconfig.h"
+#include "ESPectrum.h"
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -76,6 +77,24 @@ typedef enum {
     AYEMU_AY_CUSTOM,     /**< use AY with custom table. */
     AYEMU_YM_CUSTOM      /**< use YM with custom table. */
 } ayemu_chip_t;
+
+// Registers
+// regs[0] = finePitchChannelA;
+// regs[1] = coarsePitchChannelA;
+// regs[2] = finePitchChannelB;
+// regs[3] = coarsePitchChannelB;
+// regs[4] = finePitchChannelC;
+// regs[5] = coarsePitchChannelC;
+// regs[6] = noisePitch;
+// regs[7] = mixer;
+// regs[8] = volumeChannelA;
+// regs[9] = volumeChannelB;
+// regs[10] = volumeChannelC;
+// regs[11] = envelopeFineDuration;
+// regs[12] = envelopeCoarseDuration;
+// regs[13] = envelopeShape;
+// regs[14] = ioPortA;
+// regs[15] = ioPortB;
 
 /** parsed by #ayemu_set_regs() AY registers data \internal */
 typedef struct
@@ -114,7 +133,6 @@ class AySound
 {
 public:
 
-    static void update();
     static void updToneA();
     static void updToneB();
     static void updToneC();
@@ -132,15 +150,17 @@ public:
     static void setRegisterData(uint8_t data);
 
     static void init();
-    static void ayreset();
     static int set_chip_type(ayemu_chip_t chip, int *custom_table);
     static void set_chip_freq(int chipfreq);
     static int set_stereo(ayemu_stereo_t stereo, int *custom_eq);
     static int set_sound_format(int freq, int chans, int bits);
     static void prepare_generation();
-    static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
+    static void gen_sound(int bufsize, int bufpos);
+    static void gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, int bufpos);
 
-    static void(*updateReg[15])();
+    static void(*updateReg[14])();
+
+    static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
 
 private:
 
@@ -179,7 +199,7 @@ private:
     static int env_pos;                     /**< current position in envelop (0...127) */
     static int Cur_Seed;                    /**< random numbers counter */
 
-    static uint8_t regs[15];
+    static uint8_t regs[14];
     static uint8_t selectedRegister;
 
 };

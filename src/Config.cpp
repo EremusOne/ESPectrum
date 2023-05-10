@@ -45,6 +45,7 @@
 #include "messages.h"
 #include "ESPectrum.h"
 #include "esp_spiffs.h"
+#include "pwm_audio.h"
 
 string   Config::arch = "48K";
 string   Config::ram_file = NO_RAM_FILE;
@@ -52,10 +53,10 @@ string   Config::romSet = "SINCLAIR";
 bool     Config::slog_on = false;
 bool     Config::aspect_16_9 = true;
 uint8_t  Config::esp32rev = 0;
-string   Config::kbd_layout = "US";
+// string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
-uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
+uint8_t  Config::joystick = 0; // 0 -> Cursor, 1 -> Kempston
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -87,7 +88,9 @@ static inline void trim(std::string &s) {
 
 // Read config from FS
 void Config::load() {
-    
+
+    pwm_audio_stop();
+
     FILE *f = fopen(DISK_BOOT_FILENAME, "r");
     if (f==NULL)
     {
@@ -131,10 +134,10 @@ void Config::load() {
                 FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
             } else
                 FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
-        } else if (line.find("kbdlayout:") != string::npos) {
-            kbd_layout = line.substr(line.find(':') + 1);
-            erase_cntrl(kbd_layout);
-            trim(kbd_layout);
+        // } else if (line.find("kbdlayout:") != string::npos) {
+        //     kbd_layout = line.substr(line.find(':') + 1);
+        //     erase_cntrl(kbd_layout);
+        //     trim(kbd_layout);
         } else if (line.find("language:") != string::npos) {
             string slang = line.substr(line.find(':') + 1);
             erase_cntrl(slang);
@@ -156,17 +159,22 @@ void Config::load() {
     }
     fclose(f);
 
+    pwm_audio_start();
+
 }
 
 // Dump actual config to FS
 void Config::save() {
 
+    pwm_audio_stop();
+
     //printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
 
     FILE *f = fopen(DISK_BOOT_FILENAME, "w");
-    if (f==NULL)
+    if (f == NULL)
     {
         printf("Error opening %s\n",DISK_BOOT_FILENAME);
+        pwm_audio_start();
         return;
     }
 
@@ -198,7 +206,7 @@ void Config::save() {
 
     // KBD layout
     //printf(("kbdlayout:" + kbd_layout + "\n").c_str());
-    fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
+    // fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
 
     // Language
     //printf("language:%s\n",std::to_string(Config::lang).c_str());
@@ -212,9 +220,9 @@ void Config::save() {
 
     fclose(f);
     
-    vTaskDelay(5);
-
     printf("Config saved OK\n");
+
+    pwm_audio_start();
 
 }
 
