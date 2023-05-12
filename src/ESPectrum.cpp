@@ -190,7 +190,7 @@ void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 //=======================================================================================
 // SETUP
 //=======================================================================================
-TaskHandle_t loopTaskHandle;
+TaskHandle_t ESPectrum::loopTaskHandle;
 
 void ESPectrum::setup() 
 {
@@ -369,6 +369,7 @@ void ESPectrum::setup()
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
+    // Create loop task
     xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
 
 }
@@ -872,6 +873,8 @@ void ESPectrum::audioFrameEnd() {
 int ESPectrum::sync_cnt = 0;
 uint8_t *ESPectrum::audbuffertosend = ESPectrum::audioBuffer;
 
+volatile bool ESPectrum::vsync = false;
+
 void IRAM_ATTR ESPectrum::loop(void *unused) {
 // void IRAM_ATTR ESPectrum::loop() {    
 
@@ -904,6 +907,19 @@ int64_t idle;
 for(;;) {
 
     ts_start = micros();
+
+    #ifdef VIDEO_VSYNC
+
+    // wait for vertical sync
+    for (;;) {
+        if (vsync) break;
+    }
+    vsync = false;
+
+    // wait for vertical sync
+    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    
+    #endif
 
     audioFrameStart();
 
@@ -982,7 +998,6 @@ for(;;) {
     }
 
     // ESPmedian += ESPoffset;
-
     #endif
 
 }

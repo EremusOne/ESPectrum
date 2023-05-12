@@ -100,6 +100,7 @@ bool VGA::init(const Mode &mode, const int *pinMap, const int bitCount, const in
 	this->vsyncPin = vsyncPin;
 	this->hsyncPin = hsyncPin;
 	totalLines = mode.linesPerField();
+	// printf("totallines: %d\n",totalLines);
 	allocateLineBuffers();
 	currentLine = 0;
 	vSyncPassed = false;

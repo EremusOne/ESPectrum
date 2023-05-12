@@ -58,6 +58,26 @@ int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 
+#ifdef VIDEO_VSYNC
+void IRAM_ATTR VGA6Bit::interrupt(void *arg)
+{
+
+    VGA6Bit * staticthis = (VGA6Bit *)arg;
+
+	//staticthis->currentLine = (staticthis->currentLine + 1) % (staticthis->totalLines * 2); 
+
+	staticthis->currentLine++;
+
+    // if (staticthis->currentLine == 0)
+    if (staticthis->currentLine == (staticthis->totalLines << 1)) {
+	    staticthis->currentLine = 0;
+        ESPectrum::vsync = true;
+        // vTaskNotifyGiveFromISR(ESPectrum::loopTaskHandle, NULL);        
+    }
+
+}
+#endif
+
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
 #ifdef NO_VIDEO

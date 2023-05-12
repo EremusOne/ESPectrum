@@ -12,6 +12,8 @@
 #pragma once
 #include "VGA.h"
 #include "../Graphics/GraphicsR2G2B2S2Swapped.h"
+#include "hardconfig.h"
+
 
 class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 {
@@ -19,6 +21,9 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 	VGA6Bit() //8 bit based modes only work with I2S1
 		: VGA(1)
 	{
+		#ifdef VIDEO_VSYNC
+		interruptStaticChild = &VGA6Bit::interrupt;
+		#endif
 	}
 
 
@@ -125,7 +130,22 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 	}
 
   protected:
+
+	#ifdef VIDEO_VSYNC
+
+	bool useInterrupt()
+	{ 
+		return true; 
+	};
+
+	static void IRAM_ATTR interrupt(void *arg);
+
+	#else
+
 	virtual void interrupt()
 	{
 	}
+
+	#endif
+
 };
