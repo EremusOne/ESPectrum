@@ -543,29 +543,37 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     menu_level = 2;
                     menu_curopt = 1;                    
                     menu_saverect = true;
-                    // aspect ratio
-                    string asp_menu = MENU_ASPECT[Config::lang];
-                    bool prev_asp = Config::aspect_16_9;
-                    if (prev_asp) {
-                        asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
-                        asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
-                    } else {
-                        asp_menu.replace(asp_menu.find("[4",0),2,"[*");
-                        asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
-                    }
-                    uint8_t opt2 = menuRun(asp_menu);
-                    if (opt2) {
-                        if (opt2 == 1)
-                            Config::aspect_16_9 = false;
-                        else
-                            Config::aspect_16_9 = true;
+                    while (1) {
+                        // aspect ratio
+                        string asp_menu = MENU_ASPECT[Config::lang];
+                        bool prev_asp = Config::aspect_16_9;
+                        if (prev_asp) {
+                            asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
+                            asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
+                        } else {
+                            asp_menu.replace(asp_menu.find("[4",0),2,"[*");
+                            asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
+                        }
+                        uint8_t opt2 = menuRun(asp_menu);
+                        if (opt2) {
+                            if (opt2 == 1)
+                                Config::aspect_16_9 = false;
+                            else
+                                Config::aspect_16_9 = true;
 
-                        if (Config::aspect_16_9 != prev_asp) {
-                            Config::save();
-                            esp_hard_reset();
+                            if (Config::aspect_16_9 != prev_asp) {
+                                Config::save();
+                                esp_hard_reset();
+                            }
+
+                            menu_curopt = opt2;
+                            menu_saverect = false;
+
+                        } else {
+                            menu_curopt = 3;
+                            break;
                         }
                     }
-                    menu_curopt = 3;
                 }
                 else if (options_num == 4) {
                     menu_level = 2;

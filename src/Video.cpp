@@ -334,7 +334,7 @@ void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) 
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
         Draw = &TopBorder;
-        Draw(0,contended);
+        TopBorder(0,contended);
     }
 
 }
@@ -369,7 +369,7 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
         bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
         attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24)];
         Draw = MainScreenLB;
-        Draw(0,contended);
+        MainScreenLB(0,contended);
     }
 
 }    
@@ -389,7 +389,7 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
         if (++coldraw_cnt > 3) {      
             Draw = DrawOSD169;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            Draw(0,false);
+            DrawOSD169(0,false);
             return;
         }
     }
@@ -398,29 +398,29 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
 
 
 void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
-  
+
     uint8_t att, bmp;
 
     if (contended)
         statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
 
     CPU::tstates += statestoadd;
-    
+
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
 
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
-            att = grmem[attOffset++];       // get attribute byte
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-            
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+        att = grmem[attOffset++];       // get attribute byte
+        bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
-        if (++coldraw_cnt > 35) {      
+        *lineptr32++ = AluBytes[bmp >> 4][att];
+        *lineptr32++ = AluBytes[bmp & 0xF][att];
+
+        if (++coldraw_cnt > 35) {
             Draw = MainScreenRB;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            Draw(0,false);
+            MainScreenRB(0,false);
             return;
         }
 
@@ -504,7 +504,7 @@ void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contende
         if (is169) lineptr32 += 5;        
         coldraw_cnt = 0;
         Draw = DrawOSD43;
-        Draw(0,contended);
+        DrawOSD43(0,contended);
     }
 
 }
