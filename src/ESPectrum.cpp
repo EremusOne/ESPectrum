@@ -882,7 +882,7 @@ static char linea1[] = "CPU: 00000 / IDL: 00000 ";
 static char linea2[] = "FPS:000.00 / FND:000.00 ";    
 static double totalseconds = 0;
 static double totalsecondsnodelay = 0;
-int64_t ts_start, elapsed;
+int64_t ts_start, elapsed, ts_prev;
 int64_t idle;
 
 // int ESPmedian = 0;
@@ -904,22 +904,12 @@ int64_t idle;
 // Simulate keypress, for testing
 // bitWrite(Ports::port[5], 4, 0);
 
+ts_start = micros();
+
 for(;;) {
 
+    ts_prev = ts_start;
     ts_start = micros();
-
-    #ifdef VIDEO_VSYNC
-
-    // wait for vertical sync
-    for (;;) {
-        if (vsync) break;
-    }
-    vsync = false;
-
-    // wait for vertical sync
-    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    
-    #endif
 
     audioFrameStart();
 
@@ -950,11 +940,7 @@ for(;;) {
     idle = target - elapsed;
     if (idle < 0) idle = 0;
 
-    #ifdef VIDEO_FRAME_TIMING
-    totalseconds += idle;
-    #endif
-    
-    totalseconds += elapsed;
+    totalseconds += ts_start - ts_prev;
     totalsecondsnodelay += elapsed;
     if (totalseconds >= 1000000) {
 
@@ -987,9 +973,20 @@ for(;;) {
     #ifdef VIDEO_FRAME_TIMING    
     elapsed = micros() - ts_start;
     idle = target - elapsed - ESPoffset;
+    #ifndef VIDEO_VSYNC
     if (idle > 0) { 
         delayMicroseconds(idle);
     }
+    #else
+    // wait for vertical sync
+    for (;;) {
+        if (vsync) break;
+    }
+    vsync = false;
+
+    // wait for vertical sync
+    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    #endif
     
     // Audio sync
     if (sync_cnt++ & 0x0f) {
