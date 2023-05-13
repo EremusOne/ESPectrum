@@ -389,7 +389,7 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
         if (++coldraw_cnt > 3) {      
             Draw = DrawOSD169;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            DrawOSD169(0,false);
+            Draw(0,false);
             return;
         }
     }
@@ -504,7 +504,7 @@ void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contende
         if (is169) lineptr32 += 5;        
         coldraw_cnt = 0;
         Draw = DrawOSD43;
-        DrawOSD43(0,contended);
+        Draw(0,contended);
     }
 
 }
