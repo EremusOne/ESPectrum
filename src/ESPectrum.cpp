@@ -882,7 +882,7 @@ static char linea1[] = "CPU: 00000 / IDL: 00000 ";
 static char linea2[] = "FPS:000.00 / FND:000.00 ";    
 static double totalseconds = 0;
 static double totalsecondsnodelay = 0;
-int64_t ts_start, elapsed, ts_prev;
+int64_t ts_start, elapsed;
 int64_t idle;
 
 // int ESPmedian = 0;
@@ -904,11 +904,8 @@ int64_t idle;
 // Simulate keypress, for testing
 // bitWrite(Ports::port[5], 4, 0);
 
-ts_start = micros();
-
 for(;;) {
 
-    ts_prev = ts_start;
     ts_start = micros();
 
     audioFrameStart();
@@ -936,12 +933,8 @@ for(;;) {
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
 
-    elapsed = micros() - ts_start;
-    idle = target - elapsed;
-    if (idle < 0) idle = 0;
-
-    totalseconds += ts_start - ts_prev;
-    totalsecondsnodelay += elapsed;
+    // OSD calcs
+    totalsecondsnodelay += micros() - ts_start;
     if (totalseconds >= 1000000) {
 
         if (elapsed < 100000) {
@@ -959,7 +952,6 @@ for(;;) {
             // sprintf((char *)linea1,"CPU: %05d / BMX: %05d ", (int)(elapsed), bmax);
             // sprintf((char *)linea1,"CPU: %05d / OFF: %05d ", (int)(elapsed), (int)(ESPmedian/50));
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
-
         }
 
         totalseconds = 0;
@@ -971,13 +963,25 @@ for(;;) {
     }
     
     #ifdef VIDEO_FRAME_TIMING    
+
+    #ifndef VIDEO_VSYNC
+    
     elapsed = micros() - ts_start;
     idle = target - elapsed - ESPoffset;
-    #ifndef VIDEO_VSYNC
     if (idle > 0) { 
         delayMicroseconds(idle);
     }
+
+    // Audio sync
+    if (sync_cnt++ & 0x0f) {
+        ESPoffset = 128 - pwm_audio_rbstats();
+        sync_cnt = 0;
+    }
+
+    // ESPmedian += ESPoffset;
+
     #else
+
     // wait for vertical sync
     for (;;) {
         if (vsync) break;
@@ -986,16 +990,12 @@ for(;;) {
 
     // wait for vertical sync
     // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
     #endif
     
-    // Audio sync
-    if (sync_cnt++ & 0x0f) {
-        ESPoffset = 128 - pwm_audio_rbstats();
-        sync_cnt = 0;
-    }
-
-    // ESPmedian += ESPoffset;
     #endif
+
+    totalseconds += micros() - ts_start;
 
 }
 
