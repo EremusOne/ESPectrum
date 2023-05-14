@@ -87,6 +87,10 @@ public:
     static void (*DrawOSD43)(unsigned int, bool contended);
     static void (*DrawOSD169)(unsigned int, bool contended);
 
+    #ifdef VIDEO_VSYNC
+    static void vgataskinit(void *unused);
+    #endif
+
     static uint8_t* grmem;
 
     // For flushing video buffer as fast as possible after HALT

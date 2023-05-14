@@ -69,10 +69,10 @@ void IRAM_ATTR VGA6Bit::interrupt(void *arg)
 	staticthis->currentLine++;
 
     // if (staticthis->currentLine == 0)
-    if (staticthis->currentLine == (staticthis->totalLines << 1)) {
+    if (staticthis->currentLine == staticthis->totalLines << 1) {
 	    staticthis->currentLine = 0;
-        ESPectrum::vsync = true;
-        // vTaskNotifyGiveFromISR(ESPectrum::loopTaskHandle, NULL);        
+        // ESPectrum::vsync = true;
+        vTaskNotifyGiveFromISR(ESPectrum::loopTaskHandle, NULL);        
     }
 
 }
@@ -174,7 +174,8 @@ void precalcborder32()
     }
 }
 
-void VIDEO::Init() {
+#ifdef VIDEO_VSYNC
+void VIDEO::vgataskinit(void *unused) {
 
     const Mode& vgaMode = Config::aspect_16_9 ? vga.MODE360x200 : vga.MODE320x240;
     OSD::scrW = vgaMode.hRes;
@@ -184,6 +185,27 @@ void VIDEO::Init() {
     const int grePins[] = {GRE_PINS_6B};
     const int bluPins[] = {BLU_PINS_6B};
     vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+
+    for (;;){}
+
+}
+#endif
+
+void VIDEO::Init() {
+
+    #ifdef VIDEO_VSYNC
+    TaskHandle_t videoTaskHandle;
+    xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1024, NULL, /*configMAX_PRIORITIES - 1*/ 1, &videoTaskHandle, 1);
+    #else
+    const Mode& vgaMode = Config::aspect_16_9 ? vga.MODE360x200 : vga.MODE320x240;
+    OSD::scrW = vgaMode.hRes;
+    OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
+    
+    const int redPins[] = {RED_PINS_6B};
+    const int grePins[] = {GRE_PINS_6B};
+    const int bluPins[] = {BLU_PINS_6B};
+    vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+    #endif
 
     precalcColors();    // precalculate colors for current VGA mode
 

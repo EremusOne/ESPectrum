@@ -10,11 +10,14 @@
 		http://bitluni.net
 */
 #include "VGA.h"
-
+#include "hardconfig.h"
 //hfront hsync hback pixels vfront vsync vback lines divy pixelclock hpolaritynegative vpolaritynegative
 
+#ifdef VIDEO_VSYNC
+#define VGA31k_50_MODES
+#else
 #define VGA31k_SAFE_MODES
-// #define VGA31k_50_MODES
+#endif
 // #define TV15k_48K_MODES
 // #define TV15k_128K_MODES
 

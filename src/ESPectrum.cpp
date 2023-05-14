@@ -963,11 +963,12 @@ for(;;) {
     }
     
     #ifdef VIDEO_FRAME_TIMING    
-
-    #ifndef VIDEO_VSYNC
-    
+   
     elapsed = micros() - ts_start;
     idle = target - elapsed - ESPoffset;
+    
+    #ifndef VIDEO_VSYNC
+    
     if (idle > 0) { 
         delayMicroseconds(idle);
     }
@@ -982,14 +983,14 @@ for(;;) {
 
     #else
 
-    // wait for vertical sync
-    for (;;) {
-        if (vsync) break;
-    }
-    vsync = false;
+    // // wait for vertical sync
+    // for (;;) {
+    //     if (vsync) break;
+    // }
+    // vsync = false;
 
     // wait for vertical sync
-    // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     #endif
     
