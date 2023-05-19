@@ -57,6 +57,7 @@ public:
     static const string& getArch()   { return arch;   }
     static const string& getRomSet() { return romSet; }
     static string   ram_file;
+    static string   last_ram_file;
     static uint8_t  esp32rev;
     static bool     slog_on;
     static bool     aspect_16_9;
@@ -64,6 +65,7 @@ public:
     static uint8_t  lang;
     static bool     AY48;
     static uint8_t  joystick;
+    static uint8_t  videomode;
 
     // config persistence
     static void load();

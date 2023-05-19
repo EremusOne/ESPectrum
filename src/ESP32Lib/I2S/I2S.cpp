@@ -454,7 +454,7 @@ bool I2S::initPrecalcParallelOutputMode(const int *pinMap, const Mode& mode, con
 	}
 	else
 	{
-		// ESP32 chip revision > 0
+		// ESP32 chip revision == 0
 		rtc_clk_apll_enable(true, 0, 0, mode.r0sdm2, mode.r0odiv);
 	}
 

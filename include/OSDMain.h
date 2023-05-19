@@ -112,6 +112,9 @@ public:
 
     // // Snapshot (SNA/Z80) Management
     static void changeSnapshot(string sna_filename);
+
+    static void esp_hard_reset();
+
 };
 
 #endif // ESPECTRUM_OSD_H

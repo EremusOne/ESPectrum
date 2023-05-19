@@ -58,25 +58,24 @@ int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 
-#ifdef VIDEO_VSYNC
+// #ifdef VIDEO_VSYNC
 void IRAM_ATTR VGA6Bit::interrupt(void *arg)
 {
 
     VGA6Bit * staticthis = (VGA6Bit *)arg;
 
-	//staticthis->currentLine = (staticthis->currentLine + 1) % (staticthis->totalLines * 2); 
+    if (++staticthis->currentLine == staticthis->totalLines << 1 ) { // Why totalLines << 1 ? Still don't know. Investigate
 
-	staticthis->currentLine++;
-
-    // if (staticthis->currentLine == 0)
-    if (staticthis->currentLine == staticthis->totalLines << 1) {
 	    staticthis->currentLine = 0;
-        // ESPectrum::vsync = true;
-        vTaskNotifyGiveFromISR(ESPectrum::loopTaskHandle, NULL);        
-    }
+
+        ESPectrum::vsync = true;
+
+        // vTaskNotifyGiveFromISR(ESPectrum::loopTaskHandle, NULL);
+
+    } else ESPectrum::vsync = false;
 
 }
-#endif
+// #endif
 
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
@@ -174,38 +173,36 @@ void precalcborder32()
     }
 }
 
-#ifdef VIDEO_VSYNC
 void VIDEO::vgataskinit(void *unused) {
 
-    const Mode& vgaMode = Config::aspect_16_9 ? vga.MODE360x200 : vga.MODE320x240;
+    const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
     OSD::scrW = vgaMode.hRes;
     OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
-    
     const int redPins[] = {RED_PINS_6B};
     const int grePins[] = {GRE_PINS_6B};
     const int bluPins[] = {BLU_PINS_6B};
+    vga.VGA6Bit_useinterrupt=true;
     vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
 
     for (;;){}
 
 }
-#endif
 
 void VIDEO::Init() {
 
-    #ifdef VIDEO_VSYNC
-    TaskHandle_t videoTaskHandle;
-    xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1024, NULL, /*configMAX_PRIORITIES - 1*/ 1, &videoTaskHandle, 1);
-    #else
-    const Mode& vgaMode = Config::aspect_16_9 ? vga.MODE360x200 : vga.MODE320x240;
-    OSD::scrW = vgaMode.hRes;
-    OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
-    
-    const int redPins[] = {RED_PINS_6B};
-    const int grePins[] = {GRE_PINS_6B};
-    const int bluPins[] = {BLU_PINS_6B};
-    vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
-    #endif
+    if (Config::videomode > 0) {
+        TaskHandle_t videoTaskHandle;
+        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 8192, NULL, /* 5 */ configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
+    } else {
+        const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
+        OSD::scrW = vgaMode.hRes;
+        OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
+        const int redPins[] = {RED_PINS_6B};
+        const int grePins[] = {GRE_PINS_6B};
+        const int bluPins[] = {BLU_PINS_6B};
+        vga.VGA6Bit_useinterrupt=false;
+        vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+    }
 
     precalcColors();    // precalculate colors for current VGA mode
 

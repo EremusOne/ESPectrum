@@ -39,6 +39,7 @@
 
 #include "ESPectrum.h"
 #include "FileSNA.h"
+#include "FileZ80.h"
 #include "Config.h"
 #include "FileUtils.h"
 #include "OSDMain.h"
@@ -196,11 +197,32 @@ void ESPectrum::setup()
 {
 
     //=======================================================================================
+    // KEYBOARD
+    //=======================================================================================
+
+    PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
+    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
+
+    if (Config::slog_on) {
+        showMemInfo("Keyboard started");
+    }
+
+    //=======================================================================================
+    // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
+    //=======================================================================================
+
+    #ifdef ZXKEYB
+    ZXKeyb::setup();
+    #endif
+
+    //=======================================================================================
     // FILESYSTEM
     //=======================================================================================
     FileUtils::initFileSystem();
     Config::load();
-    
+
+    // Config::videomode = 0;
+
     #ifndef ESP32_SDL2_WRAPPER
 
     // Get chip information
@@ -232,23 +254,82 @@ void ESPectrum::setup()
     #endif
 
     //=======================================================================================
-    // KEYBOARD
+    // BOOTKEYS: Read keyboard for 500 ms. checking boot keys
     //=======================================================================================
 
-    PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
-    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
+    std:string b = "00";
+    std::string s;
+    for (int i=0; i<2000; i++) {
+        s = bootKeyboard();
+        if (s!="") {
+            
+            if (s.length()==2) 
+                b = s; 
+            else {
+                b[0] = b[1];
+                b[1] = s[0];
+            }
 
-    if (Config::slog_on) {
-        showMemInfo("Keyboard started");
+            if (b=="1Q" || b=="Q1") {
+                printf("%s\n", b.c_str());
+                Config::aspect_16_9=false;
+                Config::videomode=0;
+                Config::ram_file="none";                
+                Config::save();
+                break;
+            } else
+            if (b=="1W" || b=="W1") {
+                Config::aspect_16_9=true;
+                Config::videomode=0;
+                Config::ram_file="none";                
+                Config::save();
+                printf("%s\n", b.c_str());
+                break;
+            } else
+            if (b=="2Q" || b=="Q2") {
+                Config::aspect_16_9=false;
+                Config::videomode=1;
+                Config::ram_file="none";                
+                Config::save();
+                printf("%s\n", b.c_str());
+                break;
+            } else
+            if (b=="2W" || b=="W2") {
+                Config::aspect_16_9=true;
+                Config::videomode=1;
+                Config::ram_file="none";                
+                Config::save();
+                printf("%s\n", b.c_str());
+                break;
+            } else
+            if (b=="3Q" || b=="Q3") {
+                Config::aspect_16_9=false;
+                Config::videomode=2;
+                Config::ram_file="none";                
+                Config::save();
+                printf("%s\n", b.c_str());
+                break;
+            } else
+            if (b=="3W" || b=="W3") {
+                Config::aspect_16_9=true;
+                Config::videomode=2;
+                Config::ram_file="none";                
+                Config::save();
+                printf("%s\n", b.c_str());
+                break;
+            }
+
+        }
+
+        // if (bootKeyboard()) {
+        //     Config::ram_file="none";                
+        //     Config::save();
+        //     break;
+        // }
+
+        delayMicroseconds(250);
+
     }
-
-    //=======================================================================================
-    // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
-    //=======================================================================================
-
-    #ifdef ZXKEYB
-    ZXKeyb::setup();
-    #endif
 
     //=======================================================================================
     // MEMORY SETUP
@@ -360,12 +441,23 @@ void ESPectrum::setup()
     // Load romset
     Config::requestMachine(Config::getArch(), Config::getRomSet(), true);
 
-    #ifdef SNAPSHOT_LOAD_LAST
-    // Load last snapshot
+    // Load snapshot if present in Config::ram_file
     if (Config::ram_file != NO_RAM_FILE) {
-        OSD::changeSnapshot(Config::ram_file);
+        
+        if (FileUtils::hasSNAextension(Config::ram_file))
+            FileSNA::load(Config::ram_file);        
+        else if (FileUtils::hasZ80extension(Config::ram_file))
+            FileZ80::load(Config::ram_file);
+
+        Config::last_ram_file = Config::ram_file;
+
+        // ESP host reset
+        #ifndef SNAPSHOT_LOAD_LAST
+        Config::ram_file = NO_RAM_FILE;
+        Config::save();
+        #endif
+
     }
-    #endif // SNAPSHOT_LOAD_LAST
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
@@ -739,6 +831,81 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
 }
 
+std::string ESPectrum::bootKeyboard() {
+
+    auto Kbd = PS2Controller.keyboard();
+    fabgl::VirtualKeyItem NextKey;
+    bool r = false;
+
+    #ifdef ZXKEYB
+
+    // Process physical keyboard
+    ZXKeyb::process();
+    // Detect and process physical kbd menu key combinations
+
+    if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+            return "1Q";
+        } else 
+        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+            return "1W";
+        }
+    } else
+    if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+            return "2Q";
+        } else 
+        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+            return "2W";
+        }
+    } else
+    if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+            return "3Q";
+        } else 
+        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+            return "3W";
+        }
+    }
+
+    #endif
+
+    while (Kbd->virtualKeyAvailable()) {
+
+        r = Kbd->getNextVirtualKey(&NextKey);
+        if (r) {
+
+            // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) {
+                return "1";
+            }
+
+            // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) {
+                return "2";
+            }
+
+            // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) {
+                return "3";
+            }
+
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) {
+                return "Q";
+            }
+
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) {
+                return "W";
+            }
+
+        }
+
+    }
+
+    return "";
+
+}
+
 // static int bmax = 0;
 
 //=======================================================================================
@@ -948,6 +1115,8 @@ for(;;) {
             showMemInfo();
             #endif
 
+            // printf("[Framecnt] %u; [Seconds] %f; [FPS] %f; [FPS (no delay)] %f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+
             sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
             // sprintf((char *)linea1,"CPU: %05d / BMX: %05d ", (int)(elapsed), bmax);
             // sprintf((char *)linea1,"CPU: %05d / OFF: %05d ", (int)(elapsed), (int)(ESPmedian/50));
@@ -967,32 +1136,31 @@ for(;;) {
     elapsed = micros() - ts_start;
     idle = target - elapsed - ESPoffset;
     
-    #ifndef VIDEO_VSYNC
-    
-    if (idle > 0) { 
-        delayMicroseconds(idle);
+    if(Config::videomode) {
+
+        // wait for vertical sync (method 1)
+        for (;;) {
+            if (vsync) break;
+        }
+
+        // // wait for vertical sync (method 2)
+        // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    } else {
+
+        if (idle > 0) { 
+            delayMicroseconds(idle);
+        }
+
+        // Audio sync
+        if (sync_cnt++ & 0x0f) {
+            ESPoffset = 128 - pwm_audio_rbstats();
+            sync_cnt = 0;
+        }
+
+        // ESPmedian += ESPoffset;
+
     }
-
-    // Audio sync
-    if (sync_cnt++ & 0x0f) {
-        ESPoffset = 128 - pwm_audio_rbstats();
-        sync_cnt = 0;
-    }
-
-    // ESPmedian += ESPoffset;
-
-    #else
-
-    // // wait for vertical sync
-    // for (;;) {
-    //     if (vsync) break;
-    // }
-    // vsync = false;
-
-    // wait for vertical sync
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    #endif
     
     #endif
 

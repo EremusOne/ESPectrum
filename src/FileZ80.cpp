@@ -76,7 +76,7 @@ bool FileZ80::load(string z80_fn)
     file = fopen(z80_fn.c_str(), "rb");
     if (file==NULL)
     {
-        printf("FileZ80: Error opening %s",z80_fn.c_str());
+        printf("FileZ80: Error opening %s\n",z80_fn.c_str());
 
         // Resume audio
         pwm_audio_start();
@@ -338,6 +338,12 @@ bool FileZ80::load(string z80_fn)
         if (fileArch == "48K") {
             #ifdef SNAPSHOT_LOAD_FORCE_ARCH
             Config::requestMachine("48K", "SINCLAIR", true);
+
+            // TO DO: Condition this to 50hz mode
+            Config::ram_file = z80_fn;
+            Config::save();
+            OSD::esp_hard_reset();                            
+
             MemESP::romInUse = 0;
             #else
             MemESP::romInUse = 1;
@@ -347,6 +353,12 @@ bool FileZ80::load(string z80_fn)
     else if (Config::getArch() == "48K") {
         if (fileArch == "128K") {
             Config::requestMachine("128K", "SINCLAIR", true);
+
+            // TO DO: Condition this to 50hz mode
+            Config::ram_file = z80_fn;
+            Config::save();
+            OSD::esp_hard_reset();                            
+
             MemESP::romInUse = 1;
         }
     }

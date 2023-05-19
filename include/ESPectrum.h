@@ -48,7 +48,7 @@ using namespace std;
 #define ESP_AUDIO_SAMPLES_48  624
 
 #define ESP_AUDIO_OVERSAMPLES_128 3732
-#define ESP_AUDIO_FREQ_128 31112 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz. 
+#define ESP_AUDIO_FREQ_128 31113 // ESP_AUDIO_SAMPLES_128 * 50,0211542 fps = 31113,1579 Hz. 
 #define ESP_AUDIO_SAMPLES_128 622
 
 #define ESP_DEFAULT_VOLUME -8
@@ -65,6 +65,7 @@ public:
 
     // Kbd
     static void IRAM_ATTR processKeyboard();
+    static std::string bootKeyboard();
     static bool IRAM_ATTR readKbd(fabgl::VirtualKeyItem *Nextkey);
     static fabgl::PS2Controller PS2Controller;
     static uint8_t PS2cols[8];

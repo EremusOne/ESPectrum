@@ -95,7 +95,7 @@ uint8_t OSD::osdMaxCols() { return (OSD_W - (OSD_MARGIN * 2)) / OSD_FONT_W; }
 unsigned short OSD::osdInsideX() { return scrAlignCenterX(OSD_W) + OSD_MARGIN; }
 unsigned short OSD::osdInsideY() { return scrAlignCenterY(OSD_H) + OSD_MARGIN; }
 
-void esp_hard_reset() {
+void OSD::esp_hard_reset() {
     // RESTART ESP32 (This is the most similar way to hard resetting it)
 #ifndef ESP32_SDL2_WRAPPER
     rtc_wdt_protect_off();
@@ -162,7 +162,7 @@ static bool persistSave(uint8_t slotnumber)
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO, 0);
-    if (!FileSNA::save(FileUtils::MountPoint + persistfname)) {
+    if (!FileSNA::save(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
         return false;
     }
@@ -174,15 +174,20 @@ static bool persistLoad(uint8_t slotnumber)
 {
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
-    if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + persistfname)) {
+    if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
         return false;
     }
     OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
-    if (!FileSNA::load(FileUtils::MountPoint + persistfname)) {
+    if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
          OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
          return false;
     }
+    Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
+    #ifdef SNAPSHOT_LOAD_LAST
+    Config::save();
+    #endif
+    Config::last_ram_file = Config::ram_file;
     OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
     return true;
 }
@@ -214,7 +219,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         menu_curopt = 1;
         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
         if (mFile != "") {
-            changeSnapshot(mFile);
+            changeSnapshot(FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile);
         }
     }
     else if (KeytoESP == fabgl::VK_F3) {
@@ -309,6 +314,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         // ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
         // chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
 
+        // ESP host reset
+        #ifndef SNAPSHOT_LOAD_LAST
+        Config::ram_file = NO_RAM_FILE;
+        Config::save();
+        #endif
         esp_hard_reset();
 
     }
@@ -351,7 +361,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         menu_curopt = 1;
                         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
                         if (mFile != "") {
-                            changeSnapshot(mFile);
+                            changeSnapshot(FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile);
                             return;
                         }
                     }
@@ -441,22 +451,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 uint8_t opt2 = menuRun(MENU_RESET[Config::lang]);
                 if (opt2 == 1) {
                     // Soft
-                    if (Config::ram_file != NO_RAM_FILE)
-                        changeSnapshot(Config::ram_file);
+                    if (Config::last_ram_file != NO_RAM_FILE)
+                        changeSnapshot(Config::last_ram_file);
                     else ESPectrum::reset();
                     return;
                 }
                 else if (opt2 == 2) {
                     // Hard
                     Config::ram_file = NO_RAM_FILE;
-                    #ifdef SNAPSHOT_LOAD_LAST
                     Config::save();
-                    #endif
+                    Config::last_ram_file = NO_RAM_FILE;
                     ESPectrum::reset();
                     return;
                 }
                 else if (opt2 == 3) {
                     // ESP host reset
+                    #ifndef SNAPSHOT_LOAD_LAST
+                    Config::ram_file = NO_RAM_FILE;
+                    Config::save();
+                    #endif
                     esp_hard_reset();
                 } else {
                     menu_curopt = 3;
@@ -524,18 +537,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     string arch_menu = getArchMenu();
                     uint8_t arch_num = menuRun(arch_menu);
                     if (arch_num) {
-                        // string romset_menu = getRomsetMenu((arch_num==1 ? "48K" : "128K"));
-                        // uint8_t romset_num = menuRun(romset_menu);
-                        // if (romset_num > 0) {
                             string arch = (arch_num==1 ? "48K" : "128K");
-                        // string romSet = rowGet(romset_menu, romset_num);
-                            Config::requestMachine(arch, "SINCLAIR", true);
-                            // Config::requestMachine(arch, romSet, true);
-                            Config::ram_file = "none";
-                            Config::save();
-                            ESPectrum::reset();
+                            if (arch != Config::getArch()) {
+                                Config::requestMachine(arch, "SINCLAIR", true);
+                                Config::ram_file = "none";
+                                Config::save();
+                                esp_hard_reset();                            
+                            } else ESPectrum::reset();
                             return;
-                        //}
                     }
                     menu_curopt = 2;
                 }
@@ -948,29 +957,27 @@ string OSD::rowGet(string menu, unsigned short row) {
 // Change running snapshot
 void OSD::changeSnapshot(string filename)
 {
-    string dir = FileUtils::MountPoint + DISK_SNA_DIR;
+    // string dir = FileUtils::MountPoint + DISK_SNA_DIR;
 
     if (FileUtils::hasSNAextension(filename))
     {
     
         osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
         // printf("Loading SNA: <%s>\n", (dir + "/" + filename).c_str());
-        FileSNA::load(dir + "/" + filename);
+        FileSNA::load(filename);        
 
     }
     else if (FileUtils::hasZ80extension(filename))
     {
         osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
         // printf("Loading Z80: %s\n", filename.c_str());
-        FileZ80::load(dir + "/" + filename);
+        FileZ80::load(filename);
     }
 
-    // osdCenteredMsg(MSG_SAVE_CONFIG, LEVEL_WARN, 0);
-    
     Config::ram_file = filename;
-    
     #ifdef SNAPSHOT_LOAD_LAST
     Config::save();
     #endif
+    Config::last_ram_file = filename;
 
 }

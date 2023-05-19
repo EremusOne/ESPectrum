@@ -14,6 +14,7 @@
 #include "../I2S/I2S.h"
 #include "Mode.h"
 #include "PinConfig.h"
+#include "hardconfig.h"
 
 class VGA : public I2S
 {
@@ -23,8 +24,21 @@ class VGA : public I2S
 	bool init(const Mode &mode, const int *pinMap, const int bitCount, const int clockPin = -1);
 	virtual bool init(const Mode &mode, const PinConfig &pinConfig) = 0;
 
+	// #ifdef VIDEO_VSYNC
+	static const Mode MODE320x240_50_48;
+	static const Mode MODE360x200_50_48;
+	static const Mode MODE320x240_50_128;
+	static const Mode MODE360x200_50_128;
+	// #else
 	static const Mode MODE320x240;
 	static const Mode MODE360x200;
+	// #endif
+	static const Mode MODE320x240_TV_48;
+	static const Mode MODE360x200_TV_48;
+	static const Mode MODE320x240_TV_128;
+	static const Mode MODE360x200_TV_128;
+
+	static const Mode videomodes[3][2][2];
 
 /* unused modes
 	static const Mode MODE320x480;
