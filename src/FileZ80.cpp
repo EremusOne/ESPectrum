@@ -339,10 +339,12 @@ bool FileZ80::load(string z80_fn)
             #ifdef SNAPSHOT_LOAD_FORCE_ARCH
             Config::requestMachine("48K", "SINCLAIR", true);
 
-            // TO DO: Condition this to 50hz mode
-            Config::ram_file = z80_fn;
-            Config::save();
-            OSD::esp_hard_reset();                            
+            // Condition this to 50hz mode
+            if(Config::videomode) {
+                Config::ram_file = z80_fn;
+                Config::save();
+                OSD::esp_hard_reset();                            
+            }
 
             MemESP::romInUse = 0;
             #else
@@ -354,10 +356,12 @@ bool FileZ80::load(string z80_fn)
         if (fileArch == "128K") {
             Config::requestMachine("128K", "SINCLAIR", true);
 
-            // TO DO: Condition this to 50hz mode
-            Config::ram_file = z80_fn;
-            Config::save();
-            OSD::esp_hard_reset();                            
+            // Condition this to 50hz mode
+            if(Config::videomode) {            
+                Config::ram_file = z80_fn;
+                Config::save();
+                OSD::esp_hard_reset();                            
+            }
 
             MemESP::romInUse = 1;
         }

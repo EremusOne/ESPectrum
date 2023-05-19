@@ -542,8 +542,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                 Config::requestMachine(arch, "SINCLAIR", true);
                                 Config::ram_file = "none";
                                 Config::save();
-                                esp_hard_reset();                            
-                            } else ESPectrum::reset();
+                                if(Config::videomode) esp_hard_reset();
+                            }
+                            ESPectrum::reset();
                             return;
                     }
                     menu_curopt = 2;
@@ -571,6 +572,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                 Config::aspect_16_9 = true;
 
                             if (Config::aspect_16_9 != prev_asp) {
+                                #ifndef SNAPSHOT_LOAD_LAST
+                                Config::ram_file = "none";
+                                #endif
                                 Config::save();
                                 esp_hard_reset();
                             }

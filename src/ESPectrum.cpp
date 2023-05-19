@@ -270,49 +270,34 @@ void ESPectrum::setup()
                 b[1] = s[0];
             }
 
+            bool chgRes = true;
+
             if (b=="1Q" || b=="Q1") {
-                printf("%s\n", b.c_str());
                 Config::aspect_16_9=false;
                 Config::videomode=0;
-                Config::ram_file="none";                
-                Config::save();
-                break;
             } else
             if (b=="1W" || b=="W1") {
                 Config::aspect_16_9=true;
                 Config::videomode=0;
-                Config::ram_file="none";                
-                Config::save();
-                printf("%s\n", b.c_str());
-                break;
             } else
             if (b=="2Q" || b=="Q2") {
                 Config::aspect_16_9=false;
                 Config::videomode=1;
-                Config::ram_file="none";                
-                Config::save();
-                printf("%s\n", b.c_str());
-                break;
             } else
             if (b=="2W" || b=="W2") {
                 Config::aspect_16_9=true;
                 Config::videomode=1;
-                Config::ram_file="none";                
-                Config::save();
-                printf("%s\n", b.c_str());
-                break;
             } else
             if (b=="3Q" || b=="Q3") {
                 Config::aspect_16_9=false;
                 Config::videomode=2;
-                Config::ram_file="none";                
-                Config::save();
-                printf("%s\n", b.c_str());
-                break;
             } else
             if (b=="3W" || b=="W3") {
                 Config::aspect_16_9=true;
                 Config::videomode=2;
+            } else chgRes = false;
+
+            if (chgRes) {
                 Config::ram_file="none";                
                 Config::save();
                 printf("%s\n", b.c_str());
@@ -320,12 +305,6 @@ void ESPectrum::setup()
             }
 
         }
-
-        // if (bootKeyboard()) {
-        //     Config::ram_file="none";                
-        //     Config::save();
-        //     break;
-        // }
 
         delayMicroseconds(250);
 
