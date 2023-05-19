@@ -188,11 +188,12 @@ void VIDEO::vgataskinit(void *unused) {
 
 }
 
+TaskHandle_t VIDEO::videoTaskHandle;
+
 void VIDEO::Init() {
 
     if (Config::videomode > 0) {
-        TaskHandle_t videoTaskHandle;
-        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 8192, NULL, /* 5 */ configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
+        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, /* 5 */ configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
     } else {
         const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
         OSD::scrW = vgaMode.hRes;

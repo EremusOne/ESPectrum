@@ -191,7 +191,7 @@ void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 //=======================================================================================
 // SETUP
 //=======================================================================================
-TaskHandle_t ESPectrum::loopTaskHandle;
+// TaskHandle_t ESPectrum::loopTaskHandle;
 
 void ESPectrum::setup() 
 {
@@ -412,8 +412,10 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, 5, &audioTaskHandle, 1);
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+
+    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1536, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
     AySound::init();
@@ -462,7 +464,7 @@ void ESPectrum::setup()
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
     // Create loop task
-    xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
+    // xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
 
 }
 
@@ -623,9 +625,11 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             UBaseType_t wm;
             wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
             printf("Audio Task Stack HWM: %u\n", wm);
-            wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
-            printf("Loop Task Stack HWM: %u\n", wm);
-            
+            // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
+            // printf("Loop Task Stack HWM: %u\n", wm);
+            wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
+            printf("Video Task Stack HWM: %u\n", wm);
+
             r = false;
         }    
         #endif
@@ -1042,8 +1046,8 @@ uint8_t *ESPectrum::audbuffertosend = ESPectrum::audioBuffer;
 
 volatile bool ESPectrum::vsync = false;
 
-void IRAM_ATTR ESPectrum::loop(void *unused) {
-// void IRAM_ATTR ESPectrum::loop() {    
+// void IRAM_ATTR ESPectrum::loop(void *unused) {
+void IRAM_ATTR ESPectrum::loop() {    
 
 static char linea1[] = "CPU: 00000 / IDL: 00000 ";
 static char linea2[] = "FPS:000.00 / FND:000.00 ";    
@@ -1138,9 +1142,23 @@ for(;;) {
     
     if(Config::videomode) {
 
-        // wait for vertical sync (method 1)
-        for (;;) {
-            if (vsync) break;
+        if (sync_cnt++ == 0) {
+            if (idle > 0) { 
+                delayMicroseconds(idle);
+            }
+        } else {
+
+            // Audio sync (once every 250 frames ~ 2,5 seconds)
+            if (sync_cnt++ == 250) {
+                ESPoffset = 128 - pwm_audio_rbstats();
+                sync_cnt = 0;
+            }
+
+            // wait for vertical sync (method 1)
+            for (;;) {
+                if (vsync) break;
+            }
+
         }
 
         // // wait for vertical sync (method 2)

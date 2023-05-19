@@ -40,6 +40,6 @@ extern "C" void app_main(void) {
 
   ESPectrum::setup();
   
-  // ESPectrum::loop();
+  ESPectrum::loop();
 
 }
