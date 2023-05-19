@@ -112,6 +112,8 @@ public:
 
     static uint32_t* SaveRect;
 
+    static TaskHandle_t videoTaskHandle;
+
 };
 
 static unsigned int is169;

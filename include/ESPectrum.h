@@ -58,8 +58,8 @@ class ESPectrum
 public:
 
     static void setup();
-    static void IRAM_ATTR loop(void* unused);
-    // static void IRAM_ATTR loop();
+    // static void IRAM_ATTR loop(void* unused);
+    static void IRAM_ATTR loop();
     static void reset();
     static void loadRom(string arch, string romset);
 
@@ -100,7 +100,7 @@ public:
 
     static volatile bool vsync;
 
-    static TaskHandle_t loopTaskHandle;
+    // static TaskHandle_t loopTaskHandle;
 
 private:
 
