@@ -179,10 +179,12 @@ const int bluPins[] = {BLU_PINS_6B};
 
 void VIDEO::vgataskinit(void *unused) {
 
+    const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
+    OSD::scrW = vgaMode.hRes;
+    OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
     vga.VGA6Bit_useinterrupt=true;
-    vga.init(vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0], redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
-
-    for (;;){}
+    vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+    for (;;){}    
 
 }
 
@@ -193,12 +195,12 @@ void VIDEO::Init() {
     if (Config::videomode > 0) {
         xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, /* 5 */ configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
     } else {
+        const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
+        OSD::scrW = vgaMode.hRes;
+        OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
         vga.VGA6Bit_useinterrupt=false;
-        vga.init(vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0], redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+        vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
     }
-
-    OSD::scrW = vga.mode.hRes;
-    OSD::scrH = vga.mode.vRes / vga.mode.vDiv;
 
     precalcColors();    // precalculate colors for current VGA mode
 
