@@ -175,20 +175,26 @@ static bool persistLoad(uint8_t slotnumber)
     
     bool ret = false;
 
-    // i2s_dev_t *i2sDevices[] = {&I2S0, &I2S1};
-    // volatile i2s_dev_t &i2s = *i2sDevices[VIDEO::vga.i2sIndex];
-
-    // if (Config::videomode) {
-    //     i2s.conf.tx_start = 0;  
-    // }          
+    i2s_dev_t *i2sDevices[] = {&I2S0, &I2S1};
+    volatile i2s_dev_t &i2s = *i2sDevices[VIDEO::vga.i2sIndex];
 
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
+        if (Config::videomode) {
+            i2s.conf.tx_start = 0;  
+            i2s.conf.tx_start = 1;  
+        }          
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
     } else {
         OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
+        if (Config::videomode) {
+            i2s.conf.tx_start = 0;  
+        }          
         if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
+            if (Config::videomode) {
+                i2s.conf.tx_start = 1;  
+            }          
             OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
         } else {
             Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
@@ -196,14 +202,13 @@ static bool persistLoad(uint8_t slotnumber)
             Config::save();
             #endif
             Config::last_ram_file = Config::ram_file;
+            if (Config::videomode) {
+                i2s.conf.tx_start = 1;  
+            }          
             OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
             ret=true;
         }
     }
-
-    // if (Config::videomode) {
-    //     i2s.conf.tx_start = 1;  
-    // }          
 
     return ret;
 
@@ -992,11 +997,20 @@ void OSD::changeSnapshot(string filename)
 {
     // string dir = FileUtils::MountPoint + DISK_SNA_DIR;
 
+    i2s_dev_t *i2sDevices[] = {&I2S0, &I2S1};
+    volatile i2s_dev_t &i2s = *i2sDevices[VIDEO::vga.i2sIndex];
+
+    if (Config::videomode) {
+        i2s.conf.tx_start = 0;  
+    }          
+
     if (FileUtils::hasSNAextension(filename))
     {
     
         osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
         // printf("Loading SNA: <%s>\n", (dir + "/" + filename).c_str());
+        
+        
         FileSNA::load(filename);        
 
     }
@@ -1004,8 +1018,15 @@ void OSD::changeSnapshot(string filename)
     {
         osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
         // printf("Loading Z80: %s\n", filename.c_str());
+        
+        
         FileZ80::load(filename);
+
     }
+
+    if (Config::videomode) {
+        i2s.conf.tx_start = 1;  
+    }          
 
     Config::ram_file = filename;
     #ifdef SNAPSHOT_LOAD_LAST
