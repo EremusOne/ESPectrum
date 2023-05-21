@@ -172,24 +172,41 @@ static bool persistSave(uint8_t slotnumber)
 
 static bool persistLoad(uint8_t slotnumber)
 {
+    
+    bool ret = false;
+
+    // i2s_dev_t *i2sDevices[] = {&I2S0, &I2S1};
+    // volatile i2s_dev_t &i2s = *i2sDevices[VIDEO::vga.i2sIndex];
+
+    // if (Config::videomode) {
+    //     i2s.conf.tx_start = 0;  
+    // }          
+
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
-        return false;
+    } else {
+        OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
+        if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
+            OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+        } else {
+            Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
+            #ifdef SNAPSHOT_LOAD_LAST
+            Config::save();
+            #endif
+            Config::last_ram_file = Config::ram_file;
+            OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
+            ret=true;
+        }
     }
-    OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
-    if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
-         OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
-         return false;
-    }
-    Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
-    #ifdef SNAPSHOT_LOAD_LAST
-    Config::save();
-    #endif
-    Config::last_ram_file = Config::ram_file;
-    OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
-    return true;
+
+    // if (Config::videomode) {
+    //     i2s.conf.tx_start = 1;  
+    // }          
+
+    return ret;
+
 }
 
 #ifdef ZXKEYB
@@ -287,6 +304,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 ESPectrum::aud_volume--;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
         }
+
+        // // Check if destination file exists
+        // struct stat st;
+        // if (stat("/sd/s/1942.z80", &st) == 0) {
+        //     //printf("Exists!\n");
+        // }
+
+        // FILE *f = fopen("/sd/s/1942.z80", "r");
+        // if (f == NULL) {
+        //     printf("Null file!\n");
+        // } else fclose(f);
+
     }
     else if (KeytoESP == fabgl::VK_F10) { // Volume up
         if (ESPectrum::aud_volume<0) {

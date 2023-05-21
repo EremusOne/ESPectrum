@@ -221,8 +221,6 @@ void ESPectrum::setup()
     FileUtils::initFileSystem();
     Config::load();
 
-    // Config::videomode = 0;
-
     #ifndef ESP32_SDL2_WRAPPER
 
     // Get chip information
