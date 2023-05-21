@@ -1131,15 +1131,12 @@ for(;;) {
                 sync_cnt = 0;
             }
 
-            // wait for vertical sync (method 1)
+            // Wait for vertical sync
             for (;;) {
                 if (vsync) break;
             }
 
         }
-
-        // // wait for vertical sync (method 2)
-        // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     } else {
 

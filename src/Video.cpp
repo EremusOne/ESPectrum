@@ -58,24 +58,16 @@ int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 
-// #ifdef VIDEO_VSYNC
 void IRAM_ATTR VGA6Bit::interrupt(void *arg)
 {
-
     VGA6Bit * staticthis = (VGA6Bit *)arg;
 
     if (++staticthis->currentLine == staticthis->totalLines << 1 ) { // Why totalLines << 1 ? Still don't know. Investigate
-
 	    staticthis->currentLine = 0;
-
         ESPectrum::vsync = true;
-
-        // vTaskNotifyGiveFromISR(ESPectrum::loopTaskHandle, NULL);
-
     } else ESPectrum::vsync = false;
 
 }
-// #endif
 
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
@@ -192,7 +184,7 @@ TaskHandle_t VIDEO::videoTaskHandle;
 
 void VIDEO::Init() {
 
-    if (Config::videomode > 0) {
+    if (Config::videomode) {
         xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, /* 5 */ configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
     } else {
         const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
