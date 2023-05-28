@@ -440,7 +440,7 @@ void ESPectrum::setup()
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
-    // Create loop task
+    // Create loop function as task: it doesn't seem better than calling from main.cpp and increases RAM consumption (4096 bytes for stack).
     // xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
 
 }
@@ -564,7 +564,7 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             pwm_audio_start();
             r = false;
         }
-        #ifdef DEV_STUFF 
+        #ifdef TESTING_CODE
         else if (Nextkey->vk == fabgl::VK_GRAVEACCENT) { // Show mem info
             multi_heap_info_t info;
             heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
@@ -852,35 +852,15 @@ std::string ESPectrum::bootKeyboard() {
     #endif
 
     while (Kbd->virtualKeyAvailable()) {
-
         r = Kbd->getNextVirtualKey(&NextKey);
         if (r) {
-
             // Check keyboard status
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) {
-                return "1";
-            }
-
-            // Check keyboard status
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) {
-                return "2";
-            }
-
-            // Check keyboard status
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) {
-                return "3";
-            }
-
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) {
-                return "Q";
-            }
-
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) {
-                return "W";
-            }
-
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) return "1";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) return "2";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) return "3";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) return "Q";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) return "W";
         }
-
     }
 
     return "";
@@ -1026,8 +1006,8 @@ volatile bool ESPectrum::vsync = false;
 // void IRAM_ATTR ESPectrum::loop(void *unused) {
 void IRAM_ATTR ESPectrum::loop() {    
 
-static char linea1[] = "CPU: 00000 / IDL: 00000 ";
-static char linea2[] = "FPS:000.00 / FND:000.00 ";    
+static char linea1[25]; // "CPU: 00000 / IDL: 00000 ";
+static char linea2[25]; // "FPS:000.00 / FND:000.00 ";    
 static double totalseconds = 0;
 static double totalsecondsnodelay = 0;
 int64_t ts_start, elapsed;
@@ -1035,13 +1015,18 @@ int64_t idle;
 
 // int ESPmedian = 0;
 
-// For Testing/Profiling: Start with stats on
+// ////////////////////////////////////////////////////////
+// Testing code: Start with stats on
+// ////////////////////////////////////////////////////////
 // if (Config::aspect_16_9) 
 //     VIDEO::DrawOSD169 = VIDEO::MainScreen_OSD;
 // else
 //     VIDEO::DrawOSD43  = VIDEO::BottomBorder_OSD;
 // VIDEO::OSD = true;
 
+// ////////////////////////////////////////////////////////
+// Testing code: Dump audio buffer to file
+// ////////////////////////////////////////////////////////
 // FILE *f = fopen("/sd/c/audioout.raw", "wb");
 // if (f==NULL)
 // {
@@ -1049,7 +1034,9 @@ int64_t idle;
 // }
 // uint32_t fpart = 0;
 
-// Simulate keypress, for testing
+// ////////////////////////////////////////////////////////
+// Testing code: Start with key pressed
+// ////////////////////////////////////////////////////////
 // bitWrite(Ports::port[5], 4, 0);
 
 for(;;) {
@@ -1064,6 +1051,9 @@ for(;;) {
 
     processKeyboard();
 
+    // ////////////////////////////////////////////////////////
+    // Testing code: Dump audio buffer to file
+    // ////////////////////////////////////////////////////////
     // if (fpart!=1001) fpart++;
     // if (fpart<1000) {
     //     uint8_t* buffer = audioBuffer;
@@ -1096,12 +1086,28 @@ for(;;) {
             showMemInfo();
             #endif
 
+            #ifdef TESTING_CODE
+
             // printf("[Framecnt] %u; [Seconds] %f; [FPS] %f; [FPS (no delay)] %f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
 
-            sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+            snprintf(linea1, sizeof(linea1), "CPU: %05d / TGT: %05d ", (int)elapsed, (int)target);
+            snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            
+            // sprintf((char *)linea1,"CPU: %05d / TGT: %05d ", (int)(elapsed), (int)ESPectrum::target);
             // sprintf((char *)linea1,"CPU: %05d / BMX: %05d ", (int)(elapsed), bmax);
             // sprintf((char *)linea1,"CPU: %05d / OFF: %05d ", (int)(elapsed), (int)(ESPmedian/50));
-            sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
+            // sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+            // sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
+
+            #else
+
+            snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+            snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+
+            // sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+            // sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
+
+            #endif
         }
 
         totalseconds = 0;
@@ -1112,11 +1118,11 @@ for(;;) {
 
     }
     
-    #ifdef VIDEO_FRAME_TIMING    
-   
     elapsed = micros() - ts_start;
     idle = target - elapsed - ESPoffset;
-    
+
+    #ifdef VIDEO_FRAME_TIMING    
+
     if(Config::videomode) {
 
         if (sync_cnt++ == 0) {

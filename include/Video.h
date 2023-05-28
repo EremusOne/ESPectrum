@@ -112,6 +112,8 @@ public:
 
     static TaskHandle_t videoTaskHandle;
 
+    static int VsyncFinetune[2];
+
 };
 
 static unsigned int is169;

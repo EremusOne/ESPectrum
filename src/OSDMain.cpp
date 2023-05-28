@@ -173,37 +173,28 @@ static bool persistSave(uint8_t slotnumber)
 static bool persistLoad(uint8_t slotnumber)
 {
     
-    bool ret = false;
-
-    i2s_dev_t *i2sDevices[] = {&I2S0, &I2S1};
-    volatile i2s_dev_t &i2s = *i2sDevices[VIDEO::vga.i2sIndex];
-
     OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
-
-    if (Config::videomode) i2s.conf.tx_start = 0;
 
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
-        if (Config::videomode) i2s.conf.tx_start = 1;
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
+        return false;
     } else {
         if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
-            if (Config::videomode) i2s.conf.tx_start = 1;
             OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+            return false;
         } else {
             Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
             #ifdef SNAPSHOT_LOAD_LAST
             Config::save();
             #endif
             Config::last_ram_file = Config::ram_file;
-            if (Config::videomode) i2s.conf.tx_start = 1;  
             OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
-            ret=true;
         }
     }
 
-    return ret;
+    return true;
 
 }
 
@@ -297,11 +288,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         click();
     }
     else if (KeytoESP == fabgl::VK_F9) { // Volume down
-        if (ESPectrum::aud_volume>-16) {
-                click();
-                ESPectrum::aud_volume--;
-                pwm_audio_set_volume(ESPectrum::aud_volume);
-        }
+
+        #ifdef TESTING_CODE
+
+        ESPectrum::target--;
 
         // // Check if destination file exists
         // struct stat st;
@@ -314,13 +304,33 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         //     printf("Null file!\n");
         // } else fclose(f);
 
+        #else
+
+        if (ESPectrum::aud_volume>-16) {
+                click();
+                ESPectrum::aud_volume--;
+                pwm_audio_set_volume(ESPectrum::aud_volume);
+        }
+
+        #endif
+
     }
     else if (KeytoESP == fabgl::VK_F10) { // Volume up
+
+        #ifdef TESTING_CODE
+        
+        ESPectrum::target++;
+
+        #else
+
         if (ESPectrum::aud_volume<0) {
                 click();                
                 ESPectrum::aud_volume++;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
         }
+
+        #endif
+
     }    
     // else if (KeytoESP == fabgl::VK_F9) {
     //     ESPectrum::ESPoffset -= 5;
@@ -990,18 +1000,11 @@ void OSD::changeSnapshot(string filename)
 {
     // string dir = FileUtils::MountPoint + DISK_SNA_DIR;
 
-    i2s_dev_t *i2sDevices[] = {&I2S0, &I2S1};
-    volatile i2s_dev_t &i2s = *i2sDevices[VIDEO::vga.i2sIndex];
-
-    
     if (FileUtils::hasSNAextension(filename))
     {
     
         osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
         // printf("Loading SNA: <%s>\n", (dir + "/" + filename).c_str());
-        
-        if (Config::videomode) i2s.conf.tx_start = 0;  
-        
         FileSNA::load(filename);        
 
     }
@@ -1009,14 +1012,9 @@ void OSD::changeSnapshot(string filename)
     {
         osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
         // printf("Loading Z80: %s\n", filename.c_str());
-        
-        if (Config::videomode) i2s.conf.tx_start = 0;  
-                
         FileZ80::load(filename);
 
     }
-
-    if (Config::videomode) i2s.conf.tx_start = 1;       
 
     Config::ram_file = filename;
     #ifdef SNAPSHOT_LOAD_LAST

@@ -57,15 +57,51 @@ uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
+int VIDEO::VsyncFinetune[2];
 
-void IRAM_ATTR VGA6Bit::interrupt(void *arg)
-{
-    VGA6Bit * staticthis = (VGA6Bit *)arg;
+void IRAM_ATTR VGA6Bit::interrupt(void *arg) {
 
-    if (++staticthis->currentLine == staticthis->totalLines << 1 ) { // Why totalLines << 1 ? Still don't know. Investigate
-	    staticthis->currentLine = 0;
-        ESPectrum::vsync = true;
-    } else ESPectrum::vsync = false;
+    static int64_t prevmicros = 0;
+    static int64_t elapsedmicros = 0;
+    static int cntvsync = 0;
+
+    // VGA6Bit * staticthis = (VGA6Bit *)arg;
+
+    // if (++staticthis->currentLine == staticthis->totalLines << 1 ) {
+	//     staticthis->currentLine = 0;
+    //     ESPectrum::vsync = true;
+    // } else ESPectrum::vsync = false;
+
+    int64_t currentmicros = micros();
+
+    if (prevmicros) {
+
+        elapsedmicros += currentmicros - prevmicros;
+
+        if (elapsedmicros >= ESPectrum::target) {
+
+            ESPectrum::vsync = true;
+
+            // // This code is needed to "finetune" the sync. Without it, vsync and emu video gets slowly desynced.
+            if (VIDEO::VsyncFinetune[0]) {
+                if (cntvsync++ == VIDEO::VsyncFinetune[1]) {
+                    elapsedmicros += VIDEO::VsyncFinetune[0];
+                    cntvsync = 0;
+                }
+            }
+
+            elapsedmicros -= ESPectrum::target;
+
+        } else ESPectrum::vsync = false;
+    
+    } else {
+
+        elapsedmicros = 0;
+        ESPectrum::vsync = false;
+
+    }
+
+    prevmicros = currentmicros;
 
 }
 
@@ -185,7 +221,7 @@ TaskHandle_t VIDEO::videoTaskHandle;
 void VIDEO::Init() {
 
     if (Config::videomode) {
-        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, /* 5 */ configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
+        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
     } else {
         const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
         OSD::scrW = vgaMode.hRes;
@@ -212,9 +248,13 @@ void VIDEO::Init() {
     if (Config::getArch() == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+        VsyncFinetune[0] = is169 ? -1 : 0;
+        VsyncFinetune[1] = is169 ? 152 : 0;
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+        VsyncFinetune[0] = is169 ? 1 : 1;
+        VsyncFinetune[1] = is169 ? 123 : 123;
     }
 
     #ifdef NO_VIDEO
@@ -235,9 +275,13 @@ void VIDEO::Reset() {
     if (Config::getArch() == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+        VsyncFinetune[0] = is169 ? -1 : 0;
+        VsyncFinetune[1] = is169 ? 152 : 0;
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+        VsyncFinetune[0] = is169 ? 1 : 1;
+        VsyncFinetune[1] = is169 ? 123 : 123;
     }
 
     grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
