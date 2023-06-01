@@ -54,7 +54,7 @@
 
 // OSD
 #define OSD_TITLE  " ESPectrum - The ESP32 powered emulator "
-#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS  v1.0beta5.3 "
+#define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS      v1.0rc1 "
 
 #define OSD_PAUSE_EN " --=[PAUSED]=-- "
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"

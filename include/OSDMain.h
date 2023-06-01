@@ -73,7 +73,7 @@ public:
     // // OSD
     static void osdHome();
     static void osdAt(uint8_t row, uint8_t col);
-    static void drawOSD();
+    static void drawOSD(bool bottom_info);
     static void drawStats(char *line1, char *line2);    
     static void do_OSD(fabgl::VirtualKey KeytoESP);
 

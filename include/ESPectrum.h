@@ -113,7 +113,7 @@ private:
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
 
-int64_t IRAM_ATTR micros();
+// int64_t IRAM_ATTR micros();
 
 unsigned long IRAM_ATTR millis();
 

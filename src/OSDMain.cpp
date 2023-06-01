@@ -121,7 +121,8 @@ void OSD::osdAt(uint8_t row, uint8_t col) {
     VIDEO::vga.setCursor(x, y);
 }
 
-void OSD::drawOSD() {
+void OSD::drawOSD(bool bottom_info) {
+    static char bottom_info_str[41];
     unsigned short x = scrAlignCenterX(OSD_W);
     unsigned short y = scrAlignCenterY(OSD_H);
     VIDEO::vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(1, 0));
@@ -132,7 +133,14 @@ void OSD::drawOSD() {
     osdHome();
     VIDEO::vga.print(OSD_TITLE);
     osdAt(21, 0);
-    VIDEO::vga.print(OSD_BOTTOM);
+    if (bottom_info) {
+        switch(Config::videomode) {
+            case 0: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: Standard VGA       v1.0rc1 "); break;
+            case 1: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: VGA 50hz           v1.0rc1 "); break;
+            case 2: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: CRT 50hz           v1.0rc1 "); break;
+        }
+        VIDEO::vga.print(bottom_info_str);
+    } else VIDEO::vga.print(OSD_BOTTOM);
     osdHome();
 }
 
@@ -743,7 +751,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         else if (opt == 5) {
             // Help
-            drawOSD();
+            drawOSD(true);
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_HELP[Config::lang]);
@@ -804,7 +812,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }        
         else if (opt == 6) {
             // About
-            drawOSD();
+            drawOSD(false);
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_ABOUT[Config::lang]);

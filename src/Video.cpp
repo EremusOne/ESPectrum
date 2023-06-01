@@ -72,7 +72,7 @@ void IRAM_ATTR VGA6Bit::interrupt(void *arg) {
     //     ESPectrum::vsync = true;
     // } else ESPectrum::vsync = false;
 
-    int64_t currentmicros = micros();
+    int64_t currentmicros = esp_timer_get_time();
 
     if (prevmicros) {
 
