@@ -82,6 +82,8 @@ int AySound::Cur_Seed;                  /**< random numbers counter */
 
 uint8_t AySound::regs[14];
 
+uint8_t AySound::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
+
 void (*AySound::updateReg[14])() = {
     &updToneA,&updToneA,&updToneB,&updToneB,&updToneC,
     &updToneC,&updNoisePitch,&updMixer,&updVolA,&updVolB,
@@ -295,12 +297,11 @@ void AySound::prepare_generation()
 // Generate sound.
 // Fill sound buffer with current register data
 //
-void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
+void AySound::gen_sound(int sound_bufsize, int bufpos)
 {
 
     int tmpvol;
-    unsigned char *sound_buf = buff;
-    sound_buf += bufpos;
+    uint8_t *sound_buf = SamplebufAY + bufpos;
 
     int snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
     while (snd_numcount-- > 0) {
@@ -509,7 +510,7 @@ void AySound::selectRegister(uint8_t registerNumber)
 
 void AySound::setRegisterData(uint8_t data)
 {
-    
+
     if (selectedRegister < 14) {
         regs[selectedRegister] = data;
         updateReg[selectedRegister]();
@@ -537,11 +538,11 @@ void AySound::reset()
     prepare_generation();
 
     for (int i=0;i<14;i++) regs[i] = 0;
+    // regs[7] = 0xff; // More correct ? (Setting here as 0xff produces artifacts in Overscan loader i.e.)
 
-    selectedRegister = 0xFF;
+    selectedRegister = 0xff;
 
     for(int i=0; i<14; i++) updateReg[i]();
-
 }
 
 void AySound::gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, int bufpos)

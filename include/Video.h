@@ -87,6 +87,8 @@ public:
     static void (*DrawOSD43)(unsigned int, bool contended);
     static void (*DrawOSD169)(unsigned int, bool contended);
 
+    static void vgataskinit(void *unused);
+
     static uint8_t* grmem;
 
     // For flushing video buffer as fast as possible after HALT
@@ -105,6 +107,12 @@ public:
     static uint8_t flash_ctr;
 
     static bool OSD;
+
+    static uint32_t* SaveRect;
+
+    static TaskHandle_t videoTaskHandle;
+
+    static int VsyncFinetune[2];
 
 };
 
@@ -131,6 +139,9 @@ static unsigned int DRAM_ATTR offAtt[SPEC_H];
 #define BRI_CYAN    0xFC      // 1111 1100
 #define BRI_YELLOW  0xCF      // 1100 1111
 #define BRI_WHITE   0xFF      // 1111 1111
+
+// used in ESPectrum logo text
+#define ESP_ORANGE  0xC7      // 1100 0111
 
 #define NUM_SPECTRUM_COLORS 16
 static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {

@@ -45,12 +45,15 @@
 #include "messages.h"
 #include "ESPectrum.h"
 #include "esp_spiffs.h"
+#include "pwm_audio.h"
 
 string   Config::arch = "48K";
 string   Config::ram_file = NO_RAM_FILE;
+string   Config::last_ram_file = NO_RAM_FILE;
 string   Config::romSet = "SINCLAIR";
 bool     Config::slog_on = false;
 bool     Config::aspect_16_9 = true;
+uint8_t  Config::videomode = 0; // 0 -> SAFE VGA, 1 -> 50HZ VGA, 2 -> 50HZ CRT
 uint8_t  Config::esp32rev = 0;
 // string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
@@ -87,7 +90,9 @@ static inline void trim(std::string &s) {
 
 // Read config from FS
 void Config::load() {
-    
+
+    pwm_audio_stop();
+
     FILE *f = fopen(DISK_BOOT_FILENAME, "r");
     if (f==NULL)
     {
@@ -100,7 +105,7 @@ void Config::load() {
     while(fgets(buf, sizeof(buf), f) != NULL)
     {
         string line = buf;
-        // printf(line.c_str());
+        printf(line.c_str());
         if (line.find("ram:") != string::npos) {
             ram_file = line.substr(line.find(':') + 1);
             erase_cntrl(ram_file);
@@ -135,6 +140,11 @@ void Config::load() {
         //     kbd_layout = line.substr(line.find(':') + 1);
         //     erase_cntrl(kbd_layout);
         //     trim(kbd_layout);
+        } else if (line.find("videomode:") != string::npos) {
+            string svmode = line.substr(line.find(':') + 1);
+            erase_cntrl(svmode);
+            trim(svmode);
+            Config::videomode = stoi(svmode);
         } else if (line.find("language:") != string::npos) {
             string slang = line.substr(line.find(':') + 1);
             erase_cntrl(slang);
@@ -156,17 +166,22 @@ void Config::load() {
     }
     fclose(f);
 
+    pwm_audio_start();
+
 }
 
 // Dump actual config to FS
 void Config::save() {
 
+    pwm_audio_stop();
+
     //printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
 
     FILE *f = fopen(DISK_BOOT_FILENAME, "w");
-    if (f==NULL)
+    if (f == NULL)
     {
         printf("Error opening %s\n",DISK_BOOT_FILENAME);
+        pwm_audio_start();
         return;
     }
 
@@ -179,10 +194,8 @@ void Config::save() {
     fputs(("romset:" + romSet + "\n").c_str(),f);
 
     // RAM SNA
-    #ifdef SNAPSHOT_LOAD_LAST    
     //printf(("ram:" + ram_file + "\n").c_str());
     fputs(("ram:" + ram_file + "\n").c_str(),f);
-    #endif // SNAPSHOT_LOAD_LAST
 
     // Serial logging
     //printf(slog_on ? "slog:true\n" : "slog:false\n");
@@ -200,6 +213,9 @@ void Config::save() {
     //printf(("kbdlayout:" + kbd_layout + "\n").c_str());
     // fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
 
+    // Videomode
+    fputs(("videomode:" + std::to_string(Config::videomode) + "\n").c_str(),f);
+
     // Language
     //printf("language:%s\n",std::to_string(Config::lang).c_str());
     fputs(("language:" + std::to_string(Config::lang) + "\n").c_str(),f);
@@ -212,9 +228,9 @@ void Config::save() {
 
     fclose(f);
     
-    vTaskDelay(5);
-
     printf("Config saved OK\n");
+
+    pwm_audio_start();
 
 }
 

@@ -73,7 +73,7 @@ public:
     // // OSD
     static void osdHome();
     static void osdAt(uint8_t row, uint8_t col);
-    static void drawOSD();
+    static void drawOSD(bool bottom_info);
     static void drawStats(char *line1, char *line2);    
     static void do_OSD(fabgl::VirtualKey KeytoESP);
 
@@ -102,6 +102,9 @@ public:
     static void menuScrollBar();
     static void click();
     static uint8_t menu_level;
+    static bool menu_saverect;    
+    static unsigned short menu_curopt;    
+    static unsigned int SaveRectpos;    
 
     // // Rows
     static unsigned short rowCount(string menu);
@@ -109,6 +112,9 @@ public:
 
     // // Snapshot (SNA/Z80) Management
     static void changeSnapshot(string sna_filename);
+
+    static void esp_hard_reset();
+
 };
 
 #endif // ESPECTRUM_OSD_H

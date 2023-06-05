@@ -95,7 +95,8 @@ private:
 #define DISK_SNA_DIR "/s"
 #define DISK_TAP_DIR "/t"
 #define DISK_SCR_DIR "/c"
-#define DISK_PSNA_FILE "/p/persist"
+#define DISK_PSNA_DIR "/p"
+#define DISK_PSNA_FILE "persist"
 
 #define NO_RAM_FILE "none"
 #define SNA_48K_SIZE 49179

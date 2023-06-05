@@ -39,6 +39,7 @@
 #include "FileUtils.h"
 #include "CPU.h"
 #include "Video.h"
+#include "Ports.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
 #include "messages.h"
@@ -67,19 +68,18 @@ bool FileZ80::load(string z80_fn)
 {
     FILE *file;
 
-    ESPectrum::reset(); 
-
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
-
-    // if (sna_fn != DISK_PSNA_FILE)
-    //     loadKeytableForGame(sna_fn.c_str());
+    // Stop audio
+    pwm_audio_stop();
 
     file = fopen(z80_fn.c_str(), "rb");
     if (file==NULL)
     {
-        printf("FileZ80: Error opening %s",z80_fn.c_str());
+        printf("FileZ80: Error opening %s\n",z80_fn.c_str());
 
+        // Resume audio
+        pwm_audio_start();
         // Resume keyboard input
         ESPectrum::PS2Controller.keyboard()->resumePort();
 
@@ -89,6 +89,10 @@ bool FileZ80::load(string z80_fn)
     fseek(file,0,SEEK_END);
     uint32_t file_size = ftell(file);
     rewind (file);
+
+    // Reset Z80 and set bankLatch to default
+    MemESP::bankLatch = 0;
+    Z80::reset();
 
     uint32_t dataOffset = 0;
 
@@ -141,13 +145,14 @@ bool FileZ80::load(string z80_fn)
     string fileArch = "48K";
     uint8_t memPagingReg = 0;
 
-#define LOG_Z80_DETAILS
+    // #define LOG_Z80_DETAILS
 
-    if (RegPC != 0)
-    {
+    if (RegPC != 0) {
+
         // version 1, the simplest, 48K only.
         uint32_t memRawLength = file_size - dataOffset;
-#ifdef LOG_Z80_DETAILS
+
+        #ifdef LOG_Z80_DETAILS
         printf("Z80 format version: %d\n", version);
         printf("machine type: %s\n", fileArch.c_str());
         printf("data offset: %d\n", dataOffset);
@@ -157,7 +162,7 @@ bool FileZ80::load(string z80_fn)
         printf("b12: %d\n", b12);
         printf("pc: %d\n", RegPC);
         printf("border: %d\n", VIDEO::borderColor);
-#endif
+        #endif
 
         if (dataCompressed)
         {
@@ -183,8 +188,7 @@ bool FileZ80::load(string z80_fn)
         MemESP::pagingLock = 1;
         MemESP::videoLatch = 0;
     }
-    else
-    {
+    else {
         // read 2 more bytes
         for (uint8_t i = 30; i < 32; i++) {
             header[i] = readByteFile(file);
@@ -198,8 +202,19 @@ bool FileZ80::load(string z80_fn)
         else if (ahblen == 54 || ahblen == 55)
             version = 3;
         else {
-            printf("Z80.load: unknown version, ahblen = %d\n", ahblen);
+            
+            OSD::osdCenteredMsg("Z80 load: unknown version", LEVEL_ERROR);
+            // printf("Z80.load: unknown version, ahblen = %d\n", ahblen);
+            
             fclose(file);
+
+            // Resume audio
+            pwm_audio_start();
+            // Resume keyboard input
+            ESPectrum::PS2Controller.keyboard()->resumePort();
+
+            ESPectrum::reset();
+
             return false;
         }
 
@@ -230,7 +245,7 @@ bool FileZ80::load(string z80_fn)
             if (b34 == 3) fileArch = "48K"; // + mgt
         }
 
-#ifdef LOG_Z80_DETAILS
+        #ifdef LOG_Z80_DETAILS
         uint32_t memRawLength = file_size - dataOffset;
         printf("Z80 format version: %d\n", version);
         printf("machine type: %s\n", fileArch.c_str());
@@ -240,7 +255,7 @@ bool FileZ80::load(string z80_fn)
         printf("b34: %d\n", b34);
         printf("pc: %d\n", RegPC);
         printf("border: %d\n", VIDEO::borderColor);
-#endif
+        #endif
 
         if (fileArch == "48K") {
             MemESP::romLatch = 0;
@@ -257,14 +272,18 @@ bool FileZ80::load(string z80_fn)
                 uint8_t hdr1 = readByteFile(file); dataOffset ++;
                 uint8_t hdr2 = readByteFile(file); dataOffset ++;
                 uint16_t compDataLen = mkword(hdr0, hdr1);
-#ifdef LOG_Z80_DETAILS
+                
+                #ifdef LOG_Z80_DETAILS
                 printf("compressed data length: %d\n", compDataLen);
                 printf("page number: %d\n", hdr2);
-#endif
+                #endif
+                
                 uint16_t memoff = pageStart[hdr2];
-#ifdef LOG_Z80_DETAILS
+                
+                #ifdef LOG_Z80_DETAILS
                 printf("page start: 0x%X\n", memoff);
-#endif
+                #endif
+                
                 loadCompressedMemData(file, compDataLen, memoff, 0x4000);
                 dataOffset += compDataLen;
             }
@@ -290,19 +309,18 @@ bool FileZ80::load(string z80_fn)
             const char* pagenames[12] = { "rom0", "IDP", "rom1",
                 "ram0", "ram1", "ram2", "ram3", "ram4", "ram5", "ram6", "ram7", "MFR" };
 
-#ifdef LOG_Z80_DETAILS
-
-#endif
             uint32_t dataLen = file_size;
             while (dataOffset < dataLen) {
                 uint8_t hdr0 = readByteFile(file); dataOffset ++;
                 uint8_t hdr1 = readByteFile(file); dataOffset ++;
                 uint8_t hdr2 = readByteFile(file); dataOffset ++;
                 uint16_t compDataLen = mkword(hdr0, hdr1);
-#ifdef LOG_Z80_DETAILS
+
+                #ifdef LOG_Z80_DETAILS
                 printf("compressed data length: %d\n", compDataLen);
                 printf("page: %s\n", pagenames[hdr2]);
-#endif
+                #endif
+                
                 uint8_t* memPage = pages[hdr2];
 
                 loadCompressedMemPage(file, compDataLen, memPage, 0x4000);
@@ -315,41 +333,80 @@ bool FileZ80::load(string z80_fn)
 
     fclose(file);
 
-    // just architecturey things
-    if (Config::getArch() == "128K")
-    {
-        if (fileArch == "48K")
-        {
-#ifdef SNAPSHOT_LOAD_FORCE_ARCH
+    // Arch check
+    if (Config::getArch() == "128K") {
+        if (fileArch == "48K") {
+            #ifdef SNAPSHOT_LOAD_FORCE_ARCH
             Config::requestMachine("48K", "SINCLAIR", true);
+
+            // Condition this to 50hz mode
+            if(Config::videomode) {
+                Config::ram_file = z80_fn;
+                Config::save();
+                OSD::esp_hard_reset();                            
+            }
+
             MemESP::romInUse = 0;
-#else
+            #else
             MemESP::romInUse = 1;
-#endif
+            #endif
         }
     }
-    else if (Config::getArch() == "48K")
-    {
-        if (fileArch == "128K")
-        {
+    else if (Config::getArch() == "48K") {
+        if (fileArch == "128K") {
             Config::requestMachine("128K", "SINCLAIR", true);
+
+            // Condition this to 50hz mode
+            if(Config::videomode) {            
+                Config::ram_file = z80_fn;
+                Config::save();
+                OSD::esp_hard_reset();                            
+            }
+
             MemESP::romInUse = 1;
         }
     }
+
+    // Ports
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     CPU::statesInFrame = CPU::statesPerFrame();
+    CPU::tstates = 0;
+    CPU::global_tstates = 0;
+    ESPectrum::target = CPU::microsPerFrame();
+    ESPectrum::ESPoffset = 0;
 
     if (Config::getArch() == "48K") {
+
+        Z80Ops::is48 = true;
+
         VIDEO::tStatesPerLine = TSTATES_PER_LINE;
         VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
-        Z80Ops::is48 = true;
+
+        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
+        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
+        ESPectrum::AY_emu = Config::AY48;
+        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+
     } else {
+        
+        Z80Ops::is48 = false;
+
         VIDEO::tStatesPerLine = TSTATES_PER_LINE_128;
         VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
-        Z80Ops::is48 = false;
+
+        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
+        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
+        ESPectrum::AY_emu = true;        
+        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
+
     }
+
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+    VIDEO::Draw = &VIDEO::Blank;
 
     MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
     MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
@@ -370,29 +427,9 @@ bool FileZ80::load(string z80_fn)
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
         ESPectrum::audioBuffer[i]=0;
-        ESPectrum::SamplebufAY[i]=0;        
+        AySound::SamplebufAY[i]=0;
     }
     ESPectrum::lastaudioBit=0;
-
-    // Set samples per frame and AY_emu flag depending on arch
-    if (Config::getArch() == "48K") {
-        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
-        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
-        ESPectrum::AY_emu = Config::AY48;
-        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
-    } else {
-        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
-        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
-        ESPectrum::AY_emu = true;        
-        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
-    }
-
-    ESPectrum::ESPoffset = 0;
-
-    pwm_audio_stop();
-    pwm_audio_set_sample_rate(ESPectrum::Audio_freq);
-    pwm_audio_start();
-    pwm_audio_set_volume(ESPectrum::aud_volume);
 
     // Reset AY emulation
     AySound::init();
@@ -400,15 +437,16 @@ bool FileZ80::load(string z80_fn)
     AySound::set_stereo(AYEMU_MONO,NULL);
     AySound::reset();
 
-    // Video sync
-    ESPectrum::target = CPU::microsPerFrame();
-
-    vTaskDelay(100/portTICK_PERIOD_MS);
-
+    // Resume audio
+    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
+    pwm_audio_start();
+    pwm_audio_set_volume(ESPectrum::aud_volume);
+  
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
 
     return true;
+
 }
 
 void FileZ80::loadCompressedMemData(FILE *f, uint16_t dataLen, uint16_t memoff, uint16_t memlen)

@@ -58,12 +58,14 @@ class ESPectrum
 public:
 
     static void setup();
+    // static void IRAM_ATTR loop(void* unused);
     static void IRAM_ATTR loop();
     static void reset();
     static void loadRom(string arch, string romset);
 
     // Kbd
     static void IRAM_ATTR processKeyboard();
+    static std::string bootKeyboard();
     static bool IRAM_ATTR readKbd(fabgl::VirtualKeyItem *Nextkey);
     static fabgl::PS2Controller PS2Controller;
     static uint8_t PS2cols[8];
@@ -71,7 +73,7 @@ public:
     // Audio
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_48];
     static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES_48];
-    static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
+    // static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
     static signed char aud_volume;
     static uint32_t audbufcnt;
     static uint32_t audbufcntAY;
@@ -96,6 +98,10 @@ public:
 
     static int ESPoffset; // Testing
 
+    static volatile bool vsync;
+
+    // static TaskHandle_t loopTaskHandle;
+
 private:
 
     static void IRAM_ATTR audioTask(void* unused);
@@ -107,7 +113,7 @@ private:
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
 
-int64_t IRAM_ATTR micros();
+// int64_t IRAM_ATTR micros();
 
 unsigned long IRAM_ATTR millis();
 

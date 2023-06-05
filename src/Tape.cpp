@@ -56,6 +56,7 @@ string Tape::tapeFileName = "none";
 uint8_t Tape::tapeStatus = TAPE_STOPPED;
 uint8_t Tape::SaveStatus = SAVE_STOPPED;
 uint8_t Tape::romLoading = false;
+uint8_t Tape::tapeEarBit;
 
 static uint8_t tapeCurByte;
 static uint8_t tapePhase;
@@ -67,7 +68,6 @@ static uint32_t tapebufByteCount;
 static uint16_t tapeHdrPulses;
 static uint32_t tapeBlockLen;
 static size_t tapeFileSize;   
-static uint8_t tapeEarBit;
 static uint8_t tapeBitMask;    
 // static uint8_t tapeReadBuf[4096] = { 0 };
 
@@ -104,7 +104,7 @@ void Tape::TAP_Play()
         tapeBlockLen=(readByteFile(tape) | (readByteFile(tape) <<8)) + 2;
         tapeCurByte = readByteFile(tape);
         tapebufByteCount=2;
-        tapeStart=CPU::global_tstates;
+        tapeStart=CPU::global_tstates + CPU::tstates;
         Tape::tapeStatus=TAPE_LOADING;
         break;
 
@@ -113,7 +113,7 @@ void Tape::TAP_Play()
         break;
 
     case TAPE_PAUSED:
-        tapeStart=CPU::global_tstates;        
+        tapeStart=CPU::global_tstates + CPU::tstates;        
         Tape::tapeStatus=TAPE_LOADING;
     }
 }
@@ -124,14 +124,14 @@ void Tape::TAP_Stop()
     fclose(tape);
 }
 
-uint8_t Tape::TAP_Read()
+void Tape::TAP_Read()
 {
-    uint64_t tapeCurrent = CPU::global_tstates - tapeStart;
+    uint64_t tapeCurrent = (CPU::global_tstates + CPU::tstates) - tapeStart;
     
     switch (tapePhase) {
     case TAPE_PHASE_SYNC:
         if (tapeCurrent > TAPE_SYNC_LEN) {
-            tapeStart=CPU::global_tstates;
+            tapeStart=CPU::global_tstates + CPU::tstates;
             tapeEarBit ^= 1;
             tapePulseCount++;
             if (tapePulseCount>tapeHdrPulses) {
@@ -142,14 +142,14 @@ uint8_t Tape::TAP_Read()
         break;
     case TAPE_PHASE_SYNC1:
         if (tapeCurrent > TAPE_SYNC1_LEN) {
-            tapeStart=CPU::global_tstates;
+            tapeStart=CPU::global_tstates + CPU::tstates;
             tapeEarBit ^= 1;
             tapePhase=TAPE_PHASE_SYNC2;
         }
         break;
     case TAPE_PHASE_SYNC2:
         if (tapeCurrent > TAPE_SYNC2_LEN) {
-            tapeStart=CPU::global_tstates;
+            tapeStart=CPU::global_tstates + CPU::tstates;
             tapeEarBit ^= 1;
             if (tapeCurByte & tapeBitMask) tapeBitPulseLen=TAPE_BIT1_PULSELEN; else tapeBitPulseLen=TAPE_BIT0_PULSELEN;            
             tapePhase=TAPE_PHASE_DATA;
@@ -157,7 +157,7 @@ uint8_t Tape::TAP_Read()
         break;
     case TAPE_PHASE_DATA:
         if (tapeCurrent > tapeBitPulseLen) {
-            tapeStart=CPU::global_tstates;
+            tapeStart=CPU::global_tstates + CPU::tstates;
             tapeEarBit ^= 1;
             tapeBitPulseCount++;
             if (tapeBitPulseCount==2) {
@@ -179,7 +179,7 @@ uint8_t Tape::TAP_Read()
     case TAPE_PHASE_PAUSE:
         if (tapebufByteCount < tapeFileSize) {
             if (tapeCurrent > TAPE_BLK_PAUSELEN) {
-                tapeStart=CPU::global_tstates;
+                tapeStart=CPU::global_tstates + CPU::tstates;
                 tapePulseCount=0;
                 tapePhase=TAPE_PHASE_SYNC;
                 tapeBlockLen+=(tapeCurByte | readByteFile(tape) <<8)+ 2;
@@ -191,12 +191,8 @@ uint8_t Tape::TAP_Read()
             Tape::tapeStatus=TAPE_STOPPED;
             fclose(tape);
         }
-        return 0;
     } 
-    
-    // ESPectrum::audioGetSample(tapeEarBit);
-    
-    return tapeEarBit;
+
 }
 
 void Tape::Save() {
