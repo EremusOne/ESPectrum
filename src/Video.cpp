@@ -248,13 +248,23 @@ void VIDEO::Init() {
     if (Config::getArch() == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
-        VsyncFinetune[0] = is169 ? -1 : 0;
-        VsyncFinetune[1] = is169 ? 152 : 0;
+        if (Config::videomode == 1) {
+            VsyncFinetune[0] = is169 ? -1 : 0;
+            VsyncFinetune[1] = is169 ? 152 : 0;
+        } else {
+            VsyncFinetune[0] = is169 ? 0 : 0;
+            VsyncFinetune[1] = is169 ? 0 : 0;
+        }
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
-        VsyncFinetune[0] = is169 ? 1 : 1;
-        VsyncFinetune[1] = is169 ? 123 : 123;
+        if (Config::videomode == 1) {
+            VsyncFinetune[0] = is169 ? 1 : 1;
+            VsyncFinetune[1] = is169 ? 123 : 123;
+        } else {
+            VsyncFinetune[0] = is169 ? 0 : 0;
+            VsyncFinetune[1] = is169 ? 0 : 0;
+        }
     }
 
     #ifdef NO_VIDEO
@@ -275,13 +285,23 @@ void VIDEO::Reset() {
     if (Config::getArch() == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
-        VsyncFinetune[0] = is169 ? -1 : 0;
-        VsyncFinetune[1] = is169 ? 152 : 0;
+        if (Config::videomode == 1) {
+            VsyncFinetune[0] = is169 ? -1 : 0;
+            VsyncFinetune[1] = is169 ? 152 : 0;
+        } else {
+            VsyncFinetune[0] = is169 ? 0 : 0;
+            VsyncFinetune[1] = is169 ? 0 : 0;
+        }
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
-        VsyncFinetune[0] = is169 ? 1 : 1;
-        VsyncFinetune[1] = is169 ? 123 : 123;
+        if (Config::videomode == 1) {
+            VsyncFinetune[0] = is169 ? 1 : 1;
+            VsyncFinetune[1] = is169 ? 123 : 123;
+        } else {
+            VsyncFinetune[0] = is169 ? 0 : 0;
+            VsyncFinetune[1] = is169 ? 0 : 0;
+        }
     }
 
     grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
