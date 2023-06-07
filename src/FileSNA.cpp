@@ -1,38 +1,37 @@
-///////////////////////////////////////////////////////////////////////////////
-//
-// ZX-ESPectrum-IDF - Sinclair ZX Spectrum emulator for ESP32 / IDF
-//
-// Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
-// https://github.com/EremusOne/ZX-ESPectrum-IDF
-//
-// Based on ZX-ESPectrum-Wiimote
-// Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
-// https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
-//
-// Based on previous work by Ramón Martinez and Jorge Fuertes
-// https://github.com/rampa069/ZX-ESPectrum
-//
-// Original project by Pete Todd
-// https://github.com/retrogubbins/paseVGA
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to
-// deal in the Software without restriction, including without limitation the
-// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-// sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-// DEALINGS IN THE SOFTWARE.
-//
+/*
+
+ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
+
+Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+https://github.com/EremusOne/ZX-ESPectrum-IDF
+
+Based on ZX-ESPectrum-Wiimote
+Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
+
+Based on previous work by Ramón Martinez and Jorge Fuertes
+https://github.com/rampa069/ZX-ESPectrum
+
+Original project by Pete Todd
+https://github.com/retrogubbins/paseVGA
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+To Contact the dev team you can write to zxespectrum@gmail.com or 
+visit https://zxespectrum.speccy.org/contacto
+
+*/
 
 #include "hardconfig.h"
 #include "FileUtils.h"
@@ -48,10 +47,11 @@
 #include "Tape.h"
 #include "AySound.h"
 #include "pwm_audio.h"
+
+#include <sys/unistd.h>
+#include <sys/stat.h>
 #include <stdio.h>
-
 #include <inttypes.h>
-
 #include <string>
 
 using namespace std;
@@ -374,6 +374,38 @@ bool FileSNA::isPersistAvailable(string filename)
 
     return res;
 
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool check_and_create_directory(const char* path) {
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        if ((st.st_mode & S_IFDIR) != 0) {
+            printf("Directory exists\n");
+            return true;
+        } else {
+            printf("Path exists but it is not a directory\n");
+            // Create the directory
+            if (mkdir(path, 0755) == 0) {
+                printf("Directory created\n");
+                return true;
+            } else {
+                printf("Failed to create directory\n");
+                return false;
+            }
+        }
+    } else {
+        printf("Directory does not exist\n");
+        // Create the directory
+        if (mkdir(path, 0755) == 0) {
+            printf("Directory created\n");
+            return true;
+        } else {
+            printf("Failed to create directory\n");
+            return false;
+        }
+    }
 }
 
 // ///////////////////////////////////////////////////////////////////////////////
