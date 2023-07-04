@@ -299,12 +299,12 @@ string OSD::getRomsetMenu(string arch) {
     return menu;
 }
 
-#ifdef ZXKEYB
+// #ifdef ZXKEYB
 #define REPDEL 140 // As in real ZX Spectrum (700 ms.)
 #define REPPER 20 // As in real ZX Spectrum (100 ms.)
 static int zxDelay = 0;
 static int lastzxKey = 0;
-#endif
+// #endif
 
 // Run a new menu
 unsigned short OSD::menuRun(string new_menu) {
@@ -313,100 +313,104 @@ unsigned short OSD::menuRun(string new_menu) {
 
     newMenu(new_menu);
 
-    #ifdef ZXKEYB
+    // #ifdef ZXKEYB
     zxDelay = REPDEL;
     lastzxKey = 0;
-    #endif
+    // #endif
 
     while (1) {
         
-        #ifdef ZXKEYB
-        
-        ZXKeyb::process();
+        // #ifdef ZXKEYB
 
-        if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
-                if (lastzxKey == 1)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 1;
+        if (ZXKeyb::Exists) {
+
+            ZXKeyb::process();
+
+            if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
+                    if (lastzxKey == 1)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 1;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
+                    if (lastzxKey == 2)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 2;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                    if (lastzxKey == 3)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 3;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);
+                    if (lastzxKey == 4)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 4;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
+                    if (lastzxKey == 5)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 5;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);
+                    if (lastzxKey == 6)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 6;
+                }
+            } else            
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                    if (lastzxKey == 7)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 7;
+                }
+            } else
+            {
+                zxDelay = 0;
+                lastzxKey = 0;
             }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
-                if (lastzxKey == 2)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 2;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                if (lastzxKey == 3)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 3;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);
-                if (lastzxKey == 4)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 4;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
-                if (lastzxKey == 5)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 5;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);
-                if (lastzxKey == 6)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 6;
-            }
-        } else            
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
-                if (lastzxKey == 7)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 7;
-            }
-        } else
-        {
-            zxDelay = 0;
-            lastzxKey = 0;
+
         }
 
-        #endif
+        // #endif
        
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -509,9 +513,9 @@ unsigned short OSD::menuRun(string new_menu) {
         }
         vTaskDelay(5 / portTICK_PERIOD_MS);
         
-        #ifdef ZXKEYB        
+        // #ifdef ZXKEYB        
         if (zxDelay > 0) zxDelay--;
-        #endif
+        // #endif
 
     }
 
@@ -666,100 +670,104 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
     menuDraw();
 
-    #ifdef ZXKEYB
+    // #ifdef ZXKEYB
     zxDelay = REPDEL;
     lastzxKey = 0;
-    #endif
+    // #endif
 
     while (1) {
 
-        #ifdef ZXKEYB
+        // #ifdef ZXKEYB
 
-        ZXKeyb::process();
+        if (ZXKeyb::Exists) {
 
-        if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
-                if (lastzxKey == 1)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 1;
+            ZXKeyb::process();
+
+            if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
+                    if (lastzxKey == 1)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 1;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
+                    if (lastzxKey == 2)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 2;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                    if (lastzxKey == 3)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 3;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK        
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
+                    if (lastzxKey == 4)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 4;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
+                    if (lastzxKey == 5)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 5;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
+                    if (lastzxKey == 6)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 6;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                    if (lastzxKey == 7)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 7;
+                }
+            } else
+            {
+                zxDelay = 0;
+                lastzxKey = 0;
             }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
-                if (lastzxKey == 2)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 2;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                if (lastzxKey == 3)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 3;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK        
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
-                if (lastzxKey == 4)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 4;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
-                if (lastzxKey == 5)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 5;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
-                if (lastzxKey == 6)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 6;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
-                if (lastzxKey == 7)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 7;
-            }
-        } else
-        {
-            zxDelay = 0;
-            lastzxKey = 0;
+
         }
 
-        #endif
+        // #endif
         
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -873,9 +881,9 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
         vTaskDelay(5 / portTICK_PERIOD_MS);    
 
-        #ifdef ZXKEYB        
+        // #ifdef ZXKEYB        
         if (zxDelay > 0) zxDelay--;
-        #endif
+        // #endif
 
 
     }

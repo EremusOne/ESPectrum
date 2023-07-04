@@ -120,8 +120,10 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
             MemESP::bankLatch = data & 0x7;
             MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
             MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
-            MemESP::videoLatch = bitRead(data, 3);
-            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
+            if (MemESP::videoLatch != bitRead(data, 3)) {
+                MemESP::videoLatch = bitRead(data, 3);
+                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            }
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
             MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];            
@@ -185,22 +187,80 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
     // 128 =======================================================================
     if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
-        if (MemESP::pagingLock) return;
+        if (!MemESP::pagingLock) {
 
-        MemESP::pagingLock = bitRead(data, 5);
-        
-        MemESP::bankLatch = data & 0x7;
-        MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
-        MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+            MemESP::pagingLock = bitRead(data, 5);
 
-        MemESP::videoLatch = bitRead(data, 3);
-        
-        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
-        
-        MemESP::romLatch = bitRead(data, 4);
-        bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-        MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+            MemESP::bankLatch = data & 0x7;
+            MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+            MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+
+            if (MemESP::videoLatch != bitRead(data, 3)) {
+                MemESP::videoLatch = bitRead(data, 3);
+                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            }
+
+            MemESP::romLatch = bitRead(data, 4);
+            bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+
+        }
 
     }
-   
+
 }
+
+// void Ports::ContendedIODelay(uint16_t portNumber)
+// {
+
+//     uint8_t lowByte = portNumber & 0xff;
+
+//     if (bitRead(lowByte, 0)) {
+//         if (Z80Ops::is48) {
+//                 if (portNumber >= 0x4000 && portNumber <= 0x7FFF) {
+//                     // Template D
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(1,true);
+//                 } else {
+//                     // Template B
+//                     VIDEO::Draw(4,false);
+//                 }
+//         } else {
+//                 if ((portNumber >= 0x4000 && portNumber <= 0x7FFF) || ((portNumber >= 0xC000 && portNumber <= 0xFFFF) && (MemESP::ramContended[3]))) {
+//                     // Template D
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(1,true);
+//                 } else {
+//                     // Template B
+//                     VIDEO::Draw(4,false);
+//                 }
+//         }
+//     } else {
+//         if (Z80Ops::is48) {
+//                 if (portNumber >= 0x4000 && portNumber <= 0x7FFF) {
+//                     // Template C
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(3,true);                    
+//                 } else {
+//                     // Template A
+//                     VIDEO::Draw(1,false);
+//                     VIDEO::Draw(3,true);                    
+//                 }
+//         } else {
+//                 if ((portNumber >= 0x4000 && portNumber <= 0x7FFF) || ((portNumber >= 0xC000 && portNumber <= 0xFFFF) && (MemESP::ramContended[3]))) {
+//                     // Template C
+//                     VIDEO::Draw(1,true);
+//                     VIDEO::Draw(3,true);                    
+//                 } else {
+//                     // Template A
+//                     VIDEO::Draw(1,false);
+//                     VIDEO::Draw(3,true);
+//                 }
+
+//         }
+//     }
+// }

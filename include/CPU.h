@@ -40,6 +40,16 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 #include "ESP32Lib/ESP32Lib.h"
 
+// #define INT_START48 0
+// #define INT_END48 32
+// #define INT_START128 0
+// #define INT_END128 36
+
+#define INT_START48 0
+#define INT_END48 32
+#define INT_START128 0
+#define INT_END128 36
+
 class CPU
 {
 public:
@@ -72,6 +82,13 @@ public:
 
     // Frames elapsed
     static uint32_t framecnt;
+
+    // Late timing
+    static uint8_t latetiming;
+
+    // INT signal lenght
+    static uint8_t IntStart;
+    static uint8_t IntEnd;
 
 };
 

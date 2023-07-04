@@ -49,7 +49,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Video.h"
 
 #include "esp_vfs.h"
-#include "esp_spiffs.h"
 #include <sys/unistd.h>
 #include <sys/stat.h>
 #include "esp_vfs_fat.h"
@@ -57,26 +56,15 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
-string FileUtils::MountPoint = MOUNT_POINT_SPIFFS; // Start with SPIFFS
+string FileUtils::MountPoint = MOUNT_POINT_SD; // Start with SD
 bool FileUtils::SDReady = false;
 sdmmc_card_t *FileUtils::card;
 
 void FileUtils::initFileSystem() {
 
-    // Initialize SPIFFS file system
-    esp_vfs_spiffs_conf_t config = {
-        .base_path = MOUNT_POINT_SPIFFS,
-        .partition_label = NULL,
-        .max_files = 3,
-        .format_if_mount_failed = false,
-    };
-    if (esp_vfs_spiffs_register(&config) != ESP_OK) {
-        return;
-    }
-
     SDReady = mountSDCard();
 
-    vTaskDelay(2);
+    vTaskDelay(20 / portTICK_PERIOD_MS);
 
 }
 

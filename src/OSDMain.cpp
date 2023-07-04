@@ -194,7 +194,7 @@ static bool persistLoad(uint8_t slotnumber)
         } else {
             Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
             #ifdef SNAPSHOT_LOAD_LAST
-            Config::save();
+            Config::save("ram");
             #endif
             Config::last_ram_file = Config::ram_file;
             OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
@@ -205,10 +205,10 @@ static bool persistLoad(uint8_t slotnumber)
 
 }
 
-#ifdef ZXKEYB
+// #ifdef ZXKEYB
 #define REPDEL 140 // As in real ZX Spectrum (700 ms.)
 static int zxDelay = 0;
-#endif
+// #endif
 
 // OSD Main Loop
 void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
@@ -258,7 +258,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         menu_curopt = 1;
         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
         if (mFile != "") {
-            Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
+            // Read and analyze tape file
+            Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
+            // Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
         }
     }
     else if (KeytoESP == fabgl::VK_F6) {
@@ -361,7 +363,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         // ESP host reset
         #ifndef SNAPSHOT_LOAD_LAST
         Config::ram_file = NO_RAM_FILE;
-        Config::save();
+        Config::save("ram");
         #endif
         esp_hard_reset();
 
@@ -458,7 +460,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         // Select TAP File
                         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
                         if (mFile != "") {
-                            Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
+                            // Read and analyze tape file
+                            Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
+                            // Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
                             return;
                         }
                     }
@@ -503,7 +507,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 else if (opt2 == 2) {
                     // Hard
                     Config::ram_file = NO_RAM_FILE;
-                    Config::save();
+                    Config::save("ram");
                     Config::last_ram_file = NO_RAM_FILE;
                     ESPectrum::reset();
                     return;
@@ -512,7 +516,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     // ESP host reset
                     #ifndef SNAPSHOT_LOAD_LAST
                     Config::ram_file = NO_RAM_FILE;
-                    Config::save();
+                    Config::save("ram");
                     #endif
                     esp_hard_reset();
                 } else {
@@ -538,19 +542,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         menu_level = 2;
                         // Storage source
                         string stor_menu = MENU_STORAGE[Config::lang];
-                        int curopt;
-                        if (FileUtils::MountPoint == MOUNT_POINT_SPIFFS) {
-                            stor_menu.replace(stor_menu.find("[I",0),2,"[*");
-                            stor_menu.replace(stor_menu.find("[S",0),2,"[ ");
-                            curopt = 1;
-                        } else {
-                            stor_menu.replace(stor_menu.find("[I",0),2,"[ ");
-                            stor_menu.replace(stor_menu.find("[S",0),2,"[*");
-                            curopt = 2;
-                        }
+                        // int curopt;
+                        // if (FileUtils::MountPoint == MOUNT_POINT_SPIFFS) {
+                        //     stor_menu.replace(stor_menu.find("[I",0),2,"[*");
+                        //     stor_menu.replace(stor_menu.find("[S",0),2,"[ ");
+                        //     curopt = 1;
+                        // } else {
+                        //     stor_menu.replace(stor_menu.find("[I",0),2,"[ ");
+                        //     stor_menu.replace(stor_menu.find("[S",0),2,"[*");
+                        //     curopt = 2;
+                        // }
                         uint8_t opt2 = menuRun(stor_menu);
                         if (opt2) {
-                            if (opt2 == 3) {
+                            // if (opt2 == 3) {
                                 OSD::osdCenteredMsg("Refreshing snap dir", LEVEL_INFO);
                                 int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_SNA_DIR, ".sna.SNA.z80.Z80"); // Prepare sna filelist
                                 if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_SNA_DIR,chunks); // Merge files
@@ -558,15 +562,15 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                 chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_TAP_DIR, ".tap.TAP"); // Prepare tap filelist
                                 if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_TAP_DIR,chunks); // Merge files
                                 return;
-                            } else if (opt2 != curopt) {
-                                if (opt2 == 1)
-                                    FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
-                                else
-                                    FileUtils::MountPoint = MOUNT_POINT_SD;
-                                Config::save();
-                            }
-                            menu_curopt = opt2;
-                            menu_saverect = false;
+                            // } else if (opt2 != curopt) {
+                            //     if (opt2 == 1)
+                            //         FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
+                            //     else
+                            //         FileUtils::MountPoint = MOUNT_POINT_SD;
+                            //     Config::save();
+                            // }
+                            // menu_curopt = opt2;
+                            // menu_saverect = false;
                         } else {
                             menu_curopt = 1;                            
                             break;
@@ -653,7 +657,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         if (opt2) {
                             if (Config::joystick != (opt2 - 1)) {
                                 Config::joystick = opt2 - 1;
-                                Config::save();
+                                Config::save("joystick");
                             }
                             menu_curopt = opt2;
                             menu_saverect = false;
@@ -685,7 +689,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         if (opt2) {
                             if (Config::lang != (opt2 - 1)) {
                                 Config::lang = opt2 - 1;
-                                Config::save();
+                                Config::save("language");
                                 return;
                             }
                             menu_curopt = opt2;
@@ -726,12 +730,46 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                             Config::AY48 = false;
 
                                         if (Config::AY48 != prev_ay48) {
-                                            Config::save();
+                                            Config::save("AY48");
                                         }
                                         menu_curopt = opt2;
                                         menu_saverect = false;
                                     } else {
                                         menu_curopt = 1;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+                            }
+                            else if (options_num == 2) {
+                                menu_level = 3;
+                                menu_curopt = 1;                    
+                                menu_saverect = true;
+                                while (1) {
+                                    string alu_menu = MENU_ALUTIMING[Config::lang];
+                                    uint8_t prev_AluTiming = Config::AluTiming;
+                                    if (prev_AluTiming == 0) {
+                                        alu_menu.replace(alu_menu.find("[E",0),2,"[*");
+                                        alu_menu.replace(alu_menu.find("[L",0),2,"[ ");                        
+                                    } else {
+                                        alu_menu.replace(alu_menu.find("[E",0),2,"[ ");
+                                        alu_menu.replace(alu_menu.find("[L",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(alu_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::AluTiming = 0;
+                                        else
+                                            Config::AluTiming = 1;
+
+                                        if (Config::AluTiming != prev_AluTiming) {
+                                            CPU::latetiming = Config::AluTiming;
+                                            Config::save("AluTiming");
+                                        }
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 2;
                                         menu_level = 2;                                       
                                         break;
                                     }
@@ -755,39 +793,43 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_HELP[Config::lang]);
 
-            #ifdef ZXKEYB
+            // #ifdef ZXKEYB
             zxDelay = REPDEL;
-            #endif
+            // #endif
 
             while (1) {
 
-                #ifdef ZXKEYB
-        
-                ZXKeyb::process();
+                // #ifdef ZXKEYB
 
-                if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                        zxDelay = REPDEL;
+                if (ZXKeyb::Exists) {
+
+                    ZXKeyb::process();
+
+                    if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                        if (zxDelay == 0) {
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                            zxDelay = REPDEL;
+                        }
+                    } else
+                    if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
+                        if (zxDelay == 0) {
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
+                            zxDelay = REPDEL;
+                        }
+                    } else
+                    if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                        if (zxDelay == 0) {
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                            zxDelay = REPDEL;
+                        }
                     }
-                } else
-                if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
-                        zxDelay = REPDEL;
-                    }
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
-                        zxDelay = REPDEL;
-                    }
+                
                 }
 
-                #endif
+                // #endif
 
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                     if (ESPectrum::readKbd(&Nextkey)) {
@@ -798,9 +840,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
                 vTaskDelay(5 / portTICK_PERIOD_MS);
 
-                #ifdef ZXKEYB        
+                // #ifdef ZXKEYB        
                 if (zxDelay > 0) zxDelay--;
-                #endif
+                // #endif
 
             }
 
@@ -816,39 +858,43 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_ABOUT[Config::lang]);
             
-            #ifdef ZXKEYB
+            // #ifdef ZXKEYB
             zxDelay = REPDEL;
-            #endif
+            // #endif
             
             while (1) {
 
-                #ifdef ZXKEYB
-        
-                ZXKeyb::process();
+                // #ifdef ZXKEYB
 
-                if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER                
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                        zxDelay = REPDEL;
+                if (ZXKeyb::Exists) {
+
+                    ZXKeyb::process();
+
+                    if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER                
+                        if (zxDelay == 0) {
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                            zxDelay = REPDEL;
+                        }
+                    } else
+                    if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK                
+                        if (zxDelay == 0) {
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
+                            zxDelay = REPDEL;
+                        }
+                    } else
+                    if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                        if (zxDelay == 0) {
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                            zxDelay = REPDEL;
+                        }
                     }
-                } else
-                if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK                
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
-                        zxDelay = REPDEL;
-                    }
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
-                        zxDelay = REPDEL;
-                    }
+
                 }
 
-                #endif
+                // #endif
 
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                     if (ESPectrum::readKbd(&Nextkey)) {
@@ -859,9 +905,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
                 vTaskDelay(5 / portTICK_PERIOD_MS);
                 
-                #ifdef ZXKEYB        
+                // #ifdef ZXKEYB        
                 if (zxDelay > 0) zxDelay--;
-                #endif
+                // #endif
 
 
             }
@@ -1025,7 +1071,7 @@ void OSD::changeSnapshot(string filename)
 
     Config::ram_file = filename;
     #ifdef SNAPSHOT_LOAD_LAST
-    Config::save();
+    Config::save("ram");
     #endif
     Config::last_ram_file = filename;
 

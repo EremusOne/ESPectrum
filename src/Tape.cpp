@@ -73,6 +73,24 @@ void Tape::Init()
     tape = NULL;
 }
 
+void Tape::Open(string name)
+{
+    Tape::tapeFileName = name;
+
+    tape = fopen(Tape::tapeFileName.c_str(), "rb");
+    if (tape == NULL)
+    {
+        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+        return;
+    }
+    
+    // Analyze .tap file
+    
+
+    fclose(tape);
+
+}
+
 void Tape::TAP_Play()
 {
    
@@ -121,7 +139,7 @@ void Tape::TAP_Stop()
     fclose(tape);
 }
 
-void Tape::TAP_Read()
+void IRAM_ATTR Tape::TAP_Read()
 {
     uint64_t tapeCurrent = (CPU::global_tstates + CPU::tstates) - tapeStart;
     

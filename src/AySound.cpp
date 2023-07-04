@@ -96,7 +96,7 @@ uint8_t AySound::selectedRegister;
 
 /* sound chip volume envelops (will calculated by gen_env()) */
 static int bEnvGenInit = 0;
-static int Envelope [16][128];
+static uint8_t Envelope [16][128];
 
 /* AY volume table (c) by V_Soft and Lion 17 */
 // static int Lion17_AY_table [16] = {
@@ -131,6 +131,7 @@ static void gen_env()
     int dir;
     int vol;
 
+    // printf("Gen Env:\n");
     for (env = 0; env < 16; env++) {
         hold = 0;
         dir = (env & 4)?    1 : -1;
@@ -152,8 +153,10 @@ static void gen_env()
                     }
                 }
             }
-            Envelope[env][pos] = vol;
+            Envelope[env][pos] = (uint8_t) vol;
+            // printf("%d ",vol);
         }
+        // printf("\n");
     }
 
     bEnvGenInit = 1;

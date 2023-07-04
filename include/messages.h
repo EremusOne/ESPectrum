@@ -196,20 +196,29 @@ static const char *MENU_PERSIST_SAVE[2] = { MENU_PERSIST_SAVE_EN, MENU_PERSIST_S
     "Cargar snapshot\n" MENU_PERSIST_ES
 static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_LOAD_ES };
 
+// #define MENU_STORAGE_EN "Storage\n"\
+//     "Internal\t[I]\n"\
+//     "SD Card\t[S]\n"\
+//     "Refresh directories\n"
+// #define MENU_STORAGE_ES "Almacenamiento\n"\
+//     "Interno\t[I]\n"\
+//     "Tarjeta SD\t[S]\n"\
+//     "Refrescar directorios\n"
+// static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+
 #define MENU_STORAGE_EN "Storage\n"\
-    "Internal\t[I]\n"\
-    "SD Card\t[S]\n"\
     "Refresh directories\n"
 #define MENU_STORAGE_ES "Almacenamiento\n"\
-    "Interno\t[I]\n"\
-    "Tarjeta SD\t[S]\n"\
     "Refrescar directorios\n"
 static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
+
 #define MENU_OTHER_EN "Other\n"\
-    "AY on 48K\t>\n"
+    "AY on 48K\t>\n"\
+    "ALU Timing\t>\n"    
 #define MENU_OTHER_ES "Otros\n"\
-    "AY en 48K\t>\n"
+    "AY en 48K\t>\n"\
+    "Timing ULA\t>\n"    
 static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
 
 #define MENU_AY48_EN "AY on 48K\n"\
@@ -219,6 +228,14 @@ static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
     "Si\t[Y]\n"\
     "No\t[N]\n"
 static const char *MENU_AY48[2] = { MENU_AY48_EN, MENU_AY48_ES };
+
+#define MENU_ALUTIMING_EN "ALU Timing\n"\
+    "Early\t[E]\n"\
+    "Late\t[L]\n"
+#define MENU_ALUTIMING_ES "Timing ULA\n"\
+    "Early\t[E]\n"\
+    "Late\t[L]\n"
+static const char *MENU_ALUTIMING[2] = { MENU_ALUTIMING_EN, MENU_ALUTIMING_ES };
 
 #define MENU_ARCH_EN "Select machine\n"\
     "ZX Spectrum 48K\n"\

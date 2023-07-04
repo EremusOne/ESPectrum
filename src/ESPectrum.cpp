@@ -60,28 +60,10 @@ visit https://zxespectrum.speccy.org/contacto
 #include "freertos/task.h"
 #include "driver/timer.h"
 #include "soc/timer_group_struct.h"
-#include "esp_spiffs.h"
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #endif
-
-// #include <stdint.h>
-// #include <string.h>
-// #include <stdbool.h>
-// #include "driver/uart.h"
-
-// #include "esp_bt.h"
-// #include "nvs_flash.h"
-// #include "esp_bt_device.h"
-// #include "esp_gap_ble_api.h"
-// #include "esp_gattc_api.h"
-// #include "esp_gatt_defs.h"
-// #include "esp_bt_main.h"
-// #include "esp_system.h"
-// #include "esp_gatt_common_api.h"
-// #include "esp_log.h"
-// #define GATTC_TAG                   "GATTC_SPP_DEMO"
 
 using namespace std;
 
@@ -182,20 +164,302 @@ printf("------------------------------------------------------------------------
 printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
 printf("Minimum free ever: %d\n", info.minimum_free_bytes);
 printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
-printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+printf("Heap caps get free size (MALLOC_CAP_8BIT): %d\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
+printf("Heap caps get free size (MALLOC_CAP_32BIT): %d\n", heap_caps_get_free_size(MALLOC_CAP_32BIT));
+printf("Heap caps get free size (MALLOC_CAP_INTERNAL): %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 printf("=========================================================================\n\n");
 
-UBaseType_t wm;
-wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-printf("Audio Task Stack HWM: %u\n", wm);
-// wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
-// printf("Loop Task Stack HWM: %u\n", wm);
-wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
-printf("Video Task Stack HWM: %u\n", wm);
+// heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_8BIT);            
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_32BIT);                        
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_DMA);            
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_EXEC);            
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_IRAM_8BIT);            
+
+// printf("=========================================================================\n");
+// heap_caps_dump_all();
+
+// printf("=========================================================================\n");
+
+// UBaseType_t wm;
+// wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
+// printf("Audio Task Stack HWM: %u\n", wm);
+// // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
+// // printf("Loop Task Stack HWM: %u\n", wm);
+// wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
+// printf("Video Task Stack HWM: %u\n", wm);
 
 #endif
 
 }
+
+//=======================================================================================
+// BOOT KEYBOARD
+//=======================================================================================
+std::string ESPectrum::bootKeyboard() {
+
+    auto Kbd = PS2Controller.keyboard();
+    fabgl::VirtualKeyItem NextKey;
+    bool r = false;
+
+    // #ifdef ZXKEYB
+
+    if (ZXKeyb::Exists) {
+
+        // Process physical keyboard
+        ZXKeyb::process();
+        // Detect and process physical kbd menu key combinations
+
+        if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+                return "1Q";
+            } else 
+            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+                return "1W";
+            }
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+                return "2Q";
+            } else 
+            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+                return "2W";
+            }
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+                return "3Q";
+            } else 
+            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+                return "3W";
+            }
+        }
+
+    }
+
+    // #endif
+
+    while (Kbd->virtualKeyAvailable()) {
+        r = Kbd->getNextVirtualKey(&NextKey);
+        if (r) {
+            // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) return "1";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) return "2";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) return "3";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) return "Q";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) return "W";
+        }
+    }
+
+    return "";
+
+}
+
+// void ESPectrum::bootKeyboard() {
+    
+//     std::string b = "00";
+    
+//     #ifdef ZXKEYB
+//     if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+    
+//         // Process physical keyboard
+//         ZXKeyb::process();
+//         // Detect and process physical kbd menu key combinations
+        
+//         if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+//             if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+//                 b = "1Q";
+//             } else
+//                 if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+//                     b = "1W";
+//                 }
+//         } else
+//             if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
+//                 if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+//                     b = "2Q";
+//                 } else
+//                     if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+//                         b = "2W";
+//                     }
+//             } else
+//                 if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
+//                     if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+//                         b = "3Q";
+//                     } else
+//                         if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+//                             b = "3W";
+//                         }
+//                 }
+        
+//     } // END - ZXKeyb Exists
+//     #endif
+    
+//     //PS2Controller.keyboard()->reset();
+    
+//     if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_q) && PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) || (b == "1Q")) {
+//         b = "1Q";
+//         Config::aspect_16_9=false;
+//         Config::videomode=0;
+//     } else
+//         if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_w) && PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) || (b == "1W")) {
+//             b = "1W";
+//             Config::aspect_16_9=true;
+//             Config::videomode=0;
+//         } else
+//             if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_q) && PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) || (b == "2Q")) {
+//                 b = "2Q";
+//                 Config::aspect_16_9=false;
+//                 Config::videomode=1;
+//             } else
+//                 if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_w) && PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) || (b == "2W")) {
+//                     b = "2W";
+//                     Config::aspect_16_9=true;
+//                     Config::videomode=1;
+//                 } else
+//                     if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_q) && PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) || (b == "3Q")) {
+//                         b = "3Q";
+//                         Config::aspect_16_9=false;
+//                         Config::videomode=2;
+//                     } else
+//                         if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_w) && PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) || (b == "3W")) {
+//                             b = "3W";
+//                             Config::aspect_16_9=true;
+//                             Config::videomode=2;
+//                         }
+    
+//     if (b != "00") {
+//         Config::ram_file="none";
+//         Config::save();
+//         printf("%s\n", b.c_str());
+//     }
+    
+//     //return b;
+    
+    
+    
+//     /*
+//      std:string b = "00";
+//      std::string s;
+//      for (int i=0; i<2000; i++) {
+//      s = bootKeyboard();
+//      if (s!="") {
+     
+//      if (s.length()==2)
+//      b = s;
+//      else {
+//      b[0] = b[1];
+//      b[1] = s[0];
+//      }
+     
+//      bool chgRes = true;
+     
+//      if (b=="1Q" || b=="Q1") {
+//      Config::aspect_16_9=false;
+//      Config::videomode=0;
+//      } else
+//      if (b=="1W" || b=="W1") {
+//      Config::aspect_16_9=true;
+//      Config::videomode=0;
+//      } else
+//      if (b=="2Q" || b=="Q2") {
+//      Config::aspect_16_9=false;
+//      Config::videomode=1;
+//      } else
+//      if (b=="2W" || b=="W2") {
+//      Config::aspect_16_9=true;
+//      Config::videomode=1;
+//      } else
+//      if (b=="3Q" || b=="Q3") {
+//      Config::aspect_16_9=false;
+//      Config::videomode=2;
+//      } else
+//      if (b=="3W" || b=="W3") {
+//      Config::aspect_16_9=true;
+//      Config::videomode=2;
+//      } else chgRes = false;
+     
+//      if (chgRes) {
+//      Config::ram_file="none";
+//      Config::save();
+//      printf("%s\n", b.c_str());
+//      break;
+//      }
+     
+//      }
+     
+//      delayMicroseconds(250);
+     
+//      }
+//     */
+
+    
+//     /*
+//     auto Kbd = PS2Controller.keyboard();
+//     fabgl::VirtualKeyItem NextKey;
+//     bool r = false;
+
+//     #ifdef ZXKEYB
+
+//     // Process physical keyboard
+//     ZXKeyb::process();
+//     // Detect and process physical kbd menu key combinations
+
+//     if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+//         if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+//             return "1Q";
+//         } else 
+//         if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+//             return "1W";
+//         }
+//     } else
+//     if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
+//         if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+//             return "2Q";
+//         } else 
+//         if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+//             return "2W";
+//         }
+//     } else
+//     if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
+//         if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+//             return "3Q";
+//         } else 
+//         if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+//             return "3W";
+//         }
+//     }
+
+//     #endif
+
+//     while (Kbd->virtualKeyAvailable()) {
+//         r = Kbd->getNextVirtualKey(&NextKey);
+//         if (r) {
+//             // Check keyboard status
+//             if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) return "1";
+//             if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) return "2";
+//             if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) return "3";
+//             if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) return "Q";
+//             if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) return "W";
+//         }
+//     }
+
+//     return "";
+//     */
+
+// }
 
 //=======================================================================================
 // SETUP
@@ -205,24 +469,24 @@ printf("Video Task Stack HWM: %u\n", wm);
 void ESPectrum::setup() 
 {
 
+    #ifdef TESTING_CODE
+    showMemInfo();
+    #endif
+
     //=======================================================================================
     // KEYBOARD
     //=======================================================================================
 
     PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
-    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
-
-    if (Config::slog_on) {
-        showMemInfo("Keyboard started");
-    }
+    PS2Controller.keyboard()->reset(); // This is already setting the ScancodeSet 2
 
     //=======================================================================================
     // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
     //=======================================================================================
 
-    #ifdef ZXKEYB
+    // #ifdef ZXKEYB
     ZXKeyb::setup();
-    #endif
+    // #endif
 
     //=======================================================================================
     // FILESYSTEM
@@ -231,6 +495,10 @@ void ESPectrum::setup()
     Config::load();
 
     #ifndef ESP32_SDL2_WRAPPER
+
+    if (Config::slog_on) {
+        showMemInfo("Keyboard started");
+    }
 
     // Get chip information
     esp_chip_info_t chip_info;
@@ -305,7 +573,7 @@ void ESPectrum::setup()
             } else chgRes = false;
 
             if (chgRes) {
-                Config::ram_file="none";                
+                Config::ram_file="none";
                 Config::save();
                 printf("%s\n", b.c_str());
                 break;
@@ -330,6 +598,12 @@ void ESPectrum::setup()
     MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
     MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
     MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+
+    // MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
 
     if (Config::slog_on) {
         if (MemESP::ram1 == NULL) printf("ERROR! Unable to allocate ram1\n");        
@@ -442,7 +716,7 @@ void ESPectrum::setup()
         // ESP host reset
         #ifndef SNAPSHOT_LOAD_LAST
         Config::ram_file = NO_RAM_FILE;
-        Config::save();
+        Config::save("ram");
         #endif
 
     }
@@ -575,47 +849,7 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
         }
         #ifdef TESTING_CODE
         else if (Nextkey->vk == fabgl::VK_GRAVEACCENT) { // Show mem info
-            multi_heap_info_t info;
-            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-            printf("=========================================================================\n");
-            printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
-            printf("Minimum free ever: %d\n", info.minimum_free_bytes);
-            printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
-            printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-
-            printf("=========================================================================\n\n");
-            heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_8BIT);            
-            
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_32BIT);                        
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_DMA);            
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_EXEC);            
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_IRAM_8BIT);            
-            
-            printf("=========================================================================\n");
-            heap_caps_dump_all();
-
-            printf("=========================================================================\n");
-            UBaseType_t wm;
-            wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-            printf("Audio Task Stack HWM: %u\n", wm);
-            // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
-            // printf("Loop Task Stack HWM: %u\n", wm);
-            wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
-            printf("Video Task Stack HWM: %u\n", wm);
-
+            showMemInfo();
             r = false;
         }    
         #endif
@@ -626,9 +860,9 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
 
 uint8_t ESPectrum::PS2cols[8] = { 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f };    
     
-#ifdef ZXKEYB
+// #ifdef ZXKEYB
 static int zxDelay = 0;
-#endif
+// #endif
 
 void IRAM_ATTR ESPectrum::processKeyboard() {
 
@@ -743,136 +977,92 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
     }
 
-    #ifdef ZXKEYB
-    
-    if (zxDelay > 0)
-        zxDelay--;
-    else
-        // Process physical keyboard
-        ZXKeyb::process();
+    // #ifdef ZXKEYB
 
-    // Detect and process physical kbd menu key combinations
-    // CS+SS+N -> FN Keys
-    // F11 -> CS+SS+Q, F12 -> CS+SS+W
-    // TO DO: Add delay after special key so keys as vol up vol down or toggles like F8 doesn't get re-pressed too fast.
-    if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
+    if (ZXKeyb::Exists) { // START - ZXKeyb Exists
 
-        zxDelay = 15;
+        if (zxDelay > 0)
+            zxDelay--;
+        else
+            // Process physical keyboard
+            ZXKeyb::process();
 
-        if (!bitRead(ZXKeyb::ZXcols[3],0)) {
-            OSD::do_OSD(fabgl::VK_F1);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],1)) {
-            OSD::do_OSD(fabgl::VK_F2);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],2)) {
-            OSD::do_OSD(fabgl::VK_F3);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],3)) {
-            OSD::do_OSD(fabgl::VK_F4);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],4)) {
-            OSD::do_OSD(fabgl::VK_F5);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],4)) {
-            OSD::do_OSD(fabgl::VK_F6);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],3)) {
-            OSD::do_OSD(fabgl::VK_F7);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],2)) {
-            OSD::do_OSD(fabgl::VK_F8);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],1)) {
-            OSD::do_OSD(fabgl::VK_F9);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],0)) {
-            OSD::do_OSD(fabgl::VK_F10);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[2],0)) {
-            CaptureToBmp();
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[2],1)) {
-            OSD::do_OSD(fabgl::VK_F12);
-        } else
-            zxDelay = 0;
+        // Detect and process physical kbd menu key combinations
+        // CS+SS+N -> FN Keys
+        // F11 -> CS+SS+Q, F12 -> CS+SS+W
+        // TO DO: Add delay after special key so keys as vol up vol down or toggles like F8 doesn't get re-pressed too fast.
+        if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
 
-        if (zxDelay) {
-            // Set all keys as not pressed
-            for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0x1f;
-            return;
+            zxDelay = 15;
+
+            if (!bitRead(ZXKeyb::ZXcols[3],0)) {
+                OSD::do_OSD(fabgl::VK_F1);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],1)) {
+                OSD::do_OSD(fabgl::VK_F2);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],2)) {
+                OSD::do_OSD(fabgl::VK_F3);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],3)) {
+                OSD::do_OSD(fabgl::VK_F4);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],4)) {
+                OSD::do_OSD(fabgl::VK_F5);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],4)) {
+                OSD::do_OSD(fabgl::VK_F6);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],3)) {
+                OSD::do_OSD(fabgl::VK_F7);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],2)) {
+                OSD::do_OSD(fabgl::VK_F8);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],1)) {
+                OSD::do_OSD(fabgl::VK_F9);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],0)) {
+                OSD::do_OSD(fabgl::VK_F10);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],0)) {
+                CaptureToBmp();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],1)) {
+                OSD::do_OSD(fabgl::VK_F12);
+            } else
+                zxDelay = 0;
+
+            if (zxDelay) {
+                // Set all keys as not pressed
+                for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0x1f;
+                return;
+            }
+        
         }
-    
-    }
 
-    // Combine both keyboards
-    for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
-        Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];
-    }
-    
-    #else
-
-    if (r) {
+        // Combine both keyboards
         for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
-            Ports::port[rowidx] = PS2cols[rowidx];
+            Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];
         }
-    }
-    #endif
 
-}
+    } else {
 
-std::string ESPectrum::bootKeyboard() {
-
-    auto Kbd = PS2Controller.keyboard();
-    fabgl::VirtualKeyItem NextKey;
-    bool r = false;
-
-    #ifdef ZXKEYB
-
-    // Process physical keyboard
-    ZXKeyb::process();
-    // Detect and process physical kbd menu key combinations
-
-    if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-            return "1Q";
-        } else 
-        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-            return "1W";
-        }
-    } else
-    if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-            return "2Q";
-        } else 
-        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-            return "2W";
-        }
-    } else
-    if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-            return "3Q";
-        } else 
-        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-            return "3W";
-        }
-    }
-
-    #endif
-
-    while (Kbd->virtualKeyAvailable()) {
-        r = Kbd->getNextVirtualKey(&NextKey);
         if (r) {
-            // Check keyboard status
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) return "1";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) return "2";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) return "3";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) return "Q";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) return "W";
+            for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
+                Ports::port[rowidx] = PS2cols[rowidx];
+            }
         }
-    }
 
-    return "";
+    }
+    // #else
+
+    // if (r) {
+    //     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
+    //         Ports::port[rowidx] = PS2cols[rowidx];
+    //     }
+    // }
+    // #endif
 
 }
 

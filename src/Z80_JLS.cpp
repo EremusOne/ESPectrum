@@ -752,7 +752,7 @@ void IRAM_ATTR Z80::ini(void) {
     }
 
     carryFlag = false;
-    uint16_t tmp = work8 + REG_C + 1;
+    uint16_t tmp = work8 + ((REG_C + 1) & 255);
     if (tmp > 0xff) {
         sz5h3pnFlags |= HALFCARRY_MASK;
         carryFlag = true;
@@ -783,7 +783,7 @@ void IRAM_ATTR Z80::ind(void) {
     }
 
     carryFlag = false;
-    uint16_t tmp = work8 + (REG_C - 1);
+    uint16_t tmp = work8 + ((REG_C - 1) & 255);
     if (tmp > 0xff) {
         sz5h3pnFlags |= HALFCARRY_MASK;
         carryFlag = true;
@@ -912,13 +912,13 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
  */
 void Z80::interrupt(void) {
     
-    lastFlagQ = false;
+    // lastFlagQ = false;
     
     // Si estaba en un HALT esperando una INT, lo saca de la espera
-    if (halted) {
+    // if (halted) {
         halted = false;
-        REG_PC++;
-    }
+    //     REG_PC++;
+    // }
 
     // Z80Ops::interruptHandlingTime(7);
     VIDEO::Draw(7, false);
@@ -942,36 +942,41 @@ void Z80::interrupt(void) {
  * M3: 3 T-Estados -> escribe byte bajo de PC y PC=0x0066
  */
 void Z80::nmi(void) {
+
+    // lastFlagQ = false;
+
+    halted = false;
+
     // Esta lectura consigue dos cosas:
     //      1.- La lectura del opcode del M1 que se descarta
     //      2.- Si estaba en un HALT esperando una INT, lo saca de la espera
-    
     // Z80Ops::fetchOpcode(REG_PC);
-    FETCH_OPCODE(uint8_t discardOpCode, REG_PC);
-
     // Z80Ops::interruptHandlingTime(1);
+    FETCH_OPCODE(uint8_t discardOpCode, REG_PC);
     VIDEO::Draw(1, false);    
 
-    if (halted) {
-        halted = false;
-        REG_PC++;
-    }
+    // if (halted) {
+    //     halted = false;
+    //     REG_PC++;
+    // }
+
     regR++;
     ffIFF1 = false;
     push(REG_PC); // 3+3 t-estados + contended si procede
     REG_PC = REG_WZ = 0x0066;
 }
 
-void Z80::checkINT(void) {
+void IRAM_ATTR Z80::checkINT(void) {
 
     // Comprueba si está activada la señal INT
     if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
+        lastFlagQ = false;
         interrupt();
     }
 
 }
 
-void Z80::incRegR(uint8_t inc) {
+void IRAM_ATTR Z80::incRegR(uint8_t inc) {
 
     regR += inc;
 
@@ -989,41 +994,45 @@ void IRAM_ATTR Z80::execute() {
     }
     #endif
     
-    REG_PC++;
+    if (!halted) {
 
-    // El prefijo 0xCB no cuenta para esta guerra.
-    // En CBxx todas las xx producen un código válido
-    // de instrucción, incluyendo CBCB.
-    switch (prefixOpcode) {
-        case 0x00:
-            flagQ = pendingEI = false;
-            dcOpcode[opCode]();
-            break;
-        case 0xDD:
-            prefixOpcode = 0;
-            decodeDDFD(regIX);
-            break;
-        case 0xED:
-            prefixOpcode = 0;
-            decodeED();
-            break;
-        case 0xFD:
-            prefixOpcode = 0;
-            decodeDDFD(regIY);
-            break;
-        default:
-            return;
+        REG_PC++;
+
+        // El prefijo 0xCB no cuenta para esta guerra.
+        // En CBxx todas las xx producen un código válido
+        // de instrucción, incluyendo CBCB.
+        switch (prefixOpcode) {
+            case 0x00:
+                flagQ = pendingEI = false;
+                dcOpcode[opCode]();
+                break;
+            case 0xDD:
+                prefixOpcode = 0;
+                decodeDDFD(regIX);
+                break;
+            case 0xED:
+                prefixOpcode = 0;
+                decodeED();
+                break;
+            case 0xFD:
+                prefixOpcode = 0;
+                decodeDDFD(regIY);
+                break;
+            default:
+                return;
+        }
+
+        if (prefixOpcode != 0) return;
+
+        lastFlagQ = flagQ;
+
+        #ifdef WITH_EXEC_DONE
+        if (execDone) {
+            Z80Ops::execDone();
+        }
+        #endif
+
     }
-
-    if (prefixOpcode != 0) return;
-
-    lastFlagQ = flagQ;
-
-    #ifdef WITH_EXEC_DONE
-    if (execDone) {
-        Z80Ops::execDone();
-    }
-    #endif
     
     // Primero se comprueba NMI
     // Si se activa NMI no se comprueba INT porque la siguiente
@@ -1036,9 +1045,12 @@ void IRAM_ATTR Z80::execute() {
     // }
 
     // Ahora se comprueba si está activada la señal INT
-    if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
-        interrupt();
-    }
+    checkINT();
+
+    // if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
+    //     lastFlagQ = false;
+    //     interrupt();
+    // }
 
 }
 
@@ -1803,12 +1815,14 @@ void Z80::decodeOpcode75()
 
 void Z80::decodeOpcode76()
 { /* HALT */
-    REG_PC--;
+
+    // REG_PC--;
     
     // Signal HALT to CPU Loop
-    CPU::tstates |= 0xFF000000;
+    if (!CPU::latetiming) CPU::tstates |= 0xFF000000;
     
     halted = true;
+
 }
 
 void Z80::decodeOpcode77()
@@ -5771,6 +5785,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_DE - 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5782,6 +5798,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL - 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5791,6 +5809,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_HL - 1, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5800,6 +5819,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_BC, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5810,6 +5830,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_DE + 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5821,6 +5843,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL + 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5830,6 +5854,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_HL + 1, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5839,6 +5864,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_BC, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5883,4 +5909,39 @@ void Z80::copyToRegister(uint8_t value)
         default:
             break;
     }
+}
+
+void Z80::SetAbortedINxR_OTxRFlags() {
+        
+    sz5h3pnFlags &= ~FLAG_53_MASK;
+    sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
+
+    // // 1st implementation
+    // uint8_t pf = sz5h3pnFlags & PARITY_MASK;
+    // if (carryFlag) {
+    //     int addsub = 1 - (sz5h3pnFlags & ADDSUB_MASK);
+    //     pf = pf ^ sz53pn_addTable[(REG_B + addsub) & 0x07] ^ PARITY_MASK;
+    //     if ((REG_B & 0x0F) == (addsub != 1 ? 0x00 : 0x0F )) sz5h3pnFlags |= HALFCARRY_MASK; else sz5h3pnFlags &= ~HALFCARRY_MASK;
+    // } else {
+    //     pf = pf ^ sz53pn_addTable[REG_B & 0x07] ^ PARITY_MASK;
+    // }
+    // if (pf & PARITY_MASK) sz5h3pnFlags |= PARITY_MASK; else sz5h3pnFlags &= ~PARITY_MASK;
+
+    // // 2nd implementation
+    // uint8_t pf = sz5h3pnFlags & PARITY_MASK;
+    // int addsub = carryFlag ? 1 - (sz5h3pnFlags & ADDSUB_MASK): 0;
+    // if (addsub)
+    //     if ((REG_B & 0x0F) == (addsub > 0 ? 0xF : 0x0 )) sz5h3pnFlags |= HALFCARRY_MASK; else sz5h3pnFlags &= ~HALFCARRY_MASK;
+    // pf ^= sz53pn_addTable[(REG_B + addsub) & 0x07] ^ PARITY_MASK;
+    // if (pf & PARITY_MASK) sz5h3pnFlags |= PARITY_MASK; else sz5h3pnFlags &= ~PARITY_MASK;
+
+    // 3rd implementation
+    uint8_t cpyB = REG_B;
+    if (carryFlag) {
+        cpyB += sz5h3pnFlags & ADDSUB_MASK ? -1 : 1;
+        sz5h3pnFlags = (cpyB ^ REG_B) & HALFCARRY_MASK ? sz5h3pnFlags | HALFCARRY_MASK : sz5h3pnFlags & ~HALFCARRY_MASK;
+    }
+    uint8_t pf = (sz5h3pnFlags & PARITY_MASK) ^ sz53pn_addTable[cpyB & 0x07] ^ PARITY_MASK;
+    sz5h3pnFlags = pf & PARITY_MASK ? sz5h3pnFlags | PARITY_MASK : sz5h3pnFlags & ~PARITY_MASK;
+
 }

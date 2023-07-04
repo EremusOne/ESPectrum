@@ -85,9 +85,10 @@ public:
     static uint8_t romLoading;
  
     static void Init();
+    static void Open(string name);
     static void TAP_Play();
     static void TAP_Stop();    
-    static void TAP_Read();
+    static void IRAM_ATTR TAP_Read();
     static void Save();
 
 };

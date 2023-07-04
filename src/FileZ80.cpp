@@ -54,11 +54,6 @@ visit https://zxespectrum.speccy.org/contacto
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// using internal storage (spi flash)
-#include "esp_spiffs.h"
-
-///////////////////////////////////////////////////////////////////////////////
-
 static uint16_t mkword(uint8_t lobyte, uint8_t hibyte) {
     return lobyte | (hibyte << 8);
 }
@@ -389,6 +384,12 @@ bool FileZ80::load(string z80_fn)
         ESPectrum::AY_emu = Config::AY48;
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
 
+        CPU::latetiming = Config::AluTiming;
+
+        CPU::IntStart = INT_START48;
+        CPU::IntEnd = INT_END48 + CPU::latetiming;
+
+
     } else {
         
         Z80Ops::is48 = false;
@@ -401,6 +402,11 @@ bool FileZ80::load(string z80_fn)
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         ESPectrum::AY_emu = true;        
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
+
+        CPU::latetiming = Config::AluTiming;
+
+        CPU::IntStart = INT_START128;
+        CPU::IntEnd = INT_END128 + CPU::latetiming;
 
     }
 
