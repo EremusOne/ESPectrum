@@ -496,6 +496,38 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     }
 
+    // // 2 T-states at a time version
+
+    // static uint8_t att, bmp;
+
+    // if (contended)
+    //     statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
+
+    // CPU::tstates += statestoadd;
+
+    // statestoadd += video_rest;
+    // video_rest = statestoadd & 0x01; // Mod 2
+
+    // for (int i=0; i < (statestoadd >> 1); i++) {    
+
+    //     if((coldraw_cnt & 0x01) == 0) {
+    //         att = grmem[attOffset++];       // get attribute byte
+    //         bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+    //         *lineptr32++ = AluBytes[bmp >> 4][att];
+    //     } else {
+    //         *lineptr32++ = AluBytes[bmp & 0xF][att];
+    //     }
+
+    //     if (++coldraw_cnt > 67) {
+    //         coldraw_cnt = 36;
+    //         Draw = MainScreenRB;
+    //         video_rest += ((statestoadd >> 1) - (i + 1))  << 1;
+    //         MainScreenRB(0,false);
+    //         return;
+    //     }
+
+    // }
+
 }
 
 void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {

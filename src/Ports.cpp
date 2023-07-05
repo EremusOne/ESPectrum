@@ -41,6 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Video.h"
 #include "AySound.h"
 #include "Tape.h"
+#include "CPU.h"
 
 #pragma GCC optimize ("O3")
 
@@ -122,6 +123,11 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
             MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
             if (MemESP::videoLatch != bitRead(data, 3)) {
                 MemESP::videoLatch = bitRead(data, 3);
+                // This, or using the two states at a time video paper draw version, fixs ptime and ptime128
+                if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                    VIDEO::Draw(2, false);
+                    CPU::tstates -= 2;
+                }
                 VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             }
             MemESP::romLatch = bitRead(data, 4);
@@ -175,15 +181,20 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
         VIDEO::Draw(3, true);
+        // printf("Case 1\n");
     } else {
         if (MemESP::ramContended[address >> 14]) {
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);        
-        } else VIDEO::Draw(3, false);
+            // printf("Case 2\n");
+        } else {
+            // printf("Case 3\n");
+            VIDEO::Draw(3, false);
+        }
     }
     // ** I/O Contention (Late) **************************
-    
+
     // 128 =======================================================================
     if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
@@ -195,14 +206,19 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
             MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
             MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
 
-            if (MemESP::videoLatch != bitRead(data, 3)) {
-                MemESP::videoLatch = bitRead(data, 3);
-                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-            }
-
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
             MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+
+            if (MemESP::videoLatch != bitRead(data, 3)) {
+                MemESP::videoLatch = bitRead(data, 3);
+                // This, or using the two states at a time video paper draw version, fixs ptime and ptime128                
+                if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                    VIDEO::Draw(2, false);
+                    CPU::tstates -= 2;
+                }
+                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            }
 
         }
 
