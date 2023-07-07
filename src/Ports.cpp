@@ -123,7 +123,7 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
             MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
             if (MemESP::videoLatch != bitRead(data, 3)) {
                 MemESP::videoLatch = bitRead(data, 3);
-                // This, if not using the two states at a time video paper draw version, fixs ptime and ptime128
+                // This, if not using the ptime128 draw version, fixs ptime and ptime128
                 if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
                     VIDEO::Draw(2, false);
                     CPU::tstates -= 2;
@@ -212,7 +212,7 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
                 MemESP::videoLatch = bitRead(data, 3);
-                // This, if not using the two states at a time video paper draw version, fixs ptime and ptime128                
+                // This, if not using the ptime128 draw version, fixs ptime and ptime128
                 if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
                     VIDEO::Draw(2, false);
                     CPU::tstates -= 2;
