@@ -56,7 +56,7 @@ visit https://zxespectrum.speccy.org/contacto
 //   6: ula <= 8'hF8;
 //   7: ula <= 8'hFF;
 // and adjusted for BEEPER_MAX_VOLUME = 97
-int speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
+uint8_t speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
 
 uint8_t Ports::port[128];
 
@@ -79,10 +79,11 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
     }
     // ** I/O Contention (Late) **************************
 
-    if (((address & 0xff) == 0x1f) && (Config::joystick)) return port[0x1f]; // Kempston port
+    // Kempston Joystick
+    if ((Config::joystick) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
 
-    if ((address & 0xff) == 0xfe) // ULA PORT    
-    {
+    // ULA PORT    
+    if ((address & 0x0001) == 0) {
         
         uint8_t result = 0xbf;
 
@@ -98,20 +99,19 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
             bitWrite(result,6,Tape::tapeEarBit);
         }
 
-
         return result | (0xa0); // OR 0xa0 -> ISSUE 2
     
     }
     
     // Sound (AY-3-8912)
     if (ESPectrum::AY_emu) {
-        if ( (((address >> 8) & 0xC0) == 0xC0) && (((address & 0xff) & 0x02) == 0x00) )
+        if ((address & 0xC002) == 0xC000)
             return AySound::getRegisterData();
     }
 
     uint8_t data = VIDEO::getFloatBusData();
     
-    if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
+    if ((!Z80Ops::is48) || ((address & 0x8002) == 0)) {
 
         // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
         // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
