@@ -121,7 +121,6 @@ void OSD::osdAt(uint8_t row, uint8_t col) {
 }
 
 void OSD::drawOSD(bool bottom_info) {
-    static char bottom_info_str[41];
     unsigned short x = scrAlignCenterX(OSD_W);
     unsigned short y = scrAlignCenterY(OSD_H);
     VIDEO::vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(1, 0));
@@ -133,12 +132,13 @@ void OSD::drawOSD(bool bottom_info) {
     VIDEO::vga.print(OSD_TITLE);
     osdAt(21, 0);
     if (bottom_info) {
+        string bottom_line;
         switch(Config::videomode) {
-            case 0: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: Standard VGA       v1.0rc1 "); break;
-            case 1: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: VGA 50hz           v1.0rc1 "); break;
-            case 2: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: CRT 50hz           v1.0rc1 "); break;
+            case 0: bottom_line = " Video mode: Standard VGA   "; break;
+            case 1: bottom_line = " Video mode: VGA 50hz       "; break;
+            case 2: bottom_line = " Video mode: CRT 50hz       "; break;
         }
-        VIDEO::vga.print(bottom_info_str);
+        VIDEO::vga.print(bottom_line.append(EMU_VERSION).c_str());
     } else VIDEO::vga.print(OSD_BOTTOM);
     osdHome();
 }

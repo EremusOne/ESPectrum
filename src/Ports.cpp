@@ -111,7 +111,7 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
 
     uint8_t data = VIDEO::getFloatBusData();
     
-    if ((!Z80Ops::is48) || ((address & 0x8002) == 0)) {
+    if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
         // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
         // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.

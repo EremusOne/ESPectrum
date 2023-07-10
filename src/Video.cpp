@@ -478,8 +478,9 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
     CPU::tstates += statestoadd;
 
     if (CPU::tstates > tstateDraw) {
+        // printf("Tstate Draw: %d\n",tstateDraw);
         video_rest = CPU::tstates - tstateDraw;
-        tstateDraw += tStatesPerLine;
+        // tstateDraw += tStatesPerLine;
         lineptr32 = (uint32_t *)(vga.frameBuffers[0][linedraw_cnt]);
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
@@ -493,7 +494,8 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
 
 void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
   
-    if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];        
+    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];        
+    if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
     statestoadd += video_rest;
@@ -531,13 +533,15 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
 
-    if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];
+    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];
+    if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
 
     statestoadd += video_rest;
-    video_rest = statestoadd & 0x03; // Mod 4
 
+    video_rest = statestoadd & 0x03; // Mod 4
+    
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
         att = grmem[attOffset++];       // get attribute byte
@@ -564,8 +568,7 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
 //     static uint8_t att1,bmp1;
 
-//    if (contended)
-//        statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
+//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
 //     CPU::tstates += statestoadd;
 
@@ -579,7 +582,7 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 //                 bmp1 = grmem[bmpOffset++];
 //                 break;
 //             case 1:
-//                 att1 = grmem[attOffset++];       // get attribute byte
+//                 att1 = grmem[attOffset++];  // get attribute byte
 //             case 5:
 
 //                 if (att1 & flashing) bmp1 = ~bmp1;
@@ -595,7 +598,7 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
 //                 break;
 //             case 3:
-//                 att1 = grmem[attOffset++];       // get attribute byte
+//                 att1 = grmem[attOffset++];  // get attribute byte
 //                 break;
 //         }
 
@@ -610,7 +613,8 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
 
-    if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];
+    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];
+    if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
 
@@ -650,7 +654,8 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
 void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
 
-    if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];    
+    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];    
+    if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
     statestoadd += video_rest;
@@ -661,6 +666,7 @@ void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
         *lineptr32++ = brd;
 
         if (++coldraw_cnt == 40) {
+            tstateDraw += tStatesPerLine;
             Draw = ++linedraw_cnt == (is169 ? 196 : 216) ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
         }

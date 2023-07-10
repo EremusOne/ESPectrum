@@ -41,6 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
+#define EMU_VERSION "  v1.0rc2pr "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -54,7 +55,7 @@ visit https://zxespectrum.speccy.org/contacto
 // OSD
 #define OSD_TITLE  " ESPectrum - The ESP32 powered emulator "
 // #define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS      v1.0rc1 "
-#define OSD_BOTTOM " zxespectrum.speccy.org         v1.0rc1 "
+#define OSD_BOTTOM " zxespectrum.speccy.org     " EMU_VERSION
 
 #define OSD_PAUSE_EN " --=[PAUSED]=-- "
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"

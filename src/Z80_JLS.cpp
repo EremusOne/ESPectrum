@@ -984,17 +984,13 @@ void IRAM_ATTR Z80::incRegR(uint8_t inc) {
 
 void IRAM_ATTR Z80::execute() {
 
-    // opCode = Z80Ops::fetchOpcode(REG_PC);
-    FETCH_OPCODE(opCode,REG_PC);
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+
     regR++;
 
-    #ifdef WITH_BREAKPOINT_SUPPORT
-    if (breakpointEnabled && prefixOpcode == 0) {
-        opCode = Z80Ops::breakpoint(REG_PC, opCode);
-    }
-    #endif
-    
-    if (!halted) {
+    // if (!halted) {
 
         REG_PC++;
 
@@ -1026,13 +1022,7 @@ void IRAM_ATTR Z80::execute() {
 
         lastFlagQ = flagQ;
 
-        #ifdef WITH_EXEC_DONE
-        if (execDone) {
-            Z80Ops::execDone();
-        }
-        #endif
-
-    }
+    // }
     
     // Primero se comprueba NMI
     // Si se activa NMI no se comprueba INT porque la siguiente
@@ -1047,12 +1037,68 @@ void IRAM_ATTR Z80::execute() {
     // Ahora se comprueba si está activada la señal INT
     checkINT();
 
-    // if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
-    //     lastFlagQ = false;
-    //     interrupt();
-    // }
-
 }
+
+// void IRAM_ATTR Z80::execute() {
+
+//     regR++;
+
+//     if (!halted) {
+
+//         page = REG_PC >> 14;
+//         VIDEO::Draw(4,MemESP::ramContended[page]);
+//         opCode = MemESP::ramCurrent[page][REG_PC & 0x3fff];
+
+//         REG_PC++;
+
+//         // El prefijo 0xCB no cuenta para esta guerra.
+//         // En CBxx todas las xx producen un código válido
+//         // de instrucción, incluyendo CBCB.
+//         switch (prefixOpcode) {
+//             case 0x00:
+//                 flagQ = pendingEI = false;
+//                 dcOpcode[opCode]();
+//                 break;
+//             case 0xDD:
+//                 prefixOpcode = 0;
+//                 decodeDDFD(regIX);
+//                 break;
+//             case 0xED:
+//                 prefixOpcode = 0;
+//                 decodeED();
+//                 break;
+//             case 0xFD:
+//                 prefixOpcode = 0;
+//                 decodeDDFD(regIY);
+//                 break;
+//             default:
+//                 return;
+//         }
+
+//         if (prefixOpcode != 0) return;
+
+//         lastFlagQ = flagQ;
+
+//     } else {
+
+//         VIDEO::Draw(4,MemESP::ramContended[REG_PC >> 14]);
+
+//     }
+    
+//     // Primero se comprueba NMI
+//     // Si se activa NMI no se comprueba INT porque la siguiente
+//     // instrucción debe ser la de 0x0066.
+//     // if (activeNMI) {
+//     //     activeNMI = false;
+//     //     lastFlagQ = false;
+//     //     nmi();
+//     //     return;
+//     // }
+
+//     // Ahora se comprueba si está activada la señal INT
+//     checkINT();
+
+// }
 
 void Z80::decodeOpcode00()
 { /* NOP */
@@ -1819,8 +1865,8 @@ void Z80::decodeOpcode76()
     // REG_PC--;
     
     // Signal HALT to CPU Loop
-    if (!CPU::latetiming) CPU::tstates |= 0xFF000000;
-    
+    CPU::tstates |= 0xFF000000;    
+
     halted = true;
 
 }

@@ -164,50 +164,58 @@ void CPU::FlushOnHalt() {
         
     tstates &= 0x00FFFFFF;
 
-    uint32_t pre_tstates = tstates;        
+    uint8_t page = Z80::getRegPC() >> 14;
+    if (MemESP::ramContended[page]) {
 
-    VIDEO::Flush(); // Draw the rest of the frame
-
-    tstates = pre_tstates;
-
-    uint8_t page = (Z80::getRegPC() + 1) >> 14;
-    if ((page == 1) || ((page == 3) && (!Z80Ops::is48) && (MemESP::bankLatch & 0x01))) {
-
-        if (Z80Ops::is48) {
-
-            while (tstates < statesInFrame ) {
-                uint32_t currentTstates = CPU::tstates + 1;                
-                unsigned short int line = currentTstates / 224;
-                if (line >= 64 && line < 256) tstates += wait_st[currentTstates % 224];
-                tstates += 4;
-                Z80::incRegR(1);
-            }
-
-        } else {
-
-            while (tstates < statesInFrame ) {
-                uint32_t currentTstates = CPU::tstates + 3;
-                unsigned short int line = currentTstates / 228;
-                if (line >= 63 && line < 255) tstates += wait_st[currentTstates % 228];
-                tstates += 4;
-                Z80::incRegR(1);
-            }
-
+        uint32_t stFrame = statesInFrame - latetiming;
+        while (tstates < stFrame ) {
+            VIDEO::Draw(4,true);
+            Z80::incRegR(1);
         }
+        
+        // if (Z80Ops::is48) {
+
+        //     while (tstates < statesInFrame ) {
+        //         uint32_t currentTstates = CPU::tstates + 1;                
+        //         unsigned short int line = currentTstates / 224;
+        //         if (line >= 64 && line < 256) tstates += wait_st[currentTstates % 224];
+        //         tstates += 4;
+        //         Z80::incRegR(1);
+        //     }
+
+        // } else {
+
+        //     while (tstates < statesInFrame ) {
+        //         uint32_t currentTstates = CPU::tstates + 3;
+        //         unsigned short int line = currentTstates / 228;
+        //         if (line >= 63 && line < 255) tstates += wait_st[currentTstates % 228];
+        //         tstates += 4;
+        //         Z80::incRegR(1);
+        //     }
+
+        // }
 
     } else {
 
-        // tstates
-        uint32_t incr = (statesInFrame - pre_tstates) >> 2;
-        if (tstates & 0x03) incr++;
-        tstates += (incr << 2);
+        uint32_t pre_tstates = tstates;
+        VIDEO::Flush(); // Draw the rest of the frame
+        tstates = pre_tstates;
 
-        // RegR
+        // uint32_t stFrame = statesInFrame - latetiming;
+        // while (tstates < stFrame ) {
+        //     tstates += 4;
+        //     Z80::incRegR(1);
+        // }
+        
+        pre_tstates += latetiming;
+        uint32_t incr = (statesInFrame - pre_tstates) >> 2;
+        if (pre_tstates & 0x03) incr++;
+        tstates += (incr << 2);
         Z80::incRegR(incr & 0x000000FF);
 
     }
 
-    Z80::checkINT(); // I think I can put this out of the "while (tstates .. ". Study
+    Z80::checkINT();        
 
 }
 
@@ -215,22 +223,21 @@ void CPU::FlushOnHalt() {
 // Z80Ops
 ///////////////////////////////////////////////////////////////////////////////
 
-/* Read byte from RAM */
+// Read byte from RAM
 uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
     uint8_t page = address >> 14;
     VIDEO::Draw(3,MemESP::ramContended[page]);
-    return MemESP::ramCurrent[page][address & 0x3fff];        
+    return MemESP::ramCurrent[page][address & 0x3fff];
 }
 
-/* Write byte to RAM */
+// Write byte to RAM
 void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
     uint8_t page = address >> 14;
     VIDEO::Draw(3, MemESP::ramContended[page]);
     if (page != 0) MemESP::ramCurrent[page][address & 0x3fff] = value;
-    return;
 }
 
-/* Read/Write word from/to RAM */
+// Read word from RAM
 uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
     uint8_t page = address >> 14;
@@ -245,6 +252,7 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
 }
 
+// Write word to RAM
 void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
     uint8_t page = address >> 14;
@@ -263,35 +271,18 @@ void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 }
 
 /* Put an address on bus lasting 'tstates' cycles */
-void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
-
+void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates) {
     if (MemESP::ramContended[address >> 14]) {
         for (int idx = 0; idx < wstates; idx++)
-            VIDEO::Draw(1, true);  
-    } else {
+            VIDEO::Draw(1, true);
+    } else
         VIDEO::Draw(wstates, false);
-    }
-
 }
 
 /* Callback to know when the INT signal is active */
 bool IRAM_ATTR Z80Ops::isActiveINT(void) {
-
-
-    // Early timing
-    // int tmp = CPU::tstates;
-    // if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
-    // return ((tmp >= 0) && (tmp < (is48 ? 32 : 36)));
-
-    // // Late timing
-    // int tmp = CPU::tstates + 1;
-    // if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
-    // return ((tmp >= 0) && (tmp <= (is48 ? 32 : 36)));
-
     int tmp = CPU::tstates + CPU::latetiming;
     if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
-    // return ((tmp >= 0) && (tmp < (is48 ? 32 + CPU::latetiming: 36 + CPU::latetiming)));
     return ((tmp >= CPU::IntStart) && (tmp < CPU::IntEnd));    
-
 }
 
