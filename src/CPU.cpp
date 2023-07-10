@@ -129,27 +129,41 @@ void CPU::reset() {
 void IRAM_ATTR CPU::loop()
 {
 
-    while (tstates < statesInFrame ) {
+    while (tstates < IntEnd) {        
+        Z80::execute();
+        Z80::checkINT();
+    }
 
-            Z80::execute();
+    uint32_t stFrame = statesInFrame - IntEnd;
+    while (tstates < stFrame) Z80::execute();
 
-            //
-            // PRELIMINARY TAPE SAVE TEST
-            //            
-            // // if PC is 0x970, a call to SA_CONTRL has been made:
-            // // remove .tap output file if exists
-            // if(Z80::getRegPC() == 0x970) {
-            //     remove("/sd/tap/cinta1.tap");
-			// }
-            // // if PC is 0x04C2, a call to SA_BYTES has been made:
-            // // Call Save function
-            // if(Z80::getRegPC() == 0x04C2) {
-            //     Tape::Save();
-            //     // printf("Save in ROM called\n");
-            //     Z80::setRegPC(0x555);
-			// }
+    while (tstates < statesInFrame) {
+        Z80::execute();
+        Z80::checkINT();
+    }
 
-	}
+    // while (tstates < statesInFrame) {        
+
+        // Z80::execute();
+
+        // PRELIMINARY TAPE SAVE TEST
+        //            
+        // // if PC is 0x970, a call to SA_CONTRL has been made:
+        // // remove .tap output file if exists
+        // if(Z80::getRegPC() == 0x970) {
+        //     remove("/sd/tap/cinta1.tap");
+        // }
+        // // if PC is 0x04C2, a call to SA_BYTES has been made:
+        // // Call Save function
+        // if(Z80::getRegPC() == 0x04C2) {
+        //     Tape::Save();
+        //     // printf("Save in ROM called\n");
+        //     Z80::setRegPC(0x555);
+        // }
+
+        // Z80::checkINT();
+
+	// }
 
     if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 
@@ -283,6 +297,6 @@ void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates) {
 bool IRAM_ATTR Z80Ops::isActiveINT(void) {
     int tmp = CPU::tstates + CPU::latetiming;
     if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
-    return ((tmp >= CPU::IntStart) && (tmp < CPU::IntEnd));    
+    return ((tmp >= CPU::IntStart) && (tmp < CPU::IntEnd));
 }
 
