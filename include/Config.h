@@ -61,6 +61,7 @@ public:
     // static string   kbd_layout;
     static uint8_t  lang;
     static bool     AY48;
+    static bool     Issue2;    
     static uint8_t  joystick;
     static uint8_t  videomode;
     static uint8_t  AluTiming;

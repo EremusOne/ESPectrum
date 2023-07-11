@@ -62,6 +62,7 @@ uint8_t  Config::esp32rev = 0;
 // string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
+bool     Config::Issue2 = true;
 uint8_t  Config::joystick = 0; // 0 -> Cursor, 1 -> Kempston
 uint8_t  Config::AluTiming = 0;
 
@@ -213,6 +214,15 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_str(handle, "Issue2", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "Issue2", str_data, &required_size);
+            printf("Issue2:%s\n",str_data);
+            Issue2 = strcmp(str_data, "false");
+            free(str_data);
+        }
+
         err = nvs_get_u8(handle, "joystick", &Config::joystick);
         if (err == ESP_OK) {
             printf("joystick:%u\n",Config::joystick);
@@ -361,6 +371,9 @@ void Config::save(string value) {
 
         if((value=="AY48") || (value=="all"))
             nvs_set_str(handle,"AY48",AY48 ? "true" : "false");
+
+        if((value=="Issue2") || (value=="all"))
+            nvs_set_str(handle,"Issue2",Issue2 ? "true" : "false");
 
         if((value=="joystick") || (value=="all"))
             nvs_set_u8(handle,"joystick",Config::joystick);

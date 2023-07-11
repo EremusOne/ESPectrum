@@ -59,7 +59,7 @@ void ZXKeyb::setup()
     ZXKeyb::Exists = gpio_get_level((gpio_num_t)KM_COL_1) && gpio_get_level((gpio_num_t)KM_COL_2) && gpio_get_level((gpio_num_t)KM_COL_4);
 
     // set all keys as not pressed
-    if (ZXKeyb::Exists) for (uint8_t i = 0; i < 8; i++) ZXcols[i] = 0x1f;
+    if (ZXKeyb::Exists) for (uint8_t i = 0; i < 8; i++) ZXcols[i] = 0xbf;
 
 }
 

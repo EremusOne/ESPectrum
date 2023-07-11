@@ -216,10 +216,12 @@ static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
 #define MENU_OTHER_EN "Other\n"\
     "AY on 48K\t>\n"\
-    "ALU Timing\t>\n"    
+    "ALU Timing\t>\n"\
+    "48K Issue 2\t>\n"
 #define MENU_OTHER_ES "Otros\n"\
     "AY en 48K\t>\n"\
-    "Timing ULA\t>\n"    
+    "Timing ULA\t>\n"\
+    "48K Issue 2\t>\n"
 static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
 
 #define MENU_AY48_EN "AY on 48K\n"\
@@ -237,6 +239,14 @@ static const char *MENU_AY48[2] = { MENU_AY48_EN, MENU_AY48_ES };
     "Early\t[E]\n"\
     "Late\t[L]\n"
 static const char *MENU_ALUTIMING[2] = { MENU_ALUTIMING_EN, MENU_ALUTIMING_ES };
+
+#define MENU_ISSUE2_EN "48K Issue 2\n"\
+    "Yes\t[Y]\n"\
+    "No\t[N]\n"
+#define MENU_ISSUE2_ES "48K Issue 2\n"\
+    "Si\t[Y]\n"\
+    "No\t[N]\n"
+static const char *MENU_ISSUE2[2] = { MENU_ISSUE2_EN, MENU_ISSUE2_ES };
 
 #define MENU_ARCH_EN "Select machine\n"\
     "ZX Spectrum 48K\n"\

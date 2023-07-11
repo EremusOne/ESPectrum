@@ -694,7 +694,7 @@ void ESPectrum::setup()
     CPU::setup();
 
     // Set Ports starting values
-    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     // Set emulation loop sync target
@@ -735,7 +735,7 @@ void ESPectrum::reset()
 {
 
     // Ports
-    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     // Memory
@@ -858,7 +858,7 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     return r;
 }
 
-uint8_t ESPectrum::PS2cols[8] = { 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f };    
+uint8_t ESPectrum::PS2cols[8] = { 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf };    
     
 // #ifdef ZXKEYB
 static int zxDelay = 0;
@@ -1035,7 +1035,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
             if (zxDelay) {
                 // Set all keys as not pressed
-                for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0x1f;
+                for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0xbf;
                 return;
             }
         

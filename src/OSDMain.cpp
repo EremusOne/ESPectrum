@@ -775,6 +775,39 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                     }
                                 }
                             }
+                            else if (options_num == 3) {
+                                menu_level = 3;
+                                menu_curopt = 1;                    
+                                menu_saverect = true;
+                                while (1) {
+                                    string iss_menu = MENU_ISSUE2[Config::lang];
+                                    bool prev_iss = Config::Issue2;
+                                    if (prev_iss) {
+                                        iss_menu.replace(iss_menu.find("[Y",0),2,"[*");
+                                        iss_menu.replace(iss_menu.find("[N",0),2,"[ ");                        
+                                    } else {
+                                        iss_menu.replace(iss_menu.find("[Y",0),2,"[ ");
+                                        iss_menu.replace(iss_menu.find("[N",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(iss_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::Issue2 = true;
+                                        else
+                                            Config::Issue2 = false;
+
+                                        if (Config::Issue2 != prev_iss) {
+                                            Config::save("Issue2");
+                                        }
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 3;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+                            }
                         } else {
                             menu_curopt = 6;
                             break;

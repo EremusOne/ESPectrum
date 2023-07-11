@@ -529,7 +529,7 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
 // -------------------------------
 // Non ptime-128 compliant version
 // -------------------------------
-void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
+void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
 

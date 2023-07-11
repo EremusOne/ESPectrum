@@ -269,7 +269,7 @@ bool FileSNA::load(string sna_fn)
     }
 
     // Ports
-    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     CPU::statesInFrame = CPU::statesPerFrame();
