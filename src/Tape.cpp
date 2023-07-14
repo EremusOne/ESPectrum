@@ -217,6 +217,8 @@ void Tape::Open(string name) {
 
     } while(tapeContentIndex < tSize);
 
+    tapeCurBlock = 0;
+
     // printf("------------------------------------\n");        
     // for (int i = 0; i < tapeListIndex; i++) {
     //     printf("Block Index: %d\n",TapeListing[i].Index);
