@@ -37,6 +37,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define Tape_h
 
 #include <inttypes.h>
+#include <vector>
 #include <string>
 
 using namespace std;
@@ -72,6 +73,28 @@ using namespace std;
 #define TAPE_BLK_PAUSELEN 1750000UL // 1/2 second of pause between blocks
 //#define TAPE_BLK_PAUSELEN 875000UL // 1/4 second of pause between blocks
 
+class TapeBlock
+{
+public:
+    enum BlockType {
+        Program_header,
+        Number_array_header,
+        Character_array_header,
+        Code_header,
+        Data_block,
+        Info,
+        Unassigned
+    };
+    uint8_t Index;          // Index (position) of the tape block in the tape file.
+    BlockType Type;     // Type of tape block (enum).
+    char FileName[11];    // File name in header block.
+    bool IsHeaderless;  // Set to true for data blocks without a header.
+    uint8_t Checksum;       // Header checksum byte.
+    uint8_t BlockTypeNum;   // Block type, 0x00 = header; 0xFF = data block.
+    uint32_t StartPosition;  // Where in the translated tape data is the start point of this block?
+    uint16_t BlockLength;
+};
+
 class Tape
 {
 public:
@@ -83,7 +106,10 @@ public:
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
     static uint8_t romLoading;
+    static uint16_t tapeCurBlock;    
  
+    static std::vector<TapeBlock> TapeListing;
+
     static void Init();
     static void Open(string name);
     static void TAP_Play();

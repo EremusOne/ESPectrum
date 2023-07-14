@@ -97,14 +97,14 @@ static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
 
 #define MENU_TAPE_EN \
     "Tape menu\n"\
-    "Select TAP  \t[F5] >\n"\
-    "Play/Pause  \t[F6]  \n"\
-    "Stop  \t[F7]  \n"
+    "Select TAP   \t[F5] >\n"\
+    "Play/Stop    \t[F6]  \n"\
+    "Tape browser \t[F7]  \n"
 #define MENU_TAPE_ES \
     "Casete\n"\
-    "Elegir TAP  \t[F5] >\n"\
-    "Play/Pausa  \t[F6]  \n"\
-    "Stop  \t[F7]  \n"
+    "Elegir TAP      \t[F5] >\n"\
+    "Play/Stop       \t[F6]  \n"\
+    "Navegador cinta \t[F7]  \n"
 static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
 
 #define MENU_MAIN_EN /*"Main Menu\n"*/ \

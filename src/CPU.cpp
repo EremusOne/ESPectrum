@@ -47,6 +47,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 static bool createCalled = false;
 
+void (*CPU::loop)() = &CPU::loop_fast;
+
 uint32_t CPU::statesPerFrame()
 {
     if (Config::getArch() == "48K") return 69888;
@@ -126,7 +128,7 @@ void CPU::reset() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void IRAM_ATTR CPU::loop()
+void IRAM_ATTR CPU::loop_fast()
 {
 
     while (tstates < IntEnd) {        

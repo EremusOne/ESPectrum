@@ -57,7 +57,13 @@ public:
     static void setup();
 
     // call this for executing a frame's worth of instructions
-    static void IRAM_ATTR loop();
+    static void IRAM_ATTR loop_fast();
+
+    // call this for executing a frame's worth of instructions   
+    static void IRAM_ATTR loop_trap();
+
+    // call this for executing a frame's worth of instructions    
+    static void IRAM_ATTR (*loop)();
 
     // call this for resetting the CPU
     static void reset();

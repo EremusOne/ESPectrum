@@ -55,9 +55,9 @@ int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 int VIDEO::VsyncFinetune[2];
-uint8_t VIDEO::dispUpdCycle;
-uint8_t VIDEO::contendOffset;
-uint8_t VIDEO::contendMod;
+// uint8_t VIDEO::dispUpdCycle;
+// uint8_t VIDEO::contendOffset;
+// uint8_t VIDEO::contendMod;
 
 void IRAM_ATTR VGA6Bit::interrupt(void *arg) {
 
@@ -255,8 +255,8 @@ void VIDEO::Init() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        VIDEO::contendMod=224;
-        VIDEO::contendOffset=1;
+        // VIDEO::contendMod=224;
+        // VIDEO::contendOffset=1;
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
@@ -267,8 +267,8 @@ void VIDEO::Init() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        VIDEO::contendMod=228;
-        VIDEO::contendOffset=3;
+        // VIDEO::contendMod=228;
+        // VIDEO::contendOffset=3;
     }
 
     #ifdef NO_VIDEO
@@ -296,8 +296,8 @@ void VIDEO::Reset() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        VIDEO::contendMod=224;
-        VIDEO::contendOffset=1;
+        // VIDEO::contendMod=224;
+        // VIDEO::contendOffset=1;
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
@@ -308,8 +308,8 @@ void VIDEO::Reset() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        VIDEO::contendMod=228;
-        VIDEO::contendOffset=3;
+        // VIDEO::contendMod=228;
+        // VIDEO::contendOffset=3;
     }
 
     grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;

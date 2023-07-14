@@ -258,26 +258,33 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         menu_curopt = 1;
         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
         if (mFile != "") {
+            Tape::TAP_Stop();
             // Read and analyze tape file
             Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
             // Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
         }
     }
     else if (KeytoESP == fabgl::VK_F6) {
+        // Start / Stop .tap reproduction
+        Tape::TAP_Play();
+        click();
+    }
+    else if (KeytoESP == fabgl::VK_F7) {
 
-        // Start .tap reproduction
+        // Tape Browser
         if (Tape::tapeFileName=="none") {
             OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
         } else {
-            Tape::TAP_Play();
-            click();
+            menu_level = 0;      
+            menu_curopt = 1;
+            int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
+            if (tBlock >= 0) {
+                Tape::tapeCurBlock = tBlock;
+                Tape::TAP_Stop();
+                Tape::TAP_Play();
+            }
         }
 
-    }
-    else if (KeytoESP == fabgl::VK_F7) {
-        // Stop .tap reproduction
-        Tape::TAP_Stop();
-        click();
     }
     else if (KeytoESP == fabgl::VK_F8) {
         // Show / hide OnScreen Stats
@@ -453,33 +460,42 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 // Tape menu
                 uint8_t tap_num = menuRun(MENU_TAPE[Config::lang]);
                 if (tap_num > 0) {
+                    menu_level = 2;
+                    menu_saverect = true;
                     if (tap_num == 1) {
-                        menu_level = 2;
-                        menu_saverect = true;
                         menu_curopt = 1;
                         // Select TAP File
                         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
                         if (mFile != "") {
+                            Tape::TAP_Stop();
                             // Read and analyze tape file
                             Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
-                            // Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
                             return;
                         }
                     }
                     else if (tap_num == 2) {
-                        // Start .tap reproduction
+                        // Start / Stop .tap reproduction
+                        Tape::TAP_Play();
+                        return;                        
+                    }
+                    else if (tap_num == 3) {
+                        // Tape Browser
                         if (Tape::tapeFileName=="none") {
                             OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
                             menu_curopt = 2;
                             menu_saverect = false;
                         } else {
-                            Tape::TAP_Play();
+                            menu_level = 0;
+                            menu_saverect = false;
+                            menu_curopt = 1;
+                            int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
+                            if (tBlock >= 0) {
+                                Tape::tapeCurBlock = tBlock;
+                                Tape::TAP_Stop();
+                                Tape::TAP_Play();
+                            }
                             return;
                         }
-                    }
-                    else if (tap_num == 3) {
-                        Tape::TAP_Stop();
-                        return;                        
                     }
                 } else {
                     menu_curopt = 2;

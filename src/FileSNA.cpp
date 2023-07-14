@@ -296,8 +296,8 @@ bool FileSNA::load(string sna_fn)
         CPU::IntStart = INT_START48;
         CPU::IntEnd = INT_END48 + CPU::latetiming;
 
-        VIDEO::contendMod=224;
-        VIDEO::contendOffset=1;
+        // VIDEO::contendMod=224;
+        // VIDEO::contendOffset=1;
 
     } else {
         
@@ -317,8 +317,8 @@ bool FileSNA::load(string sna_fn)
         CPU::IntStart = INT_START128;
         CPU::IntEnd = INT_END128 + CPU::latetiming;
 
-        VIDEO::contendMod=228;
-        VIDEO::contendOffset=3;
+        // VIDEO::contendMod=228;
+        // VIDEO::contendOffset=3;
 
     }
 

@@ -127,10 +127,10 @@ public:
     static uint8_t flashing;
     static uint8_t flash_ctr;
 
-    static uint8_t dispUpdCycle;
+    // static uint8_t dispUpdCycle;
 
-    static uint8_t contendOffset;
-    static uint8_t contendMod;    
+    // static uint8_t contendOffset;
+    // static uint8_t contendMod;    
 
     static bool OSD;
 
