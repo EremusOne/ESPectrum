@@ -1300,8 +1300,13 @@ for(;;) {
 
             #else
 
-            snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-            snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            if (Tape::tapeStatus==TAPE_LOADING) {
+                snprintf(linea1, sizeof(linea1), "%02d/%02d %10s % 6d ", Tape::TapeListing[Tape::tapeCurBlock].Index, Tape::TapeListing.size() - 1, Tape::TapeListing[Tape::tapeCurBlock].FileName, Tape::TapeListing[Tape::tapeCurBlock].BlockLength);
+                snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            } else {
+                snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+                snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            }
 
             #endif
         }
