@@ -107,6 +107,9 @@ public:
     static uint8_t SaveStatus;
     static uint8_t romLoading;
     static uint16_t tapeCurBlock;    
+    static uint32_t tapebufByteCount;
+    static uint32_t tapePlayOffset;    
+    static size_t tapeFileSize;
  
     static std::vector<TapeBlock> TapeListing;
 

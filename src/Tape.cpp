@@ -57,6 +57,9 @@ uint8_t Tape::romLoading = false;
 uint8_t Tape::tapeEarBit;
 std::vector<TapeBlock> Tape::TapeListing;
 uint16_t Tape::tapeCurBlock;
+uint32_t Tape::tapebufByteCount;
+uint32_t Tape::tapePlayOffset;
+size_t Tape::tapeFileSize;
 
 static uint8_t tapeCurByte;
 static uint8_t tapePhase;
@@ -64,10 +67,8 @@ static uint64_t tapeStart;
 static uint32_t tapePulseCount;
 static uint16_t tapeBitPulseLen;   
 static uint8_t tapeBitPulseCount;     
-static uint32_t tapebufByteCount;
 static uint16_t tapeHdrPulses;
 static uint32_t tapeBlockLen;
-static size_t tapeFileSize;   
 static uint8_t tapeBitMask;
 
 // static uint8_t tapeReadBuf[4096] = { 0 };
@@ -280,6 +281,7 @@ void Tape::TAP_Play()
 
         // Move to selected block position
         fseek(tape,TapeListing[Tape::tapeCurBlock].StartPosition,SEEK_SET);
+        tapePlayOffset = TapeListing[Tape::tapeCurBlock].StartPosition;
 
         tapePhase=TAPE_PHASE_SYNC;
         tapePulseCount=0;
@@ -366,7 +368,7 @@ void IRAM_ATTR Tape::TAP_Read()
         }
         break;
     case TAPE_PHASE_PAUSE:
-        if (tapebufByteCount < tapeFileSize) {
+        if ((tapebufByteCount + tapePlayOffset) < tapeFileSize) {
             if (tapeCurrent > TAPE_BLK_PAUSELEN) {
                 tapeStart=CPU::global_tstates + CPU::tstates;
                 tapePulseCount=0;
