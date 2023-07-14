@@ -159,7 +159,8 @@ uint8_t ZXKeyb::getCols()
     cols <<= 1;
     cols |= gpio_get_level((gpio_num_t)KM_COL_0);
     
-    // cols |= 0xE0;
+    // Keep bits 5,7 up
+    cols |= 0xa0;
     
     return cols;
 }

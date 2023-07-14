@@ -192,7 +192,7 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     // string line = rowGet(menu, menuRealRowFor(virtual_row_num));
     string line = rowGet(menu, virtual_row_num);
 
-    printf("%s\n",line.c_str());
+    // printf("%s\n",line.c_str());
     
     switch (line_type) {
     case IS_TITLE:
