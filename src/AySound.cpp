@@ -77,14 +77,14 @@ int AySound::EnvNum;                    /**< number of current envilopment (0...
 int AySound::env_pos;                   /**< current position in envelop (0...127) */
 int AySound::Cur_Seed;                  /**< random numbers counter */
 
-uint8_t AySound::regs[14];
+uint8_t AySound::regs[16];
 
 uint8_t AySound::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
 
-void (*AySound::updateReg[14])() = {
+void (*AySound::updateReg[16])() = {
     &updToneA,&updToneA,&updToneB,&updToneB,&updToneC,
     &updToneC,&updNoisePitch,&updMixer,&updVolA,&updVolB,
-    &updVolC,&updEnvFreq,&updEnvFreq,&updEnvType
+    &updVolC,&updEnvFreq,&updEnvFreq,&updEnvType,&updIOPortA,&updIOPortB
 };
 
 // Status
@@ -477,8 +477,21 @@ void AySound::updEnvType() {
 
 }
 
+void AySound::updIOPortA() {
+    ayregs.IOPortA = regs[14] & 0xff;
+}
+
+void AySound::updIOPortB() {
+    ayregs.IOPortB = regs[15] & 0xff;
+}
+
 uint8_t AySound::getRegisterData()
 {
+
+    if ((selectedRegister >= 14) && ((regs[7] >> (selectedRegister - 8)) & 1) == 0) {
+        printf("getAYRegister %d: %02X\n", selectedRegister, 0xFF);
+        return 0xFF;
+    }
 
     switch(selectedRegister) {
       case 0x00: return ayregs.tone_a & 0xff;
@@ -495,8 +508,8 @@ uint8_t AySound::getRegisterData()
       case 0x0b: return ayregs.env_freq & 0x00ff;
       case 0x0c: return ayregs.env_freq >> 8;
       case 0x0d: return ayregs.env_style & 0x0f;
-      case 0x0e: return 0xff;
-      case 0x0f: return 0xff;
+      case 0x0e: return ayregs.IOPortA;
+      case 0x0f: return ayregs.IOPortB;
     }
     
     return 0;
@@ -511,10 +524,8 @@ void AySound::selectRegister(uint8_t registerNumber)
 void AySound::setRegisterData(uint8_t data)
 {
 
-    if (selectedRegister < 14) {
-        regs[selectedRegister] = data;
-        updateReg[selectedRegister]();
-    }
+    regs[selectedRegister] = data;
+    updateReg[selectedRegister]();
 
 }
 
@@ -537,23 +548,12 @@ void AySound::reset()
 
     prepare_generation();
 
-    for (int i=0;i<14;i++) regs[i] = 0;
-    // regs[7] = 0xff; // More correct ? (Setting here as 0xff produces artifacts in Overscan loader i.e.)
+    for (int i=0;i<16;i++) regs[i] = 0; // All registers are set to 0
+    
+    regs[7] = 0xff; // Mixer register
 
     selectedRegister = 0xff;
 
-    for(int i=0; i<14; i++) updateReg[i]();
-}
+    for(int i=0; i < 16; i++) updateReg[i](); // Update all registers
 
-void AySound::gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, int bufpos)
-{
-    unsigned char *sound_buf = buff;
-    sound_buf += bufpos;
-
-    while (sound_bufsize-- > 0) {
-        // *sound_buf++ =  table[(regs[8] & 0x0f) * 2 + 1]; 
-        *sound_buf++ = (vols[0][(regs[8] & 0x0f) * 2 + 1]) >> 8;
-        // *sound_buf++ = (vols[0][ayregs.vol_a * 2 + 1]) >> 8;
-        // *sound_buf++ = ayregs.vol_a << 4; 
-    }
 }

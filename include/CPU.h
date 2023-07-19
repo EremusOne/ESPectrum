@@ -65,6 +65,8 @@ public:
     // call this for executing a frame's worth of instructions    
     static void IRAM_ATTR (*loop)();
 
+    static void IRAM_ATTR checkTraps();
+
     // call this for resetting the CPU
     static void reset();
 

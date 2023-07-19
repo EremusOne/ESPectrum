@@ -70,6 +70,7 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_PSNA_LOAD_ERR "ERROR Loading Persist Snapshot"
 #define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
+#define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
 
 #define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
@@ -387,5 +388,7 @@ static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
     " [Pause]   Pausa\n"\
     " [ImpPant] Captura BMP (Carpeta SD /c)\n"
 static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
+
+static const char *OSD_TAPE_OF[2] = { "of", "de" };
 
 #endif // ESPECTRUM_MESSAGES_h

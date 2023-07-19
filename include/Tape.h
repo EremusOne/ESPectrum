@@ -102,6 +102,7 @@ public:
     // Tape
     static FILE *tape;
     static string tapeFileName;
+    static string tapeSaveName;
     static uint8_t tapeEarBit;
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;

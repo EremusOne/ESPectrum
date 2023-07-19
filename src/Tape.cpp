@@ -34,9 +34,9 @@ visit https://zxespectrum.speccy.org/contacto
 */
 
 #include <stdio.h>
-#include <inttypes.h>
 #include <vector>
 #include <string>
+#include <inttypes.h>
 
 using namespace std;
 
@@ -51,6 +51,7 @@ using namespace std;
 
 FILE *Tape::tape;
 string Tape::tapeFileName = "none";
+string Tape::tapeSaveName = "none";
 uint8_t Tape::tapeStatus = TAPE_STOPPED;
 uint8_t Tape::SaveStatus = SAVE_STOPPED;
 uint8_t Tape::romLoading = false;
@@ -393,10 +394,15 @@ void Tape::Save() {
 	uint8_t dato;
 	int longitud;
 
-    fichero = fopen("/sd/tap/cinta1.tap", "ab");
+    // if (tapeSaveName == "none") {
+    //     OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
+    //     return;
+    // }
+
+    fichero = fopen(tapeSaveName.c_str(), "ab");
     if (fichero == NULL)
     {
-        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+        OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
         return;
     }
 

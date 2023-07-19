@@ -408,7 +408,7 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData48() {
 	unsigned char halfpix = (currentTstates % 224) - 3;
 	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
 
-    int hpoffset = ((halfpix) >> 2) + ((halfpix >> 1) & 0x01);;
+    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
     
     if (halfpix & 0x01) return(grmem[offAtt[line] + hpoffset]);
 
@@ -426,7 +426,7 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
 	unsigned char halfpix = currentTstates % 228;
 	if ((halfpix >= 128) || (halfpix & 0x04)) return 0xFF;
 
-    int hpoffset = ((halfpix) >> 2) + ((halfpix >> 1) & 0x01);;
+    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
     
     if (halfpix & 0x01) return(grmem[offAtt[line] + hpoffset]);
 

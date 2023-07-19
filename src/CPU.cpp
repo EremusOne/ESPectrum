@@ -33,6 +33,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 */
 
+#include <stdio.h>
+#include <algorithm>
+
 #include "CPU.h"
 #include "ESPectrum.h"
 #include "MemESP.h"
@@ -47,7 +50,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 static bool createCalled = false;
 
-void (*CPU::loop)() = &CPU::loop_fast;
+void (*CPU::loop)() = &CPU::loop_trap;
 
 uint32_t CPU::statesPerFrame()
 {
@@ -144,28 +147,36 @@ void IRAM_ATTR CPU::loop_fast()
         Z80::checkINT();
     }
 
-    // while (tstates < statesInFrame) {        
+    if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 
-        // Z80::execute();
+    global_tstates += statesInFrame; // increase global Tstates
+    tstates -= statesInFrame;
 
-        // PRELIMINARY TAPE SAVE TEST
-        //            
-        // // if PC is 0x970, a call to SA_CONTRL has been made:
-        // // remove .tap output file if exists
-        // if(Z80::getRegPC() == 0x970) {
-        //     remove("/sd/tap/cinta1.tap");
-        // }
-        // // if PC is 0x04C2, a call to SA_BYTES has been made:
-        // // Call Save function
-        // if(Z80::getRegPC() == 0x04C2) {
-        //     Tape::Save();
-        //     // printf("Save in ROM called\n");
-        //     Z80::setRegPC(0x555);
-        // }
+    framecnt++;
 
-        // Z80::checkINT();
+}
 
-	// }
+void IRAM_ATTR CPU::loop_trap()
+{
+
+    while (tstates < IntEnd) {        
+        Z80::execute();
+        CPU::checkTraps();
+        Z80::checkINT();
+    }
+
+    uint32_t stFrame = statesInFrame - IntEnd;
+    while (tstates < stFrame) {
+        Z80::execute();
+        CPU::checkTraps();
+    }
+
+    while (tstates < statesInFrame) {
+        Z80::execute();
+        CPU::checkTraps();
+        Z80::checkINT();
+    }
+
 
     if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 
@@ -173,6 +184,56 @@ void IRAM_ATTR CPU::loop_fast()
     tstates -= statesInFrame;
 
     framecnt++;
+
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
+void IRAM_ATTR CPU::checkTraps() {
+
+        // PRELIMINARY TAPE SAVE TEST
+                   
+        // // if PC is 0x970, a call to SA_CONTRL has been made:
+        // // remove .tap output file if exists
+        if(Z80::getRegPC() == 0x970) {
+            
+            // Get save name
+            string name;
+            uint16_t header_data = Z80::getRegIX();
+            for (int i=0; i < 10; i++)
+                name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
+            rtrim(name);
+            Tape::tapeSaveName = "/sd/t/" + name + ".tap";
+
+            // TO DO: Check existence of file and ask for overwrite or append
+
+            printf("Removing previuous tap file.\n");
+            int result = remove(Tape::tapeSaveName.c_str());
+
+            // check if file has been deleted successfully
+            // if (result != 0) {
+            //     // print error message
+            //     printf("File deletion failed\n");
+            // }
+            // else {
+            //     printf("File deleted succesfully\n");
+            // }            
+
+            printf("%s\n",Tape::tapeSaveName.c_str());
+
+        } else 
+        // if PC is 0x04C2, a call to SA_BYTES has been made:
+        // Call Save function
+        if(Z80::getRegPC() == 0x04C2) {
+            printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
+            Tape::Save();
+            Z80::setRegPC(0x555);
+        }
 
 }
 
