@@ -380,7 +380,7 @@ void IRAM_ATTR Tape::TAP_Read()
                 if (tapeCurByte) tapeHdrPulses=TAPE_HDR_SHORT; else tapeHdrPulses=TAPE_HDR_LONG;
             }
         } else {
-            tapeCurBlock--;
+            tapeCurBlock=0;
             TAP_Stop();
         }
     } 
@@ -496,7 +496,10 @@ bool Tape::FlashLoad() {
             Z80::setRegA(Z80::getRegAx() ^ tapeFlag);
             tapeCurBlock++;
             return true;
-        } else return false;
+        } else {
+            tapeCurBlock = 0;
+            return false;
+        }
     }
 
 //         // La paridad incluye el byte de flag
@@ -551,7 +554,7 @@ bool Tape::FlashLoad() {
 
     Z80::setRegIX(addr);
     Z80::setRegDE(nBytes - count);
-    if (tapeCurBlock < (TapeListing.size() - 1)) tapeCurBlock++;
+    if (tapeCurBlock < (TapeListing.size() - 1)) tapeCurBlock++; else tapeCurBlock = 0;
 
     fclose(flashtape);
 
