@@ -397,6 +397,10 @@ public:
 
     static void IRAM_ATTR incRegR(uint8_t inc);
 
+    static void Xor(uint8_t oper8);
+
+    static void Cp(uint8_t oper8);    
+
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool isBreakpoint(void) { return breakpointEnabled; }
     static void setBreakpoint(bool state) { breakpointEnabled = state; }

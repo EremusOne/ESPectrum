@@ -119,6 +119,8 @@ public:
     static void TAP_Play();
     static void TAP_Stop();    
     static void IRAM_ATTR TAP_Read();
+    static bool FlashLoad();
+    // static bool FlashLoad2();
     static void Save();
 
 };

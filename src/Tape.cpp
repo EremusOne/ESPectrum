@@ -438,3 +438,446 @@ void Tape::Save() {
     fclose(fichero);
 
 }
+
+bool Tape::FlashLoad() {
+
+    // if (tapeCurBlock >= (TapeListing.size() - 1)) {
+    //     Z80::setCarryFlag(false);
+    //     return false;
+    // }
+    FILE *flashtape;
+
+    flashtape = fopen(Tape::tapeFileName.c_str(), "rb");
+    if (flashtape == NULL)
+    {
+        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+        Z80::setCarryFlag(false);
+        return false;
+    }
+    // fseek(tape,0,SEEK_END);
+    // tapeFileSize = ftell(tape);
+    // rewind (tape);
+
+    // Move to selected block position
+    fseek(flashtape,TapeListing[Tape::tapeCurBlock].StartPosition,SEEK_SET);
+
+    // tapePlayOffset = TapeListing[Tape::tapeCurBlock].StartPosition + 2;
+
+//         tapePos = offsetBlocks[idxHeader];
+//         blockLen = readInt(tapeBuffer, tapePos, 2);
+//         // System.out.println(String.format("tapePos: %X. blockLen: %X", tapePos, blockLen));
+//         tapePos += 2;
+
+    // uint32_t tapePos = TapeListing[tapeCurBlock].StartPosition;
+
+    uint16_t blockLen=(readByteFile(flashtape) | (readByteFile(flashtape) <<8));
+    uint8_t tapeFlag = readByteFile(flashtape);
+
+    // printf("BlockLen: %d. Flag: %d\n",blockLen,tapeFlag);
+
+    // printf("%u\n",Z80::getRegA());
+    // printf("%u\n",Z80::getRegAx());    
+
+    // tapePos += 2;
+
+//         // ¿Coincide el flag? (está en el registro A)
+//         if (cpu.getRegA() != (tapeBuffer[tapePos] & 0xff)) {
+//             cpu.xor(tapeBuffer[tapePos]);
+//             cpu.setCarryFlag(false);
+//             idxHeader++;
+//             return true;
+//         }
+
+    if (Z80::getRegAx() != (tapeFlag & 0xff)) {
+        // printf("No coincide el flag\n");
+        fclose(flashtape);
+        if (tapeCurBlock < (TapeListing.size() - 1)) {
+            Z80::setFlags(0x00);
+            Z80::setRegA(Z80::getRegAx() ^ tapeFlag);
+            tapeCurBlock++;
+            return true;
+        } else return false;
+    }
+
+//         // La paridad incluye el byte de flag
+//         cpu.setRegA(tapeBuffer[tapePos]);
+
+    // La paridad incluye el byte de flag
+    Z80::setRegA(tapeFlag);
+
+//         int count = 0;
+//         int addr = cpu.getRegIX();    // Address start
+//         int nBytes = cpu.getRegDE();  // Lenght
+//         while (count < nBytes && count < blockLen - 1) {
+//             memory.writeByte(addr, tapeBuffer[tapePos + count + 1]);
+//             cpu.xor(tapeBuffer[tapePos + count + 1]);
+//             addr = (addr + 1) & 0xffff;
+//             count++;
+//         }
+
+    int count = 0;
+    uint8_t data;
+    int addr = Z80::getRegIX();    // Address start
+    int nBytes = Z80::getRegDE();  // Lenght
+    // printf("Addr: %d. nBytes: %d\n",addr,nBytes);
+    while ((count < nBytes) && (count < blockLen - 1)) {
+        data = readByteFile(flashtape);
+        MemESP::writebyte(addr,data);
+        Z80::Xor(data);
+        addr = (addr + 1) & 0xffff;
+        count++;
+    }
+
+    // printf("Count: %d. nBytes: %d\n",count,nBytes);
+
+//         // Se cargarán los bytes pedidos en DE
+//         if (count == nBytes) {
+//             cpu.xor(tapeBuffer[tapePos + count + 1]); // Byte de paridad
+//             cpu.cp(0x01);
+//         }
+
+    // Se cargarán los bytes pedidos en DE
+    if (count == nBytes) {
+        Z80::Xor(readByteFile(flashtape)); // Byte de paridad
+        Z80::Cp(0x01);
+    }
+
+    // Hay menos bytes en la cinta de los indicados en DE
+    // En ese caso habrá dado un error de timeout en LD-SAMPLE (0x05ED)
+    // que se señaliza con CARRY==reset & ZERO==set
+    if (count < nBytes) {
+        Z80::setFlags(0x50); // when B==0xFF, then INC B, B=0x00, F=0x50
+    }
+
+    Z80::setRegIX(addr);
+    Z80::setRegDE(nBytes - count);
+    if (tapeCurBlock < (TapeListing.size() - 1)) tapeCurBlock++;
+
+    fclose(flashtape);
+
+    return true;
+
+}
+
+// bool Tape::FlashLoad2() {
+
+// //             // The return value, representing the index of the TapeBlock which was flash loaded.
+// //             int lastBlockIndex = -1;
+
+// //             // If we encounter a block with no data to load (for example a text block), just skip ahead.
+// //             if (tapeManager.NextBlock != null && tapeManager.NextBlock.BlockContent == null)
+// //             {
+// //                 return lastBlockIndex;
+// //             }
+
+// //             // The LD BYTES ROM routine is intercepted at an early stage just before the edge detection is started.
+// //             // Check that the tape position is at the end of a block and that there is a following block to flash load.
+// //             if (z80.PC == 0x056A && tapeManager.NextBlock != null && tapeManager.CurrentTapePosition > tapeManager.NextBlock.StartPosition - 10)
+// //             {
+
+// //                 // The target address for the data is stored in IX.
+// //                 int dataTargetParameter = 256 * z80.I1 + z80.X;
+// //                 // The block length (number of bytes) is stored in DE.
+// //                 int dataLengthParameter = 256 * z80.D + z80.E;
+// //                 // The flag byte is stored in A'.
+// //                 int flagByte = z80.APrime;
+
+//                 int dataTargetParameter = Z80::getRegIX();
+//                 int dataLengthParameter = Z80::getRegDE();
+//                 int flagByte = Z80::getRegA();
+
+//                 printf("dataTargetParameter: %04X\n",dataTargetParameter);
+//                 printf("dataLengthParameter: %04X\n",dataLengthParameter);
+//                 printf("flagByte: %02X\n",flagByte);
+
+
+// //                 // Check for various errors:
+// //                 // Is there a mismatch between the block type and the flag byte in the A' register?
+// //                 if (tapeManager.NextBlock.BlockTypeNum != flagByte && dataLengthParameter > 0)
+// //                 {
+// //                     // Don't load the block, but reset all flags.
+// //                     z80.CarryFlag = 0;
+// //                     z80.SignFlag = 0;
+// //                     z80.ZeroFlag = 0;
+// //                     z80.HalfCarryFlag = 0;
+// //                     z80.Parity_OverflowFlag = 0;
+// //                     z80.SubtractFlag = 0;
+// //                     z80.F3Flag = 0;
+// //                     z80.F5Flag = 0;
+
+// //                     // The A register is updated by XOR:ing the flag byte with the block byte read from the file.
+// //                     z80.A = flagByte ^ tapeManager.NextBlock.BlockTypeNum;
+// //                 }
+
+//                 if (Tape::TapeListing[tapeCurBlock].BlockTypeNum != flagByte && dataLengthParameter > 0) {
+//                     Z80::setFlags(0x00);
+//                     Z80::setRegA(flagByte ^ Tape::TapeListing[tapeCurBlock].BlockTypeNum);
+//                 }
+
+// //                 else
+// //                 // Is the expected number of bytes larger than the actual length of the block?
+// //                 if (dataLengthParameter > tapeManager.NextBlock.BlockContent.Length)
+// //                 {
+// //                     // If the DE register indicates a too long data length, the loader will fail after
+// //                     // loading the block and it expects one more byte.
+// //                     memory.WriteDataBlock(tapeManager.NextBlock.BlockContent, dataTargetParameter);
+
+// //                     // When a new edge is not found, set flags carry = 0 and zero = 1.
+// //                     z80.CarryFlag = 0;
+// //                     z80.ZeroFlag = 1;
+
+// //                     // The other flags are set by the last INC B (from 0xFF) at 0x05ED.
+// //                     z80.HalfCarryFlag = 1;
+// //                     z80.SignFlag = 0;
+// //                     z80.Parity_OverflowFlag = 0;
+// //                     z80.SubtractFlag = 0;
+// //                     z80.F3Flag = 0;
+// //                     z80.F5Flag = 0;
+
+// //                     // Check that we're not dealing with a data fragment (in which case IX and DE are intact).
+// //                     if (tapeManager.NextBlock.BlockContent.Length >= 2)
+// //                     {
+// //                         z80.I1 = (dataTargetParameter + tapeManager.NextBlock.BlockContent.Length + 1) / 256;
+// //                         z80.X = (dataTargetParameter + tapeManager.NextBlock.BlockContent.Length + 1) - 256 * z80.I1;
+// //                         z80.D = (dataLengthParameter - (tapeManager.NextBlock.BlockContent.Length + 1)) / 256;
+// //                         z80.E = (dataLengthParameter - (tapeManager.NextBlock.BlockContent.Length + 1)) - 256 * z80.D;
+// //                     }
+
+// //                     z80.A = 0;
+// //                 }
+
+//                 else if (dataLengthParameter > Tape::TapeListing[tapeCurBlock].BlockLength) {
+
+//                 }
+
+//                 // else
+
+//                 // Is the expected number of bytes smaller than the length of the block?
+//                 // if (dataLengthParameter < tapeManager.NextBlock.BlockContent.Length)
+// //                 {
+// //                     memory.WriteDataBlock(tapeManager.NextBlock.BlockContent, dataTargetParameter);
+
+// //                     // When calculating the checksum for the loaded data, there are two different cases,
+// //                     // either the block length parameter equals zero, in which case there is no parity
+// //                     // calculated and the checksum contains the flag byte.
+// //                     // Otherwise, the checksum is calculated in the usual way but only for the number
+// //                     // of bytes specified in the data length parameter + 1.
+// //                     int calculatedCheckSum;
+// //                     if (dataLengthParameter == 0)
+// //                     {
+// //                         calculatedCheckSum = flagByte;
+// //                     }
+// //                     else
+// //                     {
+// //                         calculatedCheckSum = flagByte;
+
+// //                         // The checksum is calculated by XOR:ing each byte of data with the flag byte.
+// //                         for (int i = 0; i < dataLengthParameter + 1; i++)
+// //                         {
+// //                             calculatedCheckSum ^= tapeManager.NextBlock.BlockContent[i];
+// //                         }
+// //                     }
+
+// //                     // Update the flags and the A register.
+// //                     UpdateFlags(calculatedCheckSum);
+
+// //                     // Update the IX and DE registers.
+// //                     z80.I1 = (dataTargetParameter + dataLengthParameter) / 256;
+// //                     z80.X = (dataTargetParameter + dataLengthParameter) - 256 * z80.I1;
+// //                     z80.D = 0;
+// //                     z80.E = 0;
+// //                 }
+// //                 else
+
+// //                 // Is the expected number of bytes equal to zero?
+// //                 if (dataLengthParameter == 0)
+// //                 {
+// //                     // There is no parity check, so the checksum contains the block type value.
+// //                     int calculatedCheckSum = 0xFF;
+
+// //                     // Update the flags and the A register.
+// //                     UpdateFlags(calculatedCheckSum);
+// //                 }
+//                  else
+// //                 // Flash load the block and update IX, DE and AF.
+//                  {
+// //                     int lastBytePos = memory.WriteDataBlock(tapeManager.NextBlock.BlockContent, dataTargetParameter);
+
+//                         tape = fopen(Tape::tapeFileName.c_str(), "rb");
+//                         if (tape == NULL)
+//                         {
+//                             OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+//                             return false;
+//                         }
+    
+//                         // Move to selected block position
+//                         fseek(tape,TapeListing[Tape::tapeCurBlock].StartPosition + 3,SEEK_SET);
+
+//                         int count = 0;
+//                         uint8_t data;
+//                         printf("Addr: %d. nBytes: %d\n",dataTargetParameter,dataLengthParameter);
+//                         while (count < dataLengthParameter) {
+//                             data = readByteFile(tape);
+//                             MemESP::writebyte(dataTargetParameter,data);
+//                             Z80::Xor(data);                            
+//                             dataTargetParameter = (dataTargetParameter + 1) & 0xffff;
+//                             count++;
+//                         }
+
+//                         Z80::Xor(readByteFile(tape)); // Byte de paridad
+//                         Z80::Cp(0x01);
+
+
+//                         Z80::setRegIX(dataTargetParameter);
+//                         Z80::setRegDE(0);
+//                         tapeCurBlock++;
+
+//                     fclose(tape);
+//                     return true;
+
+// //                     // After loading the entire block, including the last checksum byte, the current checksum will be 0.
+// //                     // (the checksum being byte 0 XOR byte 1 XOR ... byte n).
+
+// //                     // Update the flags and the A register.
+// //                     UpdateFlags(calculatedCheckSum);
+
+
+// //                     // Set IX to the same value as if the block had been loaded by the ROM routine.
+// //                     z80.I1 = lastBytePos / 256;
+// //                     z80.X = lastBytePos - 256 * z80.I1;
+
+// //                     // Set DE to 0.
+// //                     z80.D = 0;
+// //                     z80.E = 0;
+// //                 }
+
+// //                 // Keep track of the index of the last loaded tape block. This information
+// //                 // can be used to rewind the tape to the start position of the next block
+// //                 // after an auto pause.
+// //                 lastBlockIndex = tapeManager.NextBlock.Index;
+
+// //                 // Skip forward to the end of the block which was just flash loaded into RAM.
+// //                 tapeManager.GoToEndOfBlock(tapeManager.NextBlock.Index);
+
+// //                 // Skip to the end of the LD BYTES ROM routine (actually a RET, so it doesn't really matter which RET instruction we point to here).
+// //                 z80.PC = 0x05E2;
+
+//                }
+
+// //             return lastBlockIndex;
+
+// //             // Update the flags after loading a block of data.
+// //             void UpdateFlags(int checkSum)
+// //             {
+// //                 // The flags are set by the CP 0x01 operation at 0x05E0, where A = the current checksum.
+// //                 int flagTest = checkSum - 1;
+// //                 z80.CarryFlag = BitOps.GetBit(flagTest, 8);
+// //                 z80.SignFlag = Flags.SignFlag(flagTest);
+// //                 z80.ZeroFlag = Flags.ZeroFlag(flagTest);
+// //                 z80.HalfCarryFlag = Flags.HalfCarryFlagSub8(checkSum, 1, z80.CarryFlag);
+// //                 z80.Parity_OverflowFlag = Flags.OverflowFlagSub8(checkSum, 1, flagTest);
+// //                 z80.SubtractFlag = 1;
+// //                 z80.F3Flag = 0;
+// //                 z80.F5Flag = 0;
+
+// //                 z80.A = checkSum;
+// //             }
+// //         }
+// //     }
+// // }
+
+// }
+
+// // public boolean flashLoad(Memory memory) {
+
+// //         if (idxHeader >= nOffsetBlocks) {
+// //             // cpu.setCarryFlag(false);
+// //             return false;
+// //         }
+
+// //         tapePos = offsetBlocks[idxHeader];
+// //         blockLen = readInt(tapeBuffer, tapePos, 2);
+// //         // System.out.println(String.format("tapePos: %X. blockLen: %X", tapePos, blockLen));
+// //         tapePos += 2;
+
+// //         // ¿Coincide el flag? (está en el registro A)
+// //         if (cpu.getRegA() != (tapeBuffer[tapePos] & 0xff)) {
+// //             cpu.xor(tapeBuffer[tapePos]);
+// //             cpu.setCarryFlag(false);
+// //             idxHeader++;
+// //             return true;
+// //         }
+
+// //         // La paridad incluye el byte de flag
+// //         cpu.setRegA(tapeBuffer[tapePos]);
+
+// //         int count = 0;
+// //         int addr = cpu.getRegIX();    // Address start
+// //         int nBytes = cpu.getRegDE();  // Lenght
+// //         while (count < nBytes && count < blockLen - 1) {
+// //             memory.writeByte(addr, tapeBuffer[tapePos + count + 1]);
+// //             cpu.xor(tapeBuffer[tapePos + count + 1]);
+// //             addr = (addr + 1) & 0xffff;
+// //             count++;
+// //         }
+
+// //         // Se cargarán los bytes pedidos en DE
+// //         if (count == nBytes) {
+// //             cpu.xor(tapeBuffer[tapePos + count + 1]); // Byte de paridad
+// //             cpu.cp(0x01);
+// //         }
+
+// //         // Hay menos bytes en la cinta de los indicados en DE
+// //         // En ese caso habrá dado un error de timeout en LD-SAMPLE (0x05ED)
+// //         // que se señaliza con CARRY==reset & ZERO==set
+// //         if (count < nBytes) {
+// //             cpu.setFlags(0x50); // when B==0xFF, then INC B, B=0x00, F=0x50
+// //         }
+
+// //         cpu.setRegIX(addr);
+// //         cpu.setRegDE(nBytes - count);
+// //         idxHeader++;
+// //         fireTapeBlockChanged(idxHeader);
+
+// // //        System.out.println(String.format("Salida -> IX: %04X DE: %04X AF: %04X",
+// // //            cpu.getRegIX(), cpu.getRegDE(), cpu.getRegAF()));
+// //         return true;
+// // }
+
+// // private void fireTapeBlockChanged(final int block) {
+// //         blockListeners.forEach(listener -> {
+// //             listener.blockChanged(block);
+// //         });
+// // }
+
+// //      saveTrap = settings.getTapeSettings().isEnableSaveTraps();
+// //         z80.setBreakpoint(0x04D0, saveTrap);
+
+// //         loadTrap = settings.getTapeSettings().isEnableLoadTraps();
+// //         z80.setBreakpoint(0x0556, loadTrap);
+
+// //         flashload = settings.getTapeSettings().isFlashLoad();
+
+
+// //     case 0x04D0:
+// //                 // SA_BYTES routine in Spectrum ROM at 0x04D0
+// //                 // SA_BYTES starts at 0x04C2, but the +3 ROM don't enter
+// //                 // to SA_BYTES by his start address.
+// //                 if (saveTrap && memory.isSpectrumRom() && tape.isTapeReady()) {
+// //                     if (tape.saveTapeBlock(memory)) {
+// //                         return 0xC9; // RET opcode
+// //                     }
+// //                 }
+// //                 break;
+// //             case 0x0556:
+// //                 // LD_BYTES routine in Spectrum ROM at address 0x0556
+// //                 if (loadTrap && memory.isSpectrumRom() && tape.isTapeReady()) {
+// //                     if (flashload && tape.flashLoad(memory)) {
+// //                         invalidateScreen(true); // thanks Andrew Owen
+// //                         return 0xC9; // RET opcode
+// //                     } else {
+// //                         tape.play(false);
+// //                     }
+// //                 }
+// //                 break;
+// //         }

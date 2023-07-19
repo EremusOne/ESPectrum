@@ -524,8 +524,10 @@ void AySound::selectRegister(uint8_t registerNumber)
 void AySound::setRegisterData(uint8_t data)
 {
 
-    regs[selectedRegister] = data;
-    updateReg[selectedRegister]();
+    if (selectedRegister < 16) {
+        regs[selectedRegister] = data;
+        updateReg[selectedRegister]();
+    }
 
 }
 

@@ -196,15 +196,19 @@ static inline void rtrim(std::string &s) {
 
 void IRAM_ATTR CPU::checkTraps() {
 
-        // PRELIMINARY TAPE SAVE TEST
-                   
-        // // if PC is 0x970, a call to SA_CONTRL has been made:
-        // // remove .tap output file if exists
-        if(Z80::getRegPC() == 0x970) {
+    string name;
+    int result;
+    uint16_t header_data;
+
+    switch(Z80::getRegPC()) {
+
+        case 0x970 : 
+        // if PC is 0x970, a call to SA_CONTRL has been made:
+        // remove .tap output file if exists
             
             // Get save name
-            string name;
-            uint16_t header_data = Z80::getRegIX();
+
+            header_data = Z80::getRegIX();
             for (int i=0; i < 10; i++)
                 name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
             rtrim(name);
@@ -213,7 +217,7 @@ void IRAM_ATTR CPU::checkTraps() {
             // TO DO: Check existence of file and ask for overwrite or append
 
             printf("Removing previuous tap file.\n");
-            int result = remove(Tape::tapeSaveName.c_str());
+            result = remove(Tape::tapeSaveName.c_str());
 
             // check if file has been deleted successfully
             // if (result != 0) {
@@ -226,14 +230,39 @@ void IRAM_ATTR CPU::checkTraps() {
 
             printf("%s\n",Tape::tapeSaveName.c_str());
 
-        } else 
+            break;
+
+        case 0x4C2 :
         // if PC is 0x04C2, a call to SA_BYTES has been made:
         // Call Save function
-        if(Z80::getRegPC() == 0x04C2) {
+
             printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
             Tape::Save();
             Z80::setRegPC(0x555);
-        }
+
+            break;
+
+        // case 0x556 : // Jspeccy
+        case 0x56A : // SoftSpectrum
+
+        // LD_BYTES routine in Spectrum ROM at address 0x0556
+
+            // if (loadTrap && memory.isSpectrumRom() && tape.isTapeReady()) {
+            //     if (flashload && tape.flashLoad(memory)) {
+            //         invalidateScreen(true); // thanks Andrew Owen
+            //         return 0xC9; // RET opcode
+            //     } else {
+            //         tape.play(false);
+            //     }
+            // }
+
+            if (Tape::tapeFileName != "none" && Tape::tapeStatus != TAPE_LOADING) {
+                if (Tape::FlashLoad()) Z80::setRegPC(0x5e2);
+            }
+
+            break;
+
+    }
 
 }
 

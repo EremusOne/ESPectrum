@@ -559,6 +559,10 @@ void Z80::xor_(uint8_t oper8) {
     flagQ = true;
 }
 
+void Z80::Xor(uint8_t oper8) {
+    xor_(oper8);
+}
+
 // Operación OR lógica
 void Z80::or_(uint8_t oper8) {
     regA |= oper8;
@@ -590,6 +594,10 @@ void Z80::cp(uint8_t oper8) {
     }
 
     flagQ = true;
+}
+
+void Z80::Cp(uint8_t oper8) {
+    cp(oper8);
 }
 
 // DAA
