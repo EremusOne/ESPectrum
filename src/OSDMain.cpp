@@ -46,6 +46,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Tape.h"
 #include "ZXKeyb.h"
 #include "pwm_audio.h"
+#include "Z80_JLS/z80.h"
 
 #ifndef ESP32_SDL2_WRAPPER
 #include "esp_system.h"
@@ -258,11 +259,27 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         menu_curopt = 1;
         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
         if (mFile != "") {
+
+            // TO DO: make this dependant on Flashload parameter
+            if (Z80Ops::is48) {
+                changeSnapshot(FileUtils::MountPoint + "/load48.z80");
+            } else {
+                changeSnapshot(FileUtils::MountPoint + "/load128.z80");
+            }
+
+            // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
+            // https://skoolkid.github.io/rom/asm/5C78.html
+            MemESP::writebyte(0x5C78,rand() % 256);
+            MemESP::writebyte(0x5C79,rand() % 256);            
+
             Tape::TAP_Stop();
+
             // Read and analyze tape file
             Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
             // Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
+
         }
+
     }
     else if (KeytoESP == fabgl::VK_F6) {
         // Start / Stop .tap reproduction
@@ -354,7 +371,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     // else if (KeytoESP == fabgl::VK_F10) {
     //     ESPectrum::ESPoffset += 5;
     // }
-    else if (KeytoESP == fabgl::VK_F12) {
+    else if (KeytoESP == fabgl::VK_F11) { // Hard reset
+        // Hard
+        if (Config::ram_file != NO_RAM_FILE) {
+            Config::ram_file = NO_RAM_FILE;
+            Config::save("ram");
+        }
+        Config::last_ram_file = NO_RAM_FILE;
+        ESPectrum::reset();
+    }
+    else if (KeytoESP == fabgl::VK_F12) { // ESP32 reset
         
         // // Switch boot partition
         // string splabel;
@@ -467,10 +493,27 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         // Select TAP File
                         string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
                         if (mFile != "") {
+                            
+                            // TO DO: make this dependant on Flashload parameter
+                            if (Z80Ops::is48) {
+                                changeSnapshot(FileUtils::MountPoint + "/load48.z80");
+                            } else {
+                                changeSnapshot(FileUtils::MountPoint + "/load128.z80");
+                            }
+
+                            // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
+                            // https://skoolkid.github.io/rom/asm/5C78.html
+                            MemESP::writebyte(0x5C78,rand() % 256);
+                            MemESP::writebyte(0x5C79,rand() % 256);            
+
                             Tape::TAP_Stop();
+
                             // Read and analyze tape file
                             Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
+                            // Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
+
                             return;
+
                         }
                     }
                     else if (tap_num == 2) {
@@ -522,8 +565,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 }
                 else if (opt2 == 2) {
                     // Hard
-                    Config::ram_file = NO_RAM_FILE;
-                    Config::save("ram");
+                    if (Config::ram_file != NO_RAM_FILE) {
+                        Config::ram_file = NO_RAM_FILE;
+                        Config::save("ram");
+                    }
                     Config::last_ram_file = NO_RAM_FILE;
                     ESPectrum::reset();
                     return;
@@ -868,7 +913,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             zxDelay = REPDEL;
                         }
                     } else
-                    if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                    if (!bitRead(ZXKeyb::ZXcols[1], 1)) { // S (Capture screen)
                         if (zxDelay == 0) {
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
@@ -933,7 +978,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             zxDelay = REPDEL;
                         }
                     } else
-                    if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                    if (!bitRead(ZXKeyb::ZXcols[1], 1)) { // S (Capture screen)
                         if (zxDelay == 0) {
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);

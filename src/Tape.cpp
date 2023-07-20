@@ -441,34 +441,16 @@ void Tape::Save() {
 
 bool Tape::FlashLoad() {
 
-    // if (tapeCurBlock >= (TapeListing.size() - 1)) {
-    //     Z80::setCarryFlag(false);
-    //     return false;
-    // }
     FILE *flashtape;
 
     flashtape = fopen(Tape::tapeFileName.c_str(), "rb");
-    if (flashtape == NULL)
-    {
-        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+    if (flashtape == NULL) {
         Z80::setCarryFlag(false);
-        return false;
+        return true;
     }
-    // fseek(tape,0,SEEK_END);
-    // tapeFileSize = ftell(tape);
-    // rewind (tape);
 
     // Move to selected block position
     fseek(flashtape,TapeListing[Tape::tapeCurBlock].StartPosition,SEEK_SET);
-
-    // tapePlayOffset = TapeListing[Tape::tapeCurBlock].StartPosition + 2;
-
-//         tapePos = offsetBlocks[idxHeader];
-//         blockLen = readInt(tapeBuffer, tapePos, 2);
-//         // System.out.println(String.format("tapePos: %X. blockLen: %X", tapePos, blockLen));
-//         tapePos += 2;
-
-    // uint32_t tapePos = TapeListing[tapeCurBlock].StartPosition;
 
     uint16_t blockLen=(readByteFile(flashtape) | (readByteFile(flashtape) <<8));
     uint8_t tapeFlag = readByteFile(flashtape);
@@ -478,22 +460,12 @@ bool Tape::FlashLoad() {
     // printf("%u\n",Z80::getRegA());
     // printf("%u\n",Z80::getRegAx());    
 
-    // tapePos += 2;
-
-//         // ¿Coincide el flag? (está en el registro A)
-//         if (cpu.getRegA() != (tapeBuffer[tapePos] & 0xff)) {
-//             cpu.xor(tapeBuffer[tapePos]);
-//             cpu.setCarryFlag(false);
-//             idxHeader++;
-//             return true;
-//         }
-
     if (Z80::getRegAx() != (tapeFlag & 0xff)) {
         // printf("No coincide el flag\n");
         fclose(flashtape);
+        Z80::setFlags(0x00);
+        Z80::setRegA(Z80::getRegAx() ^ tapeFlag);
         if (tapeCurBlock < (TapeListing.size() - 1)) {
-            Z80::setFlags(0x00);
-            Z80::setRegA(Z80::getRegAx() ^ tapeFlag);
             tapeCurBlock++;
             return true;
         } else {
@@ -502,21 +474,8 @@ bool Tape::FlashLoad() {
         }
     }
 
-//         // La paridad incluye el byte de flag
-//         cpu.setRegA(tapeBuffer[tapePos]);
-
     // La paridad incluye el byte de flag
     Z80::setRegA(tapeFlag);
-
-//         int count = 0;
-//         int addr = cpu.getRegIX();    // Address start
-//         int nBytes = cpu.getRegDE();  // Lenght
-//         while (count < nBytes && count < blockLen - 1) {
-//             memory.writeByte(addr, tapeBuffer[tapePos + count + 1]);
-//             cpu.xor(tapeBuffer[tapePos + count + 1]);
-//             addr = (addr + 1) & 0xffff;
-//             count++;
-//         }
 
     int count = 0;
     uint8_t data;
@@ -533,27 +492,20 @@ bool Tape::FlashLoad() {
 
     // printf("Count: %d. nBytes: %d\n",count,nBytes);
 
-//         // Se cargarán los bytes pedidos en DE
-//         if (count == nBytes) {
-//             cpu.xor(tapeBuffer[tapePos + count + 1]); // Byte de paridad
-//             cpu.cp(0x01);
-//         }
-
     // Se cargarán los bytes pedidos en DE
     if (count == nBytes) {
         Z80::Xor(readByteFile(flashtape)); // Byte de paridad
         Z80::Cp(0x01);
-    }
-
-    // Hay menos bytes en la cinta de los indicados en DE
-    // En ese caso habrá dado un error de timeout en LD-SAMPLE (0x05ED)
-    // que se señaliza con CARRY==reset & ZERO==set
-    if (count < nBytes) {
+    } else if (count < nBytes) {
+        // Hay menos bytes en la cinta de los indicados en DE
+        // En ese caso habrá dado un error de timeout en LD-SAMPLE (0x05ED)
+        // que se señaliza con CARRY==reset & ZERO==set
         Z80::setFlags(0x50); // when B==0xFF, then INC B, B=0x00, F=0x50
     }
 
     Z80::setRegIX(addr);
     Z80::setRegDE(nBytes - count);
+
     if (tapeCurBlock < (TapeListing.size() - 1)) tapeCurBlock++; else tapeCurBlock = 0;
 
     fclose(flashtape);
@@ -884,3 +836,73 @@ bool Tape::FlashLoad() {
 // //                 }
 // //                 break;
 // //         }
+
+
+// void Spectrum::trapLdStart() {
+
+//     // ZF = 1 means treat the flag byte as a normal byte. This is
+//     // indicated by setting the number of flag bytes to zero.
+//     uint16_t flagByte = (z80.af_.b.l & FLAG_Z) ? 1 : 0;
+
+//     // If either there are no flag bytes or the expected flag matches the
+//     // block's flag, we signal flag ok. Expected flag is in A'.
+//     bool flagOk = tape.foundTapBlock(z80.af_.b.h) || flagByte;
+
+//     // CF = 1 means LOAD, CF = 0 means VERIFY.
+//     bool verify = !(z80.af_.b.l & FLAG_C);
+
+//     if (flagOk) {
+//         // Get parameters from CPU registers
+//         uint16_t address = z80.ix.w;
+//         uint16_t bytes = z80.de.w;
+
+//         uint16_t block = tape.getBlockLength() + flagByte - 1;  // Include parity
+//         uint16_t offset = 3 - flagByte;
+//         uint8_t parity = flagByte ? 0 : tape.getBlockByte(2);
+
+//         if (verify) {
+//             while (bytes && block) {
+//                 uint8_t byte = tape.getBlockByte(offset++);
+//                 uint8_t mem = readMemory(address++);
+//                 block--;
+//                 bytes--;
+//                 parity ^= byte;
+//                 if (byte != mem) break;
+//             }
+//         } else {
+//             while (bytes && block) {
+//                 uint8_t byte = tape.getBlockByte(offset++);
+//                 writeMemory(address++, byte);
+//                 block--;
+//                 bytes--;
+//                 parity ^= byte;
+//             }
+//         }
+
+//         if (block) {
+//             parity ^= tape.getBlockByte(offset);
+//         }
+
+//         if (!bytes && block && !parity) {
+//             z80.af.b.l |= FLAG_C;
+//         } else {
+//             z80.af.b.l &= ~FLAG_C;
+//             if (!block) z80.af.b.l |= FLAG_Z;
+//         }
+
+//         z80.hl.b.h = parity;
+//         z80.ix.w = address;
+//         z80.de.w = bytes;
+//     }
+
+//     // Advance tape
+//     tape.nextTapBlock();
+
+//     // Force RET
+//     z80.decode(0xC9);
+//     z80.startInstruction();
+
+//     if (tape.tapPointer == 0) {
+//         tape.rewind();
+//     }
+// }

@@ -160,20 +160,20 @@ void IRAM_ATTR CPU::loop_trap()
 {
 
     while (tstates < IntEnd) {        
-        Z80::execute();
         CPU::checkTraps();
+        Z80::execute();
         Z80::checkINT();
     }
 
     uint32_t stFrame = statesInFrame - IntEnd;
     while (tstates < stFrame) {
-        Z80::execute();
         CPU::checkTraps();
+        Z80::execute();
     }
 
     while (tstates < statesInFrame) {
-        Z80::execute();
         CPU::checkTraps();
+        Z80::execute();
         Z80::checkINT();
     }
 
@@ -256,7 +256,8 @@ void IRAM_ATTR CPU::checkTraps() {
             //     }
             // }
 
-            if (Tape::tapeFileName != "none" && Tape::tapeStatus != TAPE_LOADING) {
+            if ((Tape::tapeFileName != "none") && (Tape::tapeStatus != TAPE_LOADING)) {
+                // printf("Loading tape %s\n",Tape::tapeFileName.c_str());
                 if (Tape::FlashLoad()) Z80::setRegPC(0x5e2);
             }
 

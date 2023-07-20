@@ -1026,10 +1026,13 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 OSD::do_OSD(fabgl::VK_F10);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],0)) {
-                CaptureToBmp();
+                OSD::do_OSD(fabgl::VK_F11);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],1)) {
                 OSD::do_OSD(fabgl::VK_F12);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[1],1)) {
+                CaptureToBmp();
             } else
                 zxDelay = 0;
 
