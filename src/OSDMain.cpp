@@ -262,9 +262,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
             // TO DO: make this dependant on Flashload parameter
             if (Z80Ops::is48) {
-                changeSnapshot(FileUtils::MountPoint + "/load48.z80");
+                FileZ80::loader48();
+                // changeSnapshot(FileUtils::MountPoint + "/load48.z80");
             } else {
-                changeSnapshot(FileUtils::MountPoint + "/load128.z80");
+                FileZ80::loader128();
+                // changeSnapshot(FileUtils::MountPoint + "/load128.z80");
             }
 
             // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass

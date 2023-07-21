@@ -47,6 +47,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Tape.h"
 #include "pwm_audio.h"
 #include "AySound.h"
+#include "loaders.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -536,4 +537,538 @@ void FileZ80::loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage,
             ed_cnt = 0;
         }
     }
+}
+
+void FileZ80::loader48()
+{
+
+    printf("loader48 -----------------------------------\n");
+
+    unsigned char *z80_array = (unsigned char *) load48;
+
+    // Stop keyboard input
+    ESPectrum::PS2Controller.keyboard()->suspendPort();
+
+    // Stop audio
+    pwm_audio_stop();
+
+    uint32_t file_size = 1273;
+
+    // Reset Z80 and set bankLatch to default
+    MemESP::bankLatch = 0;
+    Z80::reset();
+
+    uint32_t dataOffset = 0;
+
+    // initially assuming version 1; this assumption may change
+    uint8_t version = 1;
+
+    // stack space for header, should be enough for
+    // version 1 (30 bytes)
+    // version 2 (55 bytes) (30 + 2 + 23)
+    // version 3 (87 bytes) (30 + 2 + 55) or (86 bytes) (30 + 2 + 54)
+    // uint8_t header[87];
+
+    // read first 30 bytes
+    for (uint8_t i = 0; i < 30; i++) {
+        // header[i] = readByteFile(file);
+        dataOffset ++;
+    }
+
+    // additional vars
+    uint8_t b12, b29;
+
+    // begin loading registers
+    Z80::setRegA  (       z80_array[0]);
+    Z80::setFlags (       z80_array[1]);
+    Z80::setRegBC (mkword(z80_array[2], z80_array[3]));
+    Z80::setRegHL (mkword(z80_array[4], z80_array[5]));
+    Z80::setRegPC (mkword(z80_array[6], z80_array[7]));
+    Z80::setRegSP (mkword(z80_array[8], z80_array[9]));
+    Z80::setRegI  (       z80_array[10]);
+    Z80::setRegR  (       z80_array[11]);
+    b12 =                 z80_array[12];
+    Z80::setRegDE (mkword(z80_array[13], z80_array[14]));
+    Z80::setRegBCx(mkword(z80_array[15], z80_array[16]));
+    Z80::setRegDEx(mkword(z80_array[17], z80_array[18]));
+    Z80::setRegHLx(mkword(z80_array[19], z80_array[20]));
+    Z80::setRegAFx(mkword(z80_array[22], z80_array[21])); // watch out for order!!!
+    Z80::setRegIY (mkword(z80_array[23], z80_array[24]));
+    Z80::setRegIX (mkword(z80_array[25], z80_array[26]));
+    Z80::setIFF1  (       z80_array[27] ? true : false);
+    Z80::setIFF2  (       z80_array[28] ? true : false);
+    b29 =                 z80_array[29];
+    Z80::setIM((Z80::IntMode)(b29 & 0x03));
+
+    uint16_t RegPC = Z80::getRegPC();
+
+    VIDEO::borderColor = (b12 >> 1) & 0x07;
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+    
+    bool dataCompressed = (b12 & 0x20) ? true : false;
+    string fileArch = "48K";
+    uint8_t memPagingReg = 0;
+
+    // read 2 more bytes
+    for (uint8_t i = 30; i < 32; i++) {
+        // header[i] = readByteFile(file);
+        dataOffset ++;
+    }
+
+    // additional header block length
+    uint16_t ahblen = mkword(z80_array[30], z80_array[31]);
+    if (ahblen == 23)
+        version = 2;
+    else if (ahblen == 54 || ahblen == 55)
+        version = 3;
+    else {
+        OSD::osdCenteredMsg("Z80 load: unknown version", LEVEL_ERROR);
+        // printf("Z80.load: unknown version, ahblen = %d\n", ahblen);
+        // Resume audio
+        pwm_audio_start();
+        // Resume keyboard input
+        ESPectrum::PS2Controller.keyboard()->resumePort();
+        ESPectrum::reset();
+        return;
+    }
+
+    // read additional header block
+    for (uint8_t i = 32; i < 32 + ahblen; i++) {
+        // header[i] = readByteFile(file);
+        dataOffset ++;
+    }
+
+    // program counter
+    RegPC = mkword(z80_array[32], z80_array[33]);
+    Z80::setRegPC(RegPC);
+
+    // hardware mode
+    uint8_t b34 = z80_array[34];
+
+    // defaulting to 128K
+    fileArch = "128K";
+
+    if (version == 2) {
+        if (b34 == 0) fileArch = "48K";
+        if (b34 == 1) fileArch = "48K"; // + if1
+        if (b34 == 2) fileArch = "SAMRAM";
+    }
+    else if (version == 3) {
+        if (b34 == 0) fileArch = "48K";
+        if (b34 == 1) fileArch = "48K"; // + if1
+        if (b34 == 2) fileArch = "SAMRAM";
+        if (b34 == 3) fileArch = "48K"; // + mgt
+    }
+
+    #ifdef LOG_Z80_DETAILS
+    uint32_t memRawLength = file_size - dataOffset;
+    printf("Z80 format version: %d\n", version);
+    printf("machine type: %s\n", fileArch.c_str());
+    printf("data offset: %d\n", dataOffset);
+    printf("file length: %d\n", file_size);
+    printf("b12: %d\n", b12);
+    printf("b34: %d\n", b34);
+    printf("pc: %d\n", RegPC);
+    printf("border: %d\n", VIDEO::borderColor);
+    #endif
+
+    z80_array += dataOffset;
+
+    MemESP::romLatch = 0;
+    MemESP::romInUse = 0;
+    MemESP::bankLatch = 0;
+    MemESP::pagingLock = 1;
+    MemESP::videoLatch = 0;
+
+    uint16_t pageStart[12] = {0, 0, 0, 0, 0x8000, 0xC000, 0, 0, 0x4000, 0, 0};
+
+    uint32_t dataLen = file_size;
+    while (dataOffset < dataLen) {
+        uint8_t hdr0 = z80_array[0]; dataOffset ++;
+        uint8_t hdr1 = z80_array[1]; dataOffset ++;
+        uint8_t hdr2 = z80_array[2]; dataOffset ++;
+        z80_array += 3;
+        uint16_t compDataLen = mkword(hdr0, hdr1);
+        
+        #ifdef LOG_Z80_DETAILS
+        printf("compressed data length: %d\n", compDataLen);
+        printf("page number: %d\n", hdr2);
+        #endif
+        
+        uint16_t memoff = pageStart[hdr2];
+        
+        #ifdef LOG_Z80_DETAILS
+        printf("page start: 0x%X\n", memoff);
+        #endif
+        
+        // loadCompressedMemData(file, compDataLen, memoff, 0x4000);
+        
+        // void FileZ80::loadCompressedMemData(FILE *f, uint16_t dataLen, uint16_t memoff, uint16_t memlen)
+        {
+
+            uint16_t dataOff = 0;
+            uint8_t ed_cnt = 0;
+            uint8_t repcnt = 0;
+            uint8_t repval = 0;
+            uint16_t memidx = 0;
+
+            while(dataOff < compDataLen && memidx < 0x4000) {
+                uint8_t databyte = z80_array[0]; z80_array ++;
+                if (ed_cnt == 0) {
+                    if (databyte != 0xED)
+                        MemESP::writebyte(memoff + memidx++, databyte);
+                    else
+                        ed_cnt++;
+                }
+                else if (ed_cnt == 1) {
+                    if (databyte != 0xED) {
+                        MemESP::writebyte(memoff + memidx++, 0xED);
+                        MemESP::writebyte(memoff + memidx++, databyte);
+                        ed_cnt = 0;
+                    }
+                    else
+                        ed_cnt++;
+                }
+                else if (ed_cnt == 2) {
+                    repcnt = databyte;
+                    ed_cnt++;
+                }
+                else if (ed_cnt == 3) {
+                    repval = databyte;
+                    for (uint16_t i = 0; i < repcnt; i++)
+                        MemESP::writebyte(memoff + memidx++, repval);
+                    ed_cnt = 0;
+                }
+            }
+
+            #ifdef LOG_Z80_DETAILS
+                printf("last byte: %d\n", (memoff+memidx-1));
+            #endif
+
+        }
+
+        dataOffset += compDataLen;
+
+    }
+
+    // great success!!!
+
+    // Ports
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
+    if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
+
+    CPU::tstates = 0;
+    CPU::global_tstates = 0;
+    ESPectrum::ESPoffset = 0;
+
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+    VIDEO::Draw = &VIDEO::Blank;
+
+    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
+    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
+    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+
+    MemESP::ramContended[0] = false;
+    MemESP::ramContended[1] = true;
+    MemESP::ramContended[2] = false;
+    MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
+
+    Tape::tapeFileName = "none";
+    Tape::tapeStatus = TAPE_STOPPED;
+    Tape::SaveStatus = SAVE_STOPPED;
+    Tape::romLoading = false;
+
+    // Empty audio buffers
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
+    for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
+        ESPectrum::audioBuffer[i]=0;
+        AySound::SamplebufAY[i]=0;
+    }
+    ESPectrum::lastaudioBit=0;
+
+    // Reset AY emulation
+    AySound::init();
+    AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
+    AySound::set_stereo(AYEMU_MONO,NULL);
+    AySound::reset();
+
+    // Resume audio
+    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
+
+    pwm_audio_start();
+    pwm_audio_set_volume(ESPectrum::aud_volume);
+  
+    // Resume keyboard input
+    ESPectrum::PS2Controller.keyboard()->resumePort();
+
+    printf("loader48 end -------------------------------\n");
+
+}
+
+void FileZ80::loader128()
+{
+
+    printf("loader128 -----------------------------------\n");
+
+    unsigned char *z80_array = (unsigned char *) load128;
+
+    // Stop keyboard input
+    ESPectrum::PS2Controller.keyboard()->suspendPort();
+    // Stop audio
+    pwm_audio_stop();
+
+    uint32_t file_size = 3230;
+
+    // Reset Z80 and set bankLatch to default
+    MemESP::bankLatch = 0;
+    Z80::reset();
+
+    uint32_t dataOffset = 0;
+
+    // initially assuming version 1; this assumption may change
+    uint8_t version = 1;
+
+    // stack space for header, should be enough for
+    // version 1 (30 bytes)
+    // version 2 (55 bytes) (30 + 2 + 23)
+    // version 3 (87 bytes) (30 + 2 + 55) or (86 bytes) (30 + 2 + 54)
+    // uint8_t header[87];
+
+    // read first 30 bytes
+    for (uint8_t i = 0; i < 30; i++) {
+        // header[i] = readByteFile(file);
+        dataOffset ++;
+    }
+
+    // additional vars
+    uint8_t b12, b29;
+
+    // begin loading registers
+    Z80::setRegA  (       z80_array[0]);
+    Z80::setFlags (       z80_array[1]);
+    Z80::setRegBC (mkword(z80_array[2], z80_array[3]));
+    Z80::setRegHL (mkword(z80_array[4], z80_array[5]));
+    Z80::setRegPC (mkword(z80_array[6], z80_array[7]));
+    Z80::setRegSP (mkword(z80_array[8], z80_array[9]));
+    Z80::setRegI  (       z80_array[10]);
+    Z80::setRegR  (       z80_array[11]);
+    b12 =                 z80_array[12];
+    Z80::setRegDE (mkword(z80_array[13], z80_array[14]));
+    Z80::setRegBCx(mkword(z80_array[15], z80_array[16]));
+    Z80::setRegDEx(mkword(z80_array[17], z80_array[18]));
+    Z80::setRegHLx(mkword(z80_array[19], z80_array[20]));
+    Z80::setRegAFx(mkword(z80_array[22], z80_array[21])); // watch out for order!!!
+    Z80::setRegIY (mkword(z80_array[23], z80_array[24]));
+    Z80::setRegIX (mkword(z80_array[25], z80_array[26]));
+    Z80::setIFF1  (       z80_array[27] ? true : false);
+    Z80::setIFF2  (       z80_array[28] ? true : false);
+    b29 =                 z80_array[29];
+    Z80::setIM((Z80::IntMode)(b29 & 0x03));
+
+    uint16_t RegPC = Z80::getRegPC();
+
+    VIDEO::borderColor = (b12 >> 1) & 0x07;
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+    
+    bool dataCompressed = (b12 & 0x20) ? true : false;
+    string fileArch = "48K";
+    uint8_t memPagingReg = 0;
+
+    // read 2 more bytes
+    for (uint8_t i = 30; i < 32; i++) {
+        // header[i] = readByteFile(file);
+        dataOffset ++;
+    }
+
+    // additional header block length
+    uint16_t ahblen = mkword(z80_array[30], z80_array[31]);
+    if (ahblen == 23)
+        version = 2;
+    else if (ahblen == 54 || ahblen == 55)
+        version = 3;
+    else {
+        OSD::osdCenteredMsg("Z80 load: unknown version", LEVEL_ERROR);
+        // printf("Z80.load: unknown version, ahblen = %d\n", ahblen);
+        // Resume audio
+        pwm_audio_start();
+        // Resume keyboard input
+        ESPectrum::PS2Controller.keyboard()->resumePort();
+        ESPectrum::reset();
+        return;
+    }
+
+    // read additional header block
+    for (uint8_t i = 32; i < 32 + ahblen; i++) {
+        // header[i] = readByteFile(file);
+        dataOffset ++;
+    }
+
+    // program counter
+    RegPC = mkword(z80_array[32], z80_array[33]);
+    Z80::setRegPC(RegPC);
+
+    // hardware mode
+    uint8_t b34 = z80_array[34];
+
+    // defaulting to 128K
+    fileArch = "128K";
+
+    if (version == 2) {
+        if (b34 == 0) fileArch = "48K";
+        if (b34 == 1) fileArch = "48K"; // + if1
+        if (b34 == 2) fileArch = "SAMRAM";
+    }
+    else if (version == 3) {
+        if (b34 == 0) fileArch = "48K";
+        if (b34 == 1) fileArch = "48K"; // + if1
+        if (b34 == 2) fileArch = "SAMRAM";
+        if (b34 == 3) fileArch = "48K"; // + mgt
+    }
+
+    #ifdef LOG_Z80_DETAILS
+    uint32_t memRawLength = file_size - dataOffset;
+    printf("Z80 format version: %d\n", version);
+    printf("machine type: %s\n", fileArch.c_str());
+    printf("data offset: %d\n", dataOffset);
+    printf("file length: %d\n", file_size);
+    printf("b12: %d\n", b12);
+    printf("b34: %d\n", b34);
+    printf("pc: %d\n", RegPC);
+    printf("border: %d\n", VIDEO::borderColor);
+    #endif
+
+    MemESP::romInUse = 1;
+
+    // paging register
+    uint8_t b35 = z80_array[35];
+    MemESP::pagingLock = bitRead(b35, 5);
+    MemESP::romLatch = bitRead(b35, 4);
+    MemESP::videoLatch = bitRead(b35, 3);
+    MemESP::bankLatch = b35 & 0x07;
+
+    z80_array += dataOffset;
+
+    uint8_t* pages[12] = {
+        MemESP::rom[0], MemESP::rom[2], MemESP::rom[1],
+        MemESP::ram0, MemESP::ram1, MemESP::ram2, MemESP::ram3,
+        MemESP::ram4, MemESP::ram5, MemESP::ram6, MemESP::ram7,
+        MemESP::rom[3] };
+
+    const char* pagenames[12] = { "rom0", "IDP", "rom1",
+        "ram0", "ram1", "ram2", "ram3", "ram4", "ram5", "ram6", "ram7", "MFR" };
+
+    uint32_t dataLen = file_size;
+    while (dataOffset < dataLen) {
+        uint8_t hdr0 = z80_array[0]; dataOffset ++;
+        uint8_t hdr1 = z80_array[1]; dataOffset ++;
+        uint8_t hdr2 = z80_array[2]; dataOffset ++;
+        z80_array += 3;
+        uint16_t compDataLen = mkword(hdr0, hdr1);
+
+        #ifdef LOG_Z80_DETAILS
+        printf("compressed data length: %d\n", compDataLen);
+        printf("page: %s\n", pagenames[hdr2]);
+        #endif
+        
+        uint8_t* memPage = pages[hdr2];
+
+        // loadCompressedMemPage(file, compDataLen, memPage, 0x4000);
+
+        // void FileZ80::loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage, uint16_t memlen)
+        {
+            uint16_t dataOff = 0;
+            uint8_t ed_cnt = 0;
+            uint8_t repcnt = 0;
+            uint8_t repval = 0;
+            uint16_t memidx = 0;
+
+            while(dataOff < compDataLen && memidx < 0x4000) {
+                uint8_t databyte = z80_array[0];
+                z80_array ++;
+                if (ed_cnt == 0) {
+                    if (databyte != 0xED)
+                        memPage[memidx++] = databyte;
+                    else
+                        ed_cnt++;
+                }
+                else if (ed_cnt == 1) {
+                    if (databyte != 0xED) {
+                        memPage[memidx++] = 0xED;
+                        memPage[memidx++] = databyte;
+                        ed_cnt = 0;
+                    }
+                    else
+                        ed_cnt++;
+                }
+                else if (ed_cnt == 2) {
+                    repcnt = databyte;
+                    ed_cnt++;
+                }
+                else if (ed_cnt == 3) {
+                    repval = databyte;
+                    for (uint16_t i = 0; i < repcnt; i++)
+                        memPage[memidx++] = repval;
+                    ed_cnt = 0;
+                }
+            }
+        }
+
+        dataOffset += compDataLen;
+
+    }
+
+    // great success!!!
+
+    // Ports
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
+    if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
+
+    CPU::tstates = 0;
+    CPU::global_tstates = 0;
+    ESPectrum::ESPoffset = 0;
+
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+    VIDEO::Draw = &VIDEO::Blank;
+
+    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
+    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
+    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+
+    MemESP::ramContended[0] = false;
+    MemESP::ramContended[1] = true;
+    MemESP::ramContended[2] = false;
+    MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
+
+    Tape::tapeFileName = "none";
+    Tape::tapeStatus = TAPE_STOPPED;
+    Tape::SaveStatus = SAVE_STOPPED;
+    Tape::romLoading = false;
+
+    // Empty audio buffers
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
+    for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
+        ESPectrum::audioBuffer[i]=0;
+        AySound::SamplebufAY[i]=0;
+    }
+    ESPectrum::lastaudioBit=0;
+
+    // Reset AY emulation
+    AySound::init();
+    AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
+    AySound::set_stereo(AYEMU_MONO,NULL);
+    AySound::reset();
+
+    // Resume audio
+    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
+
+    pwm_audio_start();
+    pwm_audio_set_volume(ESPectrum::aud_volume);
+  
+    // Resume keyboard input
+    ESPectrum::PS2Controller.keyboard()->resumePort();
+
+    printf("loader128 end -------------------------------\n");
+
 }
