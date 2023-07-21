@@ -15,11 +15,16 @@
 //... v1.0.0 (13/02/2017)
 //    quick & dirty conversion by dddddd (AKA deesix)
 
+#include <stdio.h>
+#include <algorithm>
+
 #include "Z80_JLS/z80.h"
 #include "Ports.h"
 #include "Video.h"
 #include "MemESP.h"
 #include "CPU.h"
+#include "Tape.h"
+#include "Config.h"
 
 #pragma GCC optimize ("O3")
 
@@ -2213,10 +2218,22 @@ void Z80::decodeOpcodebe()
     
 }
 
-void Z80::decodeOpcodebf()
+void IRAM_ATTR Z80::decodeOpcodebf()
 { /* CP A */
+
     cp(regA);
     
+    if (REG_PC == 0x56b) { // LOAD trap
+
+        // printf("Trap Load!\n");
+
+        if ((Config::flashload) && (Tape::tapeFileName != "none") && (Tape::tapeStatus != TAPE_LOADING)) {
+            // printf("Loading tape %s\n",Tape::tapeFileName.c_str());
+            if (Tape::FlashLoad()) REG_PC = 0x5e2;
+        }
+
+    }
+
 }
 
 void Z80::decodeOpcodec0()
@@ -4295,6 +4312,13 @@ void (*Z80::dcCB[256])() = {
 
 };
 
+// Trim from end (in place) (for SAVE trap, clean this up later)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
 //Subconjunto de instrucciones 0xDD / 0xFD
 /*
  * Hay que tener en cuenta el manejo de secuencias códigos DD/FD que no
@@ -4375,6 +4399,66 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
         { /* DEC IX */
             Z80Ops::addressOnBus(getPairIR().word, 2);
             regIXY.word--;
+
+            if (REG_PC == 0x04d4) { // Save trap
+
+                if (REG_HL == 0x1F80) {
+
+                    printf("Saving header!\n");
+
+                    regIXY.word++;
+
+                    // remove .tap output file if exists
+                    
+                    // Get save name
+                    string name;
+                    uint16_t header_data = REG_IX;
+                    for (int i=0; i < 10; i++)
+                        name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
+                    rtrim(name);
+                    Tape::tapeSaveName = "/sd/t/" + name + ".tap";
+
+                    printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
+                    /*int result = */remove(Tape::tapeSaveName.c_str());
+
+                    // check if file has been deleted successfully
+                    // if (result != 0) {
+                    //     // print error message
+                    //     printf("File deletion failed\n");
+                    // }
+                    // else {
+                    //     printf("File deleted succesfully\n");
+                    // }            
+
+                    printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
+                    
+                    REG_DE--;
+                    regA = 0x00;
+
+                    Tape::Save();
+
+                    REG_PC = 0x555;
+
+                } else {
+
+                    printf("Saving data!\n");
+
+                    // Call Save function
+
+                    printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
+
+                    REG_DE--;
+                    regIXY.word++;
+                    regA = 0xFF;
+
+                    Tape::Save();
+
+                    REG_PC = 0x555;
+
+                }
+
+            }
+
             break;
         }
         case 0x2C:

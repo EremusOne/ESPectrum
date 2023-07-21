@@ -445,8 +445,7 @@ bool Tape::FlashLoad() {
 
     flashtape = fopen(Tape::tapeFileName.c_str(), "rb");
     if (flashtape == NULL) {
-        Z80::setCarryFlag(false);
-        return true;
+        return false;
     }
 
     // Move to selected block position

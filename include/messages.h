@@ -208,12 +208,27 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
 //     "Refrescar directorios\n"
 // static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
+// #define MENU_STORAGE_EN "Storage\n"\
+//     "Refresh directories\n"
+// #define MENU_STORAGE_ES "Almacenamiento\n"\
+//     "Refrescar directorios\n"
+// static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+
 #define MENU_STORAGE_EN "Storage\n"\
+    "Flash tape load\t>\n"\
     "Refresh directories\n"
 #define MENU_STORAGE_ES "Almacenamiento\n"\
+    "Carga rapida cinta\t>\n"\
     "Refrescar directorios\n"
-static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+// static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
+#define MENU_FLASHLOAD_EN "Flash load\n"\
+    "Yes\t[Y]\n"\
+    "No\t[N]\n"
+#define MENU_FLASHLOAD_ES "Carga rapida\n"\
+    "Si\t[Y]\n"\
+    "No\t[N]\n"
+// static const char *MENU_FLASHLOAD[2] = { MENU_FLASHLOAD_EN, MENU_FLASHLOAD_ES };
 
 #define MENU_OTHER_EN "Other\n"\
     "AY on 48K\t>\n"\
@@ -327,8 +342,8 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
     " PS2 driver by Fabrizio di Vittorio\n"\
     "\n"\
     " Greetings to Ackerman, zx81, azesmbog,\n"\
-    " Rampa, D. Carrion, A. Villena and\n"\
-    " to Retrowiki and his people\n"\
+    " ZjoyKiLer, D. Carrion, A. Villena,\n"\
+    " Rampa and to Retrowiki and his people\n"\
     " for the support and inspiration.\n"    
 #define OSD_ABOUT_ES \
     " (C)2023 Victor Iborra \"Eremus\"\n"\
@@ -346,10 +361,11 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
     " Driver PS2 por Fabrizio di Vittorio\n"\
     "\n"\
     " Saludos a Ackerman, zx81, azesmbog,\n"\
-    " Rampa, D. Carrion, A. Villena y\n"\
-    " a Retrowiki y su gente por su\n"\
+    " ZjoyKiLer, D. Carrion, A. Villena,\n"\
+    " Rampa y a Retrowiki y su gente por su\n"\
     " ayuda e inspiracion.\n"
-static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
+
+// static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
 
 #define OSD_HELP_EN \
     " [F1]     Menu\n"\
@@ -387,7 +403,8 @@ static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
     " [F12]     Resetear ESP32\n"\
     " [Pause]   Pausa\n"\
     " [ImpPant] Captura BMP (Carpeta SD /c)\n"
-static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
+
+// static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
 
 static const char *OSD_TAPE_OF[2] = { "of", "de" };
 

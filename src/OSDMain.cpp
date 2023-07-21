@@ -602,20 +602,45 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     while (1) {
                         menu_level = 2;
                         // Storage source
-                        string stor_menu = MENU_STORAGE[Config::lang];
-                        // int curopt;
-                        // if (FileUtils::MountPoint == MOUNT_POINT_SPIFFS) {
-                        //     stor_menu.replace(stor_menu.find("[I",0),2,"[*");
-                        //     stor_menu.replace(stor_menu.find("[S",0),2,"[ ");
-                        //     curopt = 1;
-                        // } else {
-                        //     stor_menu.replace(stor_menu.find("[I",0),2,"[ ");
-                        //     stor_menu.replace(stor_menu.find("[S",0),2,"[*");
-                        //     curopt = 2;
-                        // }
+                        // string stor_menu = MENU_STORAGE[Config::lang];
+                        string stor_menu = Config::lang ? MENU_STORAGE_ES : MENU_STORAGE_EN;
                         uint8_t opt2 = menuRun(stor_menu);
                         if (opt2) {
-                            // if (opt2 == 3) {
+                            if (opt2 == 1) {
+                                menu_level = 3;
+                                menu_curopt = 1;                    
+                                menu_saverect = true;
+                                while (1) {
+                                    string flash_menu = Config::lang ? MENU_FLASHLOAD_ES : MENU_FLASHLOAD_EN;
+                                    bool prev_flashload = Config::flashload;
+                                    if (prev_flashload) {
+                                        flash_menu.replace(flash_menu.find("[Y",0),2,"[*");
+                                        flash_menu.replace(flash_menu.find("[N",0),2,"[ ");                        
+                                    } else {
+                                        flash_menu.replace(flash_menu.find("[Y",0),2,"[ ");
+                                        flash_menu.replace(flash_menu.find("[N",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(flash_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::flashload = true;
+                                        else
+                                            Config::flashload = false;
+
+                                        if (Config::flashload != prev_flashload) {
+                                            Config::save("flashload");
+                                        }
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 1;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+                            }
+                            else 
+                            if (opt2 == 2) {
                                 OSD::osdCenteredMsg("Refreshing snap dir", LEVEL_INFO);
                                 int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_SNA_DIR, ".sna.SNA.z80.Z80"); // Prepare sna filelist
                                 if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_SNA_DIR,chunks); // Merge files
@@ -623,15 +648,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                 chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_TAP_DIR, ".tap.TAP"); // Prepare tap filelist
                                 if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_TAP_DIR,chunks); // Merge files
                                 return;
-                            // } else if (opt2 != curopt) {
-                            //     if (opt2 == 1)
-                            //         FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
-                            //     else
-                            //         FileUtils::MountPoint = MOUNT_POINT_SD;
-                            //     Config::save();
-                            // }
-                            // menu_curopt = opt2;
-                            // menu_saverect = false;
+                            }
+                            menu_curopt = opt2;
+                            menu_saverect = false;
                         } else {
                             menu_curopt = 1;                            
                             break;
@@ -885,7 +904,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             drawOSD(true);
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
-            VIDEO::vga.print(OSD_HELP[Config::lang]);
+            VIDEO::vga.print(Config::lang ? OSD_HELP_ES : OSD_HELP_EN);
 
             // #ifdef ZXKEYB
             zxDelay = REPDEL;
@@ -950,7 +969,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             drawOSD(false);
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
-            VIDEO::vga.print(OSD_ABOUT[Config::lang]);
+            VIDEO::vga.print(Config::lang ? OSD_ABOUT_ES : OSD_ABOUT_EN);
             
             // #ifdef ZXKEYB
             zxDelay = REPDEL;

@@ -33,24 +33,18 @@ visit https://zxespectrum.speccy.org/contacto
 
 */
 
-#include <stdio.h>
-#include <algorithm>
-
 #include "CPU.h"
 #include "ESPectrum.h"
 #include "MemESP.h"
 #include "Ports.h"
 #include "hardconfig.h"
 #include "Config.h"
-#include "Tape.h"
 #include "Video.h"
 #include "Z80_JLS/z80.h"
 
 #pragma GCC optimize ("O3")
 
 static bool createCalled = false;
-
-void (*CPU::loop)() = &CPU::loop_trap;
 
 uint32_t CPU::statesPerFrame()
 {
@@ -131,7 +125,7 @@ void CPU::reset() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void IRAM_ATTR CPU::loop_fast()
+void IRAM_ATTR CPU::loop()
 {
 
     while (tstates < IntEnd) {        
@@ -156,117 +150,6 @@ void IRAM_ATTR CPU::loop_fast()
 
 }
 
-void IRAM_ATTR CPU::loop_trap()
-{
-
-    while (tstates < IntEnd) {        
-        CPU::checkTraps();
-        Z80::execute();
-        Z80::checkINT();
-    }
-
-    uint32_t stFrame = statesInFrame - IntEnd;
-    while (tstates < stFrame) {
-        CPU::checkTraps();
-        Z80::execute();
-    }
-
-    while (tstates < statesInFrame) {
-        CPU::checkTraps();
-        Z80::execute();
-        Z80::checkINT();
-    }
-
-
-    if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
-
-    global_tstates += statesInFrame; // increase global Tstates
-    tstates -= statesInFrame;
-
-    framecnt++;
-
-}
-
-// trim from end (in place)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
-
-void IRAM_ATTR CPU::checkTraps() {
-
-    string name;
-    int result;
-    uint16_t header_data;
-
-    switch(Z80::getRegPC()) {
-
-        case 0x970 : 
-        // if PC is 0x970, a call to SA_CONTRL has been made:
-        // remove .tap output file if exists
-            
-            // Get save name
-
-            header_data = Z80::getRegIX();
-            for (int i=0; i < 10; i++)
-                name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
-            rtrim(name);
-            Tape::tapeSaveName = "/sd/t/" + name + ".tap";
-
-            // TO DO: Check existence of file and ask for overwrite or append
-
-            printf("Removing previuous tap file.\n");
-            result = remove(Tape::tapeSaveName.c_str());
-
-            // check if file has been deleted successfully
-            // if (result != 0) {
-            //     // print error message
-            //     printf("File deletion failed\n");
-            // }
-            // else {
-            //     printf("File deleted succesfully\n");
-            // }            
-
-            printf("%s\n",Tape::tapeSaveName.c_str());
-
-            break;
-
-        case 0x4C2 :
-        // if PC is 0x04C2, a call to SA_BYTES has been made:
-        // Call Save function
-
-            printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
-            Tape::Save();
-            Z80::setRegPC(0x555);
-
-            break;
-
-        // case 0x556 : // Jspeccy
-        case 0x56A : // SoftSpectrum
-
-        // LD_BYTES routine in Spectrum ROM at address 0x0556
-
-            // if (loadTrap && memory.isSpectrumRom() && tape.isTapeReady()) {
-            //     if (flashload && tape.flashLoad(memory)) {
-            //         invalidateScreen(true); // thanks Andrew Owen
-            //         return 0xC9; // RET opcode
-            //     } else {
-            //         tape.play(false);
-            //     }
-            // }
-
-            if ((Tape::tapeFileName != "none") && (Tape::tapeStatus != TAPE_LOADING)) {
-                // printf("Loading tape %s\n",Tape::tapeFileName.c_str());
-                if (Tape::FlashLoad()) Z80::setRegPC(0x5e2);
-            }
-
-            break;
-
-    }
-
-}
-
 void CPU::FlushOnHalt() {
         
     tstates &= 0x00FFFFFF;
@@ -279,40 +162,12 @@ void CPU::FlushOnHalt() {
             VIDEO::Draw(4,true);
             Z80::incRegR(1);
         }
-        
-        // if (Z80Ops::is48) {
-
-        //     while (tstates < statesInFrame ) {
-        //         uint32_t currentTstates = CPU::tstates + 1;                
-        //         unsigned short int line = currentTstates / 224;
-        //         if (line >= 64 && line < 256) tstates += wait_st[currentTstates % 224];
-        //         tstates += 4;
-        //         Z80::incRegR(1);
-        //     }
-
-        // } else {
-
-        //     while (tstates < statesInFrame ) {
-        //         uint32_t currentTstates = CPU::tstates + 3;
-        //         unsigned short int line = currentTstates / 228;
-        //         if (line >= 63 && line < 255) tstates += wait_st[currentTstates % 228];
-        //         tstates += 4;
-        //         Z80::incRegR(1);
-        //     }
-
-        // }
 
     } else {
 
         uint32_t pre_tstates = tstates;
         VIDEO::Flush(); // Draw the rest of the frame
         tstates = pre_tstates;
-
-        // uint32_t stFrame = statesInFrame - latetiming;
-        // while (tstates < stFrame ) {
-        //     tstates += 4;
-        //     Z80::incRegR(1);
-        // }
         
         pre_tstates += latetiming;
         uint32_t incr = (statesInFrame - pre_tstates) >> 2;

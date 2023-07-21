@@ -38,12 +38,6 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include <inttypes.h>
 #include "ESPectrum.h"
-#include "ESP32Lib/ESP32Lib.h"
-
-// #define INT_START48 0
-// #define INT_END48 32
-// #define INT_START128 0
-// #define INT_END128 36
 
 #define INT_START48 0
 #define INT_END48 32
@@ -56,16 +50,8 @@ public:
     // call this for initializing CPU
     static void setup();
 
-    // call this for executing a frame's worth of instructions
-    static void IRAM_ATTR loop_fast();
-
-    // call this for executing a frame's worth of instructions   
-    static void IRAM_ATTR loop_trap();
-
-    // call this for executing a frame's worth of instructions    
-    static void IRAM_ATTR (*loop)();
-
-    static void IRAM_ATTR checkTraps();
+    // // call this for executing a frame's worth of instructions
+    static void IRAM_ATTR loop();
 
     // call this for resetting the CPU
     static void reset();

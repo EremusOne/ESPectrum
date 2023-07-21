@@ -748,7 +748,8 @@ private:
     static void decodeOpcodebc(void);                    
     static void decodeOpcodebd(void);                    
     static void decodeOpcodebe(void);                    
-    static void decodeOpcodebf(void);                    
+
+    static void IRAM_ATTR decodeOpcodebf(void); // Used for LOAD TRAP
 
     static void decodeOpcodec0(void);
     static void decodeOpcodec1(void);

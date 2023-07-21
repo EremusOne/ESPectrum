@@ -1304,7 +1304,7 @@ for(;;) {
             #else
 
             if (Tape::tapeStatus==TAPE_LOADING) {
-                snprintf(linea1, sizeof(linea1), "%02d/%02d %10s % 6d ", Tape::TapeListing[Tape::tapeCurBlock].Index, Tape::TapeListing.size() - 1, Tape::TapeListing[Tape::tapeCurBlock].FileName, Tape::TapeListing[Tape::tapeCurBlock].BlockLength);
+                snprintf(linea1, sizeof(linea1), "%02d/%02d %10s % 6d ", Tape::TapeListing[Tape::tapeCurBlock].Index + 1, Tape::TapeListing.size(), Tape::TapeListing[Tape::tapeCurBlock].FileName, Tape::TapeListing[Tape::tapeCurBlock].BlockLength);
                 float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
                 snprintf(linea2, sizeof(linea2), "%5.2f%% %06d %s %06d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, OSD_TAPE_OF[Config::lang] , Tape::tapeFileSize);
             } else {

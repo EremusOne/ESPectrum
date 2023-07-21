@@ -854,6 +854,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     click();
                 } else if (Menukey.vk == fabgl::VK_RETURN) {
                     fclose(dirfile);
+                    dirfile = NULL;
                     filedir = rowGet(menu,focus);
                     rtrim(filedir);
                     click();
@@ -877,6 +878,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     }
 
                     fclose(dirfile);
+                    dirfile = NULL;
                     click();
                     return "";
                 }
