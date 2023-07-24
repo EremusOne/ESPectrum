@@ -215,7 +215,7 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
         return ((MemESP::ramCurrent[page][(address & 0x3fff) + 1] << 8) | MemESP::ramCurrent[page][address & 0x3fff]);
 
-  } else {
+    } else {
 
         // Order matters, first read lsb, then read msb, don't "optimize"
         uint8_t lsb = Z80Ops::peek8(address);
@@ -229,11 +229,11 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 // Write word to RAM
 void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
-    uint8_t page = address >> 14;
-
    // Check if address is between two different pages
-    if (page == ((address + 1) >> 14)) {
-        
+    if ((address >> 14) == ((address + 1) >> 14)) {
+
+        uint8_t page = address >> 14;
+
         if (MemESP::ramContended[page]) {
             VIDEO::Draw(3, true);
             VIDEO::Draw(3, true);            
@@ -248,12 +248,7 @@ void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
     } else {
 
         // Order matters, first write lsb, then write msb, don't "optimize"
-        
-        // Z80Ops::poke8(address, word.byte8.lo);
-
-        VIDEO::Draw(3, MemESP::ramContended[page]);
-        if (page != 0) MemESP::ramCurrent[page][address & 0x3fff] = word.byte8.lo;
-
+        Z80Ops::poke8(address, word.byte8.lo);
         Z80Ops::poke8(address + 1, word.byte8.hi);
 
     }
