@@ -202,15 +202,27 @@ void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
 // Read word from RAM
 uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
-    uint8_t page = address >> 14;
+    // Check if address is between two different pages
+    if ((address >> 14) == ((address + 1) >> 14)) {
 
-    if (MemESP::ramContended[page]) {
-        VIDEO::Draw(3, true);
-        VIDEO::Draw(3, true);            
-    } else
-        VIDEO::Draw(6, false);
+        uint8_t page = address >> 14;
 
-    return ((MemESP::ramCurrent[page][(address & 0x3fff) + 1] << 8) | MemESP::ramCurrent[page][address & 0x3fff]);
+        if (MemESP::ramContended[page]) {
+            VIDEO::Draw(3, true);
+            VIDEO::Draw(3, true);            
+        } else
+            VIDEO::Draw(6, false);
+
+        return ((MemESP::ramCurrent[page][(address & 0x3fff) + 1] << 8) | MemESP::ramCurrent[page][address & 0x3fff]);
+
+  } else {
+
+        // Order matters, first read lsb, then read msb, don't "optimize"
+        uint8_t lsb = Z80Ops::peek8(address);
+        uint8_t msb = Z80Ops::peek8(address + 1);
+        return (msb << 8) | lsb;
+
+    }
 
 }
 
@@ -218,16 +230,32 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
     uint8_t page = address >> 14;
-    
-    if (MemESP::ramContended[page]) {
-        VIDEO::Draw(3, true);
-        VIDEO::Draw(3, true);            
-    } else
-        VIDEO::Draw(6, false);
 
-    if (page != 0) {
-        MemESP::ramCurrent[page][address & 0x3fff] = word.byte8.lo;
-        MemESP::ramCurrent[page][(address & 0x3fff) + 1] = word.byte8.hi;
+   // Check if address is between two different pages
+    if (page == ((address + 1) >> 14)) {
+        
+        if (MemESP::ramContended[page]) {
+            VIDEO::Draw(3, true);
+            VIDEO::Draw(3, true);            
+        } else
+            VIDEO::Draw(6, false);
+
+        if (page != 0) {
+            MemESP::ramCurrent[page][address & 0x3fff] = word.byte8.lo;
+            MemESP::ramCurrent[page][(address & 0x3fff) + 1] = word.byte8.hi;
+        }
+
+    } else {
+
+        // Order matters, first write lsb, then write msb, don't "optimize"
+        
+        // Z80Ops::poke8(address, word.byte8.lo);
+
+        VIDEO::Draw(3, MemESP::ramContended[page]);
+        if (page != 0) MemESP::ramCurrent[page][address & 0x3fff] = word.byte8.lo;
+
+        Z80Ops::poke8(address + 1, word.byte8.hi);
+
     }
 
 }

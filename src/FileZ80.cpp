@@ -552,7 +552,7 @@ void FileZ80::loader48()
     // Stop audio
     pwm_audio_stop();
 
-    uint32_t file_size = 1273;
+    uint32_t file_size = sizeof(load48);
 
     // Reset Z80 and set bankLatch to default
     MemESP::bankLatch = 0;
@@ -621,16 +621,6 @@ void FileZ80::loader48()
         version = 2;
     else if (ahblen == 54 || ahblen == 55)
         version = 3;
-    else {
-        OSD::osdCenteredMsg("Z80 load: unknown version", LEVEL_ERROR);
-        // printf("Z80.load: unknown version, ahblen = %d\n", ahblen);
-        // Resume audio
-        pwm_audio_start();
-        // Resume keyboard input
-        ESPectrum::PS2Controller.keyboard()->resumePort();
-        ESPectrum::reset();
-        return;
-    }
 
     // read additional header block
     for (uint8_t i = 32; i < 32 + ahblen; i++) {
@@ -818,22 +808,13 @@ void FileZ80::loader128()
     // Stop audio
     pwm_audio_stop();
 
-    uint32_t file_size = 3230;
+    uint32_t file_size = sizeof(load128);
 
     // Reset Z80 and set bankLatch to default
     MemESP::bankLatch = 0;
     Z80::reset();
 
     uint32_t dataOffset = 0;
-
-    // initially assuming version 1; this assumption may change
-    uint8_t version = 1;
-
-    // stack space for header, should be enough for
-    // version 1 (30 bytes)
-    // version 2 (55 bytes) (30 + 2 + 23)
-    // version 3 (87 bytes) (30 + 2 + 55) or (86 bytes) (30 + 2 + 54)
-    // uint8_t header[87];
 
     // read first 30 bytes
     for (uint8_t i = 0; i < 30; i++) {
@@ -877,30 +858,16 @@ void FileZ80::loader128()
 
     // read 2 more bytes
     for (uint8_t i = 30; i < 32; i++) {
-        // header[i] = readByteFile(file);
         dataOffset ++;
     }
 
     // additional header block length
     uint16_t ahblen = mkword(z80_array[30], z80_array[31]);
-    if (ahblen == 23)
-        version = 2;
-    else if (ahblen == 54 || ahblen == 55)
-        version = 3;
-    else {
-        OSD::osdCenteredMsg("Z80 load: unknown version", LEVEL_ERROR);
-        // printf("Z80.load: unknown version, ahblen = %d\n", ahblen);
-        // Resume audio
-        pwm_audio_start();
-        // Resume keyboard input
-        ESPectrum::PS2Controller.keyboard()->resumePort();
-        ESPectrum::reset();
-        return;
-    }
+
+    uint8_t version = 3;
 
     // read additional header block
     for (uint8_t i = 32; i < 32 + ahblen; i++) {
-        // header[i] = readByteFile(file);
         dataOffset ++;
     }
 
@@ -913,18 +880,6 @@ void FileZ80::loader128()
 
     // defaulting to 128K
     fileArch = "128K";
-
-    if (version == 2) {
-        if (b34 == 0) fileArch = "48K";
-        if (b34 == 1) fileArch = "48K"; // + if1
-        if (b34 == 2) fileArch = "SAMRAM";
-    }
-    else if (version == 3) {
-        if (b34 == 0) fileArch = "48K";
-        if (b34 == 1) fileArch = "48K"; // + if1
-        if (b34 == 2) fileArch = "SAMRAM";
-        if (b34 == 3) fileArch = "48K"; // + mgt
-    }
 
     #ifdef LOG_Z80_DETAILS
     uint32_t memRawLength = file_size - dataOffset;
