@@ -489,7 +489,7 @@ uint8_t AySound::getRegisterData()
 {
 
     if ((selectedRegister >= 14) && ((regs[7] >> (selectedRegister - 8)) & 1) == 0) {
-        printf("getAYRegister %d: %02X\n", selectedRegister, 0xFF);
+        // printf("getAYRegister %d: %02X\n", selectedRegister, 0xFF);
         return 0xFF;
     }
 

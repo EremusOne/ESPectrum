@@ -54,7 +54,7 @@ class FileUtils
 {
 public:
     static void initFileSystem();
-    static bool mountSDCard();
+    static bool mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS);
     static void unmountSDCard();
     // static String         getAllFilesFrom(const String path);
     // static void           listAllFiles();

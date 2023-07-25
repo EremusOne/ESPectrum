@@ -373,15 +373,15 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
     " [F3]     Load custom snapshot\n"\
     " [F4]     Save custom snapshot\n"\
     " [F5]     Select TAP file\n"\
-    " [F6]     Play/Pause tape\n"\
-    " [F7]     Stop tape\n"\
+    " [F6]     Play/Stop tape\n"\
+    " [F7]     Tape browser\n"\
     " [F8]     OSD Stats:\n"\
     "           CPU: microsec. per CPU cycle\n"\
     "           IDL: unused microsec.\n"\
     "           FPS: Frames per second\n"\
     "           FND: FPS without delay\n"\
-    " [F9]     Volume down\n"\
-    " [F10]    Volume up\n"\
+    " [F9-F10] Volume down-up\n"\
+    " [F11]    Hard reset\n"\
     " [F12]    Reset ESP32\n"\
     " [Pause]  Pause\n"\
     " [PrtScr] BMP screenshot (SD folder /c)\n"
@@ -391,15 +391,15 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
     " [F3]      Cargar snapshot\n"\
     " [F4]      Guardar snapshot\n"\
     " [F5]      Elegir TAP\n"\
-    " [F6]      Play/Pausa\n"\
-    " [F7]      Stop\n"\
+    " [F6]      Play/Stop cinta\n"\
+    " [F7]      Explorador cinta\n"\
     " [F8]      OSD\n"\
     "            CPU: microsg. por ciclo CPU\n"\
     "            IDL: microsg. sin usar\n"\
     "            FPS: Frames por segundo\n"\
     "            FND: FPS sin delay\n"\
-    " [F9]      Subir volumen\n"\
-    " [F10]     Bajar volumen\n"\
+    " [F9-F10]  Bajar-Subir volumen\n"\
+    " [F11]     Reset completo\n"\
     " [F12]     Resetear ESP32\n"\
     " [Pause]   Pausa\n"\
     " [ImpPant] Captura BMP (Carpeta SD /c)\n"

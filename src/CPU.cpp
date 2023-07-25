@@ -202,10 +202,9 @@ void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
 // Read word from RAM
 uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 
-    // Check if address is between two different pages
-    if ((address >> 14) == ((address + 1) >> 14)) {
+    uint8_t page = address >> 14;
 
-        uint8_t page = address >> 14;
+    if (page == ((address + 1) >> 14)) {    // Check if address is between two different pages
 
         if (MemESP::ramContended[page]) {
             VIDEO::Draw(3, true);
@@ -229,10 +228,9 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 // Write word to RAM
 void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
-   // Check if address is between two different pages
-    if ((address >> 14) == ((address + 1) >> 14)) {
+    uint8_t page = address >> 14;
 
-        uint8_t page = address >> 14;
+    if (page == ((address + 1) >> 14)) {    // Check if address is between two different pages
 
         if (MemESP::ramContended[page]) {
             VIDEO::Draw(3, true);
