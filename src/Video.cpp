@@ -510,11 +510,13 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
 
             // -------------------------------
             // Non ptime-128 compliant version
+            // -------------------------------
             Draw(0,false);
             // -------------------------------
 
             // // ---------------------------
             // // ptime-128 compliant version
+            // // ---------------------------
             // dispUpdCycle = 6 + CPU::latetiming;
             // Draw(0,false);
             // video_rest = 0;
@@ -609,7 +611,7 @@ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
 // }
 
-void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
+void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
 
@@ -619,7 +621,9 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
     CPU::tstates += statestoadd;
 
     statestoadd += video_rest;
+
     video_rest = statestoadd & 0x03; // Mod 4
+
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
         if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>20) && (coldraw_cnt<39)) {
@@ -639,11 +643,14 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
             *lineptr32++ = AluBytes[bmp & 0xF][att];
 
         } else {
+
             *lineptr32++ = brd;
             *lineptr32++ = brd;
+
         }
 
         if (++coldraw_cnt == 40) {
+            tstateDraw += tStatesPerLine;
             Draw = ++linedraw_cnt == 196 ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
         }

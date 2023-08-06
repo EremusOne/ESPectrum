@@ -78,7 +78,7 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false,
-        .max_files = 3,
+        .max_files = 4,
         .allocation_unit_size = 16 * 1024
     };
     

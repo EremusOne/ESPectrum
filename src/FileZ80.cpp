@@ -430,6 +430,10 @@ bool FileZ80::load(string z80_fn)
     MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
 
     Tape::tapeFileName = "none";
+    if (Tape::tape != NULL) {
+        fclose(Tape::tape);
+        Tape::tape = NULL;
+    }
     Tape::tapeStatus = TAPE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;

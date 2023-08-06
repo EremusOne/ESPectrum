@@ -61,16 +61,6 @@ visit https://zxespectrum.speccy.org/contacto
 // #define LOG_DEBUG_TIMING
 
 ///////////////////////////////////////////////////////////////////////////////
-// TO DO: Tape traps
-//
-// define TAPE_TRAPS for emulator trapping LOAD and SAVE rom code. In some 
-// titles it could help with right loading or auto-stoping tape in right places.
-// (If a .tap doesn't load with tape load active try disabling it)
-///////////////////////////////////////////////////////////////////////////////
-
-// #define TAPE_TRAPS // STILL NOT WORKING!
-
-///////////////////////////////////////////////////////////////////////////////
 // Snapshot loading behaviour
 //
 // define SNAPSHOT_LOAD_FORCE_ARCH if you want the architecture present

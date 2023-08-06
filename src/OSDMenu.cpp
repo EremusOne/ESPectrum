@@ -303,12 +303,10 @@ string OSD::getRomsetMenu(string arch) {
     return menu;
 }
 
-// #ifdef ZXKEYB
 #define REPDEL 140 // As in real ZX Spectrum (700 ms.)
 #define REPPER 20 // As in real ZX Spectrum (100 ms.)
 static int zxDelay = 0;
 static int lastzxKey = 0;
-// #endif
 
 // Run a new menu
 unsigned short OSD::menuRun(string new_menu) {
@@ -317,15 +315,11 @@ unsigned short OSD::menuRun(string new_menu) {
 
     newMenu(new_menu);
 
-    // #ifdef ZXKEYB
     zxDelay = REPDEL;
     lastzxKey = 0;
-    // #endif
 
     while (1) {
         
-        // #ifdef ZXKEYB
-
         if (ZXKeyb::Exists) {
 
             ZXKeyb::process();
@@ -414,8 +408,6 @@ unsigned short OSD::menuRun(string new_menu) {
 
         }
 
-        // #endif
-       
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
             if (ESPectrum::readKbd(&Menukey)) {
@@ -517,9 +509,7 @@ unsigned short OSD::menuRun(string new_menu) {
         }
         vTaskDelay(5 / portTICK_PERIOD_MS);
         
-        // #ifdef ZXKEYB        
         if (zxDelay > 0) zxDelay--;
-        // #endif
 
     }
 
@@ -624,10 +614,10 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     rc = stat((filedir + "/.d").c_str(), &stat_buf);
     if (rc < 0) {
         // deallocAluBytes();
-        OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO);
+        OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO, 0);
         int chunks = FileUtils::DirToFile(filedir, extensions); // Prepare sna filelist
         if (chunks) FileUtils::Mergefiles(filedir,chunks); // Merge files
-        OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
+        // OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
         // precalcAluBytes();
         rc = stat((filedir + "/.d").c_str(), &stat_buf);
     }
@@ -674,14 +664,10 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
     menuDraw();
 
-    // #ifdef ZXKEYB
     zxDelay = REPDEL;
     lastzxKey = 0;
-    // #endif
 
     while (1) {
-
-        // #ifdef ZXKEYB
 
         if (ZXKeyb::Exists) {
 
@@ -709,7 +695,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     lastzxKey = 2;
                 }
             } else
-            if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+            if (!bitRead(ZXKeyb::ZXcols[6], 0)) { // ENTER
                 if (zxDelay == 0) {
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
@@ -720,10 +706,10 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     lastzxKey = 3;
                 }
             } else
-            if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK        
+            if (!bitRead(ZXKeyb::ZXcols[4], 0)) { // 0
                 if (zxDelay == 0) {
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_SPACE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_SPACE, false, false);                
                     if (lastzxKey == 4)
                         zxDelay = REPPER;
                     else
@@ -731,10 +717,10 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     lastzxKey = 4;
                 }
             } else
-            if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
+            if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK        
                 if (zxDelay == 0) {
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
                     if (lastzxKey == 5)
                         zxDelay = REPPER;
                     else
@@ -742,10 +728,10 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     lastzxKey = 5;
                 }
             } else
-            if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
+            if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
                 if (zxDelay == 0) {
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
                     if (lastzxKey == 6)
                         zxDelay = REPPER;
                     else
@@ -753,15 +739,26 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     lastzxKey = 6;
                 }
             } else
-            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+            if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
                 if (zxDelay == 0) {
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
                     if (lastzxKey == 7)
                         zxDelay = REPPER;
                     else
                         zxDelay = REPDEL;
                     lastzxKey = 7;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                    if (lastzxKey == 8)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 8;
                 }
             } else
             {
@@ -771,8 +768,6 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
         }
 
-        // #endif
-        
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
             if (ESPectrum::readKbd(&Menukey)) {
@@ -858,7 +853,14 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     filedir = rowGet(menu,focus);
                     rtrim(filedir);
                     click();
-                    return filedir;
+                    return "R" + filedir;
+                } else if (Menukey.vk == fabgl::VK_SPACE) {
+                    fclose(dirfile);
+                    dirfile = NULL;
+                    filedir = rowGet(menu,focus);
+                    rtrim(filedir);
+                    click();
+                    return "S" + filedir;
                 } else if (Menukey.vk == fabgl::VK_ESCAPE) {
 
                     if (menu_level!=0) {
@@ -887,10 +889,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
         vTaskDelay(5 / portTICK_PERIOD_MS);    
 
-        // #ifdef ZXKEYB        
         if (zxDelay > 0) zxDelay--;
-        // #endif
-
 
     }
 }
@@ -965,93 +964,38 @@ void OSD::filemenuRedraw(string title) {
     }
 }
 
-// Redraw inside rows
-void OSD::tapemenuRedraw(string title) {
-    if ((focus != last_focus) || (begin_row != last_begin_row)) {
+string tapeBlockReadData(int Blocknum) {
 
-        // Read bunch of rows
-        menu = title + "\n";
-        char buf[256];    
-        for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
-            if (i > Tape::TapeListing.size()) break;
+    int tapeContentIndex=0;
+    int tapeBlkLen=0;
+    string blktype;
+    char buf[48];
+    char fname[10];
 
-            string blktype;
-            switch (Tape::TapeListing[i].Type) {
-            case 0: 
-                blktype = "Program      ";
-                break;
-            case 1: 
-                blktype = "Number array ";
-                break;
-            case 2: 
-                blktype = "Char array   ";
-                break;
-            case 3: 
-                blktype = "Code         ";
-                break;
-            case 4: 
-                blktype = "Data block   ";
-                break;
-            case 5: 
-                blktype = "Info         ";
-                break;
-            case 6: 
-                blktype = "Unassigned   ";
-                break;
-            }
+    tapeContentIndex = Tape::CalcTapBlockPos(Blocknum);
 
-            snprintf(buf, sizeof(buf), "%02d %s %10s % 6d\n", Tape::TapeListing[i].Index, blktype.c_str(), Tape::TapeListing[i].FileName, Tape::TapeListing[i].BlockLength);
+    // Analyze .tap file
+    tapeBlkLen=(readByteFile(Tape::tape) | (readByteFile(Tape::tape) << 8));
 
-            menu += buf;
-
-        }
-
-        for (uint8_t row = 1; row < virtual_rows; row++) {
-            if (row == focus) {
-                filemenuPrintRow(row, IS_FOCUSED);
-            } else {
-                filemenuPrintRow(row, IS_NORMAL);
-            }
-        }
-        
-        menuScrollBar();
-        
-        last_focus = focus;
-        last_begin_row = begin_row;
+    // Read the flag byte from the block.
+    // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
+    // to indicate a data block.
+    uint8_t flagByte;
+    if (tapeContentIndex + 2 < Tape::tapeFileSize) {
+        flagByte = readByteFile(Tape::tape);
+    } else {
+        flagByte = 255;
     }
-}
 
-// Run a new file menu
-int OSD::menuTape(string title) {
+    // Process the block depending on if it is a header or a data block.
+    // Block type 0 should be a header block, but it happens that headerless blocks also
+    // have block type 0, so we need to check the block length as well.
+    if (flagByte == 0 && tapeBlkLen == 19) { // This is a header.
 
-    fabgl::VirtualKeyItem Menukey;
+        // Get the block type.
+        uint8_t blocktype = readByteFile(Tape::tape);
 
-    // Tape::TapeListing.erase(Tape::TapeListing.begin(),Tape::TapeListing.begin() + 2);
-
-    real_rows = Tape::TapeListing.size() + 1;
-    virtual_rows = (real_rows > 19 ? 19 : real_rows);
-    begin_row = last_begin_row = last_focus = focus = 1;
-    
-    if (Tape::tapeCurBlock > 17) {
-        begin_row = Tape::tapeCurBlock - 16;
-        focus = 18;
-    } else{
-        begin_row = 1;    
-        focus = Tape::tapeCurBlock + 1;
-    }
-    last_focus = focus;
-    last_begin_row = begin_row;
-    menu_curopt = focus;
-
-    // Get first bunch of rows
-    menu = title + "\n";
-    char buf[256];    
-    for (int i = (begin_row - 1); i < (begin_row - 1) + (virtual_rows - 1); i++) {
-
-        if (i > Tape::TapeListing.size()) break;
-
-        string blktype;
-        switch (Tape::TapeListing[i].Type) {
+        switch (blocktype) {
         case 0: 
             blktype = "Program      ";
             break;
@@ -1073,14 +1017,91 @@ int OSD::menuTape(string title) {
         case 6: 
             blktype = "Unassigned   ";
             break;
+        default:
+            blktype = "Unassigned   ";
+            break;
         }
 
-        snprintf(buf, sizeof(buf), "%02d %s %10s % 6d\n", Tape::TapeListing[i].Index, blktype.c_str(), Tape::TapeListing[i].FileName, Tape::TapeListing[i].BlockLength);
+        // Get the filename.
+        if (blocktype > 5) {
+            fname[0] = '\0';
+        } else {
+            for (int i = 0; i < 10; i++) {
+                fname[i] = readByteFile(Tape::tape);
+            }
+            fname[10]='\0';
+        }
 
-        // printf("%02d %s %10s % 6d\n", Tape::TapeListing[i].Index, blktype.c_str(), Tape::TapeListing[i].FileName, Tape::TapeListing[i].BlockLength);
+    } else {
 
-        menu += buf;
+        blktype = "Data block   ";
+        fname[0]='\0';
 
+    }
+
+    snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);
+
+    return buf;
+
+}
+
+// Redraw inside rows
+void OSD::tapemenuRedraw(string title) {
+
+    if ((focus != last_focus) || (begin_row != last_begin_row)) {
+
+        // Read bunch of rows
+        menu = title + "\n";
+        for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
+            if (i > Tape::tapeNumBlocks) break;
+            menu += tapeBlockReadData(i);
+        }
+
+        for (uint8_t row = 1; row < virtual_rows; row++) {
+            if (row == focus) {
+                filemenuPrintRow(row, IS_FOCUSED);
+            } else {
+                filemenuPrintRow(row, IS_NORMAL);
+            }
+        }
+        
+        menuScrollBar();
+        
+        last_focus = focus;
+        last_begin_row = begin_row;
+
+    }
+}
+
+// Run a new file menu
+int OSD::menuTape(string title) {
+
+    fabgl::VirtualKeyItem Menukey;
+
+    uint32_t tapeBckPos = ftell(Tape::tape);
+
+    // Tape::TapeListing.erase(Tape::TapeListing.begin(),Tape::TapeListing.begin() + 2);
+
+    real_rows = Tape::tapeNumBlocks + 1;
+    virtual_rows = (real_rows > 19 ? 19 : real_rows);
+    begin_row = last_begin_row = last_focus = focus = 1;
+    
+    if (Tape::tapeCurBlock > 17) {
+        begin_row = Tape::tapeCurBlock - 16;
+        focus = 18;
+    } else{
+        begin_row = 1;    
+        focus = Tape::tapeCurBlock + 1;
+    }
+    last_focus = focus;
+    last_begin_row = begin_row;
+    menu_curopt = focus;
+
+    // Get first bunch of rows
+    menu = title + "\n";
+    for (int i = (begin_row - 1); i < (begin_row - 1) + (virtual_rows - 1); i++) {
+        if (i > Tape::tapeNumBlocks) break;
+        menu += tapeBlockReadData(i);
     }
 
     printf(menu.c_str());
@@ -1095,7 +1116,7 @@ int OSD::menuTape(string title) {
     }
 
     // Columns
-    cols = 37; // 34 for block info + 2 pre and post space + 1 for scrollbar
+    cols = 39; // 36 for block info + 2 pre and post space + 1 for scrollbar
 
     // Size
     w = (cols * OSD_FONT_W) + 2;
@@ -1281,8 +1302,14 @@ int OSD::menuTape(string title) {
                     click();
                 } else if (Menukey.vk == fabgl::VK_RETURN) {
                     click();
+                    Tape::CalcTapBlockPos(begin_row + focus - 2);
+                    printf("Ret value: %d\n", begin_row + focus - 2);
                     return (begin_row + focus - 2);
                 } else if (Menukey.vk == fabgl::VK_ESCAPE) {
+
+                    // if (Tape::tapeStatus==TAPE_LOADING) {
+                        fseek(Tape::tape, tapeBckPos, SEEK_SET);
+                    // }
 
                     if (menu_level!=0) {
                         // Restore backbuffer data
@@ -1297,6 +1324,7 @@ int OSD::menuTape(string title) {
                         }
                         menu_saverect = false;
                     }
+
                     click();
                     return -1;
                 }

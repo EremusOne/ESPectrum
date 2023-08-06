@@ -85,14 +85,14 @@ public:
         Info,
         Unassigned
     };
-    uint8_t Index;          // Index (position) of the tape block in the tape file.
-    BlockType Type;     // Type of tape block (enum).
-    char FileName[11];    // File name in header block.
-    bool IsHeaderless;  // Set to true for data blocks without a header.
-    uint8_t Checksum;       // Header checksum byte.
-    uint8_t BlockTypeNum;   // Block type, 0x00 = header; 0xFF = data block.
-    uint32_t StartPosition;  // Where in the translated tape data is the start point of this block?
-    uint16_t BlockLength;
+    // uint8_t Index;          // Index (position) of the tape block in the tape file.
+    // BlockType Type;         // Type of tape block (enum).
+    // char FileName[11];      // File name in header block.
+    // bool IsHeaderless;      // Set to true for data blocks without a header.
+    // uint8_t Checksum;       // Header checksum byte.
+    // uint8_t BlockTypeNum;   // Block type, 0x00 = header; 0xFF = data block.
+    uint32_t StartPosition; // Start point of this block?
+    // uint16_t BlockLength;
 };
 
 class Tape
@@ -107,7 +107,8 @@ public:
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
     static uint8_t romLoading;
-    static uint16_t tapeCurBlock;    
+    static uint16_t tapeCurBlock;  
+    static uint16_t tapeNumBlocks;  
     static uint32_t tapebufByteCount;
     static uint32_t tapePlayOffset;    
     static size_t tapeFileSize;
@@ -120,8 +121,8 @@ public:
     static void TAP_Stop();    
     static void IRAM_ATTR TAP_Read();
     static bool FlashLoad();
-    // static bool FlashLoad2();
     static void Save();
+    static uint32_t CalcTapBlockPos(int block);
 
 };
 

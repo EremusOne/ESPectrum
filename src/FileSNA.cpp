@@ -336,6 +336,10 @@ bool FileSNA::load(string sna_fn)
     MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
 
     Tape::tapeFileName = "none";
+    if (Tape::tape != NULL) {
+        fclose(Tape::tape);
+        Tape::tape = NULL;
+    }
     Tape::tapeStatus = TAPE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;

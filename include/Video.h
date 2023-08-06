@@ -91,7 +91,7 @@ public:
     static void IRAM_ATTR TopBorder(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd, bool contended);
     static void MainScreen(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR MainScreen_OSD(unsigned int statestoadd, bool contended);
+    static void MainScreen_OSD(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR BottomBorder(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd, bool contended);    
