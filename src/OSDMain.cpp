@@ -1125,14 +1125,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     }
                 }
 
-                if(Config::videomode) {
-                    // Wait for vertical sync
-                    for (;;) {
-                        if (ESPectrum::vsync) break;
-                    }
-                } else {
-                    vTaskDelay(20 / portTICK_PERIOD_MS);
-                }                
+                vTaskDelay(20 / portTICK_PERIOD_MS);
                                 
                 if (zxDelay > 0) zxDelay--;
 

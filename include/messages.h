@@ -41,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
-#define EMU_VERSION "  v1.0rc2pr "
+#define EMU_VERSION "v1.0rc2pr3.2"
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -385,6 +385,19 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
  		"\nF1  __/ |   \nE1| |  | | (_| | |  | || (_| |\r"\
  		"\nF1 |___/    \nE1|_|  |_|\\__,_|_|   \\__\\__,_|\r"
 
+	#define PATREONS "\r"\
+		"\nA1The Mega Trees:\r"\
+		"\nB1Victor Llamazares, \nC1Antonio Villena\r"\
+		"\r"\
+		"\nA1The Jet Set Willys:\r"\
+		"\nD1Inacio Santos\r"\
+		"\r"\
+		"\nA1The Manic Miners:\r"\
+		"\nE1Fernando Bonilla, \nB1M.Ignacio Monge\r"\
+		"\nC1Jose Maria Rodriguez, \nD1Julia Salvador\r"\
+		"\nB1Marta Sicilia, \nE1Radoslaw Wojciechowski\r"\
+		"\r"
+
 	static const char *AboutMsg[2][5] = {
 		{
 	    "\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
@@ -416,18 +429,7 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 		"\r"		
 		,
 	    "\nF1Big thanks to our Patreons:\r"\
-		"\r"\
-		"\nA1The Mega Trees:\r"\
-		"\r"\
-		"\nB1Victor Llamazares, \nC1Antonio Villena\r"\
-		"\r"\
-		"\nD1The Manic Miners:\r"\
-		"\r"\
-		"\nE1Fernando Bonilla, \nA1Magnetrix, \nB1M.Ignacio\r"\
-		"Monge, \nC1Jose Maria Rodriguez, \nD1Julia\r"\
-		"Salvador, \nE1Marta Sicilia, \nA1Radoslaw\r"\
-		"Wojciechowski\r"\
-		"\r"
+		PATREONS
 		,
 	    "\nF1Thanks also to:\r"\
 		"\r"\
@@ -475,18 +477,7 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 		"\r"		
 		,
 	    "\nF1Muchas gracias a nuestros Patreons:\r"\
-		"\r"\
-		"\nA1The Mega Trees:\r"\
-		"\r"\
-		"\nB1Victor Llamazares, \nC1Antonio Villena\r"\
-		"\r"\
-		"\nD1The Manic Miners:\r"\
-		"\r"\
-		"\nE1Fernando Bonilla, \nA1Magnetrix, \nB1M.Ignacio\r"\
-		"Monge, \nC1Jose Maria Rodriguez, \nD1Julia\r"\
-		"Salvador, \nE1Marta Sicilia, \nA1Radoslaw\r"\
-		"Wojciechowski\r"\
-		"\r"
+		PATREONS
 		,
 	    "\nF1Gracias tambien a:\r"\
 		"\r"\
