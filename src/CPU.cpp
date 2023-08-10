@@ -128,18 +128,15 @@ void CPU::reset() {
 void IRAM_ATTR CPU::loop()
 {
 
-    while (tstates < IntEnd) {        
+    while (tstates < IntEnd)
         Z80::execute();
-        Z80::checkINT();
-    }
-
+    
     uint32_t stFrame = statesInFrame - IntEnd;
-    while (tstates < stFrame) Z80::execute();
+    while (tstates < stFrame)
+        Z80::exec_nocheck();
 
-    while (tstates < statesInFrame) {
+    while (tstates < statesInFrame)
         Z80::execute();
-        Z80::checkINT();
-    }
 
     if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 

@@ -391,6 +391,7 @@ public:
 
     // Execute one instruction
     static void IRAM_ATTR execute();
+    static void IRAM_ATTR exec_nocheck();
 
     // Check INT
     static void IRAM_ATTR checkINT(void);

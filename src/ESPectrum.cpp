@@ -1108,12 +1108,12 @@ for(;;) {
 
             if (Tape::tapeStatus==TAPE_LOADING) {
 
-                snprintf(linea1, sizeof(linea1), " %12s %04d/%04d ", Tape::tapeFileName.substr(TapeNameScroller + 6,12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
+                snprintf(linea1, sizeof(linea1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(6 + TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
 
                 float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
                 snprintf(linea2, sizeof(linea2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
 
-                if (++TapeNameScroller > (Tape::tapeFileName.length() -  18)) TapeNameScroller = 0;
+                if ((++TapeNameScroller + 18) > Tape::tapeFileName.length()) TapeNameScroller = 0;
 
             } else {
 
