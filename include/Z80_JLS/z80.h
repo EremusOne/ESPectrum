@@ -218,7 +218,7 @@ private:
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool breakpointEnabled {false};
 #endif
-    static void copyToRegister(uint8_t value);
+    static void IRAM_ATTR copyToRegister(uint8_t value);
 
 public:
     // Constructor de la clase

@@ -6003,7 +6003,7 @@ void Z80::decodeED(void) {
     }
 }
 
-void Z80::copyToRegister(uint8_t value)
+void IRAM_ATTR Z80::copyToRegister(uint8_t value)
 {
     switch (opCode & 0x07)
     {

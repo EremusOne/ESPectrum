@@ -56,8 +56,6 @@ uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 int VIDEO::VsyncFinetune[2];
 // uint8_t VIDEO::dispUpdCycle;
-// uint8_t VIDEO::contendOffset;
-// uint8_t VIDEO::contendMod;
 
 void IRAM_ATTR VGA6Bit::interrupt(void *arg) {
 
@@ -255,8 +253,6 @@ void VIDEO::Init() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        // VIDEO::contendMod=224;
-        // VIDEO::contendOffset=1;
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
@@ -267,8 +263,6 @@ void VIDEO::Init() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        // VIDEO::contendMod=228;
-        // VIDEO::contendOffset=3;
     }
 
     #ifdef NO_VIDEO
@@ -296,8 +290,6 @@ void VIDEO::Reset() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        // VIDEO::contendMod=224;
-        // VIDEO::contendOffset=1;
     } else {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
@@ -308,8 +300,6 @@ void VIDEO::Reset() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-        // VIDEO::contendMod=228;
-        // VIDEO::contendOffset=3;
     }
 
     grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
@@ -494,7 +484,6 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
 
 void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
   
-    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];        
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
@@ -535,7 +524,6 @@ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
 
-    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
@@ -615,7 +603,6 @@ void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
 
-    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
@@ -661,7 +648,6 @@ void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
 void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
 
-    // if (contended) statestoadd += wait_st[(CPU::tstates + contendOffset) % contendMod];    
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;

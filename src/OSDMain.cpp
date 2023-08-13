@@ -40,8 +40,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 #include "messages.h"
 #include "Config.h"
-#include "FileSNA.h"
-#include "FileZ80.h"
+#include "Snapshot.h"
 #include "MemESP.h"
 #include "Tape.h"
 #include "ZXKeyb.h"
@@ -189,7 +188,7 @@ static bool persistLoad(uint8_t slotnumber)
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
         return false;
     } else {
-        if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
+        if (!LoadSnapshot(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
             OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
             return false;
         } else {
@@ -232,7 +231,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
         if (mFile != "") {
             mFile.erase(0, 1);
-            changeSnapshot(FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile);
+            string fname = FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile;
+            LoadSnapshot(fname);
+            Config::ram_file = fname;
+            #ifdef SNAPSHOT_LOAD_LAST
+            Config::save("ram");
+            #endif
+            Config::last_ram_file = fname;
         }
     }
     else if (KeytoESP == fabgl::VK_F3) {
@@ -463,7 +468,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
                         if (mFile != "") {
                             mFile.erase(0, 1);
-                            changeSnapshot(FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile);
+                            string fname = FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile;
+                            LoadSnapshot(fname);
+                            Config::ram_file = fname;
+                            #ifdef SNAPSHOT_LOAD_LAST
+                            Config::save("ram");
+                            #endif
+                            Config::last_ram_file = fname;
                             return;
                         }
                     }
@@ -601,9 +612,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 uint8_t opt2 = menuRun(MENU_RESET[Config::lang]);
                 if (opt2 == 1) {
                     // Soft
-                    if (Config::last_ram_file != NO_RAM_FILE)
-                        changeSnapshot(Config::last_ram_file);
-                    else ESPectrum::reset();
+                    if (Config::last_ram_file != NO_RAM_FILE) {
+                        LoadSnapshot(Config::last_ram_file);
+                        Config::ram_file = Config::last_ram_file;
+                        #ifdef SNAPSHOT_LOAD_LAST
+                        Config::save("ram");
+                        #endif
+                    } else ESPectrum::reset();
                     return;
                 }
                 else if (opt2 == 2) {
@@ -1265,33 +1280,4 @@ string OSD::rowGet(string menu, unsigned short row) {
         }
     }
     return "<Unknown menu row>";
-}
-
-// Change running snapshot
-void OSD::changeSnapshot(string filename)
-{
-    // string dir = FileUtils::MountPoint + DISK_SNA_DIR;
-
-    if (FileUtils::hasSNAextension(filename))
-    {
-    
-        osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
-        // printf("Loading SNA: <%s>\n", (dir + "/" + filename).c_str());
-        FileSNA::load(filename);        
-
-    }
-    else if (FileUtils::hasZ80extension(filename))
-    {
-        osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
-        // printf("Loading Z80: %s\n", filename.c_str());
-        FileZ80::load(filename);
-
-    }
-
-    Config::ram_file = filename;
-    #ifdef SNAPSHOT_LOAD_LAST
-    Config::save("ram");
-    #endif
-    Config::last_ram_file = filename;
-
 }

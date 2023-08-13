@@ -37,8 +37,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <string>
 
 #include "ESPectrum.h"
-#include "FileSNA.h"
-#include "FileZ80.h"
+#include "Snapshot.h"
 #include "Config.h"
 #include "FileUtils.h"
 #include "OSDMain.h"
@@ -510,14 +509,9 @@ void ESPectrum::setup()
     // Load snapshot if present in Config::ram_file
     if (Config::ram_file != NO_RAM_FILE) {
         
-        if (FileUtils::hasSNAextension(Config::ram_file))
-            FileSNA::load(Config::ram_file);        
-        else if (FileUtils::hasZ80extension(Config::ram_file))
-            FileZ80::load(Config::ram_file);
+        LoadSnapshot(Config::ram_file);
 
         Config::last_ram_file = Config::ram_file;
-
-        // ESP host reset
         #ifndef SNAPSHOT_LOAD_LAST
         Config::ram_file = NO_RAM_FILE;
         Config::save("ram");

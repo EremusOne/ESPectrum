@@ -33,52 +33,538 @@ visit https://zxespectrum.speccy.org/contacto
 
 */
 
+#include "Snapshot.h"
 #include "hardconfig.h"
-#include "FileZ80.h"
 #include "FileUtils.h"
+#include "Config.h"
 #include "CPU.h"
 #include "Video.h"
-#include "Ports.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
+#include "Ports.h"
 #include "messages.h"
 #include "OSDMain.h"
+#include "Tape.h"
+#include "AySound.h"
+#include "pwm_audio.h"
+#include "Z80_JLS/z80.h"
 #include "Config.h"
 #include "Tape.h"
 #include "pwm_audio.h"
 #include "AySound.h"
 #include "loaders.h"
 
-///////////////////////////////////////////////////////////////////////////////
+#include <sys/unistd.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <inttypes.h>
+#include <string>
 
-#include "Z80_JLS/z80.h"
+using namespace std;
 
-///////////////////////////////////////////////////////////////////////////////
-
-static uint16_t mkword(uint8_t lobyte, uint8_t hibyte) {
-    return lobyte | (hibyte << 8);
-}
-
-bool FileZ80::load(string z80_fn)
+// Change running snapshot
+bool LoadSnapshot(string filename)
 {
-    FILE *file;
+
+    bool res = false;
+    string snapshotArch = "";
 
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
     // Stop audio
     pwm_audio_stop();
 
-    file = fopen(z80_fn.c_str(), "rb");
+    if (FileUtils::hasSNAextension(filename)) {
+        OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
+        snapshotArch = FileSNA::load(filename);        
+    } else 
+    if (FileUtils::hasZ80extension(filename)) {
+        OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
+        snapshotArch = FileZ80::load(filename);
+    }
+
+    if (snapshotArch != "") {
+
+        // Arch check
+        if (Config::getArch() == "128K") {
+            if (snapshotArch == "48K") {
+                #ifdef SNAPSHOT_LOAD_FORCE_ARCH
+                    Config::requestMachine("48K", "SINCLAIR", true);
+
+                    // Condition this to 50hz mode
+                    if(Config::videomode) {
+                        Config::ram_file = filename;
+                        Config::save();
+                        OSD::esp_hard_reset(); 
+                    }                           
+
+                    MemESP::romInUse = 0;
+                #else
+                    MemESP::romInUse = 1;
+                #endif
+            }
+        }
+        else if (Config::getArch() == "48K") {
+            if (snapshotArch == "128K") {
+                Config::requestMachine("128K", "SINCLAIR", true);
+
+                // Condition this to 50hz mode
+                if(Config::videomode) {
+                    Config::ram_file = filename;
+                    Config::save();
+                    OSD::esp_hard_reset();                            
+                }
+
+                MemESP::romInUse = 1;
+            }
+        }
+
+        // Ports
+        for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
+        if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
+
+        CPU::tstates = 0;
+        CPU::global_tstates = 0;
+        ESPectrum::target = CPU::microsPerFrame();
+        ESPectrum::ESPoffset = 0;
+
+        if (Config::getArch() == "48K") {
+
+            Z80Ops::is48 = true;
+
+            VIDEO::tStatesPerLine = TSTATES_PER_LINE;
+            VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+            VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
+
+            ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
+            ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
+            ESPectrum::AY_emu = Config::AY48;
+            ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+
+            CPU::latetiming = Config::AluTiming;
+
+            CPU::statesInFrame = TSTATES_PER_FRAME_48;
+            CPU::IntStart = INT_START48;
+            CPU::IntEnd = INT_END48 + CPU::latetiming;
+
+        } else {
+            
+            Z80Ops::is48 = false;
+
+            VIDEO::tStatesPerLine = TSTATES_PER_LINE_128;
+            VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+            VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
+
+            ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
+            ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
+            ESPectrum::AY_emu = true;        
+            ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
+
+            CPU::latetiming = Config::AluTiming;
+            
+            CPU::statesInFrame = TSTATES_PER_FRAME_128;
+            CPU::IntStart = INT_START128;
+            CPU::IntEnd = INT_END128 + CPU::latetiming;
+
+        }
+
+        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+        VIDEO::Draw = &VIDEO::Blank;
+
+        MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+        MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
+        MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
+        MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+
+        MemESP::ramContended[0] = false;
+        MemESP::ramContended[1] = true;
+        MemESP::ramContended[2] = false;
+        MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
+
+        Tape::tapeFileName = "none";
+        if (Tape::tape != NULL) {
+            fclose(Tape::tape);
+            Tape::tape = NULL;
+        }
+        Tape::tapeStatus = TAPE_STOPPED;
+        Tape::SaveStatus = SAVE_STOPPED;
+        Tape::romLoading = false;
+
+        // Empty audio buffers
+        for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
+        for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
+            ESPectrum::audioBuffer[i]=0;
+            AySound::SamplebufAY[i]=0;
+        }
+        ESPectrum::lastaudioBit=0;
+
+        // Reset AY emulation
+        AySound::init();
+        AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
+        AySound::set_stereo(AYEMU_MONO,NULL);
+        AySound::reset();
+
+        pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
+
+        res = true;
+
+    }
+
+    // Resume audio
+    pwm_audio_start();
+    pwm_audio_set_volume(ESPectrum::aud_volume);
+  
+    // Resume keyboard input
+    ESPectrum::PS2Controller.keyboard()->resumePort();
+
+    return res;
+
+}
+
+string FileSNA::load(string sna_fn)
+{
+    FILE *file;
+    int sna_size;
+
+    file = fopen(sna_fn.c_str(), "rb");
     if (file==NULL)
     {
-        printf("FileZ80: Error opening %s\n",z80_fn.c_str());
+        printf("FileSNA: Error opening %s\n",sna_fn.c_str());
+        return "";
+    }
+
+    fseek(file,0,SEEK_END);
+    sna_size = ftell(file);
+    rewind (file);
+
+    if (sna_size < SNA_48K_SIZE) {
+        printf("FileSNA::load: bad SNA %s: size = %d < %d\n", sna_fn.c_str(), sna_size, SNA_48K_SIZE);
+        return "";
+    }
+
+    printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
+
+    string snapshotArch = "48K";
+
+    // Reset Z80
+    Z80::reset();
+
+    MemESP::bankLatch = 0;
+    MemESP::pagingLock = 1;
+    MemESP::videoLatch = 0;
+    MemESP::romLatch = 0;
+    MemESP::romInUse = 0;
+
+    // Read in the registers
+    Z80::setRegI(readByteFile(file));
+
+    Z80::setRegHLx(readWordFileLE(file));
+    Z80::setRegDEx(readWordFileLE(file));
+    Z80::setRegBCx(readWordFileLE(file));
+    Z80::setRegAFx(readWordFileLE(file));
+
+    Z80::setRegHL(readWordFileLE(file));
+    Z80::setRegDE(readWordFileLE(file));
+    Z80::setRegBC(readWordFileLE(file));
+
+    Z80::setRegIY(readWordFileLE(file));
+    Z80::setRegIX(readWordFileLE(file));
+
+    uint8_t inter = readByteFile(file);
+    Z80::setIFF2(inter & 0x04 ? true : false);
+    Z80::setIFF1(Z80::isIFF2());
+    Z80::setRegR(readByteFile(file));
+
+    Z80::setRegAF(readWordFileLE(file));
+    Z80::setRegSP(readWordFileLE(file));
+
+    Z80::setIM((Z80::IntMode)(readByteFile(file)));
+
+    VIDEO::borderColor = readByteFile(file);
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+
+    // read 48K memory
+    readBlockFile(file, MemESP::ram5, 0x4000);
+    readBlockFile(file, MemESP::ram2, 0x4000);
+    readBlockFile(file, MemESP::ram0, 0x4000);
+
+    if (sna_size == SNA_48K_SIZE)
+    {
+        snapshotArch = "48K";
+
+        // in 48K mode, pop PC from stack
+        uint16_t SP = Z80::getRegSP();
+        Z80::setRegPC(MemESP::readword(SP));
+        Z80::setRegSP(SP + 2);
+    }
+    else
+    {
+        snapshotArch = "128K";
+
+        // in 128K mode, recover stored PC
+        Z80::setRegPC(readWordFileLE(file));
+
+        // tmp_port contains page switching status, including current page number (latch)
+        uint8_t tmp_port = readByteFile(file);
+        uint8_t tmp_latch = tmp_port & 0x07;
+
+        // copy what was read into page 0 to correct page
+        memcpy(MemESP::ram[tmp_latch], MemESP::ram[0], 0x4000);
+
+        uint8_t tr_dos = readByteFile(file);     // unused
+        
+        // read remaining pages
+        for (int page = 0; page < 8; page++) {
+            if (page != tmp_latch && page != 2 && page != 5) {
+                readBlockFile(file, MemESP::ram[page], 0x4000);
+            }
+        }
+
+        // decode tmp_port
+        MemESP::videoLatch = bitRead(tmp_port, 3);
+        MemESP::romLatch = bitRead(tmp_port, 4);
+        MemESP::pagingLock = bitRead(tmp_port, 5);
+        MemESP::bankLatch = tmp_latch;
+        MemESP::romInUse = MemESP::romLatch;
+
+    }
+    
+    fclose(file);
+
+    return snapshotArch;
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool FileSNA::isPersistAvailable(string filename)
+{
+
+    bool res = true;
+    
+    pwm_audio_stop();
+
+    FILE *f = fopen(filename.c_str(), "rb");
+    if (f == NULL)
+        res = false;
+    else
+        fclose(f);
+
+    pwm_audio_start();
+
+    return res;
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool check_and_create_directory(const char* path) {
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        if ((st.st_mode & S_IFDIR) != 0) {
+            printf("Directory exists\n");
+            return true;
+        } else {
+            printf("Path exists but it is not a directory\n");
+            // Create the directory
+            if (mkdir(path, 0755) == 0) {
+                printf("Directory created\n");
+                return true;
+            } else {
+                printf("Failed to create directory\n");
+                return false;
+            }
+        }
+    } else {
+        printf("Directory does not exist\n");
+        // Create the directory
+        if (mkdir(path, 0755) == 0) {
+            printf("Directory created\n");
+            return true;
+        } else {
+            printf("Failed to create directory\n");
+            return false;
+        }
+    }
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+static bool writeMemPage(uint8_t page, FILE *file, bool blockMode)
+{
+    page = page & 0x07;
+    uint8_t* buffer = MemESP::ram[page];
+
+    // printf("writing page %d in [%s] mode\n", page, blockMode ? "block" : "byte");
+
+    if (blockMode) {
+        // Writing blocks should be faster, but fails sometimes when flash is getting full.
+        for (int offset = 0; offset < MEM_PG_SZ; offset+=0x4000) {
+            // printf("writing block from page %d at offset %d\n", page, offset);
+            if (1 != fwrite(&buffer[offset],0x4000,1,file)) {
+                printf("error writing block from page %d at offset %d\n", page, offset);
+                return false;
+            }
+        }
+    }
+    else {
+        for (int offset = 0; offset < MEM_PG_SZ; offset++) {
+            uint8_t b = buffer[offset];
+            if (1 != fwrite(&b,1,1,file)) {
+                printf("error writing byte from page %d at offset %d\n", page, offset);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool FileSNA::save(string sna_file) {
+        
+        // Try to save using pages
+        if (FileSNA::save(sna_file, true)) return true;
+
+        OSD::osdCenteredMsg(OSD_PSNA_SAVE_WARN, LEVEL_WARN);
+
+        // Try to save byte-by-byte
+        return FileSNA::save(sna_file, false);
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool FileSNA::save(string sna_file, bool blockMode) {
+
+    FILE *file;
+
+    // Stop keyboard input
+    ESPectrum::PS2Controller.keyboard()->suspendPort();
+
+    // Stop audio
+    pwm_audio_stop();
+
+    file = fopen(sna_file.c_str(), "wb");
+    if (file==NULL)
+    {
+        printf("FileSNA: Error opening %s for writing",sna_file.c_str());
 
         // Resume audio
         pwm_audio_start();
+
         // Resume keyboard input
         ESPectrum::PS2Controller.keyboard()->resumePort();
 
         return false;
+    }
+
+    // write registers: begin with I
+    writeByteFile(Z80::getRegI(), file);
+
+    writeWordFileLE(Z80::getRegHLx(), file);
+    writeWordFileLE(Z80::getRegDEx(), file);
+    writeWordFileLE(Z80::getRegBCx(), file);
+    writeWordFileLE(Z80::getRegAFx(), file);
+
+    writeWordFileLE(Z80::getRegHL(), file);
+    writeWordFileLE(Z80::getRegDE(), file);
+    writeWordFileLE(Z80::getRegBC(), file);
+
+    writeWordFileLE(Z80::getRegIY(), file);
+    writeWordFileLE(Z80::getRegIX(), file);
+
+    uint8_t inter = Z80::isIFF2() ? 0x04 : 0;
+    writeByteFile(inter, file);
+    writeByteFile(Z80::getRegR(), file);
+
+    writeWordFileLE(Z80::getRegAF(), file);
+
+    uint16_t SP = Z80::getRegSP();
+    if (Config::getArch() == "48K") {
+        // decrement stack pointer it for pushing PC to stack, only on 48K
+        SP -= 2;
+        MemESP::writeword(SP, Z80::getRegPC());
+    }
+    writeWordFileLE(SP, file);
+
+    writeByteFile(Z80::getIM(), file);
+    uint8_t bordercol = VIDEO::borderColor;
+    writeByteFile(bordercol, file);
+
+    // write RAM pages in 48K address space (0x4000 - 0xFFFF)
+    uint8_t pages[3] = {5, 2, 0};
+    if (Config::getArch() == "128K")
+        pages[2] = MemESP::bankLatch;
+
+    for (uint8_t ipage = 0; ipage < 3; ipage++) {
+        uint8_t page = pages[ipage];
+        if (!writeMemPage(page, file, blockMode)) {
+            fclose(file);
+            // Resume audio
+            pwm_audio_start();
+            // Resume keyboard input
+            ESPectrum::PS2Controller.keyboard()->resumePort();
+            return false;
+        }
+    }
+
+    if (Config::getArch() == "48K")
+    {
+        // nothing to do here
+    }
+    else if (Config::getArch() == "128K")
+    {
+        // write pc
+        writeWordFileLE( Z80::getRegPC(), file);
+
+        // write memESP bank control port
+        uint8_t tmp_port = MemESP::bankLatch;
+        bitWrite(tmp_port, 3, MemESP::videoLatch);
+        bitWrite(tmp_port, 4, MemESP::romLatch);
+        bitWrite(tmp_port, 5, MemESP::pagingLock);
+        writeByteFile(tmp_port, file);
+
+        writeByteFile(0, file);     // TR-DOS not paged
+
+        // write remaining ram pages
+        for (int page = 0; page < 8; page++) {
+            if (page != MemESP::bankLatch && page != 2 && page != 5) {
+                if (!writeMemPage(page, file, blockMode)) {
+                    fclose(file);
+                    // Resume audio
+                    pwm_audio_start();
+                    // Resume keyboard input
+                    ESPectrum::PS2Controller.keyboard()->resumePort();
+                    return false;
+                }
+            }
+        }
+    }
+
+    fclose(file);
+
+    // Resume audio
+    pwm_audio_start();
+    // Resume keyboard input
+    ESPectrum::PS2Controller.keyboard()->resumePort();
+
+    return true;
+}
+
+static uint16_t mkword(uint8_t lobyte, uint8_t hibyte) {
+    return lobyte | (hibyte << 8);
+}
+
+string FileZ80::load(string z80_fn)
+{
+    FILE *file;
+
+    file = fopen(z80_fn.c_str(), "rb");
+    if (file == NULL)
+    {
+        printf("FileZ80: Error opening %s\n",z80_fn.c_str());
+        return "";
     }
 
     fseek(file,0,SEEK_END);
@@ -197,20 +683,11 @@ bool FileZ80::load(string z80_fn)
         else if (ahblen == 54 || ahblen == 55)
             version = 3;
         else {
-            
             OSD::osdCenteredMsg("Z80 load: unknown version", LEVEL_ERROR);
             // printf("Z80.load: unknown version, ahblen = %d\n", ahblen);
-            
             fclose(file);
-
-            // Resume audio
-            pwm_audio_start();
-            // Resume keyboard input
-            ESPectrum::PS2Controller.keyboard()->resumePort();
-
             ESPectrum::reset();
-
-            return false;
+            return "";
         }
 
         // read additional header block
@@ -328,139 +805,7 @@ bool FileZ80::load(string z80_fn)
 
     fclose(file);
 
-    // Arch check
-    if (Config::getArch() == "128K") {
-        if (fileArch == "48K") {
-            #ifdef SNAPSHOT_LOAD_FORCE_ARCH
-            Config::requestMachine("48K", "SINCLAIR", true);
-
-            // Condition this to 50hz mode
-            if(Config::videomode) {
-                Config::ram_file = z80_fn;
-                Config::save();
-                OSD::esp_hard_reset();                            
-            }
-
-            MemESP::romInUse = 0;
-            #else
-            MemESP::romInUse = 1;
-            #endif
-        }
-    }
-    else if (Config::getArch() == "48K") {
-        if (fileArch == "128K") {
-            Config::requestMachine("128K", "SINCLAIR", true);
-
-            // Condition this to 50hz mode
-            if(Config::videomode) {            
-                Config::ram_file = z80_fn;
-                Config::save();
-                OSD::esp_hard_reset();                            
-            }
-
-            MemESP::romInUse = 1;
-        }
-    }
-
-    // Ports
-    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
-    if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
-
-    CPU::statesInFrame = CPU::statesPerFrame();
-    CPU::tstates = 0;
-    CPU::global_tstates = 0;
-    ESPectrum::target = CPU::microsPerFrame();
-    ESPectrum::ESPoffset = 0;
-
-    if (Config::getArch() == "48K") {
-
-        Z80Ops::is48 = true;
-
-        VIDEO::tStatesPerLine = TSTATES_PER_LINE;
-        VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
-        VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
-
-        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
-        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
-        ESPectrum::AY_emu = Config::AY48;
-        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
-
-        CPU::latetiming = Config::AluTiming;
-
-        CPU::IntStart = INT_START48;
-        CPU::IntEnd = INT_END48 + CPU::latetiming;
-
-        // VIDEO::contendMod=224;
-        // VIDEO::contendOffset=1;
-
-    } else {
-        
-        Z80Ops::is48 = false;
-
-        VIDEO::tStatesPerLine = TSTATES_PER_LINE_128;
-        VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
-        VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
-
-        ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
-        ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
-        ESPectrum::AY_emu = true;        
-        ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
-
-        CPU::latetiming = Config::AluTiming;
-
-        CPU::IntStart = INT_START128;
-        CPU::IntEnd = INT_END128 + CPU::latetiming;
-
-        // VIDEO::contendMod=228;
-        // VIDEO::contendOffset=3;
-
-    }
-
-    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
-    VIDEO::Draw = &VIDEO::Blank;
-
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
-    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
-
-    MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = true;
-    MemESP::ramContended[2] = false;
-    MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
-
-    Tape::tapeFileName = "none";
-    if (Tape::tape != NULL) {
-        fclose(Tape::tape);
-        Tape::tape = NULL;
-    }
-    Tape::tapeStatus = TAPE_STOPPED;
-    Tape::SaveStatus = SAVE_STOPPED;
-    Tape::romLoading = false;
-
-    // Empty audio buffers
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
-    for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
-        ESPectrum::audioBuffer[i]=0;
-        AySound::SamplebufAY[i]=0;
-    }
-    ESPectrum::lastaudioBit=0;
-
-    // Reset AY emulation
-    AySound::init();
-    AySound::set_sound_format(ESPectrum::Audio_freq,1,8);
-    AySound::set_stereo(AYEMU_MONO,NULL);
-    AySound::reset();
-
-    // Resume audio
-    pwm_audio_set_param(ESPectrum::Audio_freq,LEDC_TIMER_8_BIT,1);
-    pwm_audio_start();
-    pwm_audio_set_volume(ESPectrum::aud_volume);
-  
-    // Resume keyboard input
-    ESPectrum::PS2Controller.keyboard()->resumePort();
-
-    return true;
+    return fileArch;
 
 }
 

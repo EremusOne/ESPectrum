@@ -107,12 +107,9 @@ public:
     static unsigned short menu_curopt;    
     static unsigned int SaveRectpos;    
 
-    // // Rows
+    // Rows
     static unsigned short rowCount(string menu);
     static string rowGet(string menu, unsigned short row_number);
-
-    // // Snapshot (SNA/Z80) Management
-    static void changeSnapshot(string sna_filename);
 
     static void esp_hard_reset();
 

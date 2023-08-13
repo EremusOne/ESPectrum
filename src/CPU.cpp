@@ -46,12 +46,6 @@ visit https://zxespectrum.speccy.org/contacto
 
 static bool createCalled = false;
 
-uint32_t CPU::statesPerFrame()
-{
-    if (Config::getArch() == "48K") return 69888;
-    else                            return 70908;
-}
-
 uint32_t CPU::microsPerFrame()
 {
     if (Config::getArch() == "48K") return 19968;
@@ -75,22 +69,22 @@ void CPU::setup()
         createCalled = true;
     }
     
-    statesInFrame = CPU::statesPerFrame();
-
     CPU::latetiming = Config::AluTiming;    
 
     if (Config::getArch() == "48K") {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
         Z80Ops::is48 = true;
+        statesInFrame = TSTATES_PER_FRAME_48;
         CPU::IntStart = INT_START48;
         CPU::IntEnd = INT_END48 + CPU::latetiming;
     } else {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
         Z80Ops::is48 = false;
+        statesInFrame = TSTATES_PER_FRAME_128;
         CPU::IntStart = INT_START128;
         CPU::IntEnd = INT_END128 + CPU::latetiming;
     }
-
+    
     tstates = 0;
     global_tstates = 0;
 
@@ -102,18 +96,18 @@ void CPU::reset() {
 
     Z80::reset();
     
-    statesInFrame = CPU::statesPerFrame();
-
     CPU::latetiming = Config::AluTiming;
 
     if (Config::getArch() == "48K") {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
         Z80Ops::is48 = true;
+        statesInFrame = TSTATES_PER_FRAME_48;
         CPU::IntStart = INT_START48;
         CPU::IntEnd = INT_END48 + CPU::latetiming;
     } else {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
         Z80Ops::is48 = false;
+        statesInFrame = TSTATES_PER_FRAME_128;
         CPU::IntStart = INT_START128;
         CPU::IntEnd = INT_END128 + CPU::latetiming;
     }
@@ -128,15 +122,12 @@ void CPU::reset() {
 void IRAM_ATTR CPU::loop()
 {
 
-    while (tstates < IntEnd)
-        Z80::execute();
+    while (tstates < IntEnd) Z80::execute();
     
     uint32_t stFrame = statesInFrame - IntEnd;
-    while (tstates < stFrame)
-        Z80::exec_nocheck();
+    while (tstates < stFrame) Z80::exec_nocheck();
 
-    while (tstates < statesInFrame)
-        Z80::execute();
+    while (tstates < statesInFrame) Z80::execute();
 
     if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 

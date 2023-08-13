@@ -39,6 +39,9 @@ visit https://zxespectrum.speccy.org/contacto
 #include <inttypes.h>
 #include "ESPectrum.h"
 
+#define TSTATES_PER_FRAME_48 69888
+#define TSTATES_PER_FRAME_128 70908
+
 #define INT_START48 0
 #define INT_END48 32
 #define INT_START128 0
@@ -59,9 +62,6 @@ public:
     // Flush screen
     static void FlushOnHalt();
 
-    // get the number of CPU Tstates per frame (machine dependant)
-    static uint32_t statesPerFrame();
-
     // get the number of microseconds per frame (machine dependant)
     static uint32_t microsPerFrame();
 
@@ -74,15 +74,15 @@ public:
     // CPU Tstates in frame
     static uint32_t statesInFrame;
 
-    // Frames elapsed
-    static uint32_t framecnt;
-
     // Late timing
     static uint8_t latetiming;
 
     // INT signal lenght
     static uint8_t IntStart;
     static uint8_t IntEnd;
+
+    // Frames elapsed
+    static uint32_t framecnt;
 
 };
 
