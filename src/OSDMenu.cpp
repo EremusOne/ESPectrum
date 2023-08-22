@@ -81,6 +81,7 @@ static uint8_t last_focus;               // To check for changes
 static unsigned short last_begin_row; // To check for changes
 
 uint8_t DRAM_ATTR click48[12]={0,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x16,0};
+
 uint8_t DRAM_ATTR click128[116]= {  0x00,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
                                     0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
                                     0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
@@ -114,55 +115,64 @@ uint16_t OSD::zxColor(uint8_t color, uint8_t bright) {
     return spectrum_colors[color];
 }
 
-// Set menu and force recalc
-void OSD::newMenu(string new_menu) {
-    menu = new_menu;
-    menuRecalc();
-    menuDraw();
-}
+// // Set menu and force recalc
+// void OSD::newMenu(string new_menu) {
+//     menu = new_menu;
+//     menuRecalc();
 
-void OSD::menuRecalc() {
+//     // menuDraw();
 
-    // Position
-    if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
-        y = 8;
-    } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        if (menu_saverect) {
-            y += (8 + (8 * menu_prevopt));
-            prev_y[menu_level] = y;
-        } else {
-            y = prev_y[menu_level];
-        }
-    }
+//     // focus = menu_curopt;
+//     // for (uint8_t r = 1; r < virtual_rows; r++) {
+//     //     menuPrintRow(r, r == focus ? IS_FOCUSED : IS_NORMAL);
+//     // }
 
-    // Rows
-    real_rows = rowCount(menu);
-    virtual_rows = (real_rows > MENU_MAX_ROWS ? MENU_MAX_ROWS : real_rows);
-    begin_row = last_begin_row = last_focus = focus = 1;
+//     // menuScrollBar();
 
-    // Columns
-    cols = 0;
-    uint8_t col_count = 0;
-    for (unsigned short i = 0; i < menu.length(); i++) {
-        if ((menu.at(i) == ASCII_TAB) || (menu.at(i) == ASCII_NL)) {
-            if (col_count > cols) {
-                cols = col_count;
-            }
-            while (menu.at(i) != ASCII_NL) i++;
-            col_count = 0;
-        }
-        col_count++;
-    }
-    cols += 8;
-    cols = (cols > 28 ? 28 : cols);
+// }
 
-    // Size
-    w = (cols * OSD_FONT_W) + 2;
-    h = (virtual_rows * OSD_FONT_H) + 2;
+// void OSD::menuRecalc() {
 
-}
+//     // Position
+//     if (menu_level == 0) {
+//         x = (Config::aspect_16_9 ? 24 : 8);
+//         y = 8;
+//     } else {
+//         x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+//         if (menu_saverect) {
+//             y += (8 + (8 * menu_prevopt));
+//             prev_y[menu_level] = y;
+//         } else {
+//             y = prev_y[menu_level];
+//         }
+//     }
+
+//     // Rows
+//     real_rows = rowCount(menu);
+//     virtual_rows = (real_rows > MENU_MAX_ROWS ? MENU_MAX_ROWS : real_rows);
+//     begin_row = last_begin_row = last_focus = focus = 1;
+
+//     // Columns
+//     cols = 0;
+//     uint8_t col_count = 0;
+//     for (unsigned short i = 0; i < menu.length(); i++) {
+//         if ((menu.at(i) == ASCII_TAB) || (menu.at(i) == ASCII_NL)) {
+//             if (col_count > cols) {
+//                 cols = col_count;
+//             }
+//             while (menu.at(i) != ASCII_NL) i++;
+//             col_count = 0;
+//         }
+//         col_count++;
+//     }
+//     cols += 8;
+//     cols = (cols > 28 ? 28 : cols);
+
+//     // Size
+//     w = (cols * OSD_FONT_W) + 2;
+//     h = (virtual_rows * OSD_FONT_H) + 2;
+
+// }
 
 // Get real row number for a virtual one
 unsigned short OSD::menuRealRowFor(uint8_t virtual_row_num) { return begin_row + virtual_row_num - 1; }
@@ -189,10 +199,7 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     uint8_t margin;
 
-    // string line = rowGet(menu, menuRealRowFor(virtual_row_num));
-    string line = rowGet(menu, virtual_row_num);
-
-    // printf("%s\n",line.c_str());
+    string line = rowGet(menu, menuRealRowFor(virtual_row_num));
     
     switch (line_type) {
     case IS_TITLE:
@@ -237,8 +244,103 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
 }
 
+// // Draw the complete menu
+// void OSD::menuDraw() {
+
+//     // Set font
+//     VIDEO::vga.setFont(Font6x8);
+
+//     if (menu_level!=0) {
+//         if (menu_saverect) {
+//             // Save backbuffer data
+//             VIDEO::SaveRect[SaveRectpos] = x;
+//             VIDEO::SaveRect[SaveRectpos + 1] = y;
+//             VIDEO::SaveRect[SaveRectpos + 2] = w;
+//             VIDEO::SaveRect[SaveRectpos + 3] = h;
+//             SaveRectpos += 4;
+//             for (int  m = y; m < y + h; m++) {
+//                 uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+//                 for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+//                     VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+//                     SaveRectpos++;
+//                 }
+//             }
+//             //printf("Saverectpos after save: %d\n",SaveRectpos);
+//         }
+//     } else SaveRectpos = 0;
+
+//     // Menu border
+//     VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
+
+//     // Title
+//     menuPrintRow(0, IS_TITLE);
+
+//     // Rainbow
+//     unsigned short rb_y = y + 8;
+//     unsigned short rb_paint_x = x + w - 30;
+//     uint8_t rb_colors[] = {2, 6, 4, 5};
+//     for (uint8_t c = 0; c < 4; c++) {
+//         for (uint8_t i = 0; i < 5; i++) {
+//             VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, OSD::zxColor(rb_colors[c], 1));
+//         }
+//         rb_paint_x += 5;
+//     }
+   
+//     // focus = menu_curopt;
+//     // for (uint8_t r = 1; r < virtual_rows; r++) {
+//     //     menuPrintRow(r, r == focus ? IS_FOCUSED : IS_NORMAL);
+//     // }
+
+//     // menuScrollBar();
+
+// }
+
+// // Draw the complete menu
+// void OSD::filemenuDraw() {
+
+//     // Set font
+//     VIDEO::vga.setFont(Font6x8);
+
+//     if (menu_level!=0) {
+//         if (menu_saverect) {
+//             // Save backbuffer data
+//             VIDEO::SaveRect[SaveRectpos] = x;
+//             VIDEO::SaveRect[SaveRectpos + 1] = y;
+//             VIDEO::SaveRect[SaveRectpos + 2] = w;
+//             VIDEO::SaveRect[SaveRectpos + 3] = h;
+//             SaveRectpos += 4;
+//             for (int  m = y; m < y + h; m++) {
+//                 uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+//                 for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+//                     VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+//                     SaveRectpos++;
+//                 }
+//             }
+//             //printf("Saverectpos after save: %d\n",SaveRectpos);
+//         }
+//     } else SaveRectpos = 0;
+
+//     // Menu border
+//     VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
+
+//     // Rainbow
+//     unsigned short rb_y = y + 8;
+//     unsigned short rb_paint_x = x + w - 30;
+//     uint8_t rb_colors[] = {2, 6, 4, 5};
+//     for (uint8_t c = 0; c < 4; c++) {
+//         for (uint8_t i = 0; i < 5; i++) {
+//             VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, OSD::zxColor(rb_colors[c], 1));
+//         }
+//         rb_paint_x += 5;
+//     }
+
+//     // Title
+//     PrintRow(0, IS_TITLE);
+
+// }
+
 // Draw the complete menu
-void OSD::menuDraw() {
+void OSD::WindowDraw() {
 
     // Set font
     VIDEO::vga.setFont(Font6x8);
@@ -266,7 +368,8 @@ void OSD::menuDraw() {
     VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
 
     // Title
-    menuPrintRow(0, IS_TITLE);
+    PrintRow(0, IS_TITLE);
+
     // Rainbow
     unsigned short rb_y = y + 8;
     unsigned short rb_paint_x = x + w - 30;
@@ -277,31 +380,23 @@ void OSD::menuDraw() {
         }
         rb_paint_x += 5;
     }
-    // Focused first line
-    // menuPrintRow(1, IS_FOCUSED);
-    for (uint8_t r = 1; r < virtual_rows; r++) {
-        menuPrintRow(r, r == menu_curopt ? IS_FOCUSED : IS_NORMAL);
-    }
 
-    focus = menu_curopt;
-
-    menuScrollBar();
 }
 
-string OSD::getArchMenu() {
-    string menu = (string)MENU_ARCH[Config::lang]; // + FileUtils::getFileEntriesFromDir(DISK_ROM_DIR);
-    return menu;
-}
+// string OSD::getArchMenu() {
+//     string menu = (string)MENU_ARCH[Config::lang];
+//     return menu;
+// }
 
-string OSD::getRomsetMenu(string arch) {
-    string menu;
-    if (arch == "48K") {
-        menu = (string)MENU_ROMSET48[Config::lang]; // + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
-    } else {
-        menu = (string)MENU_ROMSET128[Config::lang];
-    }
-    return menu;
-}
+// string OSD::getRomsetMenu(string arch) {
+//     string menu;
+//     if (arch == "48K") {
+//         menu = (string)MENU_ROMSET48[Config::lang]; // + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
+//     } else {
+//         menu = (string)MENU_ROMSET128[Config::lang];
+//     }
+//     return menu;
+// }
 
 #define REPDEL 140 // As in real ZX Spectrum (700 ms.)
 #define REPPER 20 // As in real ZX Spectrum (100 ms.)
@@ -313,7 +408,56 @@ unsigned short OSD::menuRun(string new_menu) {
 
     fabgl::VirtualKeyItem Menukey;    
 
-    newMenu(new_menu);
+    // newMenu(new_menu);
+
+    menu = new_menu;
+
+    // Position
+    if (menu_level == 0) {
+        x = (Config::aspect_16_9 ? 24 : 8);
+        y = 8;
+    } else {
+        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        if (menu_saverect) {
+            y += (8 + (8 * menu_prevopt));
+            prev_y[menu_level] = y;
+        } else {
+            y = prev_y[menu_level];
+        }
+    }
+
+    // Rows
+    real_rows = rowCount(menu);
+    virtual_rows = (real_rows > MENU_MAX_ROWS ? MENU_MAX_ROWS : real_rows);
+    // begin_row = last_begin_row = last_focus = focus = 1;
+
+    // Columns
+    cols = 0;
+    uint8_t col_count = 0;
+    for (unsigned short i = 0; i < menu.length(); i++) {
+        if ((menu.at(i) == ASCII_TAB) || (menu.at(i) == ASCII_NL)) {
+            if (col_count > cols) {
+                cols = col_count;
+            }
+            while (menu.at(i) != ASCII_NL) i++;
+            col_count = 0;
+        }
+        col_count++;
+    }
+    cols += 8;
+    cols = (cols > 28 ? 28 : cols);
+
+    // Size
+    w = (cols * OSD_FONT_W) + 2;
+    h = (virtual_rows * OSD_FONT_H) + 2;
+
+    WindowDraw(); // Draw menu outline
+
+    begin_row = 1;
+    focus = menu_curopt;        
+    last_begin_row = last_focus = 0;
+
+    menuRedraw(); // Draw menu content
 
     zxDelay = REPDEL;
     lastzxKey = 0;
@@ -532,6 +676,7 @@ void OSD::menuScroll(bool dir) {
 // Redraw inside rows
 void OSD::menuRedraw() {
     if ((focus != last_focus) || (begin_row != last_begin_row)) {
+
         for (uint8_t row = 1; row < virtual_rows; row++) {
             if (row == focus) {
                 menuPrintRow(row, IS_FOCUSED);
@@ -542,7 +687,9 @@ void OSD::menuRedraw() {
         menuScrollBar();
         last_focus = focus;
         last_begin_row = begin_row;
+
     }
+
 }
 
 // Draw menu scroll bar
@@ -603,7 +750,7 @@ static inline void rtrim(std::string &s) {
 FILE *dirfile;
 
 // Run a new file menu
-string OSD::menuFile(string filedir, string title, string extensions) {
+string OSD::menuFile(string filedir, string title, string extensions, int currentFile) {
 
     fabgl::VirtualKeyItem Menukey;
 
@@ -620,6 +767,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
         // OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
         // precalcAluBytes();
         rc = stat((filedir + "/.d").c_str(), &stat_buf);
+        currentFile = 1;
     }
     
     // Open dir file for read
@@ -631,19 +779,17 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
     real_rows = (stat_buf.st_size / 32) + 1; // Add 1 for title
     virtual_rows = (real_rows > 19 ? 19 : real_rows);
-    begin_row = last_begin_row = last_focus = focus = 1;
     
     printf("Real rows: %d; st_size: %d\n",real_rows,stat_buf.st_size);
 
-    // Get first bunch of rows
-    menu = title + "\n";
-    for (int i = 1; i < virtual_rows; i++) {
-        char buf[256];
-        fgets(buf, sizeof(buf), dirfile);
-        if (feof(dirfile)) break;
-        menu += buf;
-    }
-
+    // // Get first bunch of rows
+    // menu = title + "\n";
+    // for (int i = 1; i < virtual_rows; i++) {
+    //     char buf[256];
+    //     fgets(buf, sizeof(buf), dirfile);
+    //     if (feof(dirfile)) break;
+    //     menu += buf;
+    // }
 
     // Position
     if (menu_level == 0) {
@@ -662,7 +808,13 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     w = (cols * OSD_FONT_W) + 2;
     h = (virtual_rows * OSD_FONT_H) + 2;
 
-    menuDraw();
+    menu = title + "\n";
+    WindowDraw(); // Draw menu outline
+
+    begin_row = focus = 1;    
+    last_begin_row = last_focus = 0;
+
+    filemenuRedraw(title); // Draw menu content
 
     zxDelay = REPDEL;
     lastzxKey = 0;
@@ -790,14 +942,14 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                         if (begin_row > 1) {
                             last_begin_row = begin_row;
                             begin_row--;
+                            filemenuRedraw(title);
                         }
-                        filemenuRedraw(title);
                     } else if (focus > 1) {
                         last_focus = focus;
                         focus--;
-                        filemenuPrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus, IS_FOCUSED);
                         if (focus + 1 < virtual_rows) {
-                            filemenuPrintRow(focus + 1, IS_NORMAL);
+                            PrintRow(focus + 1, IS_NORMAL);
                         }
                     }
                     click();
@@ -806,14 +958,14 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                         if ((begin_row + virtual_rows - 1) < real_rows) {
                             last_begin_row = begin_row;
                             begin_row++;
+                            filemenuRedraw(title);
                         }
-                        filemenuRedraw(title);
                     } else if (focus < virtual_rows - 1) {
                         last_focus = focus;
                         focus++;
-                        filemenuPrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus, IS_FOCUSED);
                         if (focus - 1 > 0) {
-                            filemenuPrintRow(focus - 1, IS_NORMAL);
+                            PrintRow(focus - 1, IS_NORMAL);
                         }
                     }
                     click();
@@ -895,7 +1047,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 }
 
 // Print a virtual row
-void OSD::filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
+void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     uint8_t margin;
 
@@ -903,7 +1055,7 @@ void OSD::filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     switch (line_type) {
     case IS_TITLE:
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
         margin = 2;
         break;
     case IS_FOCUSED:
@@ -937,6 +1089,7 @@ void OSD::filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
 // Redraw inside rows
 void OSD::filemenuRedraw(string title) {
+    
     if ((focus != last_focus) || (begin_row != last_begin_row)) {
 
         // Read bunch of rows
@@ -951,9 +1104,9 @@ void OSD::filemenuRedraw(string title) {
 
         for (uint8_t row = 1; row < virtual_rows; row++) {
             if (row == focus) {
-                filemenuPrintRow(row, IS_FOCUSED);
+                PrintRow(row, IS_FOCUSED);
             } else {
-                filemenuPrintRow(row, IS_NORMAL);
+                PrintRow(row, IS_NORMAL);
             }
         }
         
@@ -962,6 +1115,7 @@ void OSD::filemenuRedraw(string title) {
         last_focus = focus;
         last_begin_row = begin_row;
     }
+
 }
 
 string tapeBlockReadData(int Blocknum) {
@@ -1059,9 +1213,9 @@ void OSD::tapemenuRedraw(string title) {
 
         for (uint8_t row = 1; row < virtual_rows; row++) {
             if (row == focus) {
-                filemenuPrintRow(row, IS_FOCUSED);
+                PrintRow(row, IS_FOCUSED);
             } else {
-                filemenuPrintRow(row, IS_NORMAL);
+                PrintRow(row, IS_NORMAL);
             }
         }
         
@@ -1073,7 +1227,7 @@ void OSD::tapemenuRedraw(string title) {
     }
 }
 
-// Run a new file menu
+// Tape Browser Menu
 int OSD::menuTape(string title) {
 
     fabgl::VirtualKeyItem Menukey;
@@ -1084,7 +1238,7 @@ int OSD::menuTape(string title) {
 
     real_rows = Tape::tapeNumBlocks + 1;
     virtual_rows = (real_rows > 19 ? 19 : real_rows);
-    begin_row = last_begin_row = last_focus = focus = 1;
+    // begin_row = last_begin_row = last_focus = focus = 1;
     
     if (Tape::tapeCurBlock > 17) {
         begin_row = Tape::tapeCurBlock - 16;
@@ -1093,18 +1247,18 @@ int OSD::menuTape(string title) {
         begin_row = 1;    
         focus = Tape::tapeCurBlock + 1;
     }
-    last_focus = focus;
-    last_begin_row = begin_row;
+    // last_focus = focus;
+    // last_begin_row = begin_row;
     menu_curopt = focus;
 
-    // Get first bunch of rows
-    menu = title + "\n";
-    for (int i = (begin_row - 1); i < (begin_row - 1) + (virtual_rows - 1); i++) {
-        if (i > Tape::tapeNumBlocks) break;
-        menu += tapeBlockReadData(i);
-    }
+    // // Get first bunch of rows
+    // menu = title + "\n";
+    // for (int i = (begin_row - 1); i < (begin_row - 1) + (virtual_rows - 1); i++) {
+    //     if (i > Tape::tapeNumBlocks) break;
+    //     menu += tapeBlockReadData(i);
+    // }
 
-    printf(menu.c_str());
+    // printf(menu.c_str());
 
     // Position
     if (menu_level == 0) {
@@ -1122,7 +1276,12 @@ int OSD::menuTape(string title) {
     w = (cols * OSD_FONT_W) + 2;
     h = (virtual_rows * OSD_FONT_H) + 2;
 
-    menuDraw();
+    menu = title + "\n";
+    WindowDraw();
+
+    last_begin_row = last_focus = 0;
+
+    tapemenuRedraw(title);
 
     zxDelay = REPDEL;
     lastzxKey = 0;
@@ -1234,8 +1393,8 @@ int OSD::menuTape(string title) {
                     } else if (focus > 1) {
                         last_focus = focus;
                         focus--;
-                        filemenuPrintRow(focus, IS_FOCUSED);
-                        filemenuPrintRow(focus + 1, IS_NORMAL);
+                        PrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus + 1, IS_NORMAL);
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_DOWN) {
@@ -1249,8 +1408,8 @@ int OSD::menuTape(string title) {
                     } else if (focus < virtual_rows - 1) {
                         last_focus = focus;
                         focus++;
-                        filemenuPrintRow(focus, IS_FOCUSED);
-                        filemenuPrintRow(focus - 1, IS_NORMAL);
+                        PrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus - 1, IS_NORMAL);
                         click();
                     }
                 } else if ((Menukey.vk == fabgl::VK_PAGEUP) || (Menukey.vk == fabgl::VK_LEFT)) {

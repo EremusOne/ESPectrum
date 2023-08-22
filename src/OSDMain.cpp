@@ -228,10 +228,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     else if (KeytoESP == fabgl::VK_F2) {
         menu_level = 0;
         menu_curopt = 1;
-        string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
+        string mFile = menuFile(FileUtils::MountPoint + FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80", FileUtils::curSNAFile);
         if (mFile != "") {
             mFile.erase(0, 1);
-            string fname = FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile;
+            string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
             LoadSnapshot(fname);
             Config::ram_file = fname;
             #ifdef SNAPSHOT_LOAD_LAST
@@ -261,7 +261,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     else if (KeytoESP == fabgl::VK_F5) {
         menu_level = 0;      
         menu_curopt = 1;
-        string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
+        string mFile = menuFile(FileUtils::MountPoint + FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],".tap.TAP",FileUtils::curTAPFile);
         if (mFile != "") {
 
             string keySel = mFile.substr(0,1);
@@ -297,11 +297,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             Tape::TAP_Stop();
 
             // Read and analyze tape file
-            Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
+            Tape::Open(FileUtils::MountPoint + FileUtils::TAP_Path + "/" + mFile);
 
             ESPectrum::TapeNameScroller = 0;
 
-            // Tape::tapeFileName=FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile;
+            // Tape::tapeFileName=FileUtils::MountPoint + FileUtils::TAP_Path "/" + mFile;
 
         }
 
@@ -465,10 +465,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     menu_saverect = true;
                     if (sna_mnu == 1) {
                         menu_curopt = 1;
-                        string mFile = menuFile(FileUtils::MountPoint + DISK_SNA_DIR, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80");
+                        string mFile = menuFile(FileUtils::MountPoint + FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],".sna.SNA.z80.Z80",FileUtils::curSNAFile);
                         if (mFile != "") {
                             mFile.erase(0, 1);
-                            string fname = FileUtils::MountPoint + DISK_SNA_DIR + "/" + mFile;
+                            string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
                             LoadSnapshot(fname);
                             Config::ram_file = fname;
                             #ifdef SNAPSHOT_LOAD_LAST
@@ -525,7 +525,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     if (tap_num == 1) {
                         menu_curopt = 1;
                         // Select TAP File
-                        string mFile = menuFile(FileUtils::MountPoint + DISK_TAP_DIR, MENU_TAP_TITLE[Config::lang],".tap.TAP");
+                        string mFile = menuFile(FileUtils::MountPoint + FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],".tap.TAP",FileUtils::curTAPFile);
                         if (mFile != "") {
 
                             string keySel = mFile.substr(0,1);
@@ -561,7 +561,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             Tape::TAP_Stop();
 
                             // Read and analyze tape file
-                            Tape::Open(FileUtils::MountPoint + DISK_TAP_DIR "/" + mFile);
+                            Tape::Open(FileUtils::MountPoint + FileUtils::TAP_Path + "/" + mFile);
 
                             ESPectrum::TapeNameScroller = 0;
 
@@ -702,11 +702,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             else 
                             if (opt2 == 2) {
                                 OSD::osdCenteredMsg("Refreshing snap dir", LEVEL_INFO, 0);
-                                int chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_SNA_DIR, ".sna.SNA.z80.Z80"); // Prepare sna filelist
-                                if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_SNA_DIR,chunks); // Merge files
+                                int chunks = FileUtils::DirToFile(FileUtils::MountPoint + FileUtils::SNA_Path, ".sna.SNA.z80.Z80"); // Prepare sna filelist
+                                if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + FileUtils::SNA_Path,chunks); // Merge files
                                 OSD::osdCenteredMsg("Refreshing tape dir", LEVEL_INFO, 0);
-                                chunks = FileUtils::DirToFile(FileUtils::MountPoint + DISK_TAP_DIR, ".tap.TAP"); // Prepare tap filelist
-                                if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + DISK_TAP_DIR,chunks); // Merge files
+                                chunks = FileUtils::DirToFile(FileUtils::MountPoint + FileUtils::TAP_Path, ".tap.TAP"); // Prepare tap filelist
+                                if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + FileUtils::TAP_Path,chunks); // Merge files
                                 return;
                             }
                             menu_curopt = opt2;
@@ -722,7 +722,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     menu_curopt = 1;
                     menu_saverect = true;
                     // Change ROM
-                    string arch_menu = getArchMenu();
+                    string arch_menu = (string)MENU_ARCH[Config::lang];                    
                     uint8_t arch_num = menuRun(arch_menu);
                     if (arch_num) {
                             string arch = (arch_num==1 ? "48K" : "128K");

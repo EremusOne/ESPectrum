@@ -596,10 +596,17 @@ bool Tape::FlashLoad() {
         if (tape == NULL) {
             return false;
         }
+        CalcTapBlockPos(tapeCurBlock);
     }
+
+    // printf("--< BLOCK: %d >--------------------------------\n",(int)tapeCurBlock);    
 
     uint16_t blockLen=(readByteFile(tape) | (readByteFile(tape) <<8));
     uint8_t tapeFlag = readByteFile(tape);
+
+    // printf("blockLen: %d\n",(int)blockLen - 2);
+    // printf("tapeFlag: %d\n",(int)tapeFlag);
+    // printf("AX: %d\n",(int)Z80::getRegAx());
 
     if (Z80::getRegAx() != tapeFlag) {
         // printf("No coincide el flag\n");
@@ -624,6 +631,8 @@ bool Tape::FlashLoad() {
     int nBytes = Z80::getRegDE();  // Lenght
     int addr2 = addr & 0x3fff;
     uint8_t page = addr >> 14;
+
+    // printf("nBytes: %d\n",nBytes);
 
     if ((addr2 + nBytes) <= 0x4000) {
 
@@ -679,33 +688,22 @@ bool Tape::FlashLoad() {
 
     }
 
-    if (nBytes != (blockLen - 2)) {
-
-        if (tapeCurBlock < (tapeNumBlocks - 1)) {        
-            tapeCurBlock++;
-        } else {
-            tapeCurBlock = 0;
-            rewind(tape);
-        }
-
+    if (nBytes > (blockLen - 2)) {
         // Hay menos bytes en la cinta de los indicados en DE
         // En ese caso habrá dado un error de timeout en LD-SAMPLE (0x05ED)
         // que se señaliza con CARRY==reset & ZERO==set
-        Z80::setFlags(0x50); // when B==0xFF, then INC B, B=0x00, F=0x50
-        CalcTapBlockPos(tapeCurBlock);
-
+        Z80::setFlags(0x50);
     } else {
-
         Z80::Xor(readByteFile(tape)); // Byte de paridad
         Z80::Cp(0x01);
+    }
 
-        if (tapeCurBlock < (tapeNumBlocks - 1)) {        
-            tapeCurBlock++;
-        } else {
-            tapeCurBlock = 0;
-            rewind(tape);
-        }
-
+    if (tapeCurBlock < (tapeNumBlocks - 1)) {        
+        tapeCurBlock++;
+        if (nBytes != (blockLen -2)) CalcTapBlockPos(tapeCurBlock);
+    } else {
+        tapeCurBlock = 0;
+        rewind(tape);
     }
 
     Z80::setRegIX(addr);

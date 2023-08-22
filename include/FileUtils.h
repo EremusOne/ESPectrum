@@ -47,8 +47,6 @@ using namespace std;
 
 // Defines
 #define ASCII_NL 10
-#define ON true
-#define OFF false
 
 class FileUtils
 {
@@ -70,6 +68,12 @@ public:
 
     static string MountPoint;
     static bool SDReady;
+
+    static string SNA_Path; // Current SNA path on the SD (for future folder support)
+    static string TAP_Path; // Current TAP path on the SD (for future folder support)    
+
+    static int curSNAFile; // Current SNA file index on browser
+    static int curTAPFile; // Current TAP file index on browser
 
 private:
     friend class Config;

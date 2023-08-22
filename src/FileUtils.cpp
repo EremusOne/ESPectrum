@@ -61,6 +61,12 @@ string FileUtils::MountPoint = MOUNT_POINT_SD; // Start with SD
 bool FileUtils::SDReady = false;
 sdmmc_card_t *FileUtils::card;
 
+string FileUtils::SNA_Path = "/s"; // Current path on the SD (for future folder support)
+string FileUtils::TAP_Path = "/t"; // Current path on the SD (for future folder support)
+
+int FileUtils::curSNAFile = 1; // Current SNA file index on browser
+int FileUtils::curTAPFile = 1; // Current TAP file index on browser
+
 void FileUtils::initFileSystem() {
 
     // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
