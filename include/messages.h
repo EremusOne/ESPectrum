@@ -41,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
-#define EMU_VERSION "v1.0rc2pr3.2"
+#define EMU_VERSION "     v1.0rc2"
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -393,10 +393,10 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 		"\nD1Inacio Santos\r"\
 		"\r"\
 		"\nA1The Manic Miners:\r"\
-		"\nE1Fernando Bonilla, \nB1M.Ignacio Monge\r"\
-		"\nC1Jose Maria Rodriguez, \nD1Julia Salvador\r"\
-		"\nB1Marta Sicilia, \nE1Radoslaw Wojciechowski\r"\
-		"\r"
+		"\nE1Fernando Bonilla, \nB1Jorge Garcia\r"\
+		"\nC1Ignacio Monge, \nD1Jose Maria Rodriguez\r"\
+		"\nB1Julia Salvador, \nE1Marta Sicilia\r"\
+		"\nC1Radoslaw Wojciechowski\r"
 
 	static const char *AboutMsg[2][5] = {
 		{
