@@ -40,6 +40,29 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 #include "ESP32Lib/ESP32Lib.h"
 
+/*
+.- - <-INT-> - - - - - - - - - - - - - -.  ---         ---
+:   VBLANK + Invisible Top Border       :   | 16 / 15   |
+.---------------------------------.- - -:  ---   ---    |
+|           Top Border            |     :   | 48  |     |
+|----.-----------------------.----|     :  ---    |     |
+|L   |                       |R   |     :   |     |     |
+|e   |                       |i   |  H  :   |     |     |
+|f  B|                       |g  B|  B  :   |     |     |
+|t  o|         Paper         |h  o|  L  :   | 192 | 296 | 312 / 311
+|   r|                       |t  r|  A  :   |     |     |
+|   d|                       |   d|  N  :   |     |     |
+|   e|                       |   e|  K  :   |     |     |
+|   r|                       |   r|     :   |     |     |
+|----'-----------------------'----|     :  ---    |     |
+|          Bottom Border          |     :   | 56  |     |
+'---------------------------------'- - -'  ---   ---   ---
+
+|----|-----------------------|----|
+  48            256            48
+|---------------------------------|
+                352                                     */
+
 #define SPEC_W 256
 #define SPEC_H 192
 
@@ -48,10 +71,11 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW 48K @ 320x240, SCANLINE 40, -16 FROM BORDER
 #define TS_SCREEN_320x240_128 8874  // START OF VISIBLE ULA DRAW 128K @ 320x240, SCANLINE 39, -16 FROM BORDER
+                                    // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)
 
 #define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW 48K @ 360x200, SCANLINE 60, -16 FROM BORDER
 #define TS_SCREEN_360x200_128 13434 // START OF VISIBLE ULA DRAW 128K @ 360x200, SCANLINE 59, -16 FROM BORDER
-
+                                    // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)                                    
 class VIDEO
 {
 public:
@@ -66,8 +90,8 @@ public:
     static void IRAM_ATTR TopBorder_Blank(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR TopBorder(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR MainScreen(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR MainScreen_OSD(unsigned int statestoadd, bool contended);
+    static void MainScreen(unsigned int statestoadd, bool contended);
+    static void MainScreen_OSD(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR BottomBorder(unsigned int statestoadd, bool contended);
     static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd, bool contended);    
@@ -102,6 +126,11 @@ public:
 
     static uint8_t flashing;
     static uint8_t flash_ctr;
+
+    // static uint8_t dispUpdCycle;
+
+    // static uint8_t contendOffset;
+    // static uint8_t contendMod;    
 
     static bool OSD;
 

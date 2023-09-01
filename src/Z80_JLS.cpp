@@ -15,11 +15,16 @@
 //... v1.0.0 (13/02/2017)
 //    quick & dirty conversion by dddddd (AKA deesix)
 
+#include <stdio.h>
+#include <algorithm>
+
 #include "Z80_JLS/z80.h"
 #include "Ports.h"
 #include "Video.h"
 #include "MemESP.h"
 #include "CPU.h"
+#include "Tape.h"
+#include "Config.h"
 
 #pragma GCC optimize ("O3")
 
@@ -559,6 +564,10 @@ void Z80::xor_(uint8_t oper8) {
     flagQ = true;
 }
 
+void Z80::Xor(uint8_t oper8) {
+    xor_(oper8);
+}
+
 // Operación OR lógica
 void Z80::or_(uint8_t oper8) {
     regA |= oper8;
@@ -590,6 +599,10 @@ void Z80::cp(uint8_t oper8) {
     }
 
     flagQ = true;
+}
+
+void Z80::Cp(uint8_t oper8) {
+    cp(oper8);
 }
 
 // DAA
@@ -752,7 +765,7 @@ void IRAM_ATTR Z80::ini(void) {
     }
 
     carryFlag = false;
-    uint16_t tmp = work8 + REG_C + 1;
+    uint16_t tmp = work8 + ((REG_C + 1) & 255);
     if (tmp > 0xff) {
         sz5h3pnFlags |= HALFCARRY_MASK;
         carryFlag = true;
@@ -783,7 +796,7 @@ void IRAM_ATTR Z80::ind(void) {
     }
 
     carryFlag = false;
-    uint16_t tmp = work8 + (REG_C - 1);
+    uint16_t tmp = work8 + ((REG_C - 1) & 255);
     if (tmp > 0xff) {
         sz5h3pnFlags |= HALFCARRY_MASK;
         carryFlag = true;
@@ -912,13 +925,13 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
  */
 void Z80::interrupt(void) {
     
-    lastFlagQ = false;
+    // lastFlagQ = false;
     
     // Si estaba en un HALT esperando una INT, lo saca de la espera
-    if (halted) {
+    // if (halted) {
         halted = false;
-        REG_PC++;
-    }
+    //     REG_PC++;
+    // }
 
     // Z80Ops::interruptHandlingTime(7);
     VIDEO::Draw(7, false);
@@ -942,36 +955,41 @@ void Z80::interrupt(void) {
  * M3: 3 T-Estados -> escribe byte bajo de PC y PC=0x0066
  */
 void Z80::nmi(void) {
+
+    // lastFlagQ = false;
+
+    halted = false;
+
     // Esta lectura consigue dos cosas:
     //      1.- La lectura del opcode del M1 que se descarta
     //      2.- Si estaba en un HALT esperando una INT, lo saca de la espera
-    
     // Z80Ops::fetchOpcode(REG_PC);
-    FETCH_OPCODE(uint8_t discardOpCode, REG_PC);
-
     // Z80Ops::interruptHandlingTime(1);
+    FETCH_OPCODE(uint8_t discardOpCode, REG_PC);
     VIDEO::Draw(1, false);    
 
-    if (halted) {
-        halted = false;
-        REG_PC++;
-    }
+    // if (halted) {
+    //     halted = false;
+    //     REG_PC++;
+    // }
+
     regR++;
     ffIFF1 = false;
     push(REG_PC); // 3+3 t-estados + contended si procede
     REG_PC = REG_WZ = 0x0066;
 }
 
-void Z80::checkINT(void) {
+void IRAM_ATTR Z80::checkINT(void) {
 
     // Comprueba si está activada la señal INT
     if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
+        lastFlagQ = false;
         interrupt();
     }
 
 }
 
-void Z80::incRegR(uint8_t inc) {
+void IRAM_ATTR Z80::incRegR(uint8_t inc) {
 
     regR += inc;
 
@@ -979,52 +997,46 @@ void Z80::incRegR(uint8_t inc) {
 
 void IRAM_ATTR Z80::execute() {
 
-    // opCode = Z80Ops::fetchOpcode(REG_PC);
-    FETCH_OPCODE(opCode,REG_PC);
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+
     regR++;
 
-    #ifdef WITH_BREAKPOINT_SUPPORT
-    if (breakpointEnabled && prefixOpcode == 0) {
-        opCode = Z80Ops::breakpoint(REG_PC, opCode);
+    if (!halted) {
+
+        REG_PC++;
+
+        // El prefijo 0xCB no cuenta para esta guerra.
+        // En CBxx todas las xx producen un código válido
+        // de instrucción, incluyendo CBCB.
+        switch (prefixOpcode) {
+            case 0x00:
+                flagQ = pendingEI = false;
+                dcOpcode[opCode]();
+                break;
+            case 0xDD:
+                prefixOpcode = 0;
+                decodeDDFD(regIX);
+                break;
+            case 0xED:
+                prefixOpcode = 0;
+                decodeED();
+                break;
+            case 0xFD:
+                prefixOpcode = 0;
+                decodeDDFD(regIY);
+                break;
+            default:
+                return;
+        }
+
+        if (prefixOpcode != 0) return;
+
+        lastFlagQ = flagQ;
+
     }
-    #endif
-    
-    REG_PC++;
 
-    // El prefijo 0xCB no cuenta para esta guerra.
-    // En CBxx todas las xx producen un código válido
-    // de instrucción, incluyendo CBCB.
-    switch (prefixOpcode) {
-        case 0x00:
-            flagQ = pendingEI = false;
-            dcOpcode[opCode]();
-            break;
-        case 0xDD:
-            prefixOpcode = 0;
-            decodeDDFD(regIX);
-            break;
-        case 0xED:
-            prefixOpcode = 0;
-            decodeED();
-            break;
-        case 0xFD:
-            prefixOpcode = 0;
-            decodeDDFD(regIY);
-            break;
-        default:
-            return;
-    }
-
-    if (prefixOpcode != 0) return;
-
-    lastFlagQ = flagQ;
-
-    #ifdef WITH_EXEC_DONE
-    if (execDone) {
-        Z80Ops::execDone();
-    }
-    #endif
-    
     // Primero se comprueba NMI
     // Si se activa NMI no se comprueba INT porque la siguiente
     // instrucción debe ser la de 0x0066.
@@ -1036,10 +1048,52 @@ void IRAM_ATTR Z80::execute() {
     // }
 
     // Ahora se comprueba si está activada la señal INT
-    if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
-        interrupt();
-    }
+    checkINT();
 
+}
+
+void IRAM_ATTR Z80::exec_nocheck() {
+
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+
+    regR++;
+
+    if (!halted) {
+
+        REG_PC++;
+
+        // El prefijo 0xCB no cuenta para esta guerra.
+        // En CBxx todas las xx producen un código válido
+        // de instrucción, incluyendo CBCB.
+        switch (prefixOpcode) {
+            case 0x00:
+                flagQ = pendingEI = false;
+                dcOpcode[opCode]();
+                break;
+            case 0xDD:
+                prefixOpcode = 0;
+                decodeDDFD(regIX);
+                break;
+            case 0xED:
+                prefixOpcode = 0;
+                decodeED();
+                break;
+            case 0xFD:
+                prefixOpcode = 0;
+                decodeDDFD(regIY);
+                break;
+            default:
+                return;
+        }
+
+        if (prefixOpcode != 0) return;
+
+        lastFlagQ = flagQ;
+
+    }
+   
 }
 
 void Z80::decodeOpcode00()
@@ -1803,12 +1857,14 @@ void Z80::decodeOpcode75()
 
 void Z80::decodeOpcode76()
 { /* HALT */
-    REG_PC--;
+
+    // REG_PC--;
     
     // Signal HALT to CPU Loop
-    CPU::tstates |= 0xFF000000;
-    
+    CPU::tstates |= 0xFF000000;    
+
     halted = true;
+
 }
 
 void Z80::decodeOpcode77()
@@ -2206,10 +2262,22 @@ void Z80::decodeOpcodebe()
     
 }
 
-void Z80::decodeOpcodebf()
+void IRAM_ATTR Z80::decodeOpcodebf()
 { /* CP A */
+
     cp(regA);
     
+    if (REG_PC == 0x56b) { // LOAD trap
+
+        // printf("Trap Load!\n");
+
+        if ((Config::flashload) && (Tape::tapeFileName != "none") && (Tape::tapeStatus != TAPE_LOADING)) {
+            // printf("Loading tape %s\n",Tape::tapeFileName.c_str());
+            if (Tape::FlashLoad()) REG_PC = 0x5e2;
+        }
+
+    }
+
 }
 
 void Z80::decodeOpcodec0()
@@ -4288,6 +4356,13 @@ void (*Z80::dcCB[256])() = {
 
 };
 
+// Trim from end (in place) (for SAVE trap, clean this up later)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
 //Subconjunto de instrucciones 0xDD / 0xFD
 /*
  * Hay que tener en cuenta el manejo de secuencias códigos DD/FD que no
@@ -4368,6 +4443,66 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
         { /* DEC IX */
             Z80Ops::addressOnBus(getPairIR().word, 2);
             regIXY.word--;
+
+            if (REG_PC == 0x04d4) { // Save trap
+
+                if (REG_HL == 0x1F80) {
+
+                    printf("Saving header!\n");
+
+                    regIXY.word++;
+
+                    // remove .tap output file if exists
+                    
+                    // Get save name
+                    string name;
+                    uint16_t header_data = REG_IX;
+                    for (int i=0; i < 10; i++)
+                        name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
+                    rtrim(name);
+                    Tape::tapeSaveName = "/sd/t/" + name + ".tap";
+
+                    printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
+                    /*int result = */remove(Tape::tapeSaveName.c_str());
+
+                    // check if file has been deleted successfully
+                    // if (result != 0) {
+                    //     // print error message
+                    //     printf("File deletion failed\n");
+                    // }
+                    // else {
+                    //     printf("File deleted succesfully\n");
+                    // }            
+
+                    printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
+                    
+                    REG_DE--;
+                    regA = 0x00;
+
+                    Tape::Save();
+
+                    REG_PC = 0x555;
+
+                } else {
+
+                    printf("Saving data!\n");
+
+                    // Call Save function
+
+                    printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
+
+                    REG_DE--;
+                    regIXY.word++;
+                    regA = 0xFF;
+
+                    Tape::Save();
+
+                    REG_PC = 0x555;
+
+                }
+
+            }
+
             break;
         }
         case 0x2C:
@@ -5771,6 +5906,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_DE - 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5782,6 +5919,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL - 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5791,6 +5930,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_HL - 1, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5800,6 +5940,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_BC, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5810,6 +5951,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_DE + 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5821,6 +5964,8 @@ void Z80::decodeED(void) {
                 REG_PC = REG_PC - 2;
                 REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL + 1, 5);
+                sz5h3pnFlags &= ~FLAG_53_MASK;
+                sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
             }
             break;
         }
@@ -5830,6 +5975,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_HL + 1, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5839,6 +5985,7 @@ void Z80::decodeED(void) {
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
                 Z80Ops::addressOnBus(REG_BC, 5);
+                SetAbortedINxR_OTxRFlags();
             }
             break;
         }
@@ -5856,7 +6003,7 @@ void Z80::decodeED(void) {
     }
 }
 
-void Z80::copyToRegister(uint8_t value)
+void IRAM_ATTR Z80::copyToRegister(uint8_t value)
 {
     switch (opCode & 0x07)
     {
@@ -5883,4 +6030,39 @@ void Z80::copyToRegister(uint8_t value)
         default:
             break;
     }
+}
+
+void Z80::SetAbortedINxR_OTxRFlags() {
+        
+    sz5h3pnFlags &= ~FLAG_53_MASK;
+    sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
+
+    // // 1st implementation
+    // uint8_t pf = sz5h3pnFlags & PARITY_MASK;
+    // if (carryFlag) {
+    //     int addsub = 1 - (sz5h3pnFlags & ADDSUB_MASK);
+    //     pf = pf ^ sz53pn_addTable[(REG_B + addsub) & 0x07] ^ PARITY_MASK;
+    //     if ((REG_B & 0x0F) == (addsub != 1 ? 0x00 : 0x0F )) sz5h3pnFlags |= HALFCARRY_MASK; else sz5h3pnFlags &= ~HALFCARRY_MASK;
+    // } else {
+    //     pf = pf ^ sz53pn_addTable[REG_B & 0x07] ^ PARITY_MASK;
+    // }
+    // if (pf & PARITY_MASK) sz5h3pnFlags |= PARITY_MASK; else sz5h3pnFlags &= ~PARITY_MASK;
+
+    // // 2nd implementation
+    // uint8_t pf = sz5h3pnFlags & PARITY_MASK;
+    // int addsub = carryFlag ? 1 - (sz5h3pnFlags & ADDSUB_MASK): 0;
+    // if (addsub)
+    //     if ((REG_B & 0x0F) == (addsub > 0 ? 0xF : 0x0 )) sz5h3pnFlags |= HALFCARRY_MASK; else sz5h3pnFlags &= ~HALFCARRY_MASK;
+    // pf ^= sz53pn_addTable[(REG_B + addsub) & 0x07] ^ PARITY_MASK;
+    // if (pf & PARITY_MASK) sz5h3pnFlags |= PARITY_MASK; else sz5h3pnFlags &= ~PARITY_MASK;
+
+    // 3rd implementation
+    uint8_t cpyB = REG_B;
+    if (carryFlag) {
+        cpyB += sz5h3pnFlags & ADDSUB_MASK ? -1 : 1;
+        sz5h3pnFlags = (cpyB ^ REG_B) & HALFCARRY_MASK ? sz5h3pnFlags | HALFCARRY_MASK : sz5h3pnFlags & ~HALFCARRY_MASK;
+    }
+    uint8_t pf = (sz5h3pnFlags & PARITY_MASK) ^ sz53pn_addTable[cpyB & 0x07] ^ PARITY_MASK;
+    sz5h3pnFlags = pf & PARITY_MASK ? sz5h3pnFlags | PARITY_MASK : sz5h3pnFlags & ~PARITY_MASK;
+
 }

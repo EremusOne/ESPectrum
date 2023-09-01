@@ -38,7 +38,14 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include <inttypes.h>
 #include "ESPectrum.h"
-#include "ESP32Lib/ESP32Lib.h"
+
+#define TSTATES_PER_FRAME_48 69888
+#define TSTATES_PER_FRAME_128 70908
+
+#define INT_START48 0
+#define INT_END48 32
+#define INT_START128 0
+#define INT_END128 36
 
 class CPU
 {
@@ -46,7 +53,7 @@ public:
     // call this for initializing CPU
     static void setup();
 
-    // call this for executing a frame's worth of instructions
+    // // call this for executing a frame's worth of instructions
     static void IRAM_ATTR loop();
 
     // call this for resetting the CPU
@@ -54,9 +61,6 @@ public:
 
     // Flush screen
     static void FlushOnHalt();
-
-    // get the number of CPU Tstates per frame (machine dependant)
-    static uint32_t statesPerFrame();
 
     // get the number of microseconds per frame (machine dependant)
     static uint32_t microsPerFrame();
@@ -70,12 +74,20 @@ public:
     // CPU Tstates in frame
     static uint32_t statesInFrame;
 
+    // Late timing
+    static uint8_t latetiming;
+
+    // INT signal lenght
+    static uint8_t IntStart;
+    static uint8_t IntEnd;
+
     // Frames elapsed
     static uint32_t framecnt;
 
 };
 
-static const unsigned char wait_st[228] = { 
+static const unsigned char DRAM_ATTR wait_st[243] = { 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,

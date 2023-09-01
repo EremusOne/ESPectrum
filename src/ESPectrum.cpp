@@ -37,8 +37,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <string>
 
 #include "ESPectrum.h"
-#include "FileSNA.h"
-#include "FileZ80.h"
+#include "Snapshot.h"
 #include "Config.h"
 #include "FileUtils.h"
 #include "OSDMain.h"
@@ -60,28 +59,10 @@ visit https://zxespectrum.speccy.org/contacto
 #include "freertos/task.h"
 #include "driver/timer.h"
 #include "soc/timer_group_struct.h"
-#include "esp_spiffs.h"
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #endif
-
-// #include <stdint.h>
-// #include <string.h>
-// #include <stdbool.h>
-// #include "driver/uart.h"
-
-// #include "esp_bt.h"
-// #include "nvs_flash.h"
-// #include "esp_bt_device.h"
-// #include "esp_gap_ble_api.h"
-// #include "esp_gattc_api.h"
-// #include "esp_gatt_defs.h"
-// #include "esp_bt_main.h"
-// #include "esp_system.h"
-// #include "esp_gatt_common_api.h"
-// #include "esp_log.h"
-// #define GATTC_TAG                   "GATTC_SPP_DEMO"
 
 using namespace std;
 
@@ -110,6 +91,7 @@ int ESPectrum::samplesPerFrame = ESP_AUDIO_SAMPLES_48;
 int ESPectrum::overSamplesPerFrame = ESP_AUDIO_OVERSAMPLES_48;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
+int ESPectrum::TapeNameScroller = 0;
 // bool ESPectrum::Audio_restart = false;
 
 QueueHandle_t audioTaskQueue;
@@ -182,18 +164,105 @@ printf("------------------------------------------------------------------------
 printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
 printf("Minimum free ever: %d\n", info.minimum_free_bytes);
 printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
-printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+printf("Heap caps get free size (MALLOC_CAP_8BIT): %d\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
+printf("Heap caps get free size (MALLOC_CAP_32BIT): %d\n", heap_caps_get_free_size(MALLOC_CAP_32BIT));
+printf("Heap caps get free size (MALLOC_CAP_INTERNAL): %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 printf("=========================================================================\n\n");
 
-UBaseType_t wm;
-wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-printf("Audio Task Stack HWM: %u\n", wm);
-// wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
-// printf("Loop Task Stack HWM: %u\n", wm);
-wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
-printf("Video Task Stack HWM: %u\n", wm);
+// heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_8BIT);            
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_32BIT);                        
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_DMA);            
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_EXEC);            
+
+// printf("=========================================================================\n");
+// heap_caps_print_heap_info(MALLOC_CAP_IRAM_8BIT);            
+
+// printf("=========================================================================\n");
+// heap_caps_dump_all();
+
+// printf("=========================================================================\n");
+
+// UBaseType_t wm;
+// wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
+// printf("Audio Task Stack HWM: %u\n", wm);
+// // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
+// // printf("Loop Task Stack HWM: %u\n", wm);
+// wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
+// printf("Video Task Stack HWM: %u\n", wm);
 
 #endif
+
+}
+
+//=======================================================================================
+// BOOT KEYBOARD
+//=======================================================================================
+std::string ESPectrum::bootKeyboard() {
+
+    auto Kbd = PS2Controller.keyboard();
+    fabgl::VirtualKeyItem NextKey;
+    bool r = false;
+
+    if (ZXKeyb::Exists) {
+
+        // Process physical keyboard
+        ZXKeyb::process();
+        // Detect and process physical kbd menu key combinations
+
+        if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+                return "1Q";
+            } else 
+            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+                return "1W";
+            }
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+                return "2Q";
+            } else 
+            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+                return "2W";
+            }
+        } else
+        if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+                return "3Q";
+            } else 
+            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+                return "3W";
+            }
+        }
+
+    }
+
+    string kbdstr="";
+
+    while (Kbd->virtualKeyAvailable()) {
+        r = Kbd->getNextVirtualKey(&NextKey);
+        if (r) {
+            // // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) kbdstr += "1";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) kbdstr += "2";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) kbdstr += "3";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) kbdstr += "Q";
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) kbdstr += "W";
+        }
+    }
+
+    return kbdstr;
 
 }
 
@@ -205,24 +274,22 @@ printf("Video Task Stack HWM: %u\n", wm);
 void ESPectrum::setup() 
 {
 
+    #ifdef TESTING_CODE
+    showMemInfo();
+    #endif
+
     //=======================================================================================
     // KEYBOARD
     //=======================================================================================
 
     PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
-    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
-
-    if (Config::slog_on) {
-        showMemInfo("Keyboard started");
-    }
+    PS2Controller.keyboard()->reset(); // This is already setting the ScancodeSet 2
 
     //=======================================================================================
     // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
     //=======================================================================================
 
-    #ifdef ZXKEYB
     ZXKeyb::setup();
-    #endif
 
     //=======================================================================================
     // FILESYSTEM
@@ -231,6 +298,10 @@ void ESPectrum::setup()
     Config::load();
 
     #ifndef ESP32_SDL2_WRAPPER
+
+    if (Config::slog_on) {
+        showMemInfo("Keyboard started");
+    }
 
     // Get chip information
     esp_chip_info_t chip_info;
@@ -305,7 +376,7 @@ void ESPectrum::setup()
             } else chgRes = false;
 
             if (chgRes) {
-                Config::ram_file="none";                
+                Config::ram_file="none";
                 Config::save();
                 printf("%s\n", b.c_str());
                 break;
@@ -330,6 +401,12 @@ void ESPectrum::setup()
     MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
     MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
     MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+
+    // MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
 
     if (Config::slog_on) {
         if (MemESP::ram1 == NULL) printf("ERROR! Unable to allocate ram1\n");        
@@ -420,7 +497,7 @@ void ESPectrum::setup()
     CPU::setup();
 
     // Set Ports starting values
-    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     // Set emulation loop sync target
@@ -432,17 +509,12 @@ void ESPectrum::setup()
     // Load snapshot if present in Config::ram_file
     if (Config::ram_file != NO_RAM_FILE) {
         
-        if (FileUtils::hasSNAextension(Config::ram_file))
-            FileSNA::load(Config::ram_file);        
-        else if (FileUtils::hasZ80extension(Config::ram_file))
-            FileZ80::load(Config::ram_file);
+        LoadSnapshot(Config::ram_file);
 
         Config::last_ram_file = Config::ram_file;
-
-        // ESP host reset
         #ifndef SNAPSHOT_LOAD_LAST
         Config::ram_file = NO_RAM_FILE;
-        Config::save();
+        Config::save("ram");
         #endif
 
     }
@@ -461,7 +533,7 @@ void ESPectrum::reset()
 {
 
     // Ports
-    for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
+    for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     // Memory
@@ -488,6 +560,10 @@ void ESPectrum::reset()
     VIDEO::Reset();
 
     Tape::tapeFileName = "none";
+    if (Tape::tape != NULL) {
+        fclose(Tape::tape);
+        Tape::tape = NULL;
+    }
     Tape::tapeStatus = TAPE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
@@ -539,22 +615,31 @@ void ESPectrum::reset()
 void ESPectrum::loadRom(string arch, string romset) {
 
     if (arch == "48K") {
-        for (int i=0;i < max_list_rom_48; i++) {
-            if (romset.find(gb_list_roms_48k_title[i]) != string::npos) {
-                MemESP::rom[0] = (uint8_t *) gb_list_roms_48k_data[i];
-                break;
-            }
-        }
+
+        MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_48k;
+
+        // for (int i=0;i < max_list_rom_48; i++) {
+        //     if (romset.find(gb_list_roms_48k_title[i]) != string::npos) {
+        //         MemESP::rom[0] = (uint8_t *) gb_list_roms_48k_data[i];
+        //         break;
+        //     }
+        // }
+
     } else {
-        for (int i=0;i < max_list_rom_128; i++) {
-            if (romset.find(gb_list_roms_128k_title[i]) != string::npos) {
-                MemESP::rom[0] = (uint8_t *) gb_list_roms_128k_data[i][0];
-                MemESP::rom[1] = (uint8_t *) gb_list_roms_128k_data[i][1];
-                MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
-                MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
-                break;
-            }
-        }
+
+        MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_128k;
+        MemESP::rom[1] = (uint8_t *) gb_rom_1_sinclair_128k;
+
+        // for (int i=0;i < max_list_rom_128; i++) {
+        //     if (romset.find(gb_list_roms_128k_title[i]) != string::npos) {
+        //         MemESP::rom[0] = (uint8_t *) gb_list_roms_128k_data[i][0];
+        //         MemESP::rom[1] = (uint8_t *) gb_list_roms_128k_data[i][1];
+        //         MemESP::rom[2] = (uint8_t *) gb_list_roms_128k_data[i][2];
+        //         MemESP::rom[3] = (uint8_t *) gb_list_roms_128k_data[i][3];
+        //         break;
+        //     }
+        // }
+
     }
 
 }
@@ -575,47 +660,7 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
         }
         #ifdef TESTING_CODE
         else if (Nextkey->vk == fabgl::VK_GRAVEACCENT) { // Show mem info
-            multi_heap_info_t info;
-            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-            printf("=========================================================================\n");
-            printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
-            printf("Minimum free ever: %d\n", info.minimum_free_bytes);
-            printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
-            printf("Heap caps get free size: %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-
-            printf("=========================================================================\n\n");
-            heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_8BIT);            
-            
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_32BIT);                        
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_DMA);            
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_EXEC);            
-
-            printf("=========================================================================\n");
-            heap_caps_print_heap_info(MALLOC_CAP_IRAM_8BIT);            
-            
-            printf("=========================================================================\n");
-            heap_caps_dump_all();
-
-            printf("=========================================================================\n");
-            UBaseType_t wm;
-            wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-            printf("Audio Task Stack HWM: %u\n", wm);
-            // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
-            // printf("Loop Task Stack HWM: %u\n", wm);
-            wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
-            printf("Video Task Stack HWM: %u\n", wm);
-
+            showMemInfo();
             r = false;
         }    
         #endif
@@ -624,11 +669,9 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     return r;
 }
 
-uint8_t ESPectrum::PS2cols[8] = { 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f };    
+uint8_t ESPectrum::PS2cols[8] = { 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf };    
     
-#ifdef ZXKEYB
 static int zxDelay = 0;
-#endif
 
 void IRAM_ATTR ESPectrum::processKeyboard() {
 
@@ -743,136 +786,83 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
     }
 
-    #ifdef ZXKEYB
-    
-    if (zxDelay > 0)
-        zxDelay--;
-    else
-        // Process physical keyboard
-        ZXKeyb::process();
+    if (ZXKeyb::Exists) { // START - ZXKeyb Exists
 
-    // Detect and process physical kbd menu key combinations
-    // CS+SS+N -> FN Keys
-    // F11 -> CS+SS+Q, F12 -> CS+SS+W
-    // TO DO: Add delay after special key so keys as vol up vol down or toggles like F8 doesn't get re-pressed too fast.
-    if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
+        if (zxDelay > 0)
+            zxDelay--;
+        else
+            // Process physical keyboard
+            ZXKeyb::process();
 
-        zxDelay = 15;
+        // Detect and process physical kbd menu key combinations
+        // CS+SS+N -> FN Keys, F11 -> CS+SS+Q, F12 -> CS+SS+W, CS+SS+S -> Capture screen
+        if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
 
-        if (!bitRead(ZXKeyb::ZXcols[3],0)) {
-            OSD::do_OSD(fabgl::VK_F1);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],1)) {
-            OSD::do_OSD(fabgl::VK_F2);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],2)) {
-            OSD::do_OSD(fabgl::VK_F3);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],3)) {
-            OSD::do_OSD(fabgl::VK_F4);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3],4)) {
-            OSD::do_OSD(fabgl::VK_F5);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],4)) {
-            OSD::do_OSD(fabgl::VK_F6);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],3)) {
-            OSD::do_OSD(fabgl::VK_F7);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],2)) {
-            OSD::do_OSD(fabgl::VK_F8);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],1)) {
-            OSD::do_OSD(fabgl::VK_F9);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4],0)) {
-            OSD::do_OSD(fabgl::VK_F10);
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[2],0)) {
-            CaptureToBmp();
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[2],1)) {
-            OSD::do_OSD(fabgl::VK_F12);
-        } else
-            zxDelay = 0;
+            zxDelay = 15;
 
-        if (zxDelay) {
-            // Set all keys as not pressed
-            for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0x1f;
-            return;
+            if (!bitRead(ZXKeyb::ZXcols[3],0)) {
+                OSD::do_OSD(fabgl::VK_F1);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],1)) {
+                OSD::do_OSD(fabgl::VK_F2);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],2)) {
+                OSD::do_OSD(fabgl::VK_F3);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],3)) {
+                OSD::do_OSD(fabgl::VK_F4);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],4)) {
+                OSD::do_OSD(fabgl::VK_F5);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],4)) {
+                OSD::do_OSD(fabgl::VK_F6);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],3)) {
+                OSD::do_OSD(fabgl::VK_F7);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],2)) {
+                OSD::do_OSD(fabgl::VK_F8);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],1)) {
+                OSD::do_OSD(fabgl::VK_F9);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],0)) {
+                OSD::do_OSD(fabgl::VK_F10);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],0)) {
+                OSD::do_OSD(fabgl::VK_F11);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],1)) {
+                OSD::do_OSD(fabgl::VK_F12);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[1],1)) {
+                CaptureToBmp();
+            } else
+                zxDelay = 0;
+
+            if (zxDelay) {
+                // Set all keys as not pressed
+                for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0xbf;
+                return;
+            }
+        
         }
-    
-    }
 
-    // Combine both keyboards
-    for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
-        Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];
-    }
-    
-    #else
-
-    if (r) {
+        // Combine both keyboards
         for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
-            Ports::port[rowidx] = PS2cols[rowidx];
+            Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];
         }
-    }
-    #endif
 
-}
+    } else {
 
-std::string ESPectrum::bootKeyboard() {
-
-    auto Kbd = PS2Controller.keyboard();
-    fabgl::VirtualKeyItem NextKey;
-    bool r = false;
-
-    #ifdef ZXKEYB
-
-    // Process physical keyboard
-    ZXKeyb::process();
-    // Detect and process physical kbd menu key combinations
-
-    if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-            return "1Q";
-        } else 
-        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-            return "1W";
-        }
-    } else
-    if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-            return "2Q";
-        } else 
-        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-            return "2W";
-        }
-    } else
-    if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-            return "3Q";
-        } else 
-        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-            return "3W";
-        }
-    }
-
-    #endif
-
-    while (Kbd->virtualKeyAvailable()) {
-        r = Kbd->getNextVirtualKey(&NextKey);
         if (r) {
-            // Check keyboard status
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) return "1";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) return "2";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) return "3";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) return "Q";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) return "W";
+            for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
+                Ports::port[rowidx] = PS2cols[rowidx];
+            }
         }
-    }
 
-    return "";
+    }
 
 }
 
@@ -1110,8 +1100,21 @@ for(;;) {
 
             #else
 
-            snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-            snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+            if (Tape::tapeStatus==TAPE_LOADING) {
+
+                snprintf(linea1, sizeof(linea1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(6 + TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
+
+                float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
+                snprintf(linea2, sizeof(linea2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
+
+                if ((++TapeNameScroller + 18) > Tape::tapeFileName.length()) TapeNameScroller = 0;
+
+            } else {
+
+                snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+                snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+
+            }
 
             #endif
         }

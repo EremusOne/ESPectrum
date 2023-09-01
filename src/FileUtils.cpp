@@ -47,9 +47,9 @@ visit https://zxespectrum.speccy.org/contacto
 #include "OSDMain.h"
 #include "roms.h"
 #include "Video.h"
+#include "ZXKeyb.h"
 
 #include "esp_vfs.h"
-#include "esp_spiffs.h"
 #include <sys/unistd.h>
 #include <sys/stat.h>
 #include "esp_vfs_fat.h"
@@ -57,46 +57,43 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
-string FileUtils::MountPoint = MOUNT_POINT_SPIFFS; // Start with SPIFFS
+string FileUtils::MountPoint = MOUNT_POINT_SD; // Start with SD
 bool FileUtils::SDReady = false;
 sdmmc_card_t *FileUtils::card;
 
+string FileUtils::SNA_Path = "/s"; // Current path on the SD (for future folder support)
+string FileUtils::TAP_Path = "/t"; // Current path on the SD (for future folder support)
+
+int FileUtils::curSNAFile = 1; // Current SNA file index on browser
+int FileUtils::curTAPFile = 1; // Current TAP file index on browser
+
 void FileUtils::initFileSystem() {
 
-    // Initialize SPIFFS file system
-    esp_vfs_spiffs_conf_t config = {
-        .base_path = MOUNT_POINT_SPIFFS,
-        .partition_label = NULL,
-        .max_files = 3,
-        .format_if_mount_failed = false,
-    };
-    if (esp_vfs_spiffs_register(&config) != ESP_OK) {
-        return;
-    }
+    // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
+    if (!SDReady) SDReady = mountSDCard(PIN_NUM_MISO_LILYGO_ESPECTRUM,PIN_NUM_MOSI_LILYGO_ESPECTRUM,PIN_NUM_CLK_LILYGO_ESPECTRUM,PIN_NUM_CS_LILYGO_ESPECTRUM);
 
-    SDReady = mountSDCard();
-
-    vTaskDelay(2);
+    // Try to mount SD card on Olimex ESP32-SBC-FABGL Board
+    if ((!ZXKeyb::Exists) && (!SDReady)) SDReady = mountSDCard(PIN_NUM_MISO_SBCFABGL,PIN_NUM_MOSI_SBCFABGL,PIN_NUM_CLK_SBCFABGL,PIN_NUM_CS_SBCFABGL);
 
 }
 
-bool FileUtils::mountSDCard() {
+bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS) {
 
     // Init SD Card
     esp_err_t ret;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false,
-        .max_files = 3,
+        .max_files = 4,
         .allocation_unit_size = 16 * 1024
     };
     
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 
     spi_bus_config_t bus_cfg = {
-        .mosi_io_num = PIN_NUM_MOSI,
-        .miso_io_num = PIN_NUM_MISO,
-        .sclk_io_num = PIN_NUM_CLK,
+        .mosi_io_num = PIN_MOSI,
+        .miso_io_num = PIN_MISO,
+        .sclk_io_num = PIN_CLK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
@@ -105,8 +102,11 @@ bool FileUtils::mountSDCard() {
     ret = spi_bus_initialize(SPI2_HOST, &bus_cfg, SPI_DMA_CH1);
     if (ret != ESP_OK) {
         printf("SD Card init: Failed to initialize bus.\n");
+        vTaskDelay(20 / portTICK_PERIOD_MS);    
         return false;
     }
+
+    vTaskDelay(20 / portTICK_PERIOD_MS);    
 
     sdspi_device_config_t slot_config =  {
     .host_id   = SDSPI_DEFAULT_HOST,
@@ -115,7 +115,7 @@ bool FileUtils::mountSDCard() {
     .gpio_wp   = SDSPI_SLOT_NO_WP,
     .gpio_int  = GPIO_NUM_NC, \
     };
-    slot_config.gpio_cs = PIN_NUM_CS;
+    slot_config.gpio_cs = (gpio_num_t) PIN_CS;
     slot_config.host_id = SPI2_HOST;
 
     ret = esp_vfs_fat_sdspi_mount(MOUNT_POINT_SD, &host, &slot_config, &mount_config, &FileUtils::card);
@@ -125,8 +125,12 @@ bool FileUtils::mountSDCard() {
         } else {
             printf("Failed to initialize the card.\n");
         }
+        spi_bus_free(SPI2_HOST);
+        vTaskDelay(20 / portTICK_PERIOD_MS);    
         return false;
     }
+
+    vTaskDelay(20 / portTICK_PERIOD_MS);
 
     return true;
 

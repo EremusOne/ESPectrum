@@ -52,6 +52,7 @@ using namespace std;
 #include "ZXKeyb.h"
 #include "pwm_audio.h"
 #include "Z80_JLS/z80.h"
+#include "Tape.h"
 
 #define MENU_MAX_ROWS 18
 // Line type
@@ -80,6 +81,7 @@ static uint8_t last_focus;               // To check for changes
 static unsigned short last_begin_row; // To check for changes
 
 uint8_t DRAM_ATTR click48[12]={0,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x16,0};
+
 uint8_t DRAM_ATTR click128[116]= {  0x00,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
                                     0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
                                     0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
@@ -113,55 +115,64 @@ uint16_t OSD::zxColor(uint8_t color, uint8_t bright) {
     return spectrum_colors[color];
 }
 
-// Set menu and force recalc
-void OSD::newMenu(string new_menu) {
-    menu = new_menu;
-    menuRecalc();
-    menuDraw();
-}
+// // Set menu and force recalc
+// void OSD::newMenu(string new_menu) {
+//     menu = new_menu;
+//     menuRecalc();
 
-void OSD::menuRecalc() {
+//     // menuDraw();
 
-    // Position
-    if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
-        y = 8;
-    } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        if (menu_saverect) {
-            y += (8 + (8 * menu_prevopt));
-            prev_y[menu_level] = y;
-        } else {
-            y = prev_y[menu_level];
-        }
-    }
+//     // focus = menu_curopt;
+//     // for (uint8_t r = 1; r < virtual_rows; r++) {
+//     //     menuPrintRow(r, r == focus ? IS_FOCUSED : IS_NORMAL);
+//     // }
 
-    // Rows
-    real_rows = rowCount(menu);
-    virtual_rows = (real_rows > MENU_MAX_ROWS ? MENU_MAX_ROWS : real_rows);
-    begin_row = last_begin_row = last_focus = focus = 1;
+//     // menuScrollBar();
 
-    // Columns
-    cols = 0;
-    uint8_t col_count = 0;
-    for (unsigned short i = 0; i < menu.length(); i++) {
-        if ((menu.at(i) == ASCII_TAB) || (menu.at(i) == ASCII_NL)) {
-            if (col_count > cols) {
-                cols = col_count;
-            }
-            while (menu.at(i) != ASCII_NL) i++;
-            col_count = 0;
-        }
-        col_count++;
-    }
-    cols += 8;
-    cols = (cols > 28 ? 28 : cols);
+// }
 
-    // Size
-    w = (cols * OSD_FONT_W) + 2;
-    h = (virtual_rows * OSD_FONT_H) + 2;
+// void OSD::menuRecalc() {
 
-}
+//     // Position
+//     if (menu_level == 0) {
+//         x = (Config::aspect_16_9 ? 24 : 8);
+//         y = 8;
+//     } else {
+//         x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+//         if (menu_saverect) {
+//             y += (8 + (8 * menu_prevopt));
+//             prev_y[menu_level] = y;
+//         } else {
+//             y = prev_y[menu_level];
+//         }
+//     }
+
+//     // Rows
+//     real_rows = rowCount(menu);
+//     virtual_rows = (real_rows > MENU_MAX_ROWS ? MENU_MAX_ROWS : real_rows);
+//     begin_row = last_begin_row = last_focus = focus = 1;
+
+//     // Columns
+//     cols = 0;
+//     uint8_t col_count = 0;
+//     for (unsigned short i = 0; i < menu.length(); i++) {
+//         if ((menu.at(i) == ASCII_TAB) || (menu.at(i) == ASCII_NL)) {
+//             if (col_count > cols) {
+//                 cols = col_count;
+//             }
+//             while (menu.at(i) != ASCII_NL) i++;
+//             col_count = 0;
+//         }
+//         col_count++;
+//     }
+//     cols += 8;
+//     cols = (cols > 28 ? 28 : cols);
+
+//     // Size
+//     w = (cols * OSD_FONT_W) + 2;
+//     h = (virtual_rows * OSD_FONT_H) + 2;
+
+// }
 
 // Get real row number for a virtual one
 unsigned short OSD::menuRealRowFor(uint8_t virtual_row_num) { return begin_row + virtual_row_num - 1; }
@@ -233,8 +244,103 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
 }
 
+// // Draw the complete menu
+// void OSD::menuDraw() {
+
+//     // Set font
+//     VIDEO::vga.setFont(Font6x8);
+
+//     if (menu_level!=0) {
+//         if (menu_saverect) {
+//             // Save backbuffer data
+//             VIDEO::SaveRect[SaveRectpos] = x;
+//             VIDEO::SaveRect[SaveRectpos + 1] = y;
+//             VIDEO::SaveRect[SaveRectpos + 2] = w;
+//             VIDEO::SaveRect[SaveRectpos + 3] = h;
+//             SaveRectpos += 4;
+//             for (int  m = y; m < y + h; m++) {
+//                 uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+//                 for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+//                     VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+//                     SaveRectpos++;
+//                 }
+//             }
+//             //printf("Saverectpos after save: %d\n",SaveRectpos);
+//         }
+//     } else SaveRectpos = 0;
+
+//     // Menu border
+//     VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
+
+//     // Title
+//     menuPrintRow(0, IS_TITLE);
+
+//     // Rainbow
+//     unsigned short rb_y = y + 8;
+//     unsigned short rb_paint_x = x + w - 30;
+//     uint8_t rb_colors[] = {2, 6, 4, 5};
+//     for (uint8_t c = 0; c < 4; c++) {
+//         for (uint8_t i = 0; i < 5; i++) {
+//             VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, OSD::zxColor(rb_colors[c], 1));
+//         }
+//         rb_paint_x += 5;
+//     }
+   
+//     // focus = menu_curopt;
+//     // for (uint8_t r = 1; r < virtual_rows; r++) {
+//     //     menuPrintRow(r, r == focus ? IS_FOCUSED : IS_NORMAL);
+//     // }
+
+//     // menuScrollBar();
+
+// }
+
+// // Draw the complete menu
+// void OSD::filemenuDraw() {
+
+//     // Set font
+//     VIDEO::vga.setFont(Font6x8);
+
+//     if (menu_level!=0) {
+//         if (menu_saverect) {
+//             // Save backbuffer data
+//             VIDEO::SaveRect[SaveRectpos] = x;
+//             VIDEO::SaveRect[SaveRectpos + 1] = y;
+//             VIDEO::SaveRect[SaveRectpos + 2] = w;
+//             VIDEO::SaveRect[SaveRectpos + 3] = h;
+//             SaveRectpos += 4;
+//             for (int  m = y; m < y + h; m++) {
+//                 uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+//                 for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+//                     VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+//                     SaveRectpos++;
+//                 }
+//             }
+//             //printf("Saverectpos after save: %d\n",SaveRectpos);
+//         }
+//     } else SaveRectpos = 0;
+
+//     // Menu border
+//     VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
+
+//     // Rainbow
+//     unsigned short rb_y = y + 8;
+//     unsigned short rb_paint_x = x + w - 30;
+//     uint8_t rb_colors[] = {2, 6, 4, 5};
+//     for (uint8_t c = 0; c < 4; c++) {
+//         for (uint8_t i = 0; i < 5; i++) {
+//             VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, OSD::zxColor(rb_colors[c], 1));
+//         }
+//         rb_paint_x += 5;
+//     }
+
+//     // Title
+//     PrintRow(0, IS_TITLE);
+
+// }
+
 // Draw the complete menu
-void OSD::menuDraw() {
+void OSD::WindowDraw() {
 
     // Set font
     VIDEO::vga.setFont(Font6x8);
@@ -262,7 +368,8 @@ void OSD::menuDraw() {
     VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
 
     // Title
-    menuPrintRow(0, IS_TITLE);
+    PrintRow(0, IS_TITLE);
+
     // Rainbow
     unsigned short rb_y = y + 8;
     unsigned short rb_paint_x = x + w - 30;
@@ -273,141 +380,178 @@ void OSD::menuDraw() {
         }
         rb_paint_x += 5;
     }
-    // Focused first line
-    // menuPrintRow(1, IS_FOCUSED);
-    for (uint8_t r = 1; r < virtual_rows; r++) {
-        menuPrintRow(r, r == menu_curopt ? IS_FOCUSED : IS_NORMAL);
-    }
 
-    focus = menu_curopt;
-
-    menuScrollBar();
 }
 
-string OSD::getArchMenu() {
-    string menu = (string)MENU_ARCH[Config::lang]; // + FileUtils::getFileEntriesFromDir(DISK_ROM_DIR);
-    return menu;
-}
+// string OSD::getArchMenu() {
+//     string menu = (string)MENU_ARCH[Config::lang];
+//     return menu;
+// }
 
-string OSD::getRomsetMenu(string arch) {
-    string menu;
-    if (arch == "48K") {
-        menu = (string)MENU_ROMSET48[Config::lang]; // + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
-    } else {
-        menu = (string)MENU_ROMSET128[Config::lang];
-    }
-    return menu;
-}
+// string OSD::getRomsetMenu(string arch) {
+//     string menu;
+//     if (arch == "48K") {
+//         menu = (string)MENU_ROMSET48[Config::lang]; // + FileUtils::getFileEntriesFromDir((string)DISK_ROM_DIR + "/" + arch);
+//     } else {
+//         menu = (string)MENU_ROMSET128[Config::lang];
+//     }
+//     return menu;
+// }
 
-#ifdef ZXKEYB
 #define REPDEL 140 // As in real ZX Spectrum (700 ms.)
 #define REPPER 20 // As in real ZX Spectrum (100 ms.)
 static int zxDelay = 0;
 static int lastzxKey = 0;
-#endif
 
 // Run a new menu
 unsigned short OSD::menuRun(string new_menu) {
 
     fabgl::VirtualKeyItem Menukey;    
 
-    newMenu(new_menu);
+    // newMenu(new_menu);
 
-    #ifdef ZXKEYB
+    menu = new_menu;
+
+    // Position
+    if (menu_level == 0) {
+        x = (Config::aspect_16_9 ? 24 : 8);
+        y = 8;
+    } else {
+        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        if (menu_saverect) {
+            y += (8 + (8 * menu_prevopt));
+            prev_y[menu_level] = y;
+        } else {
+            y = prev_y[menu_level];
+        }
+    }
+
+    // Rows
+    real_rows = rowCount(menu);
+    virtual_rows = (real_rows > MENU_MAX_ROWS ? MENU_MAX_ROWS : real_rows);
+    // begin_row = last_begin_row = last_focus = focus = 1;
+
+    // Columns
+    cols = 0;
+    uint8_t col_count = 0;
+    for (unsigned short i = 0; i < menu.length(); i++) {
+        if ((menu.at(i) == ASCII_TAB) || (menu.at(i) == ASCII_NL)) {
+            if (col_count > cols) {
+                cols = col_count;
+            }
+            while (menu.at(i) != ASCII_NL) i++;
+            col_count = 0;
+        }
+        col_count++;
+    }
+    cols += 8;
+    cols = (cols > 28 ? 28 : cols);
+
+    // Size
+    w = (cols * OSD_FONT_W) + 2;
+    h = (virtual_rows * OSD_FONT_H) + 2;
+
+    WindowDraw(); // Draw menu outline
+
+    begin_row = 1;
+    focus = menu_curopt;        
+    last_begin_row = last_focus = 0;
+
+    menuRedraw(); // Draw menu content
+
     zxDelay = REPDEL;
     lastzxKey = 0;
-    #endif
 
     while (1) {
         
-        #ifdef ZXKEYB
-        
-        ZXKeyb::process();
+        if (ZXKeyb::Exists) {
 
-        if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
-                if (lastzxKey == 1)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 1;
+            ZXKeyb::process();
+
+            if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
+                    if (lastzxKey == 1)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 1;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
+                    if (lastzxKey == 2)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 2;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                    if (lastzxKey == 3)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 3;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);
+                    if (lastzxKey == 4)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 4;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
+                    if (lastzxKey == 5)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 5;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);
+                    if (lastzxKey == 6)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 6;
+                }
+            } else            
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                    if (lastzxKey == 7)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 7;
+                }
+            } else
+            {
+                zxDelay = 0;
+                lastzxKey = 0;
             }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
-                if (lastzxKey == 2)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 2;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                if (lastzxKey == 3)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 3;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);
-                if (lastzxKey == 4)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 4;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
-                if (lastzxKey == 5)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 5;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);
-                if (lastzxKey == 6)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 6;
-            }
-        } else            
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
-                if (lastzxKey == 7)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 7;
-            }
-        } else
-        {
-            zxDelay = 0;
-            lastzxKey = 0;
+
         }
 
-        #endif
-       
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
             if (ESPectrum::readKbd(&Menukey)) {
@@ -509,9 +653,7 @@ unsigned short OSD::menuRun(string new_menu) {
         }
         vTaskDelay(5 / portTICK_PERIOD_MS);
         
-        #ifdef ZXKEYB        
         if (zxDelay > 0) zxDelay--;
-        #endif
 
     }
 
@@ -534,6 +676,7 @@ void OSD::menuScroll(bool dir) {
 // Redraw inside rows
 void OSD::menuRedraw() {
     if ((focus != last_focus) || (begin_row != last_begin_row)) {
+
         for (uint8_t row = 1; row < virtual_rows; row++) {
             if (row == focus) {
                 menuPrintRow(row, IS_FOCUSED);
@@ -544,7 +687,9 @@ void OSD::menuRedraw() {
         menuScrollBar();
         last_focus = focus;
         last_begin_row = begin_row;
+
     }
+
 }
 
 // Draw menu scroll bar
@@ -605,7 +750,7 @@ static inline void rtrim(std::string &s) {
 FILE *dirfile;
 
 // Run a new file menu
-string OSD::menuFile(string filedir, string title, string extensions) {
+string OSD::menuFile(string filedir, string title, string extensions, int currentFile) {
 
     fabgl::VirtualKeyItem Menukey;
 
@@ -616,12 +761,13 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     rc = stat((filedir + "/.d").c_str(), &stat_buf);
     if (rc < 0) {
         // deallocAluBytes();
-        OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO);
+        OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO, 0);
         int chunks = FileUtils::DirToFile(filedir, extensions); // Prepare sna filelist
         if (chunks) FileUtils::Mergefiles(filedir,chunks); // Merge files
-        OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
+        // OSD::osdCenteredMsg(" Done: directory index ready  ", LEVEL_INFO);
         // precalcAluBytes();
         rc = stat((filedir + "/.d").c_str(), &stat_buf);
+        currentFile = 1;
     }
     
     // Open dir file for read
@@ -633,19 +779,17 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
     real_rows = (stat_buf.st_size / 32) + 1; // Add 1 for title
     virtual_rows = (real_rows > 19 ? 19 : real_rows);
-    begin_row = last_begin_row = last_focus = focus = 1;
     
     printf("Real rows: %d; st_size: %d\n",real_rows,stat_buf.st_size);
 
-    // Get first bunch of rows
-    menu = title + "\n";
-    for (int i = 1; i < virtual_rows; i++) {
-        char buf[256];
-        fgets(buf, sizeof(buf), dirfile);
-        if (feof(dirfile)) break;
-        menu += buf;
-    }
-
+    // // Get first bunch of rows
+    // menu = title + "\n";
+    // for (int i = 1; i < virtual_rows; i++) {
+    //     char buf[256];
+    //     fgets(buf, sizeof(buf), dirfile);
+    //     if (feof(dirfile)) break;
+    //     menu += buf;
+    // }
 
     // Position
     if (menu_level == 0) {
@@ -664,103 +808,118 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     w = (cols * OSD_FONT_W) + 2;
     h = (virtual_rows * OSD_FONT_H) + 2;
 
-    menuDraw();
+    menu = title + "\n";
+    WindowDraw(); // Draw menu outline
 
-    #ifdef ZXKEYB
+    begin_row = focus = 1;    
+    last_begin_row = last_focus = 0;
+
+    filemenuRedraw(title); // Draw menu content
+
     zxDelay = REPDEL;
     lastzxKey = 0;
-    #endif
 
     while (1) {
 
-        #ifdef ZXKEYB
+        if (ZXKeyb::Exists) {
 
-        ZXKeyb::process();
+            ZXKeyb::process();
 
-        if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
-                if (lastzxKey == 1)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 1;
+            if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
+                    if (lastzxKey == 1)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 1;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
+                    if (lastzxKey == 2)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 2;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[6], 0)) { // ENTER
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                    if (lastzxKey == 3)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 3;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 0)) { // 0
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_SPACE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_SPACE, false, false);                
+                    if (lastzxKey == 4)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 4;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK        
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
+                    if (lastzxKey == 5)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 5;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
+                    if (lastzxKey == 6)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 6;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
+                    if (lastzxKey == 7)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 7;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                    if (lastzxKey == 8)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 8;
+                }
+            } else
+            {
+                zxDelay = 0;
+                lastzxKey = 0;
             }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
-                if (lastzxKey == 2)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 2;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                if (lastzxKey == 3)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 3;
-            }
-        } else
-        if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK        
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
-                if (lastzxKey == 4)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 4;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
-                if (lastzxKey == 5)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 5;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
-                if (lastzxKey == 6)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 6;
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
-            if (zxDelay == 0) {
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
-                if (lastzxKey == 7)
-                    zxDelay = REPPER;
-                else
-                    zxDelay = REPDEL;
-                lastzxKey = 7;
-            }
-        } else
-        {
-            zxDelay = 0;
-            lastzxKey = 0;
+
         }
 
-        #endif
-        
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
             if (ESPectrum::readKbd(&Menukey)) {
@@ -783,14 +942,14 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                         if (begin_row > 1) {
                             last_begin_row = begin_row;
                             begin_row--;
+                            filemenuRedraw(title);
                         }
-                        filemenuRedraw(title);
                     } else if (focus > 1) {
                         last_focus = focus;
                         focus--;
-                        filemenuPrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus, IS_FOCUSED);
                         if (focus + 1 < virtual_rows) {
-                            filemenuPrintRow(focus + 1, IS_NORMAL);
+                            PrintRow(focus + 1, IS_NORMAL);
                         }
                     }
                     click();
@@ -799,14 +958,14 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                         if ((begin_row + virtual_rows - 1) < real_rows) {
                             last_begin_row = begin_row;
                             begin_row++;
+                            filemenuRedraw(title);
                         }
-                        filemenuRedraw(title);
                     } else if (focus < virtual_rows - 1) {
                         last_focus = focus;
                         focus++;
-                        filemenuPrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus, IS_FOCUSED);
                         if (focus - 1 > 0) {
-                            filemenuPrintRow(focus - 1, IS_NORMAL);
+                            PrintRow(focus - 1, IS_NORMAL);
                         }
                     }
                     click();
@@ -842,10 +1001,18 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     click();
                 } else if (Menukey.vk == fabgl::VK_RETURN) {
                     fclose(dirfile);
+                    dirfile = NULL;
                     filedir = rowGet(menu,focus);
                     rtrim(filedir);
                     click();
-                    return filedir;
+                    return "R" + filedir;
+                } else if (Menukey.vk == fabgl::VK_SPACE) {
+                    fclose(dirfile);
+                    dirfile = NULL;
+                    filedir = rowGet(menu,focus);
+                    rtrim(filedir);
+                    click();
+                    return "S" + filedir;
                 } else if (Menukey.vk == fabgl::VK_ESCAPE) {
 
                     if (menu_level!=0) {
@@ -865,6 +1032,7 @@ string OSD::menuFile(string filedir, string title, string extensions) {
                     }
 
                     fclose(dirfile);
+                    dirfile = NULL;
                     click();
                     return "";
                 }
@@ -873,16 +1041,13 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
         vTaskDelay(5 / portTICK_PERIOD_MS);    
 
-        #ifdef ZXKEYB        
         if (zxDelay > 0) zxDelay--;
-        #endif
-
 
     }
 }
 
 // Print a virtual row
-void OSD::filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
+void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     uint8_t margin;
 
@@ -890,7 +1055,7 @@ void OSD::filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     switch (line_type) {
     case IS_TITLE:
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
         margin = 2;
         break;
     case IS_FOCUSED:
@@ -924,6 +1089,7 @@ void OSD::filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
 // Redraw inside rows
 void OSD::filemenuRedraw(string title) {
+    
     if ((focus != last_focus) || (begin_row != last_begin_row)) {
 
         // Read bunch of rows
@@ -938,9 +1104,9 @@ void OSD::filemenuRedraw(string title) {
 
         for (uint8_t row = 1; row < virtual_rows; row++) {
             if (row == focus) {
-                filemenuPrintRow(row, IS_FOCUSED);
+                PrintRow(row, IS_FOCUSED);
             } else {
-                filemenuPrintRow(row, IS_NORMAL);
+                PrintRow(row, IS_NORMAL);
             }
         }
         
@@ -949,4 +1115,385 @@ void OSD::filemenuRedraw(string title) {
         last_focus = focus;
         last_begin_row = begin_row;
     }
+
 }
+
+string tapeBlockReadData(int Blocknum) {
+
+    int tapeContentIndex=0;
+    int tapeBlkLen=0;
+    string blktype;
+    char buf[48];
+    char fname[10];
+
+    tapeContentIndex = Tape::CalcTapBlockPos(Blocknum);
+
+    // Analyze .tap file
+    tapeBlkLen=(readByteFile(Tape::tape) | (readByteFile(Tape::tape) << 8));
+
+    // Read the flag byte from the block.
+    // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
+    // to indicate a data block.
+    uint8_t flagByte;
+    if (tapeContentIndex + 2 < Tape::tapeFileSize) {
+        flagByte = readByteFile(Tape::tape);
+    } else {
+        flagByte = 255;
+    }
+
+    // Process the block depending on if it is a header or a data block.
+    // Block type 0 should be a header block, but it happens that headerless blocks also
+    // have block type 0, so we need to check the block length as well.
+    if (flagByte == 0 && tapeBlkLen == 19) { // This is a header.
+
+        // Get the block type.
+        uint8_t blocktype = readByteFile(Tape::tape);
+
+        switch (blocktype) {
+        case 0: 
+            blktype = "Program      ";
+            break;
+        case 1: 
+            blktype = "Number array ";
+            break;
+        case 2: 
+            blktype = "Char array   ";
+            break;
+        case 3: 
+            blktype = "Code         ";
+            break;
+        case 4: 
+            blktype = "Data block   ";
+            break;
+        case 5: 
+            blktype = "Info         ";
+            break;
+        case 6: 
+            blktype = "Unassigned   ";
+            break;
+        default:
+            blktype = "Unassigned   ";
+            break;
+        }
+
+        // Get the filename.
+        if (blocktype > 5) {
+            fname[0] = '\0';
+        } else {
+            for (int i = 0; i < 10; i++) {
+                fname[i] = readByteFile(Tape::tape);
+            }
+            fname[10]='\0';
+        }
+
+    } else {
+
+        blktype = "Data block   ";
+        fname[0]='\0';
+
+    }
+
+    snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);
+
+    return buf;
+
+}
+
+// Redraw inside rows
+void OSD::tapemenuRedraw(string title) {
+
+    if ((focus != last_focus) || (begin_row != last_begin_row)) {
+
+        // Read bunch of rows
+        menu = title + "\n";
+        for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
+            if (i > Tape::tapeNumBlocks) break;
+            menu += tapeBlockReadData(i);
+        }
+
+        for (uint8_t row = 1; row < virtual_rows; row++) {
+            if (row == focus) {
+                PrintRow(row, IS_FOCUSED);
+            } else {
+                PrintRow(row, IS_NORMAL);
+            }
+        }
+        
+        menuScrollBar();
+        
+        last_focus = focus;
+        last_begin_row = begin_row;
+
+    }
+}
+
+// Tape Browser Menu
+int OSD::menuTape(string title) {
+
+    fabgl::VirtualKeyItem Menukey;
+
+    uint32_t tapeBckPos = ftell(Tape::tape);
+
+    // Tape::TapeListing.erase(Tape::TapeListing.begin(),Tape::TapeListing.begin() + 2);
+
+    real_rows = Tape::tapeNumBlocks + 1;
+    virtual_rows = (real_rows > 19 ? 19 : real_rows);
+    // begin_row = last_begin_row = last_focus = focus = 1;
+    
+    if (Tape::tapeCurBlock > 17) {
+        begin_row = Tape::tapeCurBlock - 16;
+        focus = 18;
+    } else{
+        begin_row = 1;    
+        focus = Tape::tapeCurBlock + 1;
+    }
+    // last_focus = focus;
+    // last_begin_row = begin_row;
+    menu_curopt = focus;
+
+    // // Get first bunch of rows
+    // menu = title + "\n";
+    // for (int i = (begin_row - 1); i < (begin_row - 1) + (virtual_rows - 1); i++) {
+    //     if (i > Tape::tapeNumBlocks) break;
+    //     menu += tapeBlockReadData(i);
+    // }
+
+    // printf(menu.c_str());
+
+    // Position
+    if (menu_level == 0) {
+        x = (Config::aspect_16_9 ? 24 : 8);
+        y = 8;
+    } else {
+        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        y = 8 + (16 * menu_level);
+    }
+
+    // Columns
+    cols = 39; // 36 for block info + 2 pre and post space + 1 for scrollbar
+
+    // Size
+    w = (cols * OSD_FONT_W) + 2;
+    h = (virtual_rows * OSD_FONT_H) + 2;
+
+    menu = title + "\n";
+    WindowDraw();
+
+    last_begin_row = last_focus = 0;
+
+    tapemenuRedraw(title);
+
+    zxDelay = REPDEL;
+    lastzxKey = 0;
+
+    while (1) {
+
+        if (ZXKeyb::Exists) {
+
+            ZXKeyb::process();
+
+            if (!bitRead(ZXKeyb::ZXcols[4], 3)) { // 6 DOWN
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_UP, false, false);                
+                    if (lastzxKey == 1)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 1;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 4)) { // 7 UP (Yes, like the drink's name, I know... :D)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_DOWN, false, false);                
+                    if (lastzxKey == 2)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 2;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
+                    if (lastzxKey == 3)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 3;
+                }
+            } else
+            if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK        
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                
+                    if (lastzxKey == 4)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 4;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3], 4)) { // LEFT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEUP, false, false);
+                    if (lastzxKey == 5)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 5;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4], 2)) { // RIGHT
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAGEDOWN, false, false);                
+                    if (lastzxKey == 6)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 6;
+                }
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
+                    if (lastzxKey == 7)
+                        zxDelay = REPPER;
+                    else
+                        zxDelay = REPDEL;
+                    lastzxKey = 7;
+                }
+            } else
+            {
+                zxDelay = 0;
+                lastzxKey = 0;
+            }
+
+        }
+
+        // Process external keyboard
+        if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+            if (ESPectrum::readKbd(&Menukey)) {
+
+                if (!Menukey.down) continue;
+
+                if (Menukey.vk == fabgl::VK_UP) {
+                    if (focus == 1 and begin_row > 1) {
+                        if (begin_row > 1) {
+                            last_begin_row = begin_row;
+                            begin_row--;
+                        }
+                        tapemenuRedraw(title);
+                        click();                        
+                    } else if (focus > 1) {
+                        last_focus = focus;
+                        focus--;
+                        PrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus + 1, IS_NORMAL);
+                        click();
+                    }
+                } else if (Menukey.vk == fabgl::VK_DOWN) {
+                    if (focus == virtual_rows - 1) {
+                        if ((begin_row + virtual_rows - 1) < real_rows) {
+                            last_begin_row = begin_row;
+                            begin_row++;
+                            tapemenuRedraw(title);
+                            click();
+                        }
+                    } else if (focus < virtual_rows - 1) {
+                        last_focus = focus;
+                        focus++;
+                        PrintRow(focus, IS_FOCUSED);
+                        PrintRow(focus - 1, IS_NORMAL);
+                        click();
+                    }
+                } else if ((Menukey.vk == fabgl::VK_PAGEUP) || (Menukey.vk == fabgl::VK_LEFT)) {
+                    // printf("%u\n",begin_row);
+                    if (begin_row > virtual_rows) {
+                        last_focus = focus;
+                        last_begin_row = begin_row;                    
+                        focus = 1;
+                        begin_row -= virtual_rows - 1;
+                        tapemenuRedraw(title);
+                        click();
+                    } else {
+                        last_focus = focus;
+                        last_begin_row = begin_row;                    
+                        focus = 1;
+                        begin_row = 1;
+                        tapemenuRedraw(title);
+                        click();
+                    }
+                } else if ((Menukey.vk == fabgl::VK_PAGEDOWN) || (Menukey.vk == fabgl::VK_RIGHT)) {
+                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                        last_focus = focus;
+                        last_begin_row = begin_row;                    
+                        focus = 1;
+                        begin_row += virtual_rows - 1;
+                        tapemenuRedraw(title);
+                        click();
+                    } else {
+                        last_focus = focus;
+                        last_begin_row = begin_row;                    
+                        focus = virtual_rows - 1;
+                        begin_row = real_rows - virtual_rows + 1;
+                        tapemenuRedraw(title);
+                        click();
+                    }
+                } else if (Menukey.vk == fabgl::VK_HOME) {
+                    last_focus = focus;
+                    last_begin_row = begin_row;                    
+                    focus = 1;
+                    begin_row = 1;
+                    tapemenuRedraw(title);
+                    click();
+                } else if (Menukey.vk == fabgl::VK_END) {
+                    last_focus = focus;
+                    last_begin_row = begin_row;                    
+                    focus = virtual_rows - 1;
+                    begin_row = real_rows - virtual_rows + 1;
+                    tapemenuRedraw(title);
+                    click();
+                } else if (Menukey.vk == fabgl::VK_RETURN) {
+                    click();
+                    Tape::CalcTapBlockPos(begin_row + focus - 2);
+                    printf("Ret value: %d\n", begin_row + focus - 2);
+                    return (begin_row + focus - 2);
+                } else if (Menukey.vk == fabgl::VK_ESCAPE) {
+
+                    // if (Tape::tapeStatus==TAPE_LOADING) {
+                        fseek(Tape::tape, tapeBckPos, SEEK_SET);
+                    // }
+
+                    if (menu_level!=0) {
+                        // Restore backbuffer data
+                        int j = SaveRectpos - (((w >> 2) + 1) * h);
+                        SaveRectpos = j - 4;
+                        for (int  m = y; m < y + h; m++) {
+                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+                                backbuffer32[n] = VIDEO::SaveRect[j];
+                                j++;
+                            }
+                        }
+                        menu_saverect = false;
+                    }
+
+                    click();
+                    return -1;
+                }
+            }
+        }
+
+        vTaskDelay(5 / portTICK_PERIOD_MS);    
+
+        if (zxDelay > 0) zxDelay--;
+
+    }
+}
+

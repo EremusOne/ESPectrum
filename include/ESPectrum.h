@@ -91,6 +91,8 @@ public:
     static int sync_cnt;    
     static uint8_t *audbuffertosend;    
 
+    static int TapeNameScroller;
+
     // static bool Audio_restart;
 
     static int64_t target;

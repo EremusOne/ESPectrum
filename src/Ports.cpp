@@ -41,6 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Video.h"
 #include "AySound.h"
 #include "Tape.h"
+#include "CPU.h"
 
 #pragma GCC optimize ("O3")
 
@@ -55,9 +56,10 @@ visit https://zxespectrum.speccy.org/contacto
 //   6: ula <= 8'hF8;
 //   7: ula <= 8'hFF;
 // and adjusted for BEEPER_MAX_VOLUME = 97
-int speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
+uint8_t speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
 
 uint8_t Ports::port[128];
+uint8_t Ports::port254 = 0;
 
 uint8_t IRAM_ATTR Ports::input(uint16_t address)
 {
@@ -78,13 +80,15 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
     }
     // ** I/O Contention (Late) **************************
 
-    if (((address & 0xff) == 0x1f) && (Config::joystick)) return port[0x1f]; // Kempston port
+    // The default port value is 0xBF.
+    uint8_t result = 0xbf;    
 
-    if ((address & 0xff) == 0xfe) // ULA PORT    
-    {
+    // Kempston Joystick
+    if ((Config::joystick) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
+
+    // ULA PORT    
+    if ((address & 0x0001) == 0) {
         
-        uint8_t result = 0xbf;
-
         uint8_t portHigh = ~(address >> 8) & 0xff;
         for (int row = 0, mask = 0x01; row < 8; row++, mask <<= 1) {
             if ((portHigh & mask) != 0) {
@@ -94,23 +98,29 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
 
         if (Tape::tapeStatus==TAPE_LOADING) {
             Tape::TAP_Read();
-            bitWrite(result,6,Tape::tapeEarBit);
-        }
+            bitWrite(result,6,Tape::tapeEarBit);            
+        } else {
+            // Issue 2 behaviour only on Spectrum 48K
+    		if ((Z80Ops::is48) && (Config::Issue2)) {
+				if (port254 & 0x18) result |= 0x40;
+			} else {
+				if (port254 & 0x10) result |= 0x40;
+			}
+		}
 
-
-        return result | (0xa0); // OR 0xa0 -> ISSUE 2
+        return result;
     
     }
     
     // Sound (AY-3-8912)
     if (ESPectrum::AY_emu) {
-        if ( (((address >> 8) & 0xC0) == 0xC0) && (((address & 0xff) & 0x02) == 0x00) )
+        if ((address & 0xC002) == 0xC000)
             return AySound::getRegisterData();
     }
 
     uint8_t data = VIDEO::getFloatBusData();
     
-    if (((address & 0x8002) == 0) && (!Z80Ops::is48)) {
+    if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
         // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
         // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
@@ -120,8 +130,15 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
             MemESP::bankLatch = data & 0x7;
             MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
             MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
-            MemESP::videoLatch = bitRead(data, 3);
-            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
+            if (MemESP::videoLatch != bitRead(data, 3)) {
+                MemESP::videoLatch = bitRead(data, 3);
+                // This, if not using the ptime128 draw version, fixs ptime and ptime128
+                if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                    VIDEO::Draw(2, false);
+                    CPU::tstates -= 2;
+                }
+                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            }
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
             MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];            
@@ -129,7 +146,7 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
 
     }
 
-    return data & 0xff;
+    return data;
 
 }
 
@@ -143,6 +160,8 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
 
     // ULA =======================================================================
     if ((address & 0x0001) == 0) {
+
+        port254 = data;
 
         // Border color
         if (VIDEO::borderColor != data & 0x07) {
@@ -173,34 +192,47 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
         VIDEO::Draw(3, true);
+        // printf("Case 1\n");
     } else {
         if (MemESP::ramContended[address >> 14]) {
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);        
-        } else VIDEO::Draw(3, false);
+            // printf("Case 2\n");
+        } else {
+            // printf("Case 3\n");
+            VIDEO::Draw(3, false);
+        }
     }
     // ** I/O Contention (Late) **************************
-    
+
     // 128 =======================================================================
     if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
-        if (MemESP::pagingLock) return;
+        if (!MemESP::pagingLock) {
 
-        MemESP::pagingLock = bitRead(data, 5);
-        
-        MemESP::bankLatch = data & 0x7;
-        MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
-        MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+            MemESP::pagingLock = bitRead(data, 5);
 
-        MemESP::videoLatch = bitRead(data, 3);
-        
-        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;        
-        
-        MemESP::romLatch = bitRead(data, 4);
-        bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-        MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+            MemESP::bankLatch = data & 0x7;
+            MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+            MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+
+            MemESP::romLatch = bitRead(data, 4);
+            bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+
+            if (MemESP::videoLatch != bitRead(data, 3)) {
+                MemESP::videoLatch = bitRead(data, 3);
+                // This, if not using the ptime128 draw version, fixs ptime and ptime128
+                if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                    VIDEO::Draw(2, false);
+                    CPU::tstates -= 2;
+                }
+                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            }
+
+        }
 
     }
-   
+
 }

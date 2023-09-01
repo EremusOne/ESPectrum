@@ -42,11 +42,17 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define SPEAKER_PIN 25
 
-// Storage mode: pins for external SD card
-#define PIN_NUM_MISO GPIO_NUM_2
-#define PIN_NUM_MOSI GPIO_NUM_12
-#define PIN_NUM_CLK  GPIO_NUM_14
-#define PIN_NUM_CS   GPIO_NUM_13
+// Storage mode: pins for external SD card (LILYGO TTGO VGA32 Board and ESPectrum Board)
+#define PIN_NUM_MISO_LILYGO_ESPECTRUM GPIO_NUM_2
+#define PIN_NUM_MOSI_LILYGO_ESPECTRUM GPIO_NUM_12
+#define PIN_NUM_CLK_LILYGO_ESPECTRUM  GPIO_NUM_14
+#define PIN_NUM_CS_LILYGO_ESPECTRUM   GPIO_NUM_13
+
+// Storage mode: pins for external SD card (Olimex ESP32-SBC-FABGL Board)
+#define PIN_NUM_MISO_SBCFABGL GPIO_NUM_35
+#define PIN_NUM_MOSI_SBCFABGL GPIO_NUM_12
+#define PIN_NUM_CLK_SBCFABGL GPIO_NUM_14
+#define PIN_NUM_CS_SBCFABGL GPIO_NUM_13
 
 // VGA Pins (6 bit)
 #define RED_PINS_6B 21, 22

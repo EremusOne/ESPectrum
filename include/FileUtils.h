@@ -47,14 +47,12 @@ using namespace std;
 
 // Defines
 #define ASCII_NL 10
-#define ON true
-#define OFF false
 
 class FileUtils
 {
 public:
     static void initFileSystem();
-    static bool mountSDCard();
+    static bool mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS);
     static void unmountSDCard();
     // static String         getAllFilesFrom(const String path);
     // static void           listAllFiles();
@@ -70,6 +68,12 @@ public:
 
     static string MountPoint;
     static bool SDReady;
+
+    static string SNA_Path; // Current SNA path on the SD (for future folder support)
+    static string TAP_Path; // Current TAP path on the SD (for future folder support)    
+
+    static int curSNAFile; // Current SNA file index on browser
+    static int curTAPFile; // Current TAP file index on browser
 
 private:
     friend class Config;

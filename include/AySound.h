@@ -114,6 +114,8 @@ typedef struct
     int env_c;        /**< R10 bit 4 */
     int env_freq;     /**< R11, R12 */
     int env_style;    /**< R13 */
+    int IOPortA;      /**< R14 */
+    int IOPortB;      /**< R15 */
 }
 ayemu_regdata_t;
 
@@ -140,7 +142,9 @@ public:
     static void updVolC();
     static void updEnvFreq();
     static void updEnvType();
-
+    static void updIOPortA();
+    static void updIOPortB();
+    
     static void reset();
     static uint8_t getRegisterData();
     static void selectRegister(uint8_t data);
@@ -153,9 +157,8 @@ public:
     static int set_sound_format(int freq, int chans, int bits);
     static void prepare_generation();
     static void gen_sound(int bufsize, int bufpos);
-    static void gen_sound_speech_test(unsigned char *buff, size_t sound_bufsize, int bufpos);
 
-    static void(*updateReg[14])();
+    static void(*updateReg[16])();
 
     static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
 
@@ -196,7 +199,7 @@ private:
     static int env_pos;                     /**< current position in envelop (0...127) */
     static int Cur_Seed;                    /**< random numbers counter */
 
-    static uint8_t regs[14];
+    static uint8_t regs[16];
     static uint8_t selectedRegister;
 
 };

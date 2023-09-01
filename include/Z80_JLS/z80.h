@@ -218,7 +218,7 @@ private:
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool breakpointEnabled {false};
 #endif
-    static void copyToRegister(uint8_t value);
+    static void IRAM_ATTR copyToRegister(uint8_t value);
 
 public:
     // Constructor de la clase
@@ -391,11 +391,16 @@ public:
 
     // Execute one instruction
     static void IRAM_ATTR execute();
+    static void IRAM_ATTR exec_nocheck();
 
     // Check INT
-    static void checkINT(void);
+    static void IRAM_ATTR checkINT(void);
 
-    static void incRegR(uint8_t inc);
+    static void IRAM_ATTR incRegR(uint8_t inc);
+
+    static void Xor(uint8_t oper8);
+
+    static void Cp(uint8_t oper8);    
 
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool isBreakpoint(void) { return breakpointEnabled; }
@@ -508,6 +513,8 @@ private:
 
     // OUTD
     static void IRAM_ATTR outd(void);
+
+    static void SetAbortedINxR_OTxRFlags();
 
     // BIT n,r
     static inline void bitTest(uint8_t mask, uint8_t reg);
@@ -742,7 +749,8 @@ private:
     static void decodeOpcodebc(void);                    
     static void decodeOpcodebd(void);                    
     static void decodeOpcodebe(void);                    
-    static void decodeOpcodebf(void);                    
+
+    static void IRAM_ATTR decodeOpcodebf(void); // Used for LOAD TRAP
 
     static void decodeOpcodec0(void);
     static void decodeOpcodec1(void);

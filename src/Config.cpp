@@ -33,6 +33,14 @@ visit https://zxespectrum.speccy.org/contacto
 
 */
 
+#include <stdio.h>
+#include <inttypes.h>
+#include "nvs_flash.h"
+#include "nvs.h"
+#include "nvs_handle.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
 #include <cctype>
 #include <algorithm>
 #include <locale>
@@ -41,7 +49,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include "FileUtils.h"
 #include "messages.h"
 #include "ESPectrum.h"
-#include "esp_spiffs.h"
 #include "pwm_audio.h"
 
 string   Config::arch = "48K";
@@ -55,7 +62,10 @@ uint8_t  Config::esp32rev = 0;
 // string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
+bool     Config::Issue2 = true;
+bool     Config::flashload = true;
 uint8_t  Config::joystick = 0; // 0 -> Cursor, 1 -> Kempston
+uint8_t  Config::AluTiming = 0;
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -90,140 +100,360 @@ void Config::load() {
 
     pwm_audio_stop();
 
-    FILE *f = fopen(DISK_BOOT_FILENAME, "r");
-    if (f==NULL)
-    {
-        // printf("Error opening %s",DISK_BOOT_FILENAME);
-        Config::save(); // Try to create file if doesn't exist
-        return;
+    // Initialize NVS
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    // Open
+    printf("\n");
+    printf("Opening Non-Volatile Storage (NVS) handle... ");
+    nvs_handle_t handle;
+    err = nvs_open("storage", NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    } else {
+        printf("Done\n");
+
+        size_t required_size;
+        char* str_data;
+        
+        err = nvs_get_str(handle, "arch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "arch", str_data, &required_size);
+            printf("arch:%s\n",str_data);
+            arch = str_data;
+            
+            // FORCE MODEL FOR TESTING
+            // arch = "48K";
+            
+            free(str_data);
+        } else {
+            // No nvs data found. Save it
+            nvs_close(handle);
+            Config::save();
+            pwm_audio_start();
+            return;
+        }
+
+        err = nvs_get_str(handle, "romSet", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "romSet", str_data, &required_size);
+            printf("romSet:%s\n",str_data);
+            romSet = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "ram", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "ram", str_data, &required_size);
+            printf("ram:%s\n",str_data);
+            ram_file = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "slog", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "slog", str_data, &required_size);
+            printf("slog:%s\n",str_data);
+            slog_on = strcmp(str_data, "false");            
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "sdstorage", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "sdstorage", str_data, &required_size);
+            printf("sdstorage:%s\n",str_data);
+
+            // if (FileUtils::SDReady) {
+            //     FileUtils::MountPoint = ( strcmp(str_data, "false") ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
+            // } else
+            //     FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
+
+            // Force SD from now on
+            FileUtils::MountPoint = MOUNT_POINT_SD;
+
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "asp169", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "asp169", str_data, &required_size);
+            printf("asp169:%s\n",str_data);
+            aspect_16_9 = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_u8(handle, "videomode", &Config::videomode);
+        if (err == ESP_OK) {
+            printf("videomode:%u\n",Config::videomode);
+        }
+
+
+        err = nvs_get_u8(handle, "language", &Config::lang);
+        if (err == ESP_OK) {
+            printf("language:%u\n",Config::lang);
+        }
+
+        err = nvs_get_str(handle, "AY48", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "AY48", str_data, &required_size);
+            printf("AY48:%s\n",str_data);
+            AY48 = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "Issue2", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "Issue2", str_data, &required_size);
+            printf("Issue2:%s\n",str_data);
+            Issue2 = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "flashload", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "flashload", str_data, &required_size);
+            printf("Flashload:%s\n",str_data);
+            flashload = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_u8(handle, "joystick", &Config::joystick);
+        if (err == ESP_OK) {
+            printf("joystick:%u\n",Config::joystick);
+        }
+
+        err = nvs_get_u8(handle, "AluTiming", &Config::AluTiming);
+        if (err == ESP_OK) {
+            printf("AluTiming:%u\n",Config::AluTiming);
+        }
+
+        // Close
+        nvs_close(handle);
     }
 
-    char buf[256];
-    while(fgets(buf, sizeof(buf), f) != NULL)
-    {
-        string line = buf;
-        printf(line.c_str());
-        if (line.find("ram:") != string::npos) {
-            ram_file = line.substr(line.find(':') + 1);
-            erase_cntrl(ram_file);
-            trim(ram_file);
-        } else if (line.find("arch:") != string::npos) {
-            arch = line.substr(line.find(':') + 1);
-            erase_cntrl(arch);
-            trim(arch);
-        } else if (line.find("romset:") != string::npos) {
-            romSet = line.substr(line.find(':') + 1);
-            erase_cntrl(romSet);
-            trim(romSet);
-        } else if (line.find("slog:") != string::npos) {
-            line = line.substr(line.find(':') + 1);
-            erase_cntrl(line);
-            trim(line);
-            slog_on = (line == "true" ? true : false);
-        } else if (line.find("asp169:") != string::npos) {
-            line = line.substr(line.find(':') + 1);
-            erase_cntrl(line);
-            trim(line);
-            aspect_16_9 = (line == "true");
-        } else if (line.find("sdstorage:") != string::npos) {
-            if (FileUtils::SDReady) {
-                line = line.substr(line.find(':') + 1);
-                erase_cntrl(line);
-                trim(line);
-                FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
-            } else
-                FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
+    // FILE *f = fopen(DISK_BOOT_FILENAME, "r");
+    // if (f==NULL)
+    // {
+    //     // printf("Error opening %s",DISK_BOOT_FILENAME);
+    //     Config::save(); // Try to create file if doesn't exist
+    //     return;
+    // }
+
+    // char buf[256];
+    // while(fgets(buf, sizeof(buf), f) != NULL)
+    // {
+    //     string line = buf;
+    //     printf(line.c_str());
+        // if (line.find("ram:") != string::npos) {
+        //     ram_file = line.substr(line.find(':') + 1);
+        //     erase_cntrl(ram_file);
+        //     trim(ram_file);
+        // } else if (line.find("arch:") != string::npos) {
+        //     arch = line.substr(line.find(':') + 1);
+        //     erase_cntrl(arch);
+        //     trim(arch);
+        // } else if (line.find("romset:") != string::npos) {
+        //     romSet = line.substr(line.find(':') + 1);
+        //     erase_cntrl(romSet);
+        //     trim(romSet);
+        // } else if (line.find("slog:") != string::npos) {
+        //     line = line.substr(line.find(':') + 1);
+        //     erase_cntrl(line);
+        //     trim(line);
+        //     slog_on = (line == "true" ? true : false);
+        // } else if (line.find("asp169:") != string::npos) {
+        //     line = line.substr(line.find(':') + 1);
+        //     erase_cntrl(line);
+        //     trim(line);
+        //     aspect_16_9 = (line == "true");
+        // } else if (line.find("sdstorage:") != string::npos) {
+        //     if (FileUtils::SDReady) {
+        //         line = line.substr(line.find(':') + 1);
+        //         erase_cntrl(line);
+        //         trim(line);
+        //         FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
+        //     } else
+        //         FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
         // } else if (line.find("kbdlayout:") != string::npos) {
         //     kbd_layout = line.substr(line.find(':') + 1);
         //     erase_cntrl(kbd_layout);
         //     trim(kbd_layout);
-        } else if (line.find("videomode:") != string::npos) {
-            string svmode = line.substr(line.find(':') + 1);
-            erase_cntrl(svmode);
-            trim(svmode);
-            Config::videomode = stoi(svmode);
-        } else if (line.find("language:") != string::npos) {
-            string slang = line.substr(line.find(':') + 1);
-            erase_cntrl(slang);
-            trim(slang);
-            Config::lang = stoi(slang);
-        } else if (line.find("AY48:") != string::npos) {
-            line = line.substr(line.find(':') + 1);
-            erase_cntrl(line);
-            trim(line);
-            AY48 = (line == "true");
-        } else if (line.find("joystick:") != string::npos) {
-            string sjoy = line.substr(line.find(':') + 1);
-            erase_cntrl(sjoy);
-            trim(sjoy);
-            Config::joystick = stoi(sjoy);
-        }
+        // } else if (line.find("videomode:") != string::npos) {
+        //     string svmode = line.substr(line.find(':') + 1);
+        //     erase_cntrl(svmode);
+        //     trim(svmode);
+        //     Config::videomode = stoi(svmode);
+        // } else if (line.find("language:") != string::npos) {
+        //     string slang = line.substr(line.find(':') + 1);
+        //     erase_cntrl(slang);
+        //     trim(slang);
+        //     Config::lang = stoi(slang);
+        // } else if (line.find("AY48:") != string::npos) {
+        //     line = line.substr(line.find(':') + 1);
+        //     erase_cntrl(line);
+        //     trim(line);
+        //     AY48 = (line == "true");
+        // } else if (line.find("joystick:") != string::npos) {
+        //     string sjoy = line.substr(line.find(':') + 1);
+        //     erase_cntrl(sjoy);
+        //     trim(sjoy);
+        //     Config::joystick = stoi(sjoy);
+        // }
 
 
-    }
-    fclose(f);
+    // }
+    // fclose(f);
 
     pwm_audio_start();
 
 }
 
-// Dump actual config to FS
 void Config::save() {
+    Config::save("all");
+}
+
+// Dump actual config to FS
+void Config::save(string value) {
 
     pwm_audio_stop();
 
-    //printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
+    // Initialize NVS
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
 
-    FILE *f = fopen(DISK_BOOT_FILENAME, "w");
-    if (f == NULL)
-    {
-        printf("Error opening %s\n",DISK_BOOT_FILENAME);
-        pwm_audio_start();
-        return;
+    // Open
+    printf("\n");
+    printf("Opening Non-Volatile Storage (NVS) handle... ");
+    nvs_handle_t handle;
+    err = nvs_open("storage", NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    } else {
+        printf("Done\n");
+
+
+        if((value=="arch") || (value=="all"))
+            nvs_set_str(handle,"arch",arch.c_str());
+
+        if((value=="romSet") || (value=="all"))
+            nvs_set_str(handle,"romSet",romSet.c_str());
+
+        if((value=="ram") || (value=="all"))
+            nvs_set_str(handle,"ram",ram_file.c_str());   
+
+        if((value=="slog") || (value=="all"))
+            // nvs_set_str(handle,"slog",slog_on ? "true" : "false");
+            nvs_set_str(handle,"slog","true");            
+
+        if((value=="sdstorage") || (value=="all"))
+            nvs_set_str(handle,"sdstorage",FileUtils::MountPoint == MOUNT_POINT_SD ? "true" : "false");
+
+        if((value=="asp169") || (value=="all"))
+            nvs_set_str(handle,"asp169",aspect_16_9 ? "true" : "false");
+
+        if((value=="videomode") || (value=="all"))
+            nvs_set_u8(handle,"videomode",Config::videomode);
+
+        if((value=="language") || (value=="all"))
+            nvs_set_u8(handle,"language",Config::lang);
+
+        if((value=="AY48") || (value=="all"))
+            nvs_set_str(handle,"AY48",AY48 ? "true" : "false");
+
+        if((value=="Issue2") || (value=="all"))
+            nvs_set_str(handle,"Issue2",Issue2 ? "true" : "false");
+
+        if((value=="flashload") || (value=="all"))
+            nvs_set_str(handle,"flashload",flashload ? "true" : "false");
+
+        if((value=="joystick") || (value=="all"))
+            nvs_set_u8(handle,"joystick",Config::joystick);
+
+        if((value=="AluTiming") || (value=="all"))
+            nvs_set_u8(handle,"AluTiming",Config::AluTiming);
+
+        printf("Committing updates in NVS ... ");
+        err = nvs_commit(handle);
+        printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
+
+        // Close
+        nvs_close(handle);
     }
 
-    // Architecture
-    //printf(("arch:" + arch + "\n").c_str());
-    fputs(("arch:" + arch + "\n").c_str(),f);
+    //printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
 
-    // ROM set
-    //printf(("romset:" + romSet + "\n").c_str());
-    fputs(("romset:" + romSet + "\n").c_str(),f);
+    // FILE *f = fopen(DISK_BOOT_FILENAME, "w");
+    // if (f == NULL)
+    // {
+    //     printf("Error opening %s\n",DISK_BOOT_FILENAME);
+    //     pwm_audio_start();
+    //     return;
+    // }
 
-    // RAM SNA
-    //printf(("ram:" + ram_file + "\n").c_str());
-    fputs(("ram:" + ram_file + "\n").c_str(),f);
+    // // Architecture
+    // //printf(("arch:" + arch + "\n").c_str());
+    // fputs(("arch:" + arch + "\n").c_str(),f);
 
-    // Serial logging
-    //printf(slog_on ? "slog:true\n" : "slog:false\n");
-    fputs(slog_on ? "slog:true\n" : "slog:false\n",f);
+    // // ROM set
+    // //printf(("romset:" + romSet + "\n").c_str());
+    // fputs(("romset:" + romSet + "\n").c_str(),f);
 
-    // Aspect ratio
-    //printf(aspect_16_9 ? "asp169:true\n" : "asp169:false\n");
-    fputs(aspect_16_9 ? "asp169:true\n" : "asp169:false\n",f);
+    // // RAM SNA
+    // //printf(("ram:" + ram_file + "\n").c_str());
+    // fputs(("ram:" + ram_file + "\n").c_str(),f);
 
-    // Mount point
-    //printf(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n");
-    fputs(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n",f);
+    // // Serial logging
+    // //printf(slog_on ? "slog:true\n" : "slog:false\n");
+    // fputs(slog_on ? "slog:true\n" : "slog:false\n",f);
 
-    // KBD layout
-    //printf(("kbdlayout:" + kbd_layout + "\n").c_str());
-    // fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
+    // // Aspect ratio
+    // //printf(aspect_16_9 ? "asp169:true\n" : "asp169:false\n");
+    // fputs(aspect_16_9 ? "asp169:true\n" : "asp169:false\n",f);
 
-    // Videomode
-    fputs(("videomode:" + std::to_string(Config::videomode) + "\n").c_str(),f);
+    // // Mount point
+    // //printf(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n");
+    // fputs(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n",f);
 
-    // Language
-    //printf("language:%s\n",std::to_string(Config::lang).c_str());
-    fputs(("language:" + std::to_string(Config::lang) + "\n").c_str(),f);
+    // // KBD layout
+    // //printf(("kbdlayout:" + kbd_layout + "\n").c_str());
+    // // fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
 
-    // AY emulation on 48K mode
-    fputs(AY48 ? "AY48:true\n" : "AY48:false\n",f);
+    // // Videomode
+    // fputs(("videomode:" + std::to_string(Config::videomode) + "\n").c_str(),f);
 
-    // Joystick
-    fputs(("joystick:" + std::to_string(Config::joystick) + "\n").c_str(),f);
+    // // Language
+    // //printf("language:%s\n",std::to_string(Config::lang).c_str());
+    // fputs(("language:" + std::to_string(Config::lang) + "\n").c_str(),f);
 
-    fclose(f);
+    // // AY emulation on 48K mode
+    // fputs(AY48 ? "AY48:true\n" : "AY48:false\n",f);
+
+    // // Joystick
+    // fputs(("joystick:" + std::to_string(Config::joystick) + "\n").c_str(),f);
+
+    // fclose(f);
     
     printf("Config saved OK\n");
 
