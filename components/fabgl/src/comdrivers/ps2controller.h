@@ -56,6 +56,7 @@ enum class PS2Preset {
   KeyboardPort1,              /**< Keyboard on Port 1 (no mouse) */
   MousePort0,                 /**< Mouse on port 0 (no keyboard) */
   MousePort1,                 /**< Mouse on port 1 (no keyboard) */
+  KeyboardPort0_KeybJoystickPort1,/**< Keyboard on Port 0 and Port 1 */
 };
 
 
@@ -70,6 +71,7 @@ enum class KbdMode {
 
 
 class Keyboard;
+class KeybJoystick;
 class Mouse;
 
 
@@ -181,6 +183,15 @@ public:
   static void setKeyboard(Keyboard * value)   { s_keyboard = value; }
 
   /**
+   * @brief Returns the instance of KeybJoystick object automatically created by PS2Controller.
+   *
+   * @return A pointer to a KeybJoystick object
+   */
+  static KeybJoystick * keybjoystick()               { return s_keybjoystick; }  
+
+  static void setKeybJoystick(KeybJoystick * value)  { s_keybjoystick = value; }
+
+  /**
    * @brief Returns the instance of Mouse object automatically created by PS2Controller.
    *
    * @return A pointer to a Mouse object
@@ -230,9 +241,11 @@ private:
   // Keyboard and Mouse instances can be created by PS2Controller in one of the begin() calls, or can be
   // set using setKeyboard() and setMouse() calls.
   static Keyboard *         s_keyboard;
+  static KeybJoystick *     s_keybjoystick;  
   static Mouse *            s_mouse;
 
   static bool               s_keyboardAllocated;
+  static bool               s_keybjoystickAllocated;
   static bool               s_mouseAllocated;
 
   static bool               s_portEnabled[2];

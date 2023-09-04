@@ -279,17 +279,21 @@ void ESPectrum::setup()
     #endif
 
     //=======================================================================================
-    // KEYBOARD
-    //=======================================================================================
-
-    PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
-    PS2Controller.keyboard()->reset(); // This is already setting the ScancodeSet 2
-
-    //=======================================================================================
     // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
     //=======================================================================================
 
     ZXKeyb::setup();
+
+    //=======================================================================================
+    // KEYBOARD
+    //=======================================================================================
+
+    // PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
+    // PS2Controller.keyboard()->reset(); // This is already setting the ScancodeSet 2
+
+    PS2Controller.begin(ZXKeyb::Exists ? PS2Preset::KeyboardPort0 : PS2Preset::KeyboardPort0_KeybJoystickPort1, KbdMode::CreateVirtualKeysQueue);
+    PS2Controller.keyboard()->reset(); // This is already setting the ScancodeSet 2
+    if (!ZXKeyb::Exists) PS2Controller.keybjoystick()->reset();
 
     //=======================================================================================
     // FILESYSTEM
@@ -669,6 +673,25 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     return r;
 }
 
+//
+// Read second ps/2 port and inject on first queue
+//
+void IRAM_ATTR ESPectrum::readKbdJoy() {
+
+    if (!ZXKeyb::Exists) {
+
+        fabgl::VirtualKeyItem NextKey;
+        auto KbdJoy = PS2Controller.keybjoystick();    
+
+        while (KbdJoy->virtualKeyAvailable()) {
+            PS2Controller.keybjoystick()->getNextVirtualKey(&NextKey);
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(NextKey.vk, NextKey.down, false);
+        }
+
+    }
+
+}
+
 uint8_t ESPectrum::PS2cols[8] = { 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf };    
     
 static int zxDelay = 0;
@@ -680,6 +703,8 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     fabgl::VirtualKey KeytoESP;
     bool Kdown;
     bool r = false;
+
+    readKbdJoy();
 
     while (Kbd->virtualKeyAvailable()) {
 

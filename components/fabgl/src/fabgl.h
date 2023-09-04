@@ -328,6 +328,7 @@
 #include "comdrivers/ps2controller.h"
 #include "comdrivers/tsi2c.h"
 #include "devdrivers/keyboard.h"
+#include "devdrivers/kbjoystick.h"
 #include "devdrivers/mouse.h"
 #include "devdrivers/DS3231.h"
 #include "comdrivers/serialport.h"

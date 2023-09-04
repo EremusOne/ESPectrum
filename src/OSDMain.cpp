@@ -217,6 +217,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     if (KeytoESP == fabgl::VK_PAUSE) {
         osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 0);
         while (1) {
+            ESPectrum::readKbdJoy();
             if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {        
                 if (ESPectrum::readKbd(&Nextkey))
                     if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
@@ -998,7 +999,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 
                 }
 
-                // #endif
+                ESPectrum::readKbdJoy();
 
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                     if (ESPectrum::readKbd(&Nextkey)) {
@@ -1132,6 +1133,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     }
 
                 }
+
+                ESPectrum::readKbdJoy();
 
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                     if (ESPectrum::readKbd(&Nextkey)) {

@@ -53,6 +53,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "pwm_audio.h"
 #include "AySound.h"
 #include "loaders.h"
+#include "ZXKeyb.h"
 
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -71,6 +72,7 @@ bool LoadSnapshot(string filename)
 
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->suspendPort();
     // Stop audio
     pwm_audio_stop();
 
@@ -216,6 +218,7 @@ bool LoadSnapshot(string filename)
   
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
 
     return res;
 
@@ -441,6 +444,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->suspendPort();    
 
     // Stop audio
     pwm_audio_stop();
@@ -455,6 +459,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
         // Resume keyboard input
         ESPectrum::PS2Controller.keyboard()->resumePort();
+        if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
 
         return false;
     }
@@ -505,6 +510,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
             pwm_audio_start();
             // Resume keyboard input
             ESPectrum::PS2Controller.keyboard()->resumePort();
+            if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();            
             return false;
         }
     }
@@ -536,6 +542,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
                     pwm_audio_start();
                     // Resume keyboard input
                     ESPectrum::PS2Controller.keyboard()->resumePort();
+                    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
                     return false;
                 }
             }
@@ -548,6 +555,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     pwm_audio_start();
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();    
 
     return true;
 }
@@ -897,6 +905,7 @@ void FileZ80::loader48()
 
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->suspendPort();
 
     // Stop audio
     pwm_audio_stop();
@@ -1140,6 +1149,7 @@ void FileZ80::loader48()
   
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
 
     printf("loader48 end -------------------------------\n");
 
@@ -1154,6 +1164,8 @@ void FileZ80::loader128()
 
     // Stop keyboard input
     ESPectrum::PS2Controller.keyboard()->suspendPort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->suspendPort();
+
     // Stop audio
     pwm_audio_stop();
 
@@ -1372,6 +1384,7 @@ void FileZ80::loader128()
   
     // Resume keyboard input
     ESPectrum::PS2Controller.keyboard()->resumePort();
+    if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
 
     printf("loader128 end -------------------------------\n");
 

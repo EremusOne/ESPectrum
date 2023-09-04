@@ -534,7 +534,7 @@ unsigned short OSD::menuRun(string new_menu) {
                     lastzxKey = 6;
                 }
             } else            
-            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+            if (!bitRead(ZXKeyb::ZXcols[1], 1)) { // S (Capture screen)
                 if (zxDelay == 0) {
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
@@ -551,6 +551,8 @@ unsigned short OSD::menuRun(string new_menu) {
             }
 
         }
+
+        ESPectrum::readKbdJoy();
 
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -902,7 +904,7 @@ string OSD::menuFile(string filedir, string title, string extensions, int curren
                     lastzxKey = 7;
                 }
             } else
-            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+            if (!bitRead(ZXKeyb::ZXcols[1], 1)) { // S (Capture screen)
                 if (zxDelay == 0) {
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
@@ -919,6 +921,8 @@ string OSD::menuFile(string filedir, string title, string extensions, int curren
             }
 
         }
+
+        ESPectrum::readKbdJoy();
 
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -1358,7 +1362,7 @@ int OSD::menuTape(string title) {
                     lastzxKey = 6;
                 }
             } else
-            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q (Capture screen)
+            if (!bitRead(ZXKeyb::ZXcols[1], 1)) { // S (Capture screen)
                 if (zxDelay == 0) {
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
                     ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
@@ -1375,6 +1379,8 @@ int OSD::menuTape(string title) {
             }
 
         }
+
+        ESPectrum::readKbdJoy();
 
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {

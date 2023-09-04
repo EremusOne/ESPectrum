@@ -387,16 +387,16 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 
 	#define PATREONS "\r"\
 		"\nA1The Mega Trees:\r"\
-		"\nB1Victor Llamazares, \nC1Antonio Villena\r"\
+		"\nB1Victor Llamazares \nC1Antonio Villena\r"\
 		"\r"\
 		"\nA1The Jet Set Willys:\r"\
 		"\nD1Inacio Santos\r"\
 		"\r"\
 		"\nA1The Manic Miners:\r"\
-		"\nE1Fernando Bonilla, \nB1Jorge Garcia\r"\
-		"\nC1Ignacio Monge, \nD1Jose Maria Rodriguez\r"\
-		"\nB1Julia Salvador, \nE1Marta Sicilia\r"\
-		"\nC1Radoslaw Wojciechowski\r"
+		"\nE1Fernando Bonilla \nB1Jorge Garcia\r"\
+		"\nC1Ignacio Monge \nD1Jose Maria Rodriguez\r"\
+		"\nB1Julia Salvador \nC1Marta Sicilia\r"\
+		"\nD1Santiago Romero \nE1Radek Wojciechowski\r"
 
 	static const char *AboutMsg[2][5] = {
 		{
@@ -417,11 +417,11 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 	  	"\nF1Collaborators:\r"\
 		"\r"\
 		"\nA1ackerman        \nF1Code & ideas\r"\
-		"\nB1Armand          \nF1Testing & difusion\r"\
+		"\nB1Armand          \nF1Testing & broadcasting\r"\
 		"\nC1azesmbog        \nF1Testing & ideas\r"\
 		"\nD1David Carrion   \nF1H/W code, ZX kbd\r"\
 		"\nE1Ramon Martinez  \nF1AY emul. improvements\r"\
-		"\nA1Ron             \nF1Testing & difusion\r"\
+		"\nA1Ron             \nF1Testing & broadcasting\r"\
 		"\nB1J. L. Sanchez   \nF1Z80 core improvements\r"\
 		"\nC1Antonio Villena \nF1Hardware support\r"\
 		"\nD1ZjoyKiLer       \nF1Testing & ideas\r"\

@@ -40,6 +40,7 @@
 #include "fabutils.h"
 #include "ulp_macro_ex.h"
 #include "devdrivers/keyboard.h"
+#include "devdrivers/kbjoystick.h"
 #include "devdrivers/mouse.h"
 
 
@@ -1083,8 +1084,10 @@ static void replace_placeholders(uint32_t prg_start, int size, bool port0Enabled
 
 PS2Controller *    PS2Controller::s_instance = nullptr;
 Keyboard *         PS2Controller::s_keyboard = nullptr;
+KeybJoystick *     PS2Controller::s_keybjoystick = nullptr;
 Mouse *            PS2Controller::s_mouse    = nullptr;
 bool               PS2Controller::s_keyboardAllocated = false;
+bool               PS2Controller::s_keybjoystickAllocated = false;
 bool               PS2Controller::s_mouseAllocated    = false;
 bool               PS2Controller::s_portEnabled[2];
 intr_handle_t      PS2Controller::s_ULPWakeISRHandle;
@@ -1204,6 +1207,15 @@ void PS2Controller::begin(PS2Preset preset, KbdMode keyboardMode)
   bool generateVirtualKeys = (keyboardMode == KbdMode::GenerateVirtualKeys || keyboardMode == KbdMode::CreateVirtualKeysQueue);
   bool createVKQueue       = (keyboardMode == KbdMode::CreateVirtualKeysQueue);
   switch (preset) {
+    case PS2Preset::KeyboardPort0_KeybJoystickPort1:
+      // both keyboard (port 0 and port 1)
+      begin(GPIO_NUM_33, GPIO_NUM_32, GPIO_NUM_26, GPIO_NUM_27);
+      setKeyboard(new Keyboard);
+      keyboard()->begin(generateVirtualKeys, createVKQueue, 0);
+      setKeybJoystick(new KeybJoystick);
+      keybjoystick()->begin(generateVirtualKeys, createVKQueue, 1);
+      s_keyboardAllocated = s_keybjoystickAllocated = true;
+      break;
     case PS2Preset::KeyboardPort0_MousePort1:
       // both keyboard (port 0) and mouse configured (port 1)
       begin(GPIO_NUM_33, GPIO_NUM_32, GPIO_NUM_26, GPIO_NUM_27);
@@ -1256,6 +1268,10 @@ void PS2Controller::end()
     if (s_keyboardAllocated)
       delete s_keyboard;
     s_keyboard = nullptr;
+
+    if (s_keybjoystickAllocated)
+      delete s_keybjoystick;
+    s_keybjoystick = nullptr;
 
     if (s_mouseAllocated)
       delete s_mouse;
