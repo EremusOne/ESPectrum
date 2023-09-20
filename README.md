@@ -17,21 +17,19 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Floating bus effect emulated (Arkanoid, Sidewize).
 - Contended memory and contended I/O emulation.
 - AY-3-8912 sound emulation.
-- Beeper & Mic emulation (Cobra’s Arc)
-- PS/2 keyboard support
+- Beeper & Mic emulation (Cobra’s Arc).
+- Dual PS/2 keyboard support.
 - Kempston and Cursor type Joystick emulation.
 - Complete OSD menu in two languages: English & Spanish.
-- Realtime TAP file loading.
+- Realtime and fast TAP file loading.
+- TAP file saving to SD card.
 - SNA and Z80 snapshot loading.
 - Snapshot saving and loading (both 48K and 128K supported).
-- BMP screen capture to SD Card (thanks David Crespo 😉)
-- Simultaneous internal (SPIFFS) and external (SD card) storage support.
+- BMP screen capture to SD Card (thanks David Crespo 😉).
 
 ## Work in progress
 
-- TZX Support
-- Being able to use SAVE command to save to SPIFFS and/or SD Card.
-- Fast tape load.
+- TZX Support.
 
 ## Installing
 
