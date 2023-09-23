@@ -31,13 +31,17 @@ class VGA : public I2S
 	static const Mode MODE360x200_50_48;
 	static const Mode MODE320x240_50_128;
 	static const Mode MODE360x200_50_128;
+	static const Mode MODE320x240_50_PENTAGON;
+	static const Mode MODE360x200_50_PENTAGON;
 
 	static const Mode MODE320x240_TV_48;
 	static const Mode MODE360x200_TV_48;
 	static const Mode MODE320x240_TV_128;
 	static const Mode MODE360x200_TV_128;
+	static const Mode MODE320x240_TV_PENTAGON;
+	static const Mode MODE360x200_TV_PENTAGON;
 
-	static const Mode videomodes[3][2][2];
+	static const Mode videomodes[3][3][2];
 
 	Mode mode;
 

@@ -44,14 +44,6 @@ visit https://zxespectrum.speccy.org/contacto
 
 #pragma GCC optimize ("O3")
 
-static bool createCalled = false;
-
-uint32_t CPU::microsPerFrame()
-{
-    if (Config::getArch() == "48K") return 19968;
-    else                            return 19992;
-}
-
 uint32_t CPU::tstates = 0;
 uint64_t CPU::global_tstates = 0;
 uint32_t CPU::statesInFrame = 0;
@@ -60,35 +52,9 @@ uint8_t CPU::latetiming = 0;
 uint8_t CPU::IntStart = 0;
 uint8_t CPU::IntEnd = 0;
 
-bool Z80Ops::is48 = true;
-
-void CPU::setup()
-{
-    if (!createCalled) {
-        Z80::create();
-        createCalled = true;
-    }
-    
-    CPU::latetiming = Config::AluTiming;    
-
-    if (Config::getArch() == "48K") {
-        VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
-        Z80Ops::is48 = true;
-        statesInFrame = TSTATES_PER_FRAME_48;
-        CPU::IntStart = INT_START48;
-        CPU::IntEnd = INT_END48 + CPU::latetiming;
-    } else {
-        VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
-        Z80Ops::is48 = false;
-        statesInFrame = TSTATES_PER_FRAME_128;
-        CPU::IntStart = INT_START128;
-        CPU::IntEnd = INT_END128 + CPU::latetiming;
-    }
-    
-    tstates = 0;
-    global_tstates = 0;
-
-}
+bool Z80Ops::is48;
+bool Z80Ops::is128;
+bool Z80Ops::isPentagon;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -98,18 +64,36 @@ void CPU::reset() {
     
     CPU::latetiming = Config::AluTiming;
 
-    if (Config::getArch() == "48K") {
+    string arch = Config::getArch();
+    if (arch == "48K") {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
         Z80Ops::is48 = true;
+        Z80Ops::is128 = false;
+        Z80Ops::isPentagon = false;
         statesInFrame = TSTATES_PER_FRAME_48;
         CPU::IntStart = INT_START48;
         CPU::IntEnd = INT_END48 + CPU::latetiming;
-    } else {
+        // Set emulation loop sync target
+        ESPectrum::target = MICROS_PER_FRAME_48;
+    } else if (arch == "128K") {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
         Z80Ops::is48 = false;
+        Z80Ops::is128 = true;
+        Z80Ops::isPentagon = false;
         statesInFrame = TSTATES_PER_FRAME_128;
         CPU::IntStart = INT_START128;
         CPU::IntEnd = INT_END128 + CPU::latetiming;
+        // Set emulation loop sync target
+        ESPectrum::target = MICROS_PER_FRAME_128;
+    } else if (arch == "Pentagon") {
+        Z80Ops::is48 = false;
+        Z80Ops::is128 = false;
+        Z80Ops::isPentagon = true;
+        statesInFrame = TSTATES_PER_FRAME_PENTAGON;
+        CPU::IntStart = INT_START_PENTAGON;
+        CPU::IntEnd = INT_END_PENTAGON + CPU::latetiming;
+        // Set emulation loop sync target
+        ESPectrum::target = MICROS_PER_FRAME_PENTAGON;
     }
 
     tstates = 0;
@@ -119,15 +103,59 @@ void CPU::reset() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// void check_trdos() {
+
+//     // Handle Beta Disk Rom mapping.
+//     // if (Config::BetaDisk) {
+
+//         // When the program counter enters the Rom address interval 0x3D00-0x3DFF, execution continues in 
+//         // the Beta Disk Rom until an address outside of the ROM space is reached.
+//         if ((Z80::getRegPC() >= 0x3D00) && (Z80::getRegPC() <= 0x3DFF) && (!ESPectrum::trdos) ) {
+
+//                 // printf("TRDOS entry PC: %d\n",Z80::getRegPC());
+
+//                 // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 if the currently mapped ROM is bank 1.
+//                 if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
+//                     MemESP::romInUse = 4;
+//                     MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+//                     ESPectrum::trdos = true;                        
+//                 }
+
+//         }
+//         else if ((Z80::getRegPC() >= 0x4000) && (ESPectrum::trdos)) {
+
+//                 if (Z80Ops::is48)
+//                     MemESP::romInUse = 0;
+//                 else
+//                     MemESP::romInUse = MemESP::romLatch;
+                
+//                 MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+//                 ESPectrum::trdos = false;
+
+//         }
+
+//     // }
+
+// }
+
 void IRAM_ATTR CPU::loop()
 {
 
-    while (tstates < IntEnd) Z80::execute();
+    while (tstates < IntEnd) {
+        // check_trdos();
+        Z80::execute();
+    }
     
     uint32_t stFrame = statesInFrame - IntEnd;
-    while (tstates < stFrame) Z80::exec_nocheck();
+    while (tstates < stFrame) {
+        // check_trdos();
+        Z80::exec_nocheck();
+    }
 
-    while (tstates < statesInFrame) Z80::execute();
+    while (tstates < statesInFrame) {
+        // check_trdos();
+        Z80::execute();
+    }
 
     if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 

@@ -71,9 +71,11 @@ public:
 
     static string SNA_Path; // Current SNA path on the SD (for future folder support)
     static string TAP_Path; // Current TAP path on the SD (for future folder support)    
+    static string DSK_Path; // Current DSK path on the SD (for future folder support)        
 
     static int curSNAFile; // Current SNA file index on browser
     static int curTAPFile; // Current TAP file index on browser
+    static int curDSKFile; // Current DSK file index on browser    
 
 private:
     friend class Config;
@@ -97,6 +99,7 @@ private:
 #define DISK_ROM_DIR "/r"
 #define DISK_SNA_DIR "/s"
 #define DISK_TAP_DIR "/t"
+#define DISK_DSK_DIR "/d"
 #define DISK_SCR_DIR "/c"
 #define DISK_PSNA_DIR "/p"
 #define DISK_PSNA_FILE "persist"

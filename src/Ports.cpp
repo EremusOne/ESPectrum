@@ -42,6 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "AySound.h"
 #include "Tape.h"
 #include "CPU.h"
+#include "wd1793.h"
 
 #pragma GCC optimize ("O3")
 
@@ -61,8 +62,9 @@ uint8_t speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
 uint8_t Ports::port[128];
 uint8_t Ports::port254 = 0;
 
-uint8_t IRAM_ATTR Ports::input(uint16_t address)
-{
+uint8_t IRAM_ATTR Ports::input(uint16_t address) {
+
+    uint8_t data;
 
     // ** I/O Contention (Early) *************************
     VIDEO::Draw(1, MemESP::ramContended[address >> 14]);
@@ -70,7 +72,8 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
     
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
-        VIDEO::Draw(3, true);
+        // VIDEO::Draw(3, true);
+        VIDEO::Draw(3, false);       
     } else {
         if (MemESP::ramContended[address >> 14]) {
             VIDEO::Draw(1, true);
@@ -80,68 +83,108 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address)
     }
     // ** I/O Contention (Late) **************************
 
-    // The default port value is 0xBF.
-    uint8_t result = 0xbf;    
-
-    // Kempston Joystick
-    if ((Config::joystick) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
-
     // ULA PORT    
     if ((address & 0x0001) == 0) {
-        
+
+        // The default port value is 0xBF.
+        data = 0xbf;
+
         uint8_t portHigh = ~(address >> 8) & 0xff;
         for (int row = 0, mask = 0x01; row < 8; row++, mask <<= 1) {
             if ((portHigh & mask) != 0) {
-                result &= port[row];
+                data &= port[row];
             }
         }
 
         if (Tape::tapeStatus==TAPE_LOADING) {
             Tape::TAP_Read();
-            bitWrite(result,6,Tape::tapeEarBit);            
+            bitWrite(data,6,Tape::tapeEarBit);            
         } else {
             // Issue 2 behaviour only on Spectrum 48K
     		if ((Z80Ops::is48) && (Config::Issue2)) {
-				if (port254 & 0x18) result |= 0x40;
+				if (port254 & 0x18) data |= 0x40;
 			} else {
-				if (port254 & 0x10) result |= 0x40;
+				if (port254 & 0x10) data |= 0x40;
 			}
 		}
 
-        return result;
-    
-    }
-    
-    // Sound (AY-3-8912)
-    if (ESPectrum::AY_emu) {
-        if ((address & 0xC002) == 0xC000)
-            return AySound::getRegisterData();
-    }
+    } else {
 
-    uint8_t data = VIDEO::getFloatBusData();
-    
-    if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
+        // The default port value is 0xFF.
+        data = 0xff;
 
-        // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
-        // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
-        // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
-        if (!MemESP::pagingLock) {
-            MemESP::pagingLock = bitRead(data, 5);
-            MemESP::bankLatch = data & 0x7;
-            MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
-            MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
-            if (MemESP::videoLatch != bitRead(data, 3)) {
-                MemESP::videoLatch = bitRead(data, 3);
-                // This, if not using the ptime128 draw version, fixs ptime and ptime128
-                if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
-                    VIDEO::Draw(2, false);
-                    CPU::tstates -= 2;
-                }
-                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+        // Check if TRDOS Rom is mapped.
+        if (ESPectrum::trdos) {
+            
+            int lowByte = address & 0xFF;
+
+            // Process Beta Disk instruction.
+            if (lowByte & 0x80) {
+                    data = ESPectrum::Betadisk.ReadSystemReg();
+                    // printf("WD1793 Read Control Register: %d\n",(int)data);
+                    return data;
             }
-            MemESP::romLatch = bitRead(data, 4);
-            bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];            
+
+            switch (lowByte) {
+                case 0x1F:
+                    data = ESPectrum::Betadisk.ReadStatusReg();
+                    // printf("WD1793 Read Status Register: %d\n",(int)data);
+                    return data;
+                case 0x3F:
+                    data = ESPectrum::Betadisk.ReadTrackReg();
+                    // printf("WD1793 Read Track Register: %d\n",(int)data);
+                    return data;
+                case 0x5F:
+                    data = ESPectrum::Betadisk.ReadSectorReg();
+                    // printf("WD1793 Read Sector Register: %d\n",(int)data);
+                    return data;
+                case 0x7F:
+                    data = ESPectrum::Betadisk.ReadDataReg();                    
+                    // printf("WD1793 Read Data Register: %d\n",(int)data);                    
+                    return data;                    
+            }
+
+        }
+
+        // Kempston Joystick
+        if ((Config::joystick) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
+
+        // Sound (AY-3-8912)
+        if (ESPectrum::AY_emu) {
+            if ((address & 0xC002) == 0xC000)
+                return AySound::getRegisterData();
+        }
+
+        if (!Z80Ops::isPentagon) {
+
+            data = VIDEO::getFloatBusData();
+            
+            if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
+
+                // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
+                // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
+                // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
+                if (!MemESP::pagingLock) {
+                    MemESP::pagingLock = bitRead(data, 5);
+                    MemESP::bankLatch = data & 0x7;
+                    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+                    MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+                    if (MemESP::videoLatch != bitRead(data, 3)) {
+                        MemESP::videoLatch = bitRead(data, 3);
+                        // This, if not using the ptime128 draw version, fixs ptime and ptime128
+                        if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                            VIDEO::Draw(2, false);
+                            CPU::tstates -= 2;
+                        }
+                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+                    }
+                    MemESP::romLatch = bitRead(data, 4);
+                    bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+                    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];            
+                }
+
+            }
+
         }
 
     }
@@ -166,7 +209,7 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
         // Border color
         if (VIDEO::borderColor != data & 0x07) {
             VIDEO::borderColor = data & 0x07;
-            VIDEO::Draw(0,true);
+            if (!Z80Ops::isPentagon) VIDEO::Draw(0,true); // Seems not needed in Pentagon
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
@@ -189,9 +232,41 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
       }
     }
 
+    // Check if TRDOS Rom is mapped.
+    if (ESPectrum::trdos) {
+
+        int lowByte = address & 0xFF;
+
+        // Process Beta Disk instruction.
+        if (lowByte & 0x80) {
+            // printf("WD1793 Write Control Register: %d\n",data);
+            ESPectrum::Betadisk.WriteSystemReg(data);
+        } else
+            switch (lowByte) {
+                case 0x1F:
+                    // printf("WD1793 Write Command Register: %d\n",data);
+                    ESPectrum::Betadisk.WriteCommandReg(data);
+                    break;
+                case 0x3F:
+                    // printf("WD1793 Write Track Register: %d\n",data);                    
+                    ESPectrum::Betadisk.WriteTrackReg(data);
+                    break;
+                case 0x5F:
+                    // printf("WD1793 Write Sector Register: %d\n",data);                    
+                    ESPectrum::Betadisk.WriteSectorReg(data);
+                    break;
+                case 0x7F:
+                    // printf("WD1793 Write Data Register: %d\n",data);
+                    ESPectrum::Betadisk.WriteDataReg(data);
+                    break;
+            }
+
+    }
+
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
-        VIDEO::Draw(3, true);
+        // VIDEO::Draw(3, true);
+        VIDEO::Draw(3, false);        
         // printf("Case 1\n");
     } else {
         if (MemESP::ramContended[address >> 14]) {
@@ -206,7 +281,7 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
     }
     // ** I/O Contention (Late) **************************
 
-    // 128 =======================================================================
+    // 128 / PENTAGON ==================================================================
     if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
         if (!MemESP::pagingLock) {
@@ -215,7 +290,7 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
 
             MemESP::bankLatch = data & 0x7;
             MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
-            MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+            MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
@@ -223,11 +298,16 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
                 MemESP::videoLatch = bitRead(data, 3);
+                
+                // Seems not needed in Pentagon
                 // This, if not using the ptime128 draw version, fixs ptime and ptime128
-                if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
-                    VIDEO::Draw(2, false);
-                    CPU::tstates -= 2;
+                if (!Z80Ops::isPentagon) {
+                    if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                        VIDEO::Draw(2, false);
+                        CPU::tstates -= 2;
+                    }
                 }
+
                 VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
             }
 

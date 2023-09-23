@@ -40,112 +40,111 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 #include "ESP32Lib/ESP32Lib.h"
 
-/*
-.- - <-INT-> - - - - - - - - - - - - - -.  ---         ---
-:   VBLANK + Invisible Top Border       :   | 16 / 15   |
-.---------------------------------.- - -:  ---   ---    |
-|           Top Border            |     :   | 48  |     |
-|----.-----------------------.----|     :  ---    |     |
-|L   |                       |R   |     :   |     |     |
-|e   |                       |i   |  H  :   |     |     |
-|f  B|                       |g  B|  B  :   |     |     |
-|t  o|         Paper         |h  o|  L  :   | 192 | 296 | 312 / 311
-|   r|                       |t  r|  A  :   |     |     |
-|   d|                       |   d|  N  :   |     |     |
-|   e|                       |   e|  K  :   |     |     |
-|   r|                       |   r|     :   |     |     |
-|----'-----------------------'----|     :  ---    |     |
-|          Bottom Border          |     :   | 56  |     |
-'---------------------------------'- - -'  ---   ---   ---
-
-|----|-----------------------|----|
-  48            256            48
-|---------------------------------|
-                352                                     */
-
 #define SPEC_W 256
 #define SPEC_H 192
 
 #define TSTATES_PER_LINE 224
 #define TSTATES_PER_LINE_128 228
+#define TSTATES_PER_LINE_PENTAGON 224
 
 #define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW 48K @ 320x240, SCANLINE 40, -16 FROM BORDER
 #define TS_SCREEN_320x240_128 8874  // START OF VISIBLE ULA DRAW 128K @ 320x240, SCANLINE 39, -16 FROM BORDER
                                     // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)
+#define TS_SCREEN_320x240_PENTAGON 12594  // START OF VISIBLE ULA DRAW PENTAGON @ 320x240, SCANLINE 56 + 50TS 
 
 #define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW 48K @ 360x200, SCANLINE 60, -16 FROM BORDER
 #define TS_SCREEN_360x200_128 13434 // START OF VISIBLE ULA DRAW 128K @ 360x200, SCANLINE 59, -16 FROM BORDER
                                     // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)                                    
+#define TS_SCREEN_360x200_PENTAGON 17074 // START OF VISIBLE ULA DRAW PENTAGON @ 360x200, SCANLINE 76, +50TS (UNTESTED!!)
+
 class VIDEO
 {
 public:
 
-    // Initialize video
-    static void Init();
+  // Initialize video
+  static void Init();
     
-    // Reset video
-    static void Reset();
+  // Reset video
+  static void Reset();
 
-    // Video draw functions
-    static void IRAM_ATTR TopBorder_Blank(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR TopBorder(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd, bool contended);
-    static void MainScreen(unsigned int statestoadd, bool contended);
-    static void MainScreen_OSD(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR BottomBorder(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd, bool contended);    
-    static void IRAM_ATTR Blank(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR MainScreenLB(unsigned int statestoadd, bool contended);
-    static void IRAM_ATTR MainScreenRB(unsigned int statestoadd, bool contended);    
-    static void IRAM_ATTR NoVideo(unsigned int statestoadd, bool contended);
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Video draw functions
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Common
+  static void NoVideo(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR Blank(unsigned int statestoadd, bool contended);
+  static void Flush(); // For flushing video buffer as fast as possible after HALT
+
+  // 48 / 128
+  static void TopBorder_Blank(unsigned int statestoadd, bool contended);
+  static void TopBorder(unsigned int statestoadd, bool contended);
+  static void MainScreen_Blank(unsigned int statestoadd, bool contended);
+  static void MainScreenLB(unsigned int statestoadd, bool contended);
+  static void MainScreen(unsigned int statestoadd, bool contended);
+  static void MainScreen_OSD(unsigned int statestoadd, bool contended);
+  static void MainScreenRB(unsigned int statestoadd, bool contended);    
+  static void BottomBorder_Blank(unsigned int statestoadd, bool contended);
+  static void BottomBorder(unsigned int statestoadd, bool contended);
+  static void BottomBorder_OSD(unsigned int statestoadd, bool contended);    
     
-    static uint8_t (*getFloatBusData)();
-    static uint8_t IRAM_ATTR getFloatBusData48();
-    static uint8_t IRAM_ATTR getFloatBusData128();    
+  // Pentagon
+  static void IRAM_ATTR TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR TopBorder_Pentagon(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR MainScreenLB_Pentagon(unsigned int statestoadd, bool contended);    
+  static void MainScreen_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR MainScreenRB_Pentagon(unsigned int statestoadd, bool contended);    
+  static void IRAM_ATTR MainScreenRB_OSD_Pentagon(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
 
-    static void (*Draw)(unsigned int, bool contended);
-    static void (*DrawOSD43)(unsigned int, bool contended);
-    static void (*DrawOSD169)(unsigned int, bool contended);
+  static uint8_t (*getFloatBusData)();
+  // static uint8_t IRAM_ATTR getFloatBusData48();
+  // static uint8_t IRAM_ATTR getFloatBusData128();    
+  static uint8_t getFloatBusData48();
+  static uint8_t getFloatBusData128();    
 
-    static void vgataskinit(void *unused);
+  static void (*Draw)(unsigned int, bool contended);
+  static void (*DrawOSD43)(unsigned int, bool contended);
+  static void (*DrawOSD169)(unsigned int, bool contended);
 
-    static uint8_t* grmem;
+  static void vgataskinit(void *unused);
 
-    // For flushing video buffer as fast as possible after HALT
-    static void Flush();
+  static uint8_t* grmem;
 
-    static VGA6Bit vga;
+  static VGA6Bit vga;
 
-    static uint8_t borderColor;
-    static uint32_t border32[8];
-    static uint32_t brd;
+  static uint8_t borderColor;
+  static uint32_t border32[8];
+  static uint32_t brd;
 
-    static uint8_t tStatesPerLine;
-    static int tStatesScreen;
+  static uint8_t tStatesPerLine;
+  static int tStatesScreen;
 
-    static uint8_t flashing;
-    static uint8_t flash_ctr;
+  static uint8_t flashing;
+  static uint8_t flash_ctr;
 
-    // static uint8_t dispUpdCycle;
+  // static uint8_t dispUpdCycle;
 
-    // static uint8_t contendOffset;
-    // static uint8_t contendMod;    
+  // static uint8_t contendOffset;
+  // static uint8_t contendMod;    
 
-    static bool OSD;
+  static bool OSD;
 
-    static uint32_t* SaveRect;
+  static uint32_t* SaveRect;
 
-    static TaskHandle_t videoTaskHandle;
+  static TaskHandle_t videoTaskHandle;
 
-    static int VsyncFinetune[2];
+  static int VsyncFinetune[2];
 
 };
 
 static unsigned int is169;
 
-static unsigned int DRAM_ATTR offBmp[SPEC_H];
-static unsigned int DRAM_ATTR offAtt[SPEC_H];
+static WORD_ALIGNED_ATTR DRAM_ATTR uint16_t offBmp[SPEC_H];
+static WORD_ALIGNED_ATTR DRAM_ATTR uint16_t offAtt[SPEC_H];
 
 // Colors for 6 bit mode
 //                            //   BB GGRR 
@@ -175,16 +174,19 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
 };
 
-static uint32_t* AluBytes[16];
+static WORD_ALIGNED_ATTR DRAM_ATTR uint32_t* AluBytes[16];
 
-static unsigned char DrawStatus;
+// static unsigned char DrawStatus;
 
 static uint32_t* lineptr32;
+static uint16_t* lineptr16;
 
 static unsigned int tstateDraw; // Drawing start point (in Tstates)
 static unsigned int linedraw_cnt;
-static unsigned int mainscrline_cnt;
+static unsigned int lin_end;
+// static unsigned int mainscrline_cnt;
 static unsigned int coldraw_cnt;
+static unsigned int col_end;
 static unsigned int video_rest;
 
 static unsigned int bmpOffset;  // offset for bitmap in graphic memory

@@ -205,7 +205,7 @@ const int bluPins[] = {BLU_PINS_6B};
 
 void VIDEO::vgataskinit(void *unused) {
 
-    const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
+    const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : (Config::getArch() == "128K" ? 1 : 2)][Config::aspect_16_9 ? 1 : 0];
     OSD::scrW = vgaMode.hRes;
     OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
     vga.VGA6Bit_useinterrupt=true;
@@ -221,7 +221,8 @@ void VIDEO::Init() {
     if (Config::videomode) {
         xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
     } else {
-        const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
+        // const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : (Config::getArch() == "128K" ? 1 : 2)][Config::aspect_16_9 ? 1 : 0];
+        const Mode& vgaMode = vga.videomodes[0][0][Config::aspect_16_9 ? 1 : 0];
         OSD::scrW = vgaMode.hRes;
         OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
         vga.VGA6Bit_useinterrupt=false;
@@ -238,49 +239,17 @@ void VIDEO::Init() {
 
     SaveRect = (uint32_t *) heap_caps_malloc(0x9000, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
 
-    borderColor = 0;
-    brd = border32[0];
-
-    is169 = Config::aspect_16_9 ? 1 : 0;
-
-    if (Config::getArch() == "48K") {
-        tStatesPerLine = TSTATES_PER_LINE;
-        tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
-        if (Config::videomode == 1) {
-            VsyncFinetune[0] = is169 ? -1 : 0;
-            VsyncFinetune[1] = is169 ? 152 : 0;
-        } else {
-            VsyncFinetune[0] = is169 ? 0 : 0;
-            VsyncFinetune[1] = is169 ? 0 : 0;
-        }
-    } else {
-        tStatesPerLine = TSTATES_PER_LINE_128;
-        tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
-        if (Config::videomode == 1) {
-            VsyncFinetune[0] = is169 ? 1 : 1;
-            VsyncFinetune[1] = is169 ? 123 : 123;
-        } else {
-            VsyncFinetune[0] = is169 ? 0 : 0;
-            VsyncFinetune[1] = is169 ? 0 : 0;
-        }
-    }
-
-    #ifdef NO_VIDEO
-        Draw = &NoVideo;
-    #else
-        Draw = &Blank;
-    #endif
-
 }
 
 void VIDEO::Reset() {
 
     borderColor = 7;
-    brd = border32[7];    
+    brd = border32[7];
 
     is169 = Config::aspect_16_9 ? 1 : 0;
-    
-    if (Config::getArch() == "48K") {
+
+    string arch = Config::getArch();
+    if (arch == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
         if (Config::videomode == 1) {
@@ -290,7 +259,11 @@ void VIDEO::Reset() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
-    } else {
+
+        DrawOSD43 = VIDEO::BottomBorder;
+        DrawOSD169 = VIDEO::MainScreen;
+
+    } else if (arch == "128K") {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
         if (Config::videomode == 1) {
@@ -300,6 +273,25 @@ void VIDEO::Reset() {
             VsyncFinetune[0] = is169 ? 0 : 0;
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
+
+        DrawOSD43 = VIDEO::BottomBorder;
+        DrawOSD169 = VIDEO::MainScreen;
+
+    } else if (arch == "Pentagon") {
+        tStatesPerLine = TSTATES_PER_LINE_PENTAGON;
+        tStatesScreen = is169 ? TS_SCREEN_360x200_PENTAGON : TS_SCREEN_320x240_PENTAGON;
+        // TODO: ADJUST THESE VALUES FOR PENTAGON
+        if (Config::videomode == 1) {
+            VsyncFinetune[0] = is169 ? 1 : 1;
+            VsyncFinetune[1] = is169 ? 123 : 123;
+        } else {
+            VsyncFinetune[0] = is169 ? 0 : 0;
+            VsyncFinetune[1] = is169 ? 0 : 0;
+        }
+
+        DrawOSD43 = BottomBorder_Pentagon;
+        DrawOSD169 = MainScreen_Pentagon;
+
     }
 
     grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
@@ -312,83 +304,7 @@ void VIDEO::Reset() {
 
 }
 
-// uint8_t IRAM_ATTR VIDEO::getFloatBusData48() {
-
-//     unsigned int currentTstates = CPU::tstates;
-
-// 	unsigned short int line = currentTstates / 224; // int line
-// 	if (line < 64 || line >= 256) return 0xFF;
-
-// 	unsigned char halfpix = currentTstates % 224;
-// 	if (halfpix >= 128) return 0xFF;
-
-//     switch (halfpix & 0x07) {
-//         case 3: { // Bitmap
-//             unsigned int bmpOffset = offBmp[line - 64];
-//             int hpoffset = (halfpix - 3) >> 2;
-//             return(grmem[bmpOffset + hpoffset]);
-//         }
-//         case 4: { // Attr
-//             unsigned int attOffset = offAtt[line - 64];
-//             int hpoffset = (halfpix - 3) >> 2;
-//             return(grmem[attOffset + hpoffset]);
-//         }
-//         case 5: { // Bitmap + 1
-//             unsigned int bmpOffset = offBmp[line - 64];
-//             int hpoffset = ((halfpix - 3) >> 2) + 1;
-//             return(grmem[bmpOffset + hpoffset]);
-//         }
-//         case 6: { // Attr + 1
-//             unsigned int attOffset = offAtt[line - 64];
-//             int hpoffset = ((halfpix - 3) >> 2) + 1;
-//             return(grmem[attOffset + hpoffset]);
-//         }
-//     }
-
-//     return(0xFF);
-
-// }
-
-// uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
-
-//     unsigned int currentTstates = CPU::tstates;
-
-//     currentTstates--;
-
-// 	unsigned short int line = currentTstates / 228; // int line
-// 	if (line < 63 || line >= 255) return 0xFF;
-
-// 	unsigned char halfpix = currentTstates % 228;
-// 	if (halfpix >= 128) return 0xFF;
-
-//     switch (halfpix & 0x07) {
-//         case 0: { // Bitmap
-//             unsigned int bmpOffset = offBmp[line - 63];
-//             int hpoffset = (halfpix) >> 2;
-//             return(grmem[bmpOffset + hpoffset]);
-//         }
-//         case 1: { // Attr
-//             unsigned int attOffset = offAtt[line - 63];
-//             int hpoffset = (halfpix) >> 2;
-//             return(grmem[attOffset + hpoffset]);
-//         }
-//         case 2: { // Bitmap + 1
-//             unsigned int bmpOffset = offBmp[line - 63];
-//             int hpoffset = ((halfpix) >> 2) + 1;
-//             return(grmem[bmpOffset + hpoffset]);
-//         }
-//         case 3: { // Attr + 1
-//             unsigned int attOffset = offAtt[line - 63];
-//             int hpoffset = ((halfpix) >> 2) + 1;
-//             return(grmem[attOffset + hpoffset]);
-//         }
-//     }
-
-//     return(0xFF);
-
-// }
-
-uint8_t IRAM_ATTR VIDEO::getFloatBusData48() {
+uint8_t VIDEO::getFloatBusData48() {
 
     unsigned int currentTstates = CPU::tstates;
 
@@ -406,7 +322,7 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData48() {
 
 }
 
-uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
+uint8_t VIDEO::getFloatBusData128() {
 
     unsigned int currentTstates = CPU::tstates - 1;
 
@@ -428,9 +344,9 @@ uint8_t IRAM_ATTR VIDEO::getFloatBusData128() {
 //  VIDEO DRAW FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
-void IRAM_ATTR VIDEO::NoVideo(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
+void VIDEO::NoVideo(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
 
-void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) {
+void VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -441,12 +357,35 @@ void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) 
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
         Draw = &TopBorder;
-        TopBorder(0,contended);
+        TopBorder(0,false);
     }
 
 }
 
-void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended) {
+
+    CPU::tstates += statestoadd;
+
+    if (CPU::tstates > tstateDraw) {
+        video_rest = CPU::tstates - tstateDraw;
+        tstateDraw += tStatesPerLine;
+        lineptr16 = (uint16_t *)(vga.frameBuffers[0][linedraw_cnt]);
+        if (is169) {
+            coldraw_cnt = 10;
+            col_end = 170;
+            lin_end = 4;
+        } else {
+            coldraw_cnt = 0;
+            col_end = 160;
+            lin_end = 24;
+        }
+        Draw = &TopBorder_Pentagon;
+        TopBorder_Pentagon(0,false);
+    }
+
+}
+
+void VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -463,7 +402,23 @@ void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
 
 }
 
-void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::TopBorder_Pentagon(unsigned int statestoadd, bool contended) {
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+    video_rest = 0;
+    for (int i=0; i < statestoadd; i++) {
+        lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
+        if (++coldraw_cnt == col_end) {
+            Draw = ++linedraw_cnt == lin_end ? &MainScreen_Blank_Pentagon : &TopBorder_Blank_Pentagon;
+            return;
+        }
+    }
+
+}
+
+void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {    
     
     CPU::tstates += statestoadd;
 
@@ -482,7 +437,33 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
 
 }    
 
-void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended) {    
+    
+    CPU::tstates += statestoadd;
+
+    if (CPU::tstates > tstateDraw) {
+        video_rest = CPU::tstates - tstateDraw;
+        lineptr32 = (uint32_t *)(vga.frameBuffers[0][linedraw_cnt]);
+        lineptr16 = (uint16_t *)(vga.frameBuffers[0][linedraw_cnt]);
+        if (is169) {
+            lineptr32 += 5;
+            coldraw_cnt = 10;
+            col_end = 25;
+            lin_end = 196;
+        } else {
+            coldraw_cnt = 0;
+            col_end = 15;
+            lin_end = 216;
+        }
+        bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
+        attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24)];
+        Draw = MainScreenLB_Pentagon;
+        MainScreenLB_Pentagon(0,false);
+    }
+
+}    
+
+void VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {    
   
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -517,9 +498,27 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
     
 }
 
-// -------------------------------
-// Non ptime-128 compliant version
-// -------------------------------
+void IRAM_ATTR VIDEO::MainScreenLB_Pentagon(unsigned int statestoadd, bool contended) {    
+  
+    CPU::tstates += statestoadd;
+    statestoadd += video_rest;
+
+    video_rest = 0;
+    for (int i=0; i < statestoadd; i++) {    
+        lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
+        if (++coldraw_cnt > col_end) {
+            lineptr32 += 8;
+            coldraw_cnt = 4;
+            col_end = is169 ? 154 : 144;
+            Draw = DrawOSD169;
+            video_rest += statestoadd - (i + 1);
+            Draw(0,false);
+            return;
+        }
+    }
+
+}
+
 void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     uint8_t att, bmp;
@@ -551,10 +550,45 @@ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
 }
 
+void VIDEO::MainScreen_Pentagon(unsigned int statestoadd, bool contended) {
+
+    uint8_t att, bmp;
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+
+    video_rest = statestoadd & 0x03; // Mod 4
+    
+    for (int i=0; i < (statestoadd >> 2); i++) {
+
+        att = grmem[attOffset++];       // get attribute byte
+        bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+
+        *lineptr32++ = AluBytes[bmp >> 4][att];
+        *lineptr32++ = AluBytes[bmp & 0xF][att];
+
+        if (++coldraw_cnt > 35) {
+            coldraw_cnt = col_end;
+            if (is169) {
+                col_end = 170;
+            } else {
+                col_end = 160;
+            }
+            Draw = MainScreenRB_Pentagon;
+            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
+            MainScreenRB_Pentagon(0,false);
+            return;
+        }
+
+    }
+
+}
+
 // // ---------------------------
 // // ptime-128 compliant version
 // // ---------------------------    
-// void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
+// void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
 //     static uint8_t att1,bmp1;
 
@@ -621,7 +655,7 @@ void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
             continue;
         }
 
-        if ((coldraw_cnt>3) && (coldraw_cnt<36)) {
+        if (/*(coldraw_cnt>3) && */(coldraw_cnt<36)) {
 
             att = grmem[attOffset++];       // get attribute byte
             bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
@@ -646,7 +680,48 @@ void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
 }
 
-void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
+void VIDEO::MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended) {
+
+    uint8_t att, bmp;
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+
+    video_rest = statestoadd & 0x03; // Mod 4
+    
+    for (int i=0; i < (statestoadd >> 2); i++) {
+
+        if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>20) && (coldraw_cnt<36)) {
+
+            lineptr32 += 2;
+            attOffset++;
+            bmpOffset++;
+
+        } else {
+
+            att = grmem[attOffset++];       // get attribute byte
+            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+
+            *lineptr32++ = AluBytes[bmp >> 4][att];
+            *lineptr32++ = AluBytes[bmp & 0xF][att];
+        
+        }
+
+        if (++coldraw_cnt > 35) {
+            coldraw_cnt = 154;
+            col_end = 170;
+            Draw = MainScreenRB_OSD_Pentagon;
+            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
+            MainScreenRB_OSD_Pentagon(0,false);
+            return;
+        }
+
+    }
+
+}
+
+void VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
 
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -668,7 +743,43 @@ void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
 
 }
 
-void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::MainScreenRB_Pentagon(unsigned int statestoadd, bool contended) {    
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+    video_rest = 0;
+    for (int i=0; i < statestoadd; i++) {
+        lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
+        if (++coldraw_cnt == col_end) {
+            tstateDraw += tStatesPerLine;
+            Draw = ++linedraw_cnt == lin_end ? &BottomBorder_Blank_Pentagon : &MainScreen_Blank_Pentagon;            
+            return;
+        }
+
+    }
+
+}
+
+void IRAM_ATTR VIDEO::MainScreenRB_OSD_Pentagon(unsigned int statestoadd, bool contended) {    
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+    video_rest = 0;
+    for (int i=0; i < statestoadd; i++) {
+        if ((linedraw_cnt<176) || (linedraw_cnt>191) || (coldraw_cnt > 165)) lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
+        if (++coldraw_cnt == 170) {
+            tstateDraw += tStatesPerLine;
+            Draw = ++linedraw_cnt == 196 ? &BottomBorder_Blank_Pentagon : &MainScreen_Blank_Pentagon;
+            return;
+        }
+
+    }
+
+}
+
+void VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contended) {    
 
     CPU::tstates += statestoadd;
 
@@ -684,7 +795,30 @@ void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contende
 
 }
 
-void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended) {    
+
+    CPU::tstates += statestoadd;
+
+    if (CPU::tstates > tstateDraw) {
+        video_rest = CPU::tstates - tstateDraw;
+        tstateDraw += tStatesPerLine;
+        lineptr16 = (uint16_t *)(vga.frameBuffers[0][linedraw_cnt]); // Pentagon
+        if (is169) {
+            coldraw_cnt = 10;
+            col_end = 170;
+            lin_end = 200;
+        } else {
+            coldraw_cnt = 0;
+            col_end = 160;
+            lin_end = 240;
+        }
+        Draw = DrawOSD43;
+        Draw(0,false);
+    }
+
+}
+
+void VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {    
 
     CPU::tstates += statestoadd;
 
@@ -700,9 +834,27 @@ void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
             return;
         }
     }
+
 }
 
-void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::BottomBorder_Pentagon(unsigned int statestoadd, bool contended) {    
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+
+    video_rest = 0;
+    for (int i=0; i < statestoadd; i++) {    
+        lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
+        if (++coldraw_cnt == col_end) {
+            Draw = ++linedraw_cnt == lin_end ? &Blank : &BottomBorder_Blank_Pentagon;
+            return;
+        }
+    }
+
+}
+
+void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -729,6 +881,31 @@ void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
 
 }
 
+void IRAM_ATTR VIDEO::BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended) {
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+
+    video_rest = 0;
+    for(;statestoadd > 0; statestoadd--) {
+
+        if ((linedraw_cnt < 220) || (linedraw_cnt > 235)) {
+            lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
+        } else {
+            if ((coldraw_cnt < 84) || (coldraw_cnt > 155)) {
+                lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
+            }
+        }
+        
+        if (++coldraw_cnt == 160) {
+            Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank_Pentagon;
+            return;
+        }
+    }
+
+}
+
 void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
@@ -736,7 +913,7 @@ void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd, bool contended) {
     if (CPU::tstates < tStatesPerLine) {
         linedraw_cnt = 0;
         tstateDraw = tStatesScreen;
-        Draw = &TopBorder_Blank;
+        Draw = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
     }
 
 }

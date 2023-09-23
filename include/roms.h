@@ -49,6 +49,9 @@ visit https://zxespectrum.speccy.org/contacto
  //#include "roms/romPlus2128K.h"
 //  #include "roms/romZX81.edition3.h"
 
+#include "roms/trdos.h"
+#include "roms/rompentagon128k.h"
+
 //  #define max_list_rom_48 1
  
 //  #define max_list_rom_128 1

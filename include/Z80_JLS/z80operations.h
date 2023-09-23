@@ -56,6 +56,8 @@ public:
     // static unsigned char IRAM_ATTR delayContention128();
 
     static bool is48;
+    static bool is128;
+    static bool isPentagon;
 
 };
 

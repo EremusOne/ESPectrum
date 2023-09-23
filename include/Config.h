@@ -42,13 +42,16 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
-#include "esp_attr.h"
+// #include "esp_attr.h"
 
 class Config
 {
 public:
+
     // machine type change request
-    static void requestMachine(string newArch, string newRomSet, bool force);
+    static void requestMachine(string newArch, string newRomSet);
+
+    static const string archnames[3];
 
     // config variables
     static const string& getArch()   { return arch;   }
@@ -58,7 +61,6 @@ public:
     static uint8_t  esp32rev;
     static bool     slog_on;
     static bool     aspect_16_9;
-    // static string   kbd_layout;
     static uint8_t  lang;
     static bool     AY48;
     static bool     Issue2;    
@@ -72,23 +74,11 @@ public:
     static void save();
     static void save(string value);
 
-    // // list of snapshot file names
-    // static string   sna_file_list;
-    // // list of snapshot display names
-    // static string   sna_name_list;
-    // // load lists of snapshots
-    // static void loadSnapshotLists();
-
-    // // list of TAP file names
-    // static string   tap_file_list;
-    // // list of TAP display names
-    // static string   tap_name_list;
-    // // load lists of TAP files
-    // static void loadTapLists();
-
 private:
+
     static string   arch;
     static string   romSet;
+
 };
 
 #endif // Config.h

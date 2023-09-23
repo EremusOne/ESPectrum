@@ -36,7 +36,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "MemESP.h"
 #include <stddef.h>
 
-uint8_t* MemESP::rom[4];
+uint8_t* MemESP::rom[5];
 
 uint8_t* MemESP::ram0 = NULL;
 uint8_t* MemESP::ram1 = NULL;

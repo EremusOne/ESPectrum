@@ -1092,6 +1092,8 @@ private:
     static void dcCBFE(void);                    
     static void dcCBFF(void);                    
 
+    static void IRAM_ATTR check_trdos();                 
+    static void IRAM_ATTR check_trdos_unpage();                 
 };
 
 #endif // Z80CPP_H

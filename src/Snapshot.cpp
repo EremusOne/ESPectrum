@@ -87,11 +87,11 @@ bool LoadSnapshot(string filename)
 
     if (snapshotArch != "") {
 
-        // Arch check
+        // Arch check (TO DO: CONSIDER PENTAGON)
         if (Config::getArch() == "128K") {
             if (snapshotArch == "48K") {
                 #ifdef SNAPSHOT_LOAD_FORCE_ARCH
-                    Config::requestMachine("48K", "SINCLAIR", true);
+                    Config::requestMachine("48K", "SINCLAIR");
 
                     // Condition this to 50hz mode
                     if(Config::videomode) {
@@ -108,7 +108,7 @@ bool LoadSnapshot(string filename)
         }
         else if (Config::getArch() == "48K") {
             if (snapshotArch == "128K") {
-                Config::requestMachine("128K", "SINCLAIR", true);
+                Config::requestMachine("128K", "SINCLAIR");
 
                 // Condition this to 50hz mode
                 if(Config::videomode) {
@@ -127,12 +127,14 @@ bool LoadSnapshot(string filename)
 
         CPU::tstates = 0;
         CPU::global_tstates = 0;
-        ESPectrum::target = CPU::microsPerFrame();
         ESPectrum::ESPoffset = 0;
 
-        if (Config::getArch() == "48K") {
+        string arch = Config::getArch();
+        if (arch == "48K") {
 
             Z80Ops::is48 = true;
+            Z80Ops::is128 = false;
+            Z80Ops::isPentagon = false;                        
 
             VIDEO::tStatesPerLine = TSTATES_PER_LINE;
             VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
@@ -149,9 +151,13 @@ bool LoadSnapshot(string filename)
             CPU::IntStart = INT_START48;
             CPU::IntEnd = INT_END48 + CPU::latetiming;
 
-        } else {
+            ESPectrum::target = MICROS_PER_FRAME_48;
+
+        } else if (arch == "128K") {
             
             Z80Ops::is48 = false;
+            Z80Ops::is128 = true;
+            Z80Ops::isPentagon = false;                        
 
             VIDEO::tStatesPerLine = TSTATES_PER_LINE_128;
             VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
@@ -168,6 +174,30 @@ bool LoadSnapshot(string filename)
             CPU::IntStart = INT_START128;
             CPU::IntEnd = INT_END128 + CPU::latetiming;
 
+            ESPectrum::target = MICROS_PER_FRAME_128;            
+
+        } else if (arch == "Pentagon") {
+
+            Z80Ops::is48 = false;
+            Z80Ops::is128 = false;
+            Z80Ops::isPentagon = true;                        
+
+            VIDEO::tStatesPerLine = TSTATES_PER_LINE_PENTAGON;
+            VIDEO::tStatesScreen = Config::aspect_16_9 ? TS_SCREEN_360x200_PENTAGON : TS_SCREEN_320x240_PENTAGON;
+
+            ESPectrum::overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_PENTAGON;
+            ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_PENTAGON;
+            ESPectrum::AY_emu = true;        
+            ESPectrum::Audio_freq = ESP_AUDIO_FREQ_PENTAGON;
+
+            CPU::latetiming = Config::AluTiming;
+            
+            CPU::statesInFrame = TSTATES_PER_FRAME_PENTAGON;
+            CPU::IntStart = INT_START_PENTAGON;
+            CPU::IntEnd = INT_END_PENTAGON + CPU::latetiming;
+
+            ESPectrum::target = MICROS_PER_FRAME_PENTAGON;            
+
         }
 
         VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
@@ -179,9 +209,9 @@ bool LoadSnapshot(string filename)
         MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
 
         MemESP::ramContended[0] = false;
-        MemESP::ramContended[1] = true;
+        MemESP::ramContended[1] = Z80Ops::isPentagon ? false : true;
         MemESP::ramContended[2] = false;
-        MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;    
+        MemESP::ramContended[3] = Z80Ops::isPentagon ? false : MemESP::bankLatch & 0x01 ? true: false;
 
         Tape::tapeFileName = "none";
         if (Tape::tape != NULL) {
@@ -193,8 +223,8 @@ bool LoadSnapshot(string filename)
         Tape::romLoading = false;
 
         // Empty audio buffers
-        for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
-        for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
+        for (int i=0;i<ESP_AUDIO_OVERSAMPLES_PENTAGON;i++) ESPectrum::overSamplebuf[i]=0;
+        for (int i=0;i<ESP_AUDIO_SAMPLES_PENTAGON;i++) {
             ESPectrum::audioBuffer[i]=0;
             AySound::SamplebufAY[i]=0;
         }
@@ -1128,8 +1158,8 @@ void FileZ80::loader48()
     Tape::romLoading = false;
 
     // Empty audio buffers
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
-    for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_PENTAGON;i++) ESPectrum::overSamplebuf[i]=0;
+    for (int i=0;i<ESP_AUDIO_SAMPLES_PENTAGON;i++) {
         ESPectrum::audioBuffer[i]=0;
         AySound::SamplebufAY[i]=0;
     }
@@ -1363,8 +1393,8 @@ void FileZ80::loader128()
     Tape::romLoading = false;
 
     // Empty audio buffers
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) ESPectrum::overSamplebuf[i]=0;
-    for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
+    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_PENTAGON;i++) ESPectrum::overSamplebuf[i]=0;
+    for (int i=0;i<ESP_AUDIO_SAMPLES_PENTAGON;i++) {
         ESPectrum::audioBuffer[i]=0;
         AySound::SamplebufAY[i]=0;
     }

@@ -72,6 +72,7 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_FLASHLOAD "Flash loading TAP file"
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 #define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
+#define OSD_BETADISK_LOAD_ERR "ERROR Loading Disk file"
 
 #define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
@@ -84,6 +85,10 @@ static const char *MENU_SNA_TITLE[2] = { MENU_SNA_TITLE_EN,MENU_SNA_TITLE_ES };
 #define MENU_TAP_TITLE_EN "Select TAP file"
 #define MENU_TAP_TITLE_ES "Elija fichero TAP"
 static const char *MENU_TAP_TITLE[2] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES };
+
+#define MENU_DSK_TITLE_EN "Select disk image"
+#define MENU_DSK_TITLE_ES "Elija imagen de disco"
+static const char *MENU_DSK_TITLE[2] = { MENU_DSK_TITLE_EN,MENU_DSK_TITLE_ES };
 
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
@@ -109,9 +114,34 @@ static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
     "Navegador cinta \t[F7]  \n"
 static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
 
+#define MENU_BETADISK_EN \
+    "Drives\n"\
+    "Drive A\t>\n"\
+    "Drive B\t>\n"\
+    "Drive C\t>\n"\
+    "Drive D\t>\n"
+#define MENU_BETADISK_ES \
+    "Unidades\n"\
+    "Unidad A\t>\n"\
+    "Unidad B\t>\n"\
+    "Unidad C\t>\n"\
+    "Unidad D\t>\n"
+static const char *MENU_BETADISK[2] = { MENU_BETADISK_EN,MENU_BETADISK_ES };
+
+#define MENU_BETADRIVE_EN \
+    "Drive#\n"\
+	"Insert disk\t>\n"\
+    "Eject disk\n"
+#define MENU_BETADRIVE_ES \
+    "Unidad#\n"\
+    "Insertar disco\t>\n"\
+    "Expulsar disco\n"
+static const char *MENU_BETADRIVE[2] = { MENU_BETADRIVE_EN,MENU_BETADRIVE_ES };
+
 #define MENU_MAIN_EN /*"Main Menu\n"*/ \
     "Snapshot\t>\n"\
     "Tape\t>\n"\
+    "Betadisk\t>\n"\
     "Reset\t>\n"\
     "Options\t>\n"\
     "Help\n"\
@@ -119,6 +149,7 @@ static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
 #define MENU_MAIN_ES /*"Menu principal\n"*/ \
     "Snapshots\t>\n"\
     "Casete\t>\n"\
+    "Betadisk\t>\n"\
     "Resetear\t>\n"\
     "Opciones\t>\n"\
     "Ayuda\n"\
@@ -156,12 +187,12 @@ static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
 #define MENU_RESET_EN \
     "Reset Menu\n"\
     "Soft reset\n"\
-    "Hard reset\n"\
+    "Hard reset\t[F11]\n"\
     "ESP32 reset\t[F12]\n"
 #define MENU_RESET_ES \
     "Resetear\n"\
     "Reset parcial\n"\
-    "Reset completo\n"\
+    "Reset completo\t[F11]\n"\
     "Resetear ESP32\t[F12]\n"
 static const char *MENU_RESET[2] = { MENU_RESET_EN, MENU_RESET_ES };
 
@@ -267,27 +298,29 @@ static const char *MENU_ISSUE2[2] = { MENU_ISSUE2_EN, MENU_ISSUE2_ES };
 
 #define MENU_ARCH_EN "Select machine\n"\
     "ZX Spectrum 48K\n"\
-    "ZX Spectrum 128K\n"
+    "ZX Spectrum 128K\n"\
+    "Pentagon 128K\n"
 #define MENU_ARCH_ES "Elija modelo\n"\
     "ZX Spectrum 48K\n"\
-    "ZX Spectrum 128K\n"
+    "ZX Spectrum 128K\n"\
+    "Pentagon 128K\n"
 static const char *MENU_ARCH[2] = { MENU_ARCH_EN, MENU_ARCH_ES };
 
-#define MENU_ROMSET48_EN "Select ROM\n"\
-    "SINCLAIR\n"\
-    "SE\n"
-#define MENU_ROMSET48_ES "Elija ROM\n"\
-    "SINCLAIR\n"\
-    "SE\n"
-static const char *MENU_ROMSET48[2] = { MENU_ROMSET48_EN, MENU_ROMSET48_ES };
+// #define MENU_ROMSET48_EN "Select ROM\n"\
+//     "SINCLAIR\n"\
+//     "SE\n"
+// #define MENU_ROMSET48_ES "Elija ROM\n"\
+//     "SINCLAIR\n"\
+//     "SE\n"
+// static const char *MENU_ROMSET48[2] = { MENU_ROMSET48_EN, MENU_ROMSET48_ES };
 
-#define MENU_ROMSET128_EN "Select ROM\n"\
-    "SINCLAIR\n"\
-    "PLUS2\n"
-#define MENU_ROMSET128_ES "Elija ROM\n"\
-    "SINCLAIR\n"\
-    "PLUS2\n"
-static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
+// #define MENU_ROMSET128_EN "Select ROM\n"\
+//     "SINCLAIR\n"\
+//     "PLUS2\n"
+// #define MENU_ROMSET128_ES "Elija ROM\n"\
+//     "SINCLAIR\n"\
+//     "PLUS2\n"
+// static const char *MENU_ROMSET128[2] = { MENU_ROMSET128_EN, MENU_ROMSET128_ES };
 
 // #define MENU_LANGUAGE_EN "Language\n"\
 //     "Interface\t>\n"\
@@ -327,175 +360,131 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
 //     "Ingles GB\t[UK]\n"
 // static const char *MENU_KBD_LAYOUT[2] = { MENU_KBD_LAYOUT_EN, MENU_KBD_LAYOUT_ES };
 
-// #define OSD_ABOUT1_EN \
-//     " (C)2023 Victor Iborra \"Eremus\"\n"\
-//     "         David Crespo  \"dcrespo3d\"\n"\
-//     "\n"\
-//     " Based on ZX-ESPectrum-Wiimote\n"\
-//     " (C)2020-2023 David Crespo\n"\
-//     "\n"\ 
-//     " Inspired by previous projects\n"\
-//     " from Pete Todd and Rampa & Queru\n"\
-//     "\n"\
-//     " Z80 emulation by JL Sanchez\n"\
-//     " VGA driver by BitLuni\n"\
-//     " AY-3-8912 library by A. Sashnov\n"\
-//     " PS2 driver by Fabrizio di Vittorio\n"  
+#define DEDICATORIA "\nF1Dedicado especialmente a:\r"\
+	"\nB1      _       _ _\r"\
+	"\nB1     | |     | (_)          \nA1d88b d88b\r"\
+	"\nB1     | |_   _| |_  __ _    \nA188888888888\r"\
+	"\nB1 _   | | | | | | |/ _` |   \nA1`Y8888888Y'\r"\
+	"\nB1| |__| | |_| | | | (_| |     \nA1`Y888Y'\r"\
+	"\nB1 \\____/ \\___/|_|_|\\__,_|       \nA1`Y'\r"\
+	"\nF1 _   _    \nE1 __  __            _ \r"\
+	"\nF1| | | |   \nE1|  \\/  |          | |\r"\
+	"\nF1| |_| |   \nE1| \\  / | __ _ _ __| |_ __ _\r"\
+	"\nF1 \\__, |   \nE1| |\\/| |/ _` | '__| __/ _` |\r"\
+	"\nF1  __/ |   \nE1| |  | | (_| | |  | || (_| |\r"\
+	"\nF1 |___/    \nE1|_|  |_|\\__,_|_|   \\__\\__,_|\r"
 
-// #define OSD_ABOUT2_EN \
-//     " Greetings to Ackerman, zx81, azesmbog,\n"\
-//     " ZjoyKiLer, D. Carrion, A. Villena,\n"\
-//     " Rampa and to Retrowiki and his people\n"\
-//     " for the support and inspiration.\n"    
+#define PATREONS "\r"\
+	"\nA1The Mega Trees:\r"\
+	"\nB1Victor Llamazares \nC1Antonio Villena\r"\
+	"\r"\
+	"\nA1The Jet Set Willys:\r"\
+	"\nD1Inacio Santos\r"\
+	"\r"\
+	"\nA1The Manic Miners:\r"\
+	"\nE1Fernando Bonilla \nB1Jorge Garcia\r"\
+	"\nC1Ignacio Monge \nD1Jose Maria Rodriguez\r"\
+	"\nB1Julia Salvador \nC1Marta Sicilia\r"\
+	"\nD1Santiago Romero \nE1Radek Wojciechowski\r"
 
-// #define OSD_ABOUT1_ES \
-//     " (C)2023 Victor Iborra \"Eremus\"\n"\
-//     "         David Crespo  \"dcrespo3d\"\n"\
-//     "\n"\
-//     " Basado en ZX-ESPectrum-Wiimote\n"\
-//     " (C)2020-2023 David Crespo\n"\
-//     "\n"\ 
-//     " Inspirado en proyectos anteriores\n"\
-//     " de Pete Todd y Rampa & Queru\n"\
-//     "\n"\
-//     " Emulacion Z80 por JL Sanchez\n"\
-//     " Driver VGA por BitLuni\n"\
-//     " Libreria AY-3-8912 por A. Sashnov\n"\
-//     " Driver PS2 por Fabrizio di Vittorio\n"
-
-// #define OSD_ABOUT2_ES \
-//     " Saludos a Ackerman, zx81, azesmbog,\n"\
-//     " ZjoyKiLer, D. Carrion, A. Villena,\n"\
-//     " Rampa y a Retrowiki y su gente por su\n"\
-//     " ayuda e inspiracion.\n"
-
-// static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
-
-	#define DEDICATORIA "\nF1Dedicado especialmente a:\r"\
-		"\nB1      _       _ _\r"\
-		"\nB1     | |     | (_)          \nA1d88b d88b\r"\
-		"\nB1     | |_   _| |_  __ _    \nA188888888888\r"\
-		"\nB1 _   | | | | | | |/ _` |   \nA1`Y8888888Y'\r"\
-		"\nB1| |__| | |_| | | | (_| |     \nA1`Y888Y'\r"\
-		"\nB1 \\____/ \\___/|_|_|\\__,_|       \nA1`Y'\r"\
-		"\nF1 _   _    \nE1 __  __            _ \r"\
- 		"\nF1| | | |   \nE1|  \\/  |          | |\r"\
- 		"\nF1| |_| |   \nE1| \\  / | __ _ _ __| |_ __ _\r"\
- 		"\nF1 \\__, |   \nE1| |\\/| |/ _` | '__| __/ _` |\r"\
- 		"\nF1  __/ |   \nE1| |  | | (_| | |  | || (_| |\r"\
- 		"\nF1 |___/    \nE1|_|  |_|\\__,_|_|   \\__\\__,_|\r"
-
-	#define PATREONS "\r"\
-		"\nA1The Mega Trees:\r"\
-		"\nB1Victor Llamazares \nC1Antonio Villena\r"\
-		"\r"\
-		"\nA1The Jet Set Willys:\r"\
-		"\nD1Inacio Santos\r"\
-		"\r"\
-		"\nA1The Manic Miners:\r"\
-		"\nE1Fernando Bonilla \nB1Jorge Garcia\r"\
-		"\nC1Ignacio Monge \nD1Jose Maria Rodriguez\r"\
-		"\nB1Julia Salvador \nC1Marta Sicilia\r"\
-		"\nD1Santiago Romero \nE1Radek Wojciechowski\r"
-
-	static const char *AboutMsg[2][5] = {
-		{
-	    "\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
-		"        David Crespo  \"dcrespo3d\"\r"\
-		"\r"\
-		"\nA1Based on ZX-ESPectrum-Wiimote\r"\
-		"(C)2020-2023 David Crespo\r"\
-		"\r"\
-		"\nB1Inspired by previous projects\r"\
-		"from Pete Todd and Rampa & Queru\r"\
-		"\r"\
-		"\nC1Z80 emulation by JL Sanchez\r"\
-		"\nD1VGA driver by BitLuni\r"\
-		"\nE1AY-3-8912 library by A. Sashnov\r"\
-		"\nF1PS2 driver by Fabrizio di Vittorio\r"
-		,
-	  	"\nF1Collaborators:\r"\
-		"\r"\
-		"\nA1ackerman        \nF1Code & ideas\r"\
-		"\nB1Armand          \nF1Testing & broadcasting\r"\
-		"\nC1azesmbog        \nF1Testing & ideas\r"\
-		"\nD1David Carrion   \nF1H/W code, ZX kbd\r"\
-		"\nE1Ramon Martinez  \nF1AY emul. improvements\r"\
-		"\nA1Ron             \nF1Testing & broadcasting\r"\
-		"\nB1J. L. Sanchez   \nF1Z80 core improvements\r"\
-		"\nC1Antonio Villena \nF1Hardware support\r"\
-		"\nD1ZjoyKiLer       \nF1Testing & ideas\r"\
-		"\r"
-		"\r"		
-		,
-	    "\nF1Big thanks to our Patreons:\r"\
-		PATREONS
-		,
-	    "\nF1Thanks also to:\r"\
-		"\r"\
-		"\nA1Retrowiki.es \nF1and its great community\r"\
-		"\nB1Ron \nF1for his cool RetroCrypta\r"\
-		"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
-		"\nE1J.C. Gonzalez Amestoy \nF1for RVM\r"\
-		"\nA1Tsvetan Usunov from Olimex Ltd.\r"\
-		"\nB1All creators in ZX Spectrum server at\r"\
-		"Discord\r"\
-		"\r"\
-		"\nF1and, of course, to:\r"\
-		"\r"\
-		"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
-	    ,
-	    DEDICATORIA
-		},
-		{
-	    "\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
-		"        David Crespo  \"dcrespo3d\"\r"\
-		"\r"\
-		"\nA1Basado en ZX-ESPectrum-Wiimote\r"\
-		"(C)2020-2023 David Crespo\r"\
-		"\r"\
-		"\nB1Inspirado en proyectos anteriores\r"\
-		"de Pete Todd y Rampa & Queru\r"\
-		"\r"\
-		"\nC1Emulacion Z80 por JL Sanchez\r"\
-		"\nD1Driver VGA por BitLuni\r"\
-		"\nE1Libreria AY-3-8912 por A. Sashnov\r"\
-		"\nF1Driver PS2 por Fabrizio di Vittorio\r"
-		,
-	  	"\nF1Colaboradores:\r"\
-		"\r"\
-		"\nA1ackerman        \nF1Codigo e ideas\r"\
-		"\nB1Armand          \nF1Testing y difusion\r"\
-		"\nC1azesmbog        \nF1Testing e ideas\r"\
-		"\nD1David Carrion   \nF1Codigo h/w, teclado ZX\r"\
-		"\nE1Ramon Martinez  \nF1Mejoras emulacion AY\r"\
-		"\nA1Ron             \nF1Testing y difusion\r"\
-		"\nB1J. L. Sanchez   \nF1Mejoras core Z80\r"\
-		"\nC1Antonio Villena \nF1Soporte hardware\r"\
-		"\nD1ZjoyKiLer       \nF1Testing e ideas\r"\
-		"\r"
-		"\r"		
-		,
-	    "\nF1Muchas gracias a nuestros Patreons:\r"\
-		PATREONS
-		,
-	    "\nF1Gracias tambien a:\r"\
-		"\r"\
-		"\nA1Retrowiki.es \nF1y su magnifica comunidad\r"\
-		"\nB1Ron \nF1por su genial RetroCrypta\r"\
-		"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
-		"\nE1J.C. Gonzalez Amestoy \nF1por RVM\r"\
-		"\nA1Tsvetan Usunov de Olimex Ltd.\r"\
-		"\nB1Todos los creadores en el servidor\r"\
-		"ZX Spectrum en Discord\r"\
-		"\r"\
-		"\nF1y, por supuesto, a:\r"\
-		"\r"\
-		"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
-	    ,
-		DEDICATORIA
-		}
-	};
+static const char *AboutMsg[2][5] = {
+	{
+	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
+	"        David Crespo  \"dcrespo3d\"\r"\
+	"\r"\
+	"\nA1Based on ZX-ESPectrum-Wiimote\r"\
+	"(C)2020-2023 David Crespo\r"\
+	"\r"\
+	"\nB1Inspired by previous projects\r"\
+	"from Pete Todd and Rampa & Queru\r"\
+	"\r"\
+	"\nC1Z80 emulation by JL Sanchez\r"\
+	"\nD1VGA driver by BitLuni\r"\
+	"\nE1AY-3-8912 library by A. Sashnov\r"\
+	"\nF1PS2 driver by Fabrizio di Vittorio\r"
+	,
+	"\nF1Collaborators:\r"\
+	"\r"\
+	"\nA1ackerman        \nF1Code & ideas\r"\
+	"\nB1Armand          \nF1Testing & broadcasting\r"\
+	"\nC1azesmbog        \nF1Testing & ideas\r"\
+	"\nD1David Carrion   \nF1H/W code, ZX kbd\r"\
+	"\nE1Ramon Martinez  \nF1AY emul. improvements\r"\
+	"\nA1Ron             \nF1Testing & broadcasting\r"\
+	"\nB1J. L. Sanchez   \nF1Z80 core improvements\r"\
+	"\nC1Antonio Villena \nF1Hardware support\r"\
+	"\nD1ZjoyKiLer       \nF1Testing & ideas\r"\
+	"\r"
+	"\r"		
+	,
+	"\nF1Big thanks to our Patreons:\r"\
+	PATREONS
+	,
+	"\nF1Thanks also to:\r"\
+	"\r"\
+	"\nA1Retrowiki.es \nF1and its great community\r"\
+	"\nB1Ron \nF1for his cool RetroCrypta\r"\
+	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
+	"\nE1J.C. Gonzalez Amestoy \nF1for RVM\r"\
+	"\nA1Tsvetan Usunov from Olimex Ltd.\r"\
+	"\nB1All creators in ZX Spectrum server at\r"\
+	"Discord\r"\
+	"\r"\
+	"\nF1and, of course, to:\r"\
+	"\r"\
+	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
+	,
+	DEDICATORIA
+	},
+	{
+	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
+	"        David Crespo  \"dcrespo3d\"\r"\
+	"\r"\
+	"\nA1Basado en ZX-ESPectrum-Wiimote\r"\
+	"(C)2020-2023 David Crespo\r"\
+	"\r"\
+	"\nB1Inspirado en proyectos anteriores\r"\
+	"de Pete Todd y Rampa & Queru\r"\
+	"\r"\
+	"\nC1Emulacion Z80 por JL Sanchez\r"\
+	"\nD1Driver VGA por BitLuni\r"\
+	"\nE1Libreria AY-3-8912 por A. Sashnov\r"\
+	"\nF1Driver PS2 por Fabrizio di Vittorio\r"
+	,
+	"\nF1Colaboradores:\r"\
+	"\r"\
+	"\nA1ackerman        \nF1Codigo e ideas\r"\
+	"\nB1Armand          \nF1Testing y difusion\r"\
+	"\nC1azesmbog        \nF1Testing e ideas\r"\
+	"\nD1David Carrion   \nF1Codigo h/w, teclado ZX\r"\
+	"\nE1Ramon Martinez  \nF1Mejoras emulacion AY\r"\
+	"\nA1Ron             \nF1Testing y difusion\r"\
+	"\nB1J. L. Sanchez   \nF1Mejoras core Z80\r"\
+	"\nC1Antonio Villena \nF1Soporte hardware\r"\
+	"\nD1ZjoyKiLer       \nF1Testing e ideas\r"\
+	"\r"
+	"\r"		
+	,
+	"\nF1Muchas gracias a nuestros Patreons:\r"\
+	PATREONS
+	,
+	"\nF1Gracias tambien a:\r"\
+	"\r"\
+	"\nA1Retrowiki.es \nF1y su magnifica comunidad\r"\
+	"\nB1Ron \nF1por su genial RetroCrypta\r"\
+	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
+	"\nE1J.C. Gonzalez Amestoy \nF1por RVM\r"\
+	"\nA1Tsvetan Usunov de Olimex Ltd.\r"\
+	"\nB1Todos los creadores en el servidor\r"\
+	"ZX Spectrum en Discord\r"\
+	"\r"\
+	"\nF1y, por supuesto, a:\r"\
+	"\r"\
+	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
+	,
+	DEDICATORIA
+	}
+};
 
 #define OSD_HELP_EN \
     " [F1]     Menu\n"\

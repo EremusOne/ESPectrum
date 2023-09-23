@@ -41,19 +41,24 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define TSTATES_PER_FRAME_48 69888
 #define TSTATES_PER_FRAME_128 70908
+#define TSTATES_PER_FRAME_PENTAGON 71680
+
+#define MICROS_PER_FRAME_48 19968
+#define MICROS_PER_FRAME_128 19992
+#define MICROS_PER_FRAME_PENTAGON 20480
 
 #define INT_START48 0
 #define INT_END48 32
 #define INT_START128 0
 #define INT_END128 36
+#define INT_START_PENTAGON 0
+#define INT_END_PENTAGON 36
 
 class CPU
 {
 public:
-    // call this for initializing CPU
-    static void setup();
-
-    // // call this for executing a frame's worth of instructions
+    
+    // call this for executing a frame's worth of instructions
     static void IRAM_ATTR loop();
 
     // call this for resetting the CPU
@@ -61,9 +66,6 @@ public:
 
     // Flush screen
     static void FlushOnHalt();
-
-    // get the number of microseconds per frame (machine dependant)
-    static uint32_t microsPerFrame();
 
     // CPU Tstates elapsed in current frame
     static uint32_t tstates;

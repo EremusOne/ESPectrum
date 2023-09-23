@@ -107,7 +107,9 @@ void Z80::create() {
     sz53pn_subTable[0] |= ZERO_MASK;
 
     execDone = false;
-    reset();
+
+    // reset();
+
 }
 
 void Z80::destroy(void)
@@ -906,6 +908,54 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
     flagQ = true;
 }
 
+void IRAM_ATTR Z80::check_trdos() {
+
+    if (!ESPectrum::trdos) {
+
+        if (REG_PCh == 0x3D) {
+
+            // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
+            if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
+                MemESP::romInUse = 4;
+                MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+                ESPectrum::trdos = true;
+            }
+
+        }
+
+    }
+
+}
+
+void IRAM_ATTR Z80::check_trdos_unpage() {
+
+    if (ESPectrum::trdos) {
+
+        if (REG_PCh >= 0x40) {                
+
+            if (Z80Ops::is48)
+                MemESP::romInUse = 0;
+            else
+                MemESP::romInUse = MemESP::romLatch;
+            
+            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+            ESPectrum::trdos = false;
+
+        }
+
+    } else if (REG_PCh == 0x3D) {
+
+            // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
+            if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
+                MemESP::romInUse = 4;
+                MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+                ESPectrum::trdos = true;                        
+            }
+
+    }
+
+}
+
 //Interrupción
 /* Desglose de la interrupción, según el modo:
  * IM0:
@@ -941,11 +991,17 @@ void Z80::interrupt(void) {
     ffIFF1 = ffIFF2 = false;
     push(REG_PC); // el push añadirá 6 t-estados (+contended si toca)
     if (modeINT == IntMode::IM2) {
+        
         REG_PC = Z80Ops::peek16((regI << 8) | 0xff); // +6 t-estados
+
+        check_trdos_unpage();
+
+
     } else {
         REG_PC = 0x0038;
     }
     REG_WZ = REG_PC;
+
 }
 
 //Interrupción NMI, no utilizado por ahora
@@ -2285,6 +2341,9 @@ void Z80::decodeOpcodec0()
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if ((sz5h3pnFlags & ZERO_MASK) == 0) {
         REG_PC = REG_WZ = pop();
+
+        check_trdos_unpage();
+
     }
     
 }
@@ -2300,6 +2359,9 @@ void Z80::decodeOpcodec2()
     REG_WZ = Z80Ops::peek16(REG_PC);
     if ((sz5h3pnFlags & ZERO_MASK) == 0) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2308,6 +2370,9 @@ void Z80::decodeOpcodec2()
 void Z80::decodeOpcodec3()
 { /* JP nn */
     REG_WZ = REG_PC = Z80Ops::peek16(REG_PC);
+
+    check_trdos();
+
 }
 
 void Z80::decodeOpcodec4()
@@ -2317,6 +2382,9 @@ void Z80::decodeOpcodec4()
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2351,6 +2419,9 @@ void Z80::decodeOpcodec8()
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if ((sz5h3pnFlags & ZERO_MASK) != 0) {
         REG_PC = REG_WZ = pop();
+
+        check_trdos_unpage();
+
     }
 
 }
@@ -2359,6 +2430,8 @@ void Z80::decodeOpcodec9()
 { /* RET */
     REG_PC = REG_WZ = pop();
 
+    check_trdos_unpage();
+
 }
 
 void Z80::decodeOpcodeca()
@@ -2366,6 +2439,9 @@ void Z80::decodeOpcodeca()
     REG_WZ = Z80Ops::peek16(REG_PC);
     if ((sz5h3pnFlags & ZERO_MASK) != 0) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2391,6 +2467,9 @@ void Z80::decodeOpcodecc()
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2402,6 +2481,9 @@ void Z80::decodeOpcodecd()
     Z80Ops::addressOnBus(REG_PC + 1, 1);
     push(REG_PC + 2);
     REG_PC = REG_WZ;
+
+    check_trdos();
+
 }
 
 void Z80::decodeOpcodece()
@@ -2425,6 +2507,9 @@ void Z80::decodeOpcoded0()
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if (!carryFlag) {
         REG_PC = REG_WZ = pop();
+
+        check_trdos();
+
     }
 }
 
@@ -2438,6 +2523,9 @@ void Z80::decodeOpcoded2()
     REG_WZ = Z80Ops::peek16(REG_PC);
     if (!carryFlag) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2460,6 +2548,9 @@ void Z80::decodeOpcoded4()
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+        
+        check_trdos();
+        
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2492,6 +2583,9 @@ void Z80::decodeOpcoded8()
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if (carryFlag) {
         REG_PC = REG_WZ = pop();
+
+        check_trdos();
+
     }
 }
 
@@ -2516,6 +2610,9 @@ void Z80::decodeOpcodeda()
     REG_WZ = Z80Ops::peek16(REG_PC);
     if (carryFlag) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2539,6 +2636,9 @@ void Z80::decodeOpcodedc()
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2574,6 +2674,8 @@ void Z80::decodeOpcodee0() /* RET PO */
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if ((sz5h3pnFlags & PARITY_MASK) == 0) {
         REG_PC = REG_WZ = pop();
+
+        check_trdos();        
     }
 }
 
@@ -2587,6 +2689,9 @@ void Z80::decodeOpcodee2() /* JP PO,nn */
     REG_WZ = Z80Ops::peek16(REG_PC);
     if ((sz5h3pnFlags & PARITY_MASK) == 0) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2612,7 +2717,11 @@ void Z80::decodeOpcodee4() /* CALL PO,nn */
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
+
     }
     REG_PC = REG_PC + 2;
 }
@@ -2644,12 +2753,17 @@ void Z80::decodeOpcodee8() /* RET PE */
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if ((sz5h3pnFlags & PARITY_MASK) != 0) {
         REG_PC = REG_WZ = pop();
+
+        check_trdos();
     }
 }
 
 void Z80::decodeOpcodee9() /* JP (HL) */
 { 
     REG_PC = REG_HL;
+
+    check_trdos();
+
 }
 
 void Z80::decodeOpcodeea() /* JP PE,nn */
@@ -2657,7 +2771,11 @@ void Z80::decodeOpcodeea() /* JP PE,nn */
     REG_WZ = Z80Ops::peek16(REG_PC);
     if ((sz5h3pnFlags & PARITY_MASK) != 0) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
+
     }
     REG_PC = REG_PC + 2;
 }
@@ -2676,6 +2794,9 @@ void Z80::decodeOpcodeec() /* CALL PE,nn */
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2711,6 +2832,9 @@ void Z80::decodeOpcodef0() /* RET P */
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if (sz5h3pnFlags < SIGN_MASK) {
         REG_PC = REG_WZ = pop();
+        
+        check_trdos();
+
     }
 }
 
@@ -2724,6 +2848,9 @@ void Z80::decodeOpcodef2() /* JP P,nn */
     REG_WZ = Z80Ops::peek16(REG_PC);
     if (sz5h3pnFlags < SIGN_MASK) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2741,6 +2868,9 @@ void Z80::decodeOpcodef4() /* CALL P,nn */
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2773,6 +2903,9 @@ void Z80::decodeOpcodef8() /* RET M */
     Z80Ops::addressOnBus(getPairIR().word, 1);
     if (sz5h3pnFlags > 0x7f) {
         REG_PC = REG_WZ = pop();
+
+        check_trdos();
+
     }
 }
 
@@ -2787,6 +2920,9 @@ void Z80::decodeOpcodefa() /* JP M,nn */
     REG_WZ = Z80Ops::peek16(REG_PC);
     if (sz5h3pnFlags > 0x7f) {
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -2805,6 +2941,9 @@ void Z80::decodeOpcodefc() /* CALL M,nn */
         Z80Ops::addressOnBus(REG_PC + 1, 1);
         push(REG_PC + 2);
         REG_PC = REG_WZ;
+
+        check_trdos();
+
         return;
     }
     REG_PC = REG_PC + 2;
@@ -4974,6 +5113,9 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
         case 0xE9:
         { /* JP (IX) */
             REG_PC = regIXY.word;
+
+            check_trdos();
+
             break;
         }
         case 0xED:

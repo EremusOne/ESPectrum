@@ -79,7 +79,7 @@ int AySound::Cur_Seed;                  /**< random numbers counter */
 
 uint8_t AySound::regs[16];
 
-uint8_t AySound::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
+uint8_t AySound::SamplebufAY[ESP_AUDIO_SAMPLES_PENTAGON] = { 0 };
 
 void (*AySound::updateReg[16])() = {
     &updToneA,&updToneA,&updToneB,&updToneB,&updToneC,
@@ -297,7 +297,7 @@ void AySound::prepare_generation()
 // Generate sound.
 // Fill sound buffer with current register data
 //
-void AySound::gen_sound(int sound_bufsize, int bufpos)
+void IRAM_ATTR AySound::gen_sound(int sound_bufsize, int bufpos)
 {
 
     int tmpvol;

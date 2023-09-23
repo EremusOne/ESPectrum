@@ -156,11 +156,11 @@ public:
     static int set_stereo(ayemu_stereo_t stereo, int *custom_eq);
     static int set_sound_format(int freq, int chans, int bits);
     static void prepare_generation();
-    static void gen_sound(int bufsize, int bufpos);
+    static void IRAM_ATTR gen_sound(int bufsize, int bufpos);
 
     static void(*updateReg[16])();
 
-    static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
+    static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_PENTAGON];
 
 private:
 

@@ -1079,12 +1079,21 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
     VIDEO::vga.print(" ");
 
-    if (line.length() < cols - margin) {
-    VIDEO::vga.print(line.c_str());
-    for (uint8_t i = line.length(); i < (cols - margin); i++)
-        VIDEO::vga.print(" ");
+    if ((virtual_row_num == 0) && (line.substr(0,9) == "ESPectrum")) {
+        VIDEO::vga.setTextColor(ESP_ORANGE, OSD::zxColor(0, 0));
+        VIDEO::vga.print("ESP");        
+        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));        
+        VIDEO::vga.print(("ectrum " + Config::getArch()).c_str());
+        for (uint8_t i = line.length(); i < (cols - margin); i++)
+            VIDEO::vga.print(" ");
     } else {
-        VIDEO::vga.print(line.substr(0, cols - margin).c_str());
+        if (line.length() < cols - margin) {
+        VIDEO::vga.print(line.c_str());
+        for (uint8_t i = line.length(); i < (cols - margin); i++)
+            VIDEO::vga.print(" ");
+        } else {
+            VIDEO::vga.print(line.substr(0, cols - margin).c_str());
+        }
     }
 
     VIDEO::vga.print(" ");

@@ -61,11 +61,13 @@ string FileUtils::MountPoint = MOUNT_POINT_SD; // Start with SD
 bool FileUtils::SDReady = false;
 sdmmc_card_t *FileUtils::card;
 
-string FileUtils::SNA_Path = "/s"; // Current path on the SD (for future folder support)
-string FileUtils::TAP_Path = "/t"; // Current path on the SD (for future folder support)
+string FileUtils::SNA_Path = DISK_SNA_DIR; // Current path on the SD (for future folder support)
+string FileUtils::TAP_Path = DISK_TAP_DIR; // Current path on the SD (for future folder support)
+string FileUtils::DSK_Path = DISK_DSK_DIR; // Current path on the SD (for future folder support)
 
 int FileUtils::curSNAFile = 1; // Current SNA file index on browser
 int FileUtils::curTAPFile = 1; // Current TAP file index on browser
+int FileUtils::curDSKFile = 1; // Current TAP file index on browser
 
 void FileUtils::initFileSystem() {
 
@@ -84,7 +86,7 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false,
-        .max_files = 4,
+        .max_files = 8,
         .allocation_unit_size = 16 * 1024
     };
     

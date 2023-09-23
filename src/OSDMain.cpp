@@ -332,15 +332,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         // Show / hide OnScreen Stats
         if (VIDEO::OSD) {
             if (Config::aspect_16_9) 
-                VIDEO::DrawOSD169 = VIDEO::MainScreen;
+                VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
+                // VIDEO::DrawOSD169 = VIDEO::MainScreen;                
             else
-                VIDEO::DrawOSD43 = VIDEO::BottomBorder;
+                VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
+                // VIDEO::DrawOSD43 = VIDEO::BottomBorder;                
             VIDEO::OSD = false;
         } else {
             if (Config::aspect_16_9) 
-                VIDEO::DrawOSD169 = VIDEO::MainScreen_OSD;
+                VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+                // VIDEO::DrawOSD169 = VIDEO::MainScreen_OSD;
             else
-                VIDEO::DrawOSD43  = VIDEO::BottomBorder_OSD;
+                VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+                // VIDEO::DrawOSD43  = VIDEO::BottomBorder_OSD;
             VIDEO::OSD = true;
             ESPectrum::TapeNameScroller = 0;
         }    
@@ -373,6 +377,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
         // #endif
 
+        // VIDEO::tStatesScreen += 224;
+        // VIDEO::tStatesScreen += 1;     
+        // printf("%d\n",VIDEO::tStatesScreen);           
+
     }
     else if (KeytoESP == fabgl::VK_F10) { // Volume up
 
@@ -387,6 +395,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 ESPectrum::aud_volume++;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
         }
+
+        // VIDEO::tStatesScreen -= 224;
+        // VIDEO::tStatesScreen -= 1;
+        // printf("%d\n",VIDEO::tStatesScreen);
 
         // #endif
 
@@ -603,6 +615,52 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         else if (opt == 3) {
             // ***********************************************************************************
+            // BETADISK MENU
+            // ***********************************************************************************
+            menu_saverect = true;
+            menu_curopt = 1;            
+            while(1) {
+                menu_level = 1;
+                // Betadisk menu
+                uint8_t dsk_num = menuRun(MENU_BETADISK[Config::lang]);
+                if (dsk_num > 0) {
+                    menu_saverect = true;
+                    menu_curopt = 1;
+                    while (1) {
+                        menu_level = 2;
+                        string drvmenu = MENU_BETADRIVE[Config::lang];
+                        drvmenu.replace(drvmenu.find("#",0),1,(string)" " + char(64 + dsk_num));
+                        uint8_t opt2 = menuRun(drvmenu);
+                        if (opt2 > 0) {
+                            menu_saverect = true;
+                            menu_curopt = 1;
+                            if (opt2 == 1) {
+                                string mFile = menuFile(FileUtils::MountPoint + FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],".trd.TRD.scl.SCL",FileUtils::curDSKFile);
+                                if (mFile != "") {
+                                    mFile.erase(0, 1);
+                                    string fname = FileUtils::MountPoint + FileUtils::DSK_Path + "/" + mFile;
+                                    ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
+                                    ESPectrum::Betadisk.InsertDisk(dsk_num - 1,fname);
+                                    return;
+                                }
+                            } else 
+                            if (opt2 == 2) {
+                                ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
+                                return;
+                            }
+                        } else {
+                            menu_curopt = dsk_num;
+                            break;                            
+                        }
+                    }
+                } else {
+                    menu_curopt = 3;
+                    break;
+                }
+            }
+        }
+        else if (opt == 4) {
+            // ***********************************************************************************
             // RESET MENU
             // ***********************************************************************************
             menu_saverect = true;
@@ -642,12 +700,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     #endif
                     esp_hard_reset();
                 } else {
-                    menu_curopt = 3;
+                    menu_curopt = 4;
                     break;
                 }
             }
         }
-        else if (opt == 4) {
+        else if (opt == 5) {
             // ***********************************************************************************
             // OPTIONS MENU
             // ***********************************************************************************
@@ -708,6 +766,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                 OSD::osdCenteredMsg("Refreshing tape dir", LEVEL_INFO, 0);
                                 chunks = FileUtils::DirToFile(FileUtils::MountPoint + FileUtils::TAP_Path, ".tap.TAP"); // Prepare tap filelist
                                 if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + FileUtils::TAP_Path,chunks); // Merge files
+                                OSD::osdCenteredMsg("Refreshing disk dir", LEVEL_INFO, 0);
+                                chunks = FileUtils::DirToFile(FileUtils::MountPoint + FileUtils::DSK_Path, ".trd.TRD.scl.SCL"); // Prepare dsk filelist
+                                if (chunks) FileUtils::Mergefiles(FileUtils::MountPoint + FileUtils::DSK_Path,chunks); // Merge files
                                 return;
                             }
                             menu_curopt = opt2;
@@ -726,9 +787,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     string arch_menu = (string)MENU_ARCH[Config::lang];                    
                     uint8_t arch_num = menuRun(arch_menu);
                     if (arch_num) {
-                            string arch = (arch_num==1 ? "48K" : "128K");
+                            // string arch = (arch_num==1 ? "48K" : "128K");
+                            string arch = Config::archnames[arch_num - 1];
                             if (arch != Config::getArch()) {
-                                Config::requestMachine(arch, "SINCLAIR", true);
+                                Config::requestMachine(arch, "SINCLAIR");
                                 Config::ram_file = "none";
                                 Config::save();
                                 if(Config::videomode) esp_hard_reset();
@@ -955,12 +1017,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         }
                     }
                 } else {
-                    menu_curopt = 4;
+                    menu_curopt = 5;
                     break;
                 }
             }
         }
-        else if (opt == 5) {
+        else if (opt == 6) {
             // Help
             drawOSD(true);
             osdAt(2, 0);
@@ -1019,7 +1081,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             return;
 
         }        
-        else if (opt == 6) {
+        else if (opt == 7) {
 
             // About
             drawOSD(false);
