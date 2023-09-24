@@ -2,9 +2,9 @@
 
 This is an emulator of the Sinclair ZX Spectrum computer running on Espressif ESP32 SoC powered boards.
 
-Currently, it can be used with Lilygo TTGo VGA32 board, Antonio Villena's ESPectrum board and ESP32-SBC-FABGL board from Olimex.
+Currently, it can be used with Lilygo's TTGo VGA32 board, Antonio Villena's ESPectrum board and ESP32-SBC-FabGL board from Olimex.
 
-Just connect a VGA monitor, a PS/2 keyboard, prepare a SD Card as needed and power via microUSB.
+Just connect a VGA monitor or CRT TV (with special VGA-RGB cable needed), a PS/2 keyboard, prepare a SD Card as needed and power via microUSB.
 
 This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote) which is a fork of the [ZX-ESPectrum](https://github.com/rampa069/ZX-ESPectrum) project by Rampa and Queru which was inspired by Pete's Todd [PaseVGA](https://github.com/retrogubbins/paseVGA) project.
 
@@ -12,7 +12,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 - ZX Spectrum 48K, 128K and Pentagon 128K emulation (no PSRAM needed).
 - Accurate Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
-- VGA output (6 bpp, BRIGHT attribute kept) with good emulation of Spectrum screen.
+- 6 bpp VGA output in three modes: Standard VGA (60 and 70hz), VGA 50hz and CRT 15khz 50hz.
 - Support for two aspect ratios: 16:9 or 4:3 monitors (using 360x200 or 320x240 modes)
 - Multicolor attribute effects emulated (Bifrost*2, Nirvana and Nirvana+ engines).
 - Border effects emulated (Aquaplane, The Sentinel, Overscan demo).
@@ -45,7 +45,6 @@ You can flash the binaries directly to the board if do not want to mess with cod
 
 Quick start from PlatformIO:
 - Clone this repo and Open from VSCode/PlatFormIO
-- Execute task: Upload File System Image
 - Execute task: Upload
 - Enjoy
 
