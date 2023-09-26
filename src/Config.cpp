@@ -287,8 +287,7 @@ void Config::save(string value) {
             nvs_set_str(handle,"ram",ram_file.c_str());   
 
         if((value=="slog") || (value=="all"))
-            // nvs_set_str(handle,"slog",slog_on ? "true" : "false");
-            nvs_set_str(handle,"slog","true");            
+            nvs_set_str(handle,"slog",slog_on ? "true" : "false");
 
         if((value=="sdstorage") || (value=="all"))
             nvs_set_str(handle,"sdstorage",FileUtils::MountPoint == MOUNT_POINT_SD ? "true" : "false");

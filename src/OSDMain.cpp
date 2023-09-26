@@ -148,7 +148,7 @@ void OSD::drawStats(char *line1, char *line2) {
     unsigned short x,y;
 
     if (Config::aspect_16_9) {
-        x = 188;
+        x = 156;
         y = 176;
     } else {
         x = 168;
@@ -333,18 +333,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         if (VIDEO::OSD) {
             if (Config::aspect_16_9) 
                 VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
-                // VIDEO::DrawOSD169 = VIDEO::MainScreen;                
             else
                 VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
-                // VIDEO::DrawOSD43 = VIDEO::BottomBorder;                
             VIDEO::OSD = false;
         } else {
             if (Config::aspect_16_9) 
                 VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
-                // VIDEO::DrawOSD169 = VIDEO::MainScreen_OSD;
             else
                 VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
-                // VIDEO::DrawOSD43  = VIDEO::BottomBorder_OSD;
             VIDEO::OSD = true;
             ESPectrum::TapeNameScroller = 0;
         }    

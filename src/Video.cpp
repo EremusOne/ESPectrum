@@ -248,6 +248,8 @@ void VIDEO::Reset() {
 
     is169 = Config::aspect_16_9 ? 1 : 0;
 
+    OSD = false;
+
     string arch = Config::getArch();
     if (arch == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
@@ -423,9 +425,7 @@ void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {
     CPU::tstates += statestoadd;
 
     if (CPU::tstates > tstateDraw) {
-        // printf("Tstate Draw: %d\n",tstateDraw);
         video_rest = CPU::tstates - tstateDraw;
-        // tstateDraw += tStatesPerLine;
         lineptr32 = (uint32_t *)(vga.frameBuffers[0][linedraw_cnt]);
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
@@ -511,7 +511,7 @@ void IRAM_ATTR VIDEO::MainScreenLB_Pentagon(unsigned int statestoadd, bool conte
             coldraw_cnt = 4;
             col_end = is169 ? 154 : 144;
             Draw = DrawOSD169;
-            video_rest += statestoadd - (i + 1);
+            video_rest += statestoadd - (i + 1) + 2; // Add 2 to compensate +2 in TS_SCREEN_320x240_PENTAGON
             Draw(0,false);
             return;
         }
@@ -569,6 +569,26 @@ void VIDEO::MainScreen_Pentagon(unsigned int statestoadd, bool contended) {
         *lineptr32++ = AluBytes[bmp & 0xF][att];
 
         if (++coldraw_cnt > 35) {
+            coldraw_cnt = 0;
+            Draw = MainScreen_Pentagon_delay;            
+            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
+            MainScreen_Pentagon_delay(0,false);
+            return;
+        }
+
+    }
+
+}
+
+// Needed to compensate +2 tstates added before in MainScreenLB_Pentagon
+void VIDEO::MainScreen_Pentagon_delay(unsigned int statestoadd, bool contended) {
+
+    CPU::tstates += statestoadd;
+
+    statestoadd += video_rest;
+    video_rest = 0;
+    for (int i=0; i < statestoadd; i++) {
+        if (++coldraw_cnt > 1) {
             coldraw_cnt = col_end;
             if (is169) {
                 col_end = 170;
@@ -576,11 +596,10 @@ void VIDEO::MainScreen_Pentagon(unsigned int statestoadd, bool contended) {
                 col_end = 160;
             }
             Draw = MainScreenRB_Pentagon;
-            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
+            video_rest += statestoadd - (i + 1);
             MainScreenRB_Pentagon(0,false);
             return;
         }
-
     }
 
 }
@@ -692,7 +711,7 @@ void VIDEO::MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended) {
     
     for (int i=0; i < (statestoadd >> 2); i++) {
 
-        if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>20) && (coldraw_cnt<36)) {
+        if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>16) && (coldraw_cnt<35)) {
 
             lineptr32 += 2;
             attOffset++;
@@ -709,11 +728,10 @@ void VIDEO::MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended) {
         }
 
         if (++coldraw_cnt > 35) {
-            coldraw_cnt = 154;
-            col_end = 170;
-            Draw = MainScreenRB_OSD_Pentagon;
+            coldraw_cnt = 0;
+            Draw = MainScreen_Pentagon_delay;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            MainScreenRB_OSD_Pentagon(0,false);
+            MainScreen_Pentagon_delay(0,false);
             return;
         }
 
@@ -754,24 +772,6 @@ void IRAM_ATTR VIDEO::MainScreenRB_Pentagon(unsigned int statestoadd, bool conte
         if (++coldraw_cnt == col_end) {
             tstateDraw += tStatesPerLine;
             Draw = ++linedraw_cnt == lin_end ? &BottomBorder_Blank_Pentagon : &MainScreen_Blank_Pentagon;            
-            return;
-        }
-
-    }
-
-}
-
-void IRAM_ATTR VIDEO::MainScreenRB_OSD_Pentagon(unsigned int statestoadd, bool contended) {    
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-    video_rest = 0;
-    for (int i=0; i < statestoadd; i++) {
-        if ((linedraw_cnt<176) || (linedraw_cnt>191) || (coldraw_cnt > 165)) lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-        if (++coldraw_cnt == 170) {
-            tstateDraw += tStatesPerLine;
-            Draw = ++linedraw_cnt == 196 ? &BottomBorder_Blank_Pentagon : &MainScreen_Blank_Pentagon;
             return;
         }
 

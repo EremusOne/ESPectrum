@@ -50,12 +50,12 @@ visit https://zxespectrum.speccy.org/contacto
 #define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW 48K @ 320x240, SCANLINE 40, -16 FROM BORDER
 #define TS_SCREEN_320x240_128 8874  // START OF VISIBLE ULA DRAW 128K @ 320x240, SCANLINE 39, -16 FROM BORDER
                                     // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)
-#define TS_SCREEN_320x240_PENTAGON 12594  // START OF VISIBLE ULA DRAW PENTAGON @ 320x240, SCANLINE 56 + 50TS 
+#define TS_SCREEN_320x240_PENTAGON 12594  // START OF VISIBLE ULA DRAW PENTAGON @ 320x240, SCANLINE 56 + 48TS + 2TS (NEEDED TO FIT BORDER)
 
 #define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW 48K @ 360x200, SCANLINE 60, -16 FROM BORDER
 #define TS_SCREEN_360x200_128 13434 // START OF VISIBLE ULA DRAW 128K @ 360x200, SCANLINE 59, -16 FROM BORDER
                                     // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)                                    
-#define TS_SCREEN_360x200_PENTAGON 17074 // START OF VISIBLE ULA DRAW PENTAGON @ 360x200, SCANLINE 76, +50TS (UNTESTED!!)
+#define TS_SCREEN_360x200_PENTAGON 17074 // START OF VISIBLE ULA DRAW PENTAGON @ 360x200, SCANLINE 76, +48TS + 2TS (NEEDED TO FIT BORDER)
 
 class VIDEO
 {
@@ -93,16 +93,14 @@ public:
   static void IRAM_ATTR MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended);
   static void IRAM_ATTR MainScreenLB_Pentagon(unsigned int statestoadd, bool contended);    
   static void MainScreen_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreen_Pentagon_delay(unsigned int statestoadd, bool contended);  
   static void MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended);
   static void IRAM_ATTR MainScreenRB_Pentagon(unsigned int statestoadd, bool contended);    
-  static void IRAM_ATTR MainScreenRB_OSD_Pentagon(unsigned int statestoadd, bool contended);
   static void IRAM_ATTR BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
   static void IRAM_ATTR BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
   static void IRAM_ATTR BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
 
   static uint8_t (*getFloatBusData)();
-  // static uint8_t IRAM_ATTR getFloatBusData48();
-  // static uint8_t IRAM_ATTR getFloatBusData128();    
   static uint8_t getFloatBusData48();
   static uint8_t getFloatBusData128();    
 

@@ -72,8 +72,7 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address) {
     
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
-        // VIDEO::Draw(3, true);
-        VIDEO::Draw(3, false);       
+        VIDEO::Draw(3, true);
     } else {
         if (MemESP::ramContended[address >> 14]) {
             VIDEO::Draw(1, true);
@@ -265,8 +264,7 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
 
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
-        // VIDEO::Draw(3, true);
-        VIDEO::Draw(3, false);        
+        VIDEO::Draw(3, true);
         // printf("Case 1\n");
     } else {
         if (MemESP::ramContended[address >> 14]) {

@@ -103,59 +103,15 @@ void CPU::reset() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// void check_trdos() {
-
-//     // Handle Beta Disk Rom mapping.
-//     // if (Config::BetaDisk) {
-
-//         // When the program counter enters the Rom address interval 0x3D00-0x3DFF, execution continues in 
-//         // the Beta Disk Rom until an address outside of the ROM space is reached.
-//         if ((Z80::getRegPC() >= 0x3D00) && (Z80::getRegPC() <= 0x3DFF) && (!ESPectrum::trdos) ) {
-
-//                 // printf("TRDOS entry PC: %d\n",Z80::getRegPC());
-
-//                 // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 if the currently mapped ROM is bank 1.
-//                 if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
-//                     MemESP::romInUse = 4;
-//                     MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-//                     ESPectrum::trdos = true;                        
-//                 }
-
-//         }
-//         else if ((Z80::getRegPC() >= 0x4000) && (ESPectrum::trdos)) {
-
-//                 if (Z80Ops::is48)
-//                     MemESP::romInUse = 0;
-//                 else
-//                     MemESP::romInUse = MemESP::romLatch;
-                
-//                 MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-//                 ESPectrum::trdos = false;
-
-//         }
-
-//     // }
-
-// }
-
 void IRAM_ATTR CPU::loop()
 {
 
-    while (tstates < IntEnd) {
-        // check_trdos();
-        Z80::execute();
-    }
+    while (tstates < IntEnd) Z80::execute();
     
     uint32_t stFrame = statesInFrame - IntEnd;
-    while (tstates < stFrame) {
-        // check_trdos();
-        Z80::exec_nocheck();
-    }
+    while (tstates < stFrame) Z80::exec_nocheck();
 
-    while (tstates < statesInFrame) {
-        // check_trdos();
-        Z80::execute();
-    }
+    while (tstates < statesInFrame) Z80::execute();
 
     if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 
@@ -165,6 +121,8 @@ void IRAM_ATTR CPU::loop()
     framecnt++;
 
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 void CPU::FlushOnHalt() {
         

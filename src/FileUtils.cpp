@@ -257,7 +257,7 @@ string FileUtils::getFileEntriesFromDir(string path) {
 
 }
 
-int IRAM_ATTR FileUtils::DirToFile(string fpath, string fileExts) {
+int FileUtils::DirToFile(string fpath, string fileExts) {
 
     char fileName[8];
 
