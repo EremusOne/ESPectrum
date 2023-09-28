@@ -509,19 +509,24 @@ void ESPectrum::setup()
 
     // Init CPU
     Z80::create();
-    CPU::reset();
 
     // Set Ports starting values
     for (int i = 0; i < 128; i++) Ports::port[i] = 0xBF;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
+    // Init disk controller
+    Betadisk.Initialise();
+
     // Load romset
     Config::requestMachine(Config::getArch(), Config::getRomSet());
+
+    // Reset cpu
+    CPU::reset();
 
     // Load snapshot if present in Config::ram_file
     if (Config::ram_file != NO_RAM_FILE) {
         
-        LoadSnapshot(Config::ram_file);
+        LoadSnapshot(Config::ram_file,"");
 
         Config::last_ram_file = Config::ram_file;
         #ifndef SNAPSHOT_LOAD_LAST
@@ -530,8 +535,6 @@ void ESPectrum::setup()
         #endif
 
     }
-
-    Betadisk.Initialise();
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
@@ -613,8 +616,13 @@ void ESPectrum::reset()
     ESPoffset = 0;
 
     pwm_audio_stop();
+    
+    delay(100); // Maybe this fix random sound lost ?
+    
     pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
+    
     pwm_audio_start();
+    
     pwm_audio_set_volume(aud_volume);
 
     // Reset AY emulation
@@ -636,12 +644,12 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     // Global keys
     if (Nextkey->down) {
         if (Nextkey->vk == fabgl::VK_PRINTSCREEN) { // Capture framebuffer to BMP file in SD Card (thx @dcrespo3d!)
-            pwm_audio_stop();
+            // pwm_audio_stop();
             CaptureToBmp();
-            pwm_audio_start();
+            // pwm_audio_start();
             r = false;
         }
-        #ifdef TESTING_CODE
+        #ifdef RAM_INFO_KEY
         else if (Nextkey->vk == fabgl::VK_GRAVEACCENT) { // Show mem info
             showMemInfo();
             r = false;
@@ -1113,6 +1121,8 @@ for(;;) {
 
         if (elapsed < 100000) {
     
+            // printf("Tstates: %u, RegPC: %u\n",CPU::tstates,Z80::getRegPC());
+
             #ifdef LOG_DEBUG_TIMING
             printf("===========================================================================\n");
             printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);

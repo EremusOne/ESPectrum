@@ -42,12 +42,12 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
-bool LoadSnapshot(string filename);
+bool LoadSnapshot(string filename, string force_arch);
 
 class FileSNA
 {
 public:
-    static string load(string sna_fn);
+    static bool load(string sna_fn, string force_arch);
     static bool save(string sna_fn);
     static bool save(string sna_fn, bool blockMode);
     static bool isPersistAvailable(string filename);
@@ -56,7 +56,7 @@ public:
 class FileZ80
 {
 public:
-    static string load(string z80_fn);
+    static bool load(string z80_fn);
     static void loader48();    
     static void loader128();        
 private:

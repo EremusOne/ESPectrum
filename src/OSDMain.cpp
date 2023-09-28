@@ -167,14 +167,33 @@ void OSD::drawStats(char *line1, char *line2) {
 static bool persistSave(uint8_t slotnumber)
 {
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
+    char persistfinfo[sizeof(DISK_PSNA_FILE) + 6];    
+
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
+    sprintf(persistfinfo,DISK_PSNA_FILE "%u.esp",slotnumber);
+
     OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO, 0);
+
+    // Save info file
+    string finfo = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfinfo;
+    FILE *f = fopen(finfo.c_str(), "w");
+    if (f == NULL) {
+        printf("Error opening %s\n",persistfinfo);
+        return false;
+    }
+    // Put architecture on info file
+    fputs((Config::getArch() + "\n").c_str(),f);
+    fclose(f);    
+
     if (!FileSNA::save(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
         return false;
     }
+
     // OSD::osdCenteredMsg(OSD_PSNA_SAVED, LEVEL_INFO);
+
     return true;
+
 }
 
 static bool persistLoad(uint8_t slotnumber)
@@ -183,12 +202,32 @@ static bool persistLoad(uint8_t slotnumber)
     OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO, 0);
 
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
+    char persistfinfo[sizeof(DISK_PSNA_FILE) + 6];        
+
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
+    sprintf(persistfinfo,DISK_PSNA_FILE "%u.esp",slotnumber);
+
     if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
         return false;
     } else {
-        if (!LoadSnapshot(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
+
+        // Read info file
+        string finfo = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfinfo;
+        FILE *f = fopen(finfo.c_str(), "r");
+        if (f == NULL) {
+            printf("Error opening %s\n",persistfinfo);
+            return false;
+        }
+        char buf[256];
+        fgets(buf, sizeof(buf),f);
+        string persist_arch = buf;
+        persist_arch.pop_back();
+        printf("[%s]\n",persist_arch.c_str());
+
+        fclose(f);
+
+        if (!LoadSnapshot(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname, "" /* persist_arch */)) {
             OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
             return false;
         } else {
@@ -215,16 +254,21 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     fabgl::VirtualKeyItem Nextkey;
 
     if (KeytoESP == fabgl::VK_PAUSE) {
-        osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 0);
+        click();
+        osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 1000);
         while (1) {
             ESPectrum::readKbdJoy();
-            if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {        
+            while (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {        
                 if (ESPectrum::readKbd(&Nextkey))
-                    if ((Nextkey.down) && (Nextkey.vk == fabgl::VK_PAUSE)) break;
+                    if (Nextkey.down)
+                        if (Nextkey.vk == fabgl::VK_PAUSE) {
+                            click();
+                            return;
+                        } else
+                            osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 500);
             }
             vTaskDelay(5 / portTICK_PERIOD_MS);
         }
-        click();
     }
     else if (KeytoESP == fabgl::VK_F2) {
         menu_level = 0;
@@ -233,7 +277,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         if (mFile != "") {
             mFile.erase(0, 1);
             string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
-            LoadSnapshot(fname);
+            LoadSnapshot(fname,"");
             Config::ram_file = fname;
             #ifdef SNAPSHOT_LOAD_LAST
             Config::save("ram");
@@ -478,7 +522,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         if (mFile != "") {
                             mFile.erase(0, 1);
                             string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
-                            LoadSnapshot(fname);
+                            LoadSnapshot(fname,"");
                             Config::ram_file = fname;
                             #ifdef SNAPSHOT_LOAD_LAST
                             Config::save("ram");
@@ -668,7 +712,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                 if (opt2 == 1) {
                     // Soft
                     if (Config::last_ram_file != NO_RAM_FILE) {
-                        LoadSnapshot(Config::last_ram_file);
+                        LoadSnapshot(Config::last_ram_file,"");
                         Config::ram_file = Config::last_ram_file;
                         #ifdef SNAPSHOT_LOAD_LAST
                         Config::save("ram");

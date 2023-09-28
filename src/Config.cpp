@@ -99,7 +99,7 @@ static inline void trim(std::string &s) {
 // Read config from FS
 void Config::load() {
 
-    pwm_audio_stop();
+    // pwm_audio_stop();
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
@@ -139,7 +139,7 @@ void Config::load() {
             // No nvs data found. Save it
             nvs_close(handle);
             Config::save();
-            pwm_audio_start();
+            // pwm_audio_start();
             return;
         }
 
@@ -243,7 +243,7 @@ void Config::load() {
         nvs_close(handle);
     }
 
-    pwm_audio_start();
+    // pwm_audio_start();
 
 }
 
@@ -254,7 +254,7 @@ void Config::save() {
 // Dump actual config to FS
 void Config::save(string value) {
 
-    pwm_audio_stop();
+    // pwm_audio_stop();
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
@@ -326,7 +326,7 @@ void Config::save(string value) {
 
     printf("Config saved OK\n");
 
-    pwm_audio_start();
+    // pwm_audio_start();
 
 }
 

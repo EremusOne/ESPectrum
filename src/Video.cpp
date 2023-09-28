@@ -220,8 +220,11 @@ void VIDEO::Init() {
 
     if (Config::videomode) {
         xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
+        // Wait for vertical sync to ensure vga.init is done
+        for (;;) {
+            if (ESPectrum::vsync) break;
+        }
     } else {
-        // const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : (Config::getArch() == "128K" ? 1 : 2)][Config::aspect_16_9 ? 1 : 0];
         const Mode& vgaMode = vga.videomodes[0][0][Config::aspect_16_9 ? 1 : 0];
         OSD::scrW = vgaMode.hRes;
         OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
