@@ -488,7 +488,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
         // write pc
         writeWordFileLE( Z80::getRegPC(), file);
-        printf("PC: %u\n",(unsigned int)Z80::getRegPC());
+        // printf("PC: %u\n",(unsigned int)Z80::getRegPC());
 
         // write memESP bank control port
         uint8_t tmp_port = MemESP::bankLatch;
@@ -496,7 +496,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         bitWrite(tmp_port, 4, MemESP::romLatch);
         bitWrite(tmp_port, 5, MemESP::pagingLock);
         writeByteFile(tmp_port, file);
-        printf("7FFD: %u\n",(unsigned int)tmp_port);
+        // printf("7FFD: %u\n",(unsigned int)tmp_port);
 
         if (ESPectrum::trdos)
             writeByteFile(1, file);     // TR-DOS paged
