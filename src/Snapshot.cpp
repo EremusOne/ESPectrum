@@ -648,30 +648,64 @@ bool FileZ80::load(string z80_fn) {
     // begin loading registers
     Z80::setRegA  (       header[0]);
     Z80::setFlags (       header[1]);
-    Z80::setRegBC (mkword(header[2], header[3]));
-    Z80::setRegHL (mkword(header[4], header[5]));
+    
+    // Z80::setRegBC (mkword(header[2], header[3]));
+    Z80::setRegC(header[2]);    
+    Z80::setRegB(header[3]);
+    
+    // Z80::setRegHL (mkword(header[4], header[5]));
+    Z80::setRegL(header[4]);    
+    Z80::setRegH(header[5]);
+
     Z80::setRegPC (mkword(header[6], header[7]));
     Z80::setRegSP (mkword(header[8], header[9]));
+
     Z80::setRegI  (       header[10]);
-    Z80::setRegR  (       header[11]);
+
+    // Z80::setRegR  (       header[11]);
+    uint8_t regR = header[11] & 0x7f;
+    if ((header[12] & 0x01) != 0) {
+        regR |= 0x80;
+    }
+    Z80::setRegR(regR);
+
     b12 =                 header[12];
-    Z80::setRegDE (mkword(header[13], header[14]));
-    Z80::setRegBCx(mkword(header[15], header[16]));
-    Z80::setRegDEx(mkword(header[17], header[18]));
-    Z80::setRegHLx(mkword(header[19], header[20]));
-    Z80::setRegAFx(mkword(header[22], header[21])); // watch out for order!!!
+
+    VIDEO::borderColor = (b12 >> 1) & 0x07;
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+    
+    // Z80::setRegDE (mkword(header[13], header[14]));
+    Z80::setRegE(header[13]);
+    Z80::setRegD(header[14]);
+
+    // Z80::setRegBCx(mkword(header[15], header[16]));
+    Z80::setRegCx(header[15]);
+    Z80::setRegBx(header[16]);
+
+    // Z80::setRegDEx(mkword(header[17], header[18]));
+    Z80::setRegEx(header[17]);
+    Z80::setRegDx(header[18]);
+
+    // Z80::setRegHLx(mkword(header[19], header[20]));
+    Z80::setRegLx(header[19]);
+    Z80::setRegHx(header[20]);
+
+    // Z80::setRegAFx(mkword(header[22], header[21])); // watch out for order!!!
+    Z80::setRegAx(header[21]);
+    Z80::setRegFx(header[22]);
+
     Z80::setRegIY (mkword(header[23], header[24]));
     Z80::setRegIX (mkword(header[25], header[26]));
+
     Z80::setIFF1  (       header[27] ? true : false);
     Z80::setIFF2  (       header[28] ? true : false);
     b29 =                 header[29];
     Z80::setIM((Z80::IntMode)(b29 & 0x03));
 
-    uint16_t RegPC = Z80::getRegPC();
+    // spectrum.setIssue2((z80Header1[29] & 0x04) != 0); // TO DO: Implement this
 
-    VIDEO::borderColor = (b12 >> 1) & 0x07;
-    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
-    
+    uint16_t RegPC = Z80::getRegPC();
+   
     bool dataCompressed = (b12 & 0x20) ? true : false;
     uint8_t memPagingReg = 0;
 
@@ -741,15 +775,31 @@ bool FileZ80::load(string z80_fn) {
                 uint16_t compDataLen = mkword(hdr0, hdr1);
                 
                 uint16_t memoff = pageStart[hdr2];
-               
-                loadCompressedMemData(file, compDataLen, memoff, 0x4000);
+
+                if (compDataLen == 0xffff) {                 
+
+                    // Uncompressed data
+
+                    compDataLen = 0x4000;
+
+                    for (int i = 0; i < compDataLen; i++)                    
+                        MemESP::writebyte(memoff + i, readByteFile(file));
+
+                } else {
+
+                    loadCompressedMemData(file, compDataLen, memoff, 0x4000);
+
+                }
+
                 dataOffset += compDataLen;
+
             }
 
         } else if ((z80_arch == "128K") || (z80_arch == "Pentagon")) {
             
             // paging register
             uint8_t b35 = header[35];
+            // printf("Paging register: %u\n",b35);
             MemESP::videoLatch = bitRead(b35, 3);
             MemESP::romLatch = bitRead(b35, 4);
             MemESP::pagingLock = bitRead(b35, 5);
@@ -774,8 +824,25 @@ bool FileZ80::load(string z80_fn) {
                 uint8_t hdr2 = readByteFile(file); dataOffset ++;
                 uint16_t compDataLen = mkword(hdr0, hdr1);
                 
-                if ((hdr2 > 2) && (hdr2 < 11)) 
-                    loadCompressedMemPage(file, compDataLen, pages[hdr2], 0x4000);
+                if (compDataLen == 0xffff) { 
+
+                    // load uncompressed data into memory
+                    // printf("Loading uncompressed data\n");
+
+                    compDataLen = 0x4000;
+
+                    if ((hdr2 > 2) && (hdr2 < 11)) 
+                        for (int i = 0; i < compDataLen; i++)
+                            pages[hdr2][i] = readByteFile(file);
+
+                } else {
+
+                    // Block is compressed
+
+                    if ((hdr2 > 2) && (hdr2 < 11)) 
+                        loadCompressedMemPage(file, compDataLen, pages[hdr2], 0x4000);
+
+                }
 
                 dataOffset += compDataLen;
 
