@@ -58,11 +58,11 @@ public:
     // static void           listAllFiles();
     // static void           sanitizeFilename(String filename); // in-place
     // static File           safeOpenFileRead(String filename);
-    static string getFileEntriesFromDir(string path);
+    // static string getFileEntriesFromDir(string path);
     static int DirToFile(string Dir, string fileExts);
     static void Mergefiles(string fpath, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
-    static string getSortedFileList(string fileDir);
+    // static string getSortedFileList(string fileDir);
     static bool hasSNAextension(string filename);
     static bool hasZ80extension(string filename);
 
@@ -105,6 +105,7 @@ private:
 #define DISK_PSNA_FILE "persist"
 
 #define NO_RAM_FILE "none"
+
 #define SNA_48K_SIZE 49179
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487

@@ -227,7 +227,7 @@ static bool persistLoad(uint8_t slotnumber)
 
         fclose(f);
 
-        if (!LoadSnapshot(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname, "" /* persist_arch */)) {
+        if (!LoadSnapshot(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname, persist_arch)) {
             OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
             return false;
         } else {

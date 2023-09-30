@@ -102,6 +102,6 @@ visit https://zxespectrum.speccy.org/contacto
 // Activate VK_GRAVEACCENT for logging ram info to console
 ///////////////////////////////////////////////////////////////////////////////
 
-#define RAM_INFO_KEY
+// #define RAM_INFO_KEY
 
 #endif // ESPectrum_config_h

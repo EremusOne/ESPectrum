@@ -202,60 +202,60 @@ void FileUtils::unmountSDCard() {
 //     return f;
 // }
 
-string FileUtils::getFileEntriesFromDir(string path) {
+// string FileUtils::getFileEntriesFromDir(string path) {
 
-    string filelist;
+//     string filelist;
 
-    // printf("Getting entries from: '%s'\n", path.c_str());
+//     // printf("Getting entries from: '%s'\n", path.c_str());
 
-    DIR* dir = opendir(path.c_str());
-    if (dir == NULL) {
-        // OSD::errorHalt(ERR_DIR_OPEN + "\n" + path).cstr());
-    }
+//     DIR* dir = opendir(path.c_str());
+//     if (dir == NULL) {
+//         // OSD::errorHalt(ERR_DIR_OPEN + "\n" + path).cstr());
+//     }
 
-    struct dirent* de = readdir(dir);
+//     struct dirent* de = readdir(dir);
     
-    if (!de) {
+//     if (!de) {
 
-        printf("No entries found!\n");
+//         printf("No entries found!\n");
 
-    } else {
+//     } else {
 
-        int cnt = 0;
-        while (true) {
+//         int cnt = 0;
+//         while (true) {
             
-            printf("Found file: %s\n", de->d_name);
+//             printf("Found file: %s\n", de->d_name);
             
-            string filename = de->d_name;
+//             string filename = de->d_name;
 
-            // printf("readdir filename -> %s\n", filename.c_str());
+//             // printf("readdir filename -> %s\n", filename.c_str());
 
-            if (filename.compare(0,1,".") == 0) {
-        //        printf("HIDDEN\n");
-            } else if (filename.substr(filename.size()-4) == ".txt") {
-        //        printf("IGNORING TXT\n");
-            } else if (filename.substr(filename.size()-4) == ".TXT") {
-        //        printf("IGNORING TXT\n");
-            } else {
-        //        printf("ADDING\n");
-                filelist += filename + "\n";
-                cnt++;
-            }
+//             if (filename.compare(0,1,".") == 0) {
+//         //        printf("HIDDEN\n");
+//             } else if (filename.substr(filename.size()-4) == ".txt") {
+//         //        printf("IGNORING TXT\n");
+//             } else if (filename.substr(filename.size()-4) == ".TXT") {
+//         //        printf("IGNORING TXT\n");
+//             } else {
+//         //        printf("ADDING\n");
+//                 filelist += filename + "\n";
+//                 cnt++;
+//             }
             
-            de = readdir(dir);
-            if ((!de) || (cnt == 20)) break;
+//             de = readdir(dir);
+//             if ((!de) || (cnt == 20)) break;
         
-        }
+//         }
 
-    }
+//     }
 
-    // printf(filelist.c_str());
+//     // printf(filelist.c_str());
 
-    closedir(dir);
+//     closedir(dir);
 
-    return filelist;
+//     return filelist;
 
-}
+// }
 
 int FileUtils::DirToFile(string fpath, string fileExts) {
 
@@ -333,6 +333,9 @@ int FileUtils::DirToFile(string fpath, string fileExts) {
     }
 
     closedir(dir);
+
+    filenames.clear(); // Clear vector
+    std::vector<std::string>().swap(filenames); // free memory
 
     printf("Sort done.\n");
 
@@ -459,42 +462,42 @@ bool FileUtils::hasZ80extension(string filename)
 //     return count;
 // }
 
-// Get all sna files sorted alphabetically
-string FileUtils::getSortedFileList(string fileDir)
-{
+// // Get all sna files sorted alphabetically
+// string FileUtils::getSortedFileList(string fileDir)
+// {
     
-    // get string of unsorted filenames, separated by newlines
-    string entries = getFileEntriesFromDir(fileDir);
+//     // get string of unsorted filenames, separated by newlines
+//     string entries = getFileEntriesFromDir(fileDir);
 
-    // count filenames (they always end at newline)
-    int count = 0;
-    for (int i = 0; i < entries.length(); i++) {
-        if (entries.at(i) == ASCII_NL) {
-            count++;
-        }
-    }
+//     // count filenames (they always end at newline)
+//     int count = 0;
+//     for (int i = 0; i < entries.length(); i++) {
+//         if (entries.at(i) == ASCII_NL) {
+//             count++;
+//         }
+//     }
 
-    std::vector<std::string> filenames;
-    filenames.reserve(count);
+//     std::vector<std::string> filenames;
+//     filenames.reserve(count);
 
-    // Copy filenames from string to vector
-    string fname = "";
-    for (int i = 0; i < entries.length(); i++) {
-        if (entries.at(i) == ASCII_NL) {
-            filenames.push_back(fname.c_str());
-            fname = "";
-        } else fname += entries.at(i);
-    }
+//     // Copy filenames from string to vector
+//     string fname = "";
+//     for (int i = 0; i < entries.length(); i++) {
+//         if (entries.at(i) == ASCII_NL) {
+//             filenames.push_back(fname.c_str());
+//             fname = "";
+//         } else fname += entries.at(i);
+//     }
 
-    // Sort vector
-    sort(filenames.begin(),filenames.end());
+//     // Sort vector
+//     sort(filenames.begin(),filenames.end());
 
-    // Copy back filenames from vector to string
-    string sortedEntries = "";
-    for (int i = 0; i < count; i++) {
-        sortedEntries += filenames[i] + '\n';
-    }
+//     // Copy back filenames from vector to string
+//     string sortedEntries = "";
+//     for (int i = 0; i < count; i++) {
+//         sortedEntries += filenames[i] + '\n';
+//     }
 
-    return sortedEntries;
+//     return sortedEntries;
 
-}
+// }
