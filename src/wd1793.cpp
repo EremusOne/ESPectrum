@@ -46,7 +46,7 @@ using namespace std;
 
 #pragma GCC optimize ("O3")
 
-void WD1793::Initialise() {
+void WD1793::Init() {
 
     for( int i = 0 ; i < 4; i++ ) {
 

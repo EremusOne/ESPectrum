@@ -168,10 +168,10 @@ private:
     static int table[32];                   /**< table of volumes for chip */
     static ayemu_chip_t type;               /**< general chip type (\b AYEMU_AY or \b AYEMU_YM) */
     static int ChipFreq;                    /**< chip emulator frequency */
-    static int eq[6];                       /**< volumes for channels.
-                                            Array contains 6 elements: 
-                                            A left, A right, B left, B right, C left and C right;
-                                            range -100...100 */
+    // static int eq[6];                       /**< volumes for channels.
+                                            // Array contains 6 elements: 
+                                            // A left, A right, B left, B right, C left and C right;
+                                            // range -100...100 */
     static ayemu_regdata_t ayregs;          /**< parsed registers data */
     static ayemu_sndfmt_t sndfmt;           /**< output sound format */
 
@@ -193,8 +193,8 @@ private:
     static int cnt_e;                       /**< back counter of envelop generator */
     static int ChipTacts_per_outcount;      /**< chip's counts per one sound signal count */
     static int Amp_Global;                  /**< scale factor for amplitude */
-    static int vols[6][32];                 /**< stereo type (channel volumes) and chip table.
-                                            This cache calculated by #table and #eq  */
+    // static int vols[32];                 /**< stereo type (channel volumes) and chip table.
+                                            // This cache calculated by #table and #eq  */
     static int EnvNum;                      /**< number of current envilopment (0...15) */
     static int env_pos;                     /**< current position in envelop (0...127) */
     static int Cur_Seed;                    /**< random numbers counter */

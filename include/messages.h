@@ -265,11 +265,13 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
 #define MENU_OTHER_EN "Other\n"\
     "AY on 48K\t>\n"\
     "ALU Timing\t>\n"\
-    "48K Issue 2\t>\n"
+    "48K Issue 2\t>\n"\
+    "Device on 2nd PS/2\t>\n"
 #define MENU_OTHER_ES "Otros\n"\
     "AY en 48K\t>\n"\
     "Timing ULA\t>\n"\
-    "48K Issue 2\t>\n"
+    "48K Issue 2\t>\n"\
+    "Disp. en segundo PS/2\t>\n"	
 static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
 
 #define MENU_AY48_EN "AY on 48K\n"\
@@ -279,6 +281,14 @@ static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
     "Si\t[Y]\n"\
     "No\t[N]\n"
 static const char *MENU_AY48[2] = { MENU_AY48_EN, MENU_AY48_ES };
+
+#define MENU_KBD2NDPS2_EN "Device\n"\
+    "None\t[N]\n"\
+    "Keyboard\t[K]\n"
+#define MENU_KBD2NDPS2_ES "Dispositivo\n"\
+    "Nada\t[N]\n"\
+    "Teclado\t[K]\n"
+static const char *MENU_KBD2NDPS2[2] = { MENU_KBD2NDPS2_EN, MENU_KBD2NDPS2_ES };
 
 #define MENU_ALUTIMING_EN "ALU Timing\n"\
     "Early\t[E]\n"\

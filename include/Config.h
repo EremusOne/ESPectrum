@@ -68,6 +68,7 @@ public:
     static uint8_t  joystick;
     static uint8_t  videomode;
     static uint8_t  AluTiming;
+    static uint8_t  ps2_dev2;    
 
     // config persistence
     static void load();

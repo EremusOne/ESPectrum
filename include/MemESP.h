@@ -63,18 +63,11 @@ public:
     static uint8_t* ramCurrent[4];    
     static bool ramContended[4];
 
-    // static volatile uint8_t bankLatch;
-    // static volatile uint8_t videoLatch;
-    // static volatile uint8_t romLatch;
-    // static volatile uint8_t pagingLock;
-
     static uint8_t bankLatch;
     static uint8_t videoLatch;
     static uint8_t romLatch;
     static uint8_t pagingLock;
 
-    static uint8_t modeSP3;
-    static uint8_t romSP3;
     static uint8_t romInUse;
 
     static uint8_t readbyte(uint16_t addr);
@@ -83,14 +76,14 @@ public:
     static void writeword(uint16_t addr, uint16_t data);
 };
 
-static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage0[0x4000] = { 0 };
-static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage1[0x4000] = { 0 };
-static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage2[0x4000] = { 0 };
-// static uint8_t DRAM_ATTR staticMemPage3[0x4000] = { 0 };
-// static uint8_t DRAM_ATTR staticMemPage4[0x4000] = { 0 };
-// static uint8_t DRAM_ATTR staticMemPage5[0x4000] = { 0 };
-// static uint8_t DRAM_ATTR staticMemPage6[0x4000] = { 0 };
-// static uint8_t DRAM_ATTR staticMemPage7[0x4000] = { 0 };
+// static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage0[0x4000] = { 0 };
+// static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage1[0x4000] = { 0 };
+// static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage2[0x4000] = { 0 };
+
+static uint8_t staticMemPage0[0x4000] = { 0 };
+static uint8_t staticMemPage1[0x4000] = { 0 };
+static uint8_t staticMemPage2[0x4000] = { 0 };
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //

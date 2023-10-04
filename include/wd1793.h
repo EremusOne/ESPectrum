@@ -135,7 +135,7 @@ class WD1793 {
         bool sclConverted;
         unsigned char Track0[2304]; // Store SCL translated track0
 
-        void Initialise();
+        void Init();
         void ShutDown();
         void EnterIdle();
         void EjectDisks();

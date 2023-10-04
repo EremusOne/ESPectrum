@@ -67,6 +67,7 @@ bool     Config::Issue2 = true;
 bool     Config::flashload = true;
 uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
 uint8_t  Config::AluTiming = 0;
+uint8_t  Config::ps2_dev2 = 0; // Second port (Lilygo / Olimex) PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -168,6 +169,9 @@ void Config::load() {
             printf("slog:%s\n",str_data);
             slog_on = strcmp(str_data, "false");            
             free(str_data);
+
+            // slog_on = true; // Force for testing
+
         }
 
         err = nvs_get_str(handle, "sdstorage", NULL, &required_size);
@@ -237,6 +241,11 @@ void Config::load() {
         err = nvs_get_u8(handle, "AluTiming", &Config::AluTiming);
         if (err == ESP_OK) {
             printf("AluTiming:%u\n",Config::AluTiming);
+        }
+
+        err = nvs_get_u8(handle, "PS2Dev2", &Config::ps2_dev2);
+        if (err == ESP_OK) {
+            printf("PS2Dev2:%u\n",Config::ps2_dev2);
         }
 
         // Close
@@ -315,6 +324,9 @@ void Config::save(string value) {
 
         if((value=="AluTiming") || (value=="all"))
             nvs_set_u8(handle,"AluTiming",Config::AluTiming);
+
+        if((value=="PS2Dev2") || (value=="all"))
+            nvs_set_u8(handle,"PS2Dev2",Config::ps2_dev2);
 
         printf("Committing updates in NVS ... ");
         err = nvs_commit(handle);

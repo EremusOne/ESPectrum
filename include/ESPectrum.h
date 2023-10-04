@@ -109,6 +109,8 @@ public:
 
     // static TaskHandle_t loopTaskHandle;
 
+    static bool ps2kbd2;
+
     static bool trdos;
     static WD1793 Betadisk;
 

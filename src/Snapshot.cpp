@@ -596,7 +596,10 @@ bool FileZ80::load(string z80_fn) {
             if (mch == 4) z80_arch = "128K";
             if (mch == 5) z80_arch = "128K"; // + if1
             if (mch == 6) z80_arch = "128K"; // + mgt
+            if (mch == 7) z80_arch = "128K"; // Spectrum +3
             if (mch == 9) z80_arch = "Pentagon";
+            if (mch == 12) z80_arch = "128K"; // Spectrum +2
+            if (mch == 13) z80_arch = "128K"; // Spectrum +2A            
         }
 
     }

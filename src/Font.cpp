@@ -243,7 +243,7 @@ unsigned char Font6x8Pixels[] = {
 
 #if FONTFACE == 1 // iso8859_1
 
-unsigned char Font6x8Pixels[] = {
+const unsigned char Font6x8Pixels[] = {
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   
     0,   0,   0,   0,   0,   0,   0,   0,   0,   255, 0,   0,   0,   0,   0,   255, 0,   0,   0,   0,   0,   255, 0,   0,   

@@ -46,10 +46,10 @@ visit https://zxespectrum.speccy.org/contacto
 int AySound::table[32];                 /**< table of volumes for chip */
 ayemu_chip_t AySound::type;             /**< general chip type (\b AYEMU_AY or \b AYEMU_YM) */
 int AySound::ChipFreq;                  /**< chip emulator frequency */
-int AySound::eq[6];                     /**< volumes for channels.
-                                        Array contains 6 elements: 
-                                        A left, A right, B left, B right, C left and C right;
-                                        range -100...100 */
+// int AySound::eq[6];                     /**< volumes for channels.
+                                        // Array contains 6 elements: 
+                                        // A left, A right, B left, B right, C left and C right;
+                                        // range -100...100 */
 ayemu_regdata_t AySound::ayregs;        /**< parsed registers data */
 ayemu_sndfmt_t AySound::sndfmt;         /**< output sound format */
 
@@ -71,8 +71,12 @@ int AySound::cnt_n;                     /**< back counter of noise generator */
 int AySound::cnt_e;                     /**< back counter of envelop generator */
 int AySound::ChipTacts_per_outcount;    /**< chip's counts per one sound signal count */
 int AySound::Amp_Global;                /**< scale factor for amplitude */
-int AySound::vols[6][32];               /**< stereo type (channel volumes) and chip table.
-                                        This cache calculated by #table and #eq    */
+
+// int AySound::vols[6][32];               /**< stereo type (channel volumes) and chip table.
+//                                         This cache calculated by #table and #eq    */
+
+// int AySound::vols[32];
+
 int AySound::EnvNum;                    /**< number of current envilopment (0...15) */
 int AySound::env_pos;                   /**< current position in envelop (0...127) */
 int AySound::Cur_Seed;                  /**< random numbers counter */
@@ -110,7 +114,7 @@ static uint8_t Envelope [16][128];
 //     5841, 8250, 11654, 16462, 23253, 32845, 46395, 65535
 // };
 
-const int DRAM_ATTR Rampa_AY_table[16] = {0,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
+const uint8_t DRAM_ATTR Rampa_AY_table[16] = {0,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
 
 // Borrowed from SoftSpectrum48 source code:
 // Values according to: http://forum.tslabs.info/viewtopic.php?f=6&t=539
@@ -201,9 +205,8 @@ int AySound::set_chip_type(ayemu_chip_t type, int *custom_table)
 		table[v] = int(max_volume / powf(root_two, float(v ^ 0x1f) / 3.18f));
 	}
     // Tie level 0 to silence.
-	for(int v = 31; v >= 0; --v) {
-		table[v] -= table[0];
-	}
+	for(int v = 31; v >= 0; --v)
+        table[v] -= table[0];
 
     // for (int n = 0; n < 32; n++)
     //     // table[n] = Lion17_AY_table[n / 2];
@@ -254,10 +257,10 @@ int AySound::set_sound_format(int freq, int chans, int bits)
 //
 int AySound::set_stereo(ayemu_stereo_t stereo_type, int *custom_eq)
 {
-    int i;
-    int chip;
+    // int i;
+    // int chip;
 
-    for (i = 0 ; i < 6 ; i++) eq[i] = 100;
+    // for (i = 0 ; i < 6 ; i++) eq[i] = 100;
 
     default_stereo_flag = 0;
     dirty = 1;
@@ -267,7 +270,7 @@ int AySound::set_stereo(ayemu_stereo_t stereo_type, int *custom_eq)
 void AySound::prepare_generation()
 {
 
-    int vol;
+    // int vol;
 
     if (!dirty) return;
 
@@ -279,16 +282,20 @@ void AySound::prepare_generation()
 
     ChipTacts_per_outcount = ChipFreq / sndfmt.freq / 8;
 
-    for (int n = 0; n < 32; n++) {
-        vol = table[n];
-        for (int m=0; m < 6; m++)
-            vols[m][n] = (int) (((double) vol * eq[m]) / 100);
-    }
+    // for (int n = 0; n < 32; n++) {
+    //     // vol = table[n];
+    //     for (int m=0; m < 6; m++)
+    //         // vols[m][n] = (int) (((double) vol * eq[m]) / 100);
+    //         vols[m][n] = table[n];
+    // }
 
-    int max_l = vols[0][31] + vols[2][31] + vols[4][31];
-    int max_r = vols[1][31] + vols[3][31] + vols[5][31];
-    vol = (max_l > max_r) ? max_l : max_r;
-    Amp_Global = ChipTacts_per_outcount * vol / AYEMU_MAX_AMP;
+    // int max_l = vols[0][31] + vols[2][31] + vols[4][31];
+    // int max_r = vols[1][31] + vols[3][31] + vols[5][31];
+
+    // vol = (max_l > max_r) ? max_l : max_r;
+    // Amp_Global = ChipTacts_per_outcount * vol / AYEMU_MAX_AMP;
+
+    Amp_Global = ChipTacts_per_outcount * (table[31] * 3) / AYEMU_MAX_AMP;
 
     dirty = 0;
 }
@@ -303,8 +310,9 @@ void IRAM_ATTR AySound::gen_sound(int sound_bufsize, int bufpos)
     int tmpvol;
     uint8_t *sound_buf = SamplebufAY + bufpos;
 
-    int snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
-    while (snd_numcount-- > 0) {
+    // int snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
+    // while (snd_numcount-- > 0) {
+    while (sound_bufsize-- > 0) {        
 
         int mix_l = 0;
         
@@ -398,17 +406,17 @@ void IRAM_ATTR AySound::gen_sound(int sound_bufsize, int bufpos)
 
             if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a)) {
                 tmpvol = (ayregs.env_a) ? ENVVOL : Rampa_AY_table[ayregs.vol_a];
-                mix_l += vols[0][tmpvol];
+                mix_l += table[tmpvol];
             }
 
             if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b)) {
                 tmpvol = (ayregs.env_b) ? ENVVOL : Rampa_AY_table[ayregs.vol_b];
-                mix_l += vols[2][tmpvol];
+                mix_l += table[tmpvol];
             }
             
             if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c)) {
                 tmpvol = (ayregs.env_c) ? ENVVOL : Rampa_AY_table[ayregs.vol_c];
-                mix_l += vols[4][tmpvol];
+                mix_l += table[tmpvol];
             }            
 
         }

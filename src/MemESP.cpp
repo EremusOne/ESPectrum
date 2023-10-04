@@ -54,7 +54,5 @@ uint8_t MemESP::bankLatch = 0;
 uint8_t MemESP::videoLatch = 0;
 uint8_t MemESP::romLatch = 0;
 uint8_t MemESP::pagingLock = 0;
-uint8_t MemESP::modeSP3 = 0;
-uint8_t MemESP::romSP3 = 0;
 uint8_t MemESP::romInUse = 0;
 

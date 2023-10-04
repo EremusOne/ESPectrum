@@ -43,7 +43,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include "OSDMain.h"
 #include "Ports.h"
 #include "MemESP.h"
-// #include "roms.h"
 #include "CPU.h"
 #include "Video.h"
 #include "messages.h"
@@ -74,6 +73,7 @@ using namespace std;
 // KEYBOARD
 //=======================================================================================
 fabgl::PS2Controller ESPectrum::PS2Controller;
+bool ESPectrum::ps2kbd2 = false;
 
 //=======================================================================================
 // AUDIO
@@ -281,6 +281,10 @@ std::string ESPectrum::bootKeyboard() {
 void ESPectrum::setup() 
 {
 
+    printf("------------------------------------\n");
+    printf("| ESPectrum: booting               |\n");        
+    printf("------------------------------------\n");    
+    
     #ifdef TESTING_CODE
     showMemInfo();
     #endif
@@ -291,22 +295,19 @@ void ESPectrum::setup()
 
     ZXKeyb::setup();
 
-    //=======================================================================================
-    // KEYBOARD
-    //=======================================================================================
-
-    // PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
-    // PS2Controller.keyboard()->reset(); // This is already setting the ScancodeSet 2
-
-    PS2Controller.begin(ZXKeyb::Exists ? PS2Preset::KeyboardPort0 : PS2Preset::KeyboardPort0_KeybJoystickPort1, KbdMode::CreateVirtualKeysQueue);
-    PS2Controller.keyboard()->reset(); // This is already setting the ScancodeSet 2
-    if (!ZXKeyb::Exists) PS2Controller.keybjoystick()->reset();
-
+   
     //=======================================================================================
     // FILESYSTEM
     //=======================================================================================
     FileUtils::initFileSystem();
     Config::load();
+
+    //=======================================================================================
+    // KEYBOARD
+    //=======================================================================================
+
+    ESPectrum::ps2kbd2 = !((ZXKeyb::Exists) || (Config::ps2_dev2 == 0));
+    PS2Controller.begin(ps2kbd2 ? PS2Preset::KeyboardPort0_KeybJoystickPort1 : PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
 
     #ifndef ESP32_SDL2_WRAPPER
 
@@ -432,8 +433,6 @@ void ESPectrum::setup()
     MemESP::ram[4] = MemESP::ram4; MemESP::ram[5] = MemESP::ram5;
     MemESP::ram[6] = MemESP::ram6; MemESP::ram[7] = MemESP::ram7;
 
-    MemESP::modeSP3 = 0;
-    MemESP::romSP3 = 0;
     MemESP::romInUse = 0;
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
@@ -515,7 +514,7 @@ void ESPectrum::setup()
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
     // Init disk controller
-    Betadisk.Initialise();
+    Betadisk.Init();
 
     // Load romset
     Config::requestMachine(Config::getArch(), Config::getRomSet());
@@ -562,8 +561,6 @@ void ESPectrum::reset()
 
     if (arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
 
-    MemESP::modeSP3 = 0;
-    MemESP::romSP3 = 0;
     MemESP::romInUse = 0;
 
     MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
@@ -665,7 +662,7 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
 //
 void IRAM_ATTR ESPectrum::readKbdJoy() {
 
-    if (!ZXKeyb::Exists) {
+    if (ps2kbd2) {
 
         fabgl::VirtualKeyItem NextKey;
         auto KbdJoy = PS2Controller.keybjoystick();    
