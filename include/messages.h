@@ -350,11 +350,21 @@ static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTER
 
 #define MENU_JOY_EN "PS/2 Joystick\n"\
     "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"
+    "Kempston\t[ ]\n"\
+	"Cursor Keys as Joy\t>\n"
 #define MENU_JOY_ES "Joystick PS/2\n"\
     "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"
+    "Kempston\t[ ]\n"\
+	"Joy en teclas de cursor\t>\n"
 static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
+
+#define MENU_CURSORJOY_EN "Cursor as Joy\n"\
+    "Yes\t[Y]\n"\
+    "No\t[N]\n"
+#define MENU_CURSORJOY_ES "Joy en Cursor\n"\
+    "Si\t[Y]\n"\
+    "No\t[N]\n"
+static const char *MENU_CURSORJOY[2] = { MENU_CURSORJOY_EN, MENU_CURSORJOY_ES };
 
 // #define MENU_KBD_LAYOUT_EN "Select language\n"\
 //     "US English\t[US]\n"\

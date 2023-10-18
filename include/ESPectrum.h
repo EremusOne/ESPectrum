@@ -69,7 +69,7 @@ public:
 
     // Kbd
     static void IRAM_ATTR processKeyboard();
-    static std::string bootKeyboard();
+    static void bootKeyboard();
     static bool IRAM_ATTR readKbd(fabgl::VirtualKeyItem *Nextkey);
     static void IRAM_ATTR readKbdJoy();
     static fabgl::PS2Controller PS2Controller;

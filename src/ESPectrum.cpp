@@ -216,60 +216,84 @@ printf("========================================================================
 //=======================================================================================
 // BOOT KEYBOARD
 //=======================================================================================
-std::string ESPectrum::bootKeyboard() {
+void ESPectrum::bootKeyboard() {
 
     auto Kbd = PS2Controller.keyboard();
     fabgl::VirtualKeyItem NextKey;
-    bool r = false;
+    int i = 0;
+    string s = "00";
 
-    if (ZXKeyb::Exists) {
+    for (; i < 200; i++) {
 
-        // Process physical keyboard
-        ZXKeyb::process();
-        // Detect and process physical kbd menu key combinations
+        if (ZXKeyb::Exists) {
 
-        if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+            // Process physical keyboard
+            ZXKeyb::process();
+            
+            // Detect and process physical kbd menu key combinations
+            if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+                s[0]='1';
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
+                s[0]='2';
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
+                s[0]='3';
+            }
+
             if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-                return "1Q";
+                s[1]='Q';
             } else 
             if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-                return "1W";
+                s[1]='W';
             }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
-            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-                return "2Q";
-            } else 
-            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-                return "2W";
-            }
-        } else
-        if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
-            if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
-                return "3Q";
-            } else 
-            if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
-                return "3W";
-            }
+
         }
+
+        while (Kbd->virtualKeyAvailable()) {
+
+            bool r = Kbd->getNextVirtualKey(&NextKey);
+
+            if (r && NextKey.down) {
+
+                // Check keyboard status
+                switch (NextKey.vk) {
+                    case fabgl::VK_1:
+                        s[0] = '1';
+                        break;
+                    case fabgl::VK_2:
+                        s[0] = '2';
+                        break;
+                    case fabgl::VK_3:
+                        s[0] = '3';
+                        break;
+                    case fabgl::VK_Q:
+                    case fabgl::VK_q:    
+                        s[1] = 'Q';
+                        break;
+                    case fabgl::VK_W:
+                    case fabgl::VK_w:    
+                        s[1] = 'W';
+                        break;
+                }
+
+            }
+
+        }
+
+        if (s.find('0') == std::string::npos) break;
+
+        delayMicroseconds(1000);
 
     }
 
-    string kbdstr="";
-
-    while (Kbd->virtualKeyAvailable()) {
-        r = Kbd->getNextVirtualKey(&NextKey);
-        if (r) {
-            // // Check keyboard status
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) kbdstr += "1";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) kbdstr += "2";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) kbdstr += "3";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) kbdstr += "Q";
-            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) kbdstr += "W";
-        }
+    if (i < 200) {
+        Config::videomode = (s[0] == '1') ? 0 : (s[0] == '2') ? 1 : 2;
+        Config::aspect_16_9 = (s[1] == 'Q') ? false : true;
+        Config::ram_file="none";
+        Config::save();
+        // printf("%s\n", s.c_str());
     }
-
-    return kbdstr;
 
 }
 
@@ -281,12 +305,18 @@ std::string ESPectrum::bootKeyboard() {
 void ESPectrum::setup() 
 {
 
-    printf("------------------------------------\n");
-    printf("| ESPectrum: booting               |\n");        
-    printf("------------------------------------\n");    
-    
-    #ifdef TESTING_CODE
-    showMemInfo();
+    #ifndef ESP32_SDL2_WRAPPER
+
+    if (Config::slog_on) {
+
+        printf("------------------------------------\n");
+        printf("| ESPectrum: booting               |\n");        
+        printf("------------------------------------\n");    
+
+        showMemInfo();
+
+    }
+
     #endif
 
     //=======================================================================================
@@ -294,16 +324,15 @@ void ESPectrum::setup()
     //=======================================================================================
 
     ZXKeyb::setup();
-
    
     //=======================================================================================
-    // FILESYSTEM
+    // LOAD CONFIG
     //=======================================================================================
-    FileUtils::initFileSystem();
+    
     Config::load();
 
     //=======================================================================================
-    // KEYBOARD
+    // INIT PS/2 KEYBOARD
     //=======================================================================================
 
     ESPectrum::ps2kbd2 = !((ZXKeyb::Exists) || (Config::ps2_dev2 == 0));
@@ -318,7 +347,6 @@ void ESPectrum::setup()
     // Get chip information
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
-
     Config::esp32rev = chip_info.revision;
 
     if (Config::slog_on) {
@@ -344,61 +372,12 @@ void ESPectrum::setup()
     #endif
 
     //=======================================================================================
-    // BOOTKEYS: Read keyboard for 250 ms. checking boot keys
+    // BOOTKEYS: Read keyboard for 200 ms. checking boot keys
     //=======================================================================================
 
-    std:string b = "00";
-    std::string s;
-    for (int i=0; i<1000; i++) {
-        s = bootKeyboard();
-        if (s!="") {
-            
-            if (s.length()==2) 
-                b = s; 
-            else {
-                b[0] = b[1];
-                b[1] = s[0];
-            }
-
-            bool chgRes = true;
-
-            if (b=="1Q" || b=="Q1") {
-                Config::aspect_16_9=false;
-                Config::videomode=0;
-            } else
-            if (b=="1W" || b=="W1") {
-                Config::aspect_16_9=true;
-                Config::videomode=0;
-            } else
-            if (b=="2Q" || b=="Q2") {
-                Config::aspect_16_9=false;
-                Config::videomode=1;
-            } else
-            if (b=="2W" || b=="W2") {
-                Config::aspect_16_9=true;
-                Config::videomode=1;
-            } else
-            if (b=="3Q" || b=="Q3") {
-                Config::aspect_16_9=false;
-                Config::videomode=2;
-            } else
-            if (b=="3W" || b=="W3") {
-                Config::aspect_16_9=true;
-                Config::videomode=2;
-            } else chgRes = false;
-
-            if (chgRes) {
-                Config::ram_file="none";
-                Config::save();
-                printf("%s\n", b.c_str());
-                break;
-            }
-
-        }
-
-        delayMicroseconds(250);
-
-    }
+    // printf("Waiting boot keys\n");
+    bootKeyboard();
+    // printf("End Waiting boot keys\n");
 
     //=======================================================================================
     // MEMORY SETUP
@@ -460,6 +439,12 @@ void ESPectrum::setup()
     VIDEO::Reset();
     
     if (Config::slog_on) showMemInfo("VGA started");
+
+    //=======================================================================================
+    // INIT FILESYSTEM
+    //=======================================================================================
+    
+    FileUtils::initFileSystem();
 
     //=======================================================================================
     // AUDIO
@@ -574,6 +559,10 @@ void ESPectrum::reset()
     MemESP::ramContended[3] = false;
 
     VIDEO::Reset();
+
+    // Reinit disk controller
+    Betadisk.ShutDown();
+    Betadisk.Init();
 
     Tape::tapeFileName = "none";
     if (Tape::tape != NULL) {
@@ -710,37 +699,149 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
                 return;
             }
 
-            // Kempston Joystick emulation
-            if (Config::joystick) {
+            if (Config::CursorAsJoy) {
 
-                Ports::port[0x1f] = 0;
+                // Kempston Joystick emulation
+                if (Config::joystick) {
 
-                jShift = !(Kbd->isVKDown(fabgl::VK_LSHIFT) || Kbd->isVKDown(fabgl::VK_RSHIFT));
+                    Ports::port[0x1f] = 0;
 
+                    jShift = !(Kbd->isVKDown(fabgl::VK_LSHIFT) || Kbd->isVKDown(fabgl::VK_RSHIFT));
+
+                    if (Kbd->isVKDown(fabgl::VK_RIGHT) || Kbd->isVKDown(fabgl::VK_KP_RIGHT)) {
+                        jRight = jShift;
+                        bitWrite(Ports::port[0x1f], 0, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_LEFT) || Kbd->isVKDown(fabgl::VK_KP_LEFT)) {
+                        jLeft = jShift;
+                        bitWrite(Ports::port[0x1f], 1, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_DOWN) || Kbd->isVKDown(fabgl::VK_KP_DOWN) || Kbd->isVKDown(fabgl::VK_KP_CENTER)) {
+                        jDown = jShift;
+                        bitWrite(Ports::port[0x1f], 2, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_UP) || Kbd->isVKDown(fabgl::VK_KP_UP)) {
+                        jUp = jShift;
+                        bitWrite(Ports::port[0x1f], 3, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_RALT)) {
+                        jFire = jShift;
+                        bitWrite(Ports::port[0x1f], 4, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_SLASH) || Kbd->isVKDown(fabgl::VK_RGUI)) {
+                        bitWrite(Ports::port[0x1f], 5, 1);
+                    }
+
+                }
+
+                bitWrite(PS2cols[3], 4, (!Kbd->isVKDown(fabgl::VK_5)) & (!Kbd->isVKDown(fabgl::VK_PERCENT))
+                    & ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_LEFT) & !Kbd->isVKDown(fabgl::VK_KP_LEFT)))
+                    & (jLeft)
+                        ); // Cursor joystick Left
+                bitWrite(PS2cols[4], 0, (!Kbd->isVKDown(fabgl::VK_0)) & (!Kbd->isVKDown(fabgl::VK_RIGHTPAREN))
+                                    &   (!Kbd->isVKDown(fabgl::VK_BACKSPACE))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RALT)))
+                                    & (jFire)
+                                    ); // Cursor joystick Fire
+                bitWrite(PS2cols[4], 2, (!Kbd->isVKDown(fabgl::VK_8)) & (!Kbd->isVKDown(fabgl::VK_ASTERISK))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RIGHT) & !Kbd->isVKDown(fabgl::VK_KP_RIGHT)))
+                                    & (jRight)
+                                    ); // Cursor joystick Right
+                bitWrite(PS2cols[4], 3, (!Kbd->isVKDown(fabgl::VK_7)) & (!Kbd->isVKDown(fabgl::VK_AMPERSAND))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_UP) & !Kbd->isVKDown(fabgl::VK_KP_UP)))
+                                    & (jUp)
+                                    ); // Cursor joystick Up
+                bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_6)) & (!Kbd->isVKDown(fabgl::VK_CARET))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_DOWN) & !Kbd->isVKDown(fabgl::VK_KP_DOWN)  & !Kbd->isVKDown(fabgl::VK_KP_CENTER)))
+                                    & (jDown)
+                                    ); // Cursor joystick Down
+
+            } else {
+
+                // Kempston Joystick emulation
+                if (Config::joystick) {
+
+                    // printf("VK: %d\n",(int)KeytoESP);
+
+                    Ports::port[0x1f] = 0;
+
+                    if (Kbd->isVKDown(fabgl::VK_KP_RIGHT)) {
+                        bitWrite(Ports::port[0x1f], 0, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_KP_LEFT)) {
+                        bitWrite(Ports::port[0x1f], 1, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_KP_DOWN) || Kbd->isVKDown(fabgl::VK_KP_CENTER)) {
+                        bitWrite(Ports::port[0x1f], 2, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_KP_UP)) {
+                        bitWrite(Ports::port[0x1f], 3, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_RALT)) {
+                        bitWrite(Ports::port[0x1f], 4, 1);
+                    }
+
+                    if (Kbd->isVKDown(fabgl::VK_SLASH) || Kbd->isVKDown(fabgl::VK_RGUI)) {
+                        bitWrite(Ports::port[0x1f], 5, 1);
+                    }
+
+                }
+
+                // Cursor Keys
                 if (Kbd->isVKDown(fabgl::VK_RIGHT)) {
+                    jShift = false;
                     jRight = jShift;
-                    bitWrite(Ports::port[0x1f], 0, 1);
                 }
 
                 if (Kbd->isVKDown(fabgl::VK_LEFT)) {
+                    jShift = false;
                     jLeft = jShift;
-                    bitWrite(Ports::port[0x1f], 1, 1);
                 }
 
                 if (Kbd->isVKDown(fabgl::VK_DOWN)) {
+                    jShift = false;                
                     jDown = jShift;
-                    bitWrite(Ports::port[0x1f], 2, 1);
                 }
 
                 if (Kbd->isVKDown(fabgl::VK_UP)) {
+                    jShift = false;
                     jUp = jShift;
-                    bitWrite(Ports::port[0x1f], 3, 1);
                 }
 
-                if (Kbd->isVKDown(fabgl::VK_RALT)) {
-                    jFire = jShift;
-                    bitWrite(Ports::port[0x1f], 4, 1);
-                }
+
+                bitWrite(PS2cols[3], 4, (!Kbd->isVKDown(fabgl::VK_5)) & (!Kbd->isVKDown(fabgl::VK_PERCENT))
+                    & ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_LEFT)))
+                    & (jLeft)
+                        ); // Cursor joystick Left
+
+                bitWrite(PS2cols[4], 0, (!Kbd->isVKDown(fabgl::VK_0)) & (!Kbd->isVKDown(fabgl::VK_RIGHTPAREN))
+                                    &   (!Kbd->isVKDown(fabgl::VK_BACKSPACE))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RALT)))
+                                    ); // Cursor joystick Fire
+
+                bitWrite(PS2cols[4], 2, (!Kbd->isVKDown(fabgl::VK_8)) & (!Kbd->isVKDown(fabgl::VK_ASTERISK))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_RIGHT)))
+                                    & (jRight)
+                                    ); // Cursor joystick Right
+
+                bitWrite(PS2cols[4], 3, (!Kbd->isVKDown(fabgl::VK_7)) & (!Kbd->isVKDown(fabgl::VK_AMPERSAND))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_UP)))
+                                    & (jUp)
+                                    ); // Cursor joystick Up
+
+                bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_6)) & (!Kbd->isVKDown(fabgl::VK_CARET))
+                                    &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_DOWN) & !Kbd->isVKDown(fabgl::VK_KP_CENTER)) )
+                                    & (jDown)
+                                    ); // Cursor joystick Down
 
             }
 
@@ -773,29 +874,34 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             bitWrite(PS2cols[3], 1, (!Kbd->isVKDown(fabgl::VK_2)) & (!Kbd->isVKDown(fabgl::VK_AT)));
             bitWrite(PS2cols[3], 2, (!Kbd->isVKDown(fabgl::VK_3)) & (!Kbd->isVKDown(fabgl::VK_HASH)));
             bitWrite(PS2cols[3], 3, (!Kbd->isVKDown(fabgl::VK_4)) & (!Kbd->isVKDown(fabgl::VK_DOLLAR)));
-            bitWrite(PS2cols[3], 4, (!Kbd->isVKDown(fabgl::VK_5)) & (!Kbd->isVKDown(fabgl::VK_PERCENT))
-                & ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_LEFT)))
-                & (jLeft)
-                    ); // Cursor joystick Left
 
-            bitWrite(PS2cols[4], 0, (!Kbd->isVKDown(fabgl::VK_0)) & (!Kbd->isVKDown(fabgl::VK_RIGHTPAREN))
-                                &   (!Kbd->isVKDown(fabgl::VK_BACKSPACE))
-                                &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RALT)))
-                                & (jFire)
-                                ); // Cursor joystick Fire
+            // bitWrite(PS2cols[3], 4, (!Kbd->isVKDown(fabgl::VK_5)) & (!Kbd->isVKDown(fabgl::VK_PERCENT))
+            //     & ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_LEFT)))
+            //     & (jLeft)
+            //         ); // Cursor joystick Left
+
+            // bitWrite(PS2cols[4], 0, (!Kbd->isVKDown(fabgl::VK_0)) & (!Kbd->isVKDown(fabgl::VK_RIGHTPAREN))
+            //                     &   (!Kbd->isVKDown(fabgl::VK_BACKSPACE))
+            //                     &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RALT)))
+            //                     // & (jFire)
+            //                     ); // Cursor joystick Fire
+
             bitWrite(PS2cols[4], 1, !Kbd->isVKDown(fabgl::VK_9) & (!Kbd->isVKDown(fabgl::VK_LEFTPAREN)));
-            bitWrite(PS2cols[4], 2, (!Kbd->isVKDown(fabgl::VK_8)) & (!Kbd->isVKDown(fabgl::VK_ASTERISK))
-                                &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_RIGHT)))
-                                & (jRight)
-                                ); // Cursor joystick Right
-            bitWrite(PS2cols[4], 3, (!Kbd->isVKDown(fabgl::VK_7)) & (!Kbd->isVKDown(fabgl::VK_AMPERSAND))
-                                &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_UP)))
-                                & (jUp)
-                                ); // Cursor joystick Up
-            bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_6)) & (!Kbd->isVKDown(fabgl::VK_CARET))
-                                &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_DOWN)))
-                                & (jDown)
-                                ); // Cursor joystick Down
+
+            // bitWrite(PS2cols[4], 2, (!Kbd->isVKDown(fabgl::VK_8)) & (!Kbd->isVKDown(fabgl::VK_ASTERISK))
+            //                     &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_RIGHT)))
+            //                     & (jRight)
+            //                     ); // Cursor joystick Right
+
+            // bitWrite(PS2cols[4], 3, (!Kbd->isVKDown(fabgl::VK_7)) & (!Kbd->isVKDown(fabgl::VK_AMPERSAND))
+            //                     &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_UP)))
+            //                     & (jUp)
+            //                     ); // Cursor joystick Up
+
+            // bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_6)) & (!Kbd->isVKDown(fabgl::VK_CARET))
+            //                     &   ((Config::joystick) | (!Kbd->isVKDown(fabgl::VK_KP_DOWN) & !Kbd->isVKDown(fabgl::VK_KP_CENTER)) )
+            //                     & (jDown)
+            //                     ); // Cursor joystick Down
 
             bitWrite(PS2cols[5], 0, (!Kbd->isVKDown(fabgl::VK_P)) & (!Kbd->isVKDown(fabgl::VK_p)));
             bitWrite(PS2cols[5], 1, (!Kbd->isVKDown(fabgl::VK_O)) & (!Kbd->isVKDown(fabgl::VK_o)));

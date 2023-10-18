@@ -897,7 +897,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             nfind++;
                         }
                         uint8_t opt2 = menuRun(Mnustr);
-                        if (opt2) {
+                        if (opt2 > 0 &&  opt2 < 3) {
                             if (Config::joystick != (opt2 - 1)) {
                                 Config::joystick = opt2 - 1;
                                 Config::save("joystick");
@@ -905,8 +905,44 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             menu_curopt = opt2;
                             menu_saverect = false;
                         } else {
-                            menu_curopt = 4;
-                            break;
+                            if (opt2) {
+                                // Menu cursor keys as joy
+                                menu_level = 3;
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string csasjoy_menu = MENU_CURSORJOY[Config::lang];
+                                    bool prev_csasjoy = Config::CursorAsJoy;
+                                    if (prev_csasjoy) {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
+                                    } else {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(csasjoy_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::CursorAsJoy = true;
+                                        else
+                                            Config::CursorAsJoy = false;
+
+                                        if (Config::CursorAsJoy != prev_csasjoy) {
+                                            Config::save("CursorAsJoy");
+                                        }
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 3;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+
+                            } else {
+                                menu_curopt = 4;
+                                break;
+                            }
                         }
                     }
                 }
