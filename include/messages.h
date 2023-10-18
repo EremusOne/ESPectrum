@@ -266,12 +266,12 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
     "AY on 48K\t>\n"\
     "ALU Timing\t>\n"\
     "48K Issue 2\t>\n"\
-    "Device on 2nd PS/2\t>\n"
+    "Second PS/2 device\t>\n"
 #define MENU_OTHER_ES "Otros\n"\
     "AY en 48K\t>\n"\
     "Timing ULA\t>\n"\
     "48K Issue 2\t>\n"\
-    "Disp. en segundo PS/2\t>\n"	
+    "Segundo disp. PS/2\t>\n"	
 static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
 
 #define MENU_AY48_EN "AY on 48K\n"\

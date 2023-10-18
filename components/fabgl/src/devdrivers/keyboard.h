@@ -124,7 +124,7 @@ public:
    *     PS2Controller.begin(GPIO_NUM_33, GPIO_NUM_32); // clk, dat
    *     Keyboard.begin(true, true, 0); // port 0
    */
-  void begin(bool generateVirtualKeys, bool createVKQueue, int PS2Port);
+  void begin(bool generateVirtualKeys, bool createVKQueue, int PS2Port, bool doReset = true);
 
   /**
    * @brief Dynamically enables or disables Virtual Keys generation
@@ -153,7 +153,7 @@ public:
    *
    * @return True if the keyboard is correctly initialized.
    */
-  bool reset();
+  bool reset(bool sendCmdReset = true);
 
   /**
    * @brief Checks if keyboard has been detected and correctly initialized.

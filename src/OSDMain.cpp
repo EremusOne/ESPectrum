@@ -912,8 +912,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                 menu_saverect = true;
                                 while (1) {
                                     string csasjoy_menu = MENU_CURSORJOY[Config::lang];
-                                    bool prev_csasjoy = Config::CursorAsJoy;
-                                    if (prev_csasjoy) {
+                                    if (Config::CursorAsJoy) {
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
                                         csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
                                     } else {
@@ -927,9 +926,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                                         else
                                             Config::CursorAsJoy = false;
 
-                                        if (Config::CursorAsJoy != prev_csasjoy) {
-                                            Config::save("CursorAsJoy");
-                                        }
+                                        ESPectrum::PS2Controller.keyboard()->setLEDs(false,false,Config::CursorAsJoy);
+                                        if(ESPectrum::ps2kbd2)
+                                            ESPectrum::PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
+                                        Config::save("CursorAsJoy");
+
                                         menu_curopt = opt2;
                                         menu_saverect = false;
                                     } else {

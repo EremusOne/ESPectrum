@@ -64,7 +64,7 @@ Keyboard::~Keyboard()
 }
 
 
-void Keyboard::begin(bool generateVirtualKeys, bool createVKQueue, int PS2Port)
+void Keyboard::begin(bool generateVirtualKeys, bool createVKQueue, int PS2Port, bool doReset)
 {
   PS2Device::begin(PS2Port);
 
@@ -83,7 +83,7 @@ void Keyboard::begin(bool generateVirtualKeys, bool createVKQueue, int PS2Port)
 
   m_uiApp = nullptr;
 
-  reset();
+  reset(doReset);
 
   enableVirtualKeys(generateVirtualKeys, createVKQueue);
 }
@@ -127,25 +127,30 @@ void Keyboard::enableVirtualKeys(bool generateVirtualKeys, bool createVKQueue)
 
 
 // reset keyboard, set scancode 2 and US layout
-bool Keyboard::reset()
+bool Keyboard::reset(bool sendCmdReset)
 {
   memset(m_VKMap, 0, sizeof(m_VKMap));
 
   // sets default layout
   setLayout(&USLayout);
 
-  // 350ms keyboard poweron delay (look at NXP M68HC08 designer reference manual)
-  vTaskDelay(350 / portTICK_PERIOD_MS);
+  if (sendCmdReset) {
 
-  // tries up to three times to reset keyboard
-  for (int i = 0; i < 3; ++i) {
-    m_keyboardAvailable = send_cmdReset();
-    if (m_keyboardAvailable)
-      break;
+    // 350ms keyboard poweron delay (look at NXP M68HC08 designer reference manual)
     vTaskDelay(350 / portTICK_PERIOD_MS);
-  }
-  // give the time to the device to be fully initialized
-  vTaskDelay(200 / portTICK_PERIOD_MS);
+
+    // tries up to three times to reset keyboard
+    for (int i = 0; i < 3; ++i) {
+      m_keyboardAvailable = send_cmdReset();
+      if (m_keyboardAvailable)
+        break;
+      vTaskDelay(350 / portTICK_PERIOD_MS);
+    }
+    // give the time to the device to be fully initialized
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+
+  } else 
+    m_keyboardAvailable = true;
 
   send_cmdSetScancodeSet(2);
 

@@ -1207,6 +1207,12 @@ void PS2Controller::begin(PS2Preset preset, KbdMode keyboardMode)
   bool generateVirtualKeys = (keyboardMode == KbdMode::GenerateVirtualKeys || keyboardMode == KbdMode::CreateVirtualKeysQueue);
   bool createVKQueue       = (keyboardMode == KbdMode::CreateVirtualKeysQueue);
   switch (preset) {
+    case PS2Preset::zxKeyb:
+      begin(GPIO_NUM_33, GPIO_NUM_32, GPIO_UNUSED, GPIO_UNUSED);
+      setKeyboard(new Keyboard);
+      keyboard()->begin(generateVirtualKeys, createVKQueue, 0, false);
+      s_keyboardAllocated = true;
+      break;
     case PS2Preset::KeyboardPort0_KeybJoystickPort1:
       // both keyboard (port 0 and port 1)
       begin(GPIO_NUM_33, GPIO_NUM_32, GPIO_NUM_26, GPIO_NUM_27);

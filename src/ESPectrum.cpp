@@ -335,8 +335,20 @@ void ESPectrum::setup()
     // INIT PS/2 KEYBOARD
     //=======================================================================================
 
-    ESPectrum::ps2kbd2 = !((ZXKeyb::Exists) || (Config::ps2_dev2 == 0));
-    PS2Controller.begin(ps2kbd2 ? PS2Preset::KeyboardPort0_KeybJoystickPort1 : PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
+    ESPectrum::ps2kbd2 = (Config::ps2_dev2 != 0);
+    
+    if (ZXKeyb::Exists) {
+        PS2Controller.begin(ps2kbd2 ? PS2Preset::KeyboardPort0 : PS2Preset::zxKeyb, KbdMode::CreateVirtualKeysQueue);
+    } else {
+        PS2Controller.begin(ps2kbd2 ? PS2Preset::KeyboardPort0_KeybJoystickPort1 : PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
+    }
+
+    ps2kbd2 &= !ZXKeyb::Exists;
+
+    // Set Scroll Lock Led as current CursorAsJoy value
+    PS2Controller.keyboard()->setLEDs(false, false, Config::CursorAsJoy);
+    if(ps2kbd2)
+        PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
 
     #ifndef ESP32_SDL2_WRAPPER
 
@@ -634,12 +646,19 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             CaptureToBmp();
             // pwm_audio_start();
             r = false;
+        } else
+        if (Nextkey->vk == fabgl::VK_SCROLLLOCK) { // Change CursorAsJoy setting
+            Config::CursorAsJoy = !Config::CursorAsJoy;
+            PS2Controller.keyboard()->setLEDs(false,false,Config::CursorAsJoy);
+            if(ps2kbd2)
+                PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
+            Config::save("CursorAsJoy");
         }
         #ifdef RAM_INFO_KEY
         else if (Nextkey->vk == fabgl::VK_GRAVEACCENT) { // Show mem info
             showMemInfo();
             r = false;
-        }    
+        }
         #endif
     }
 
@@ -942,7 +961,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             ZXKeyb::process();
 
         // Detect and process physical kbd menu key combinations
-        // CS+SS+N -> FN Keys, F11 -> CS+SS+Q, F12 -> CS+SS+W, CS+SS+S -> Capture screen
+        // CS+SS+<1..0> -> F1..F10 Keys, CS+SS+Q -> F11, CS+SS+W -> F12, CS+SS+S -> Capture screen
         if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
 
             zxDelay = 15;
