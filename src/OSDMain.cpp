@@ -256,19 +256,72 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     if (KeytoESP == fabgl::VK_PAUSE) {
         click();
         osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 1000);
+
+        // while (1) {
+        //     ESPectrum::readKbdJoy();
+        //     while (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {        
+        //         if (ESPectrum::readKbd(&Nextkey))
+        //             if (Nextkey.down)
+        //                 if (Nextkey.vk == fabgl::VK_PAUSE) {
+        //                     click();
+        //                     return;
+        //                 } else
+        //                     osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 500);
+        //     }
+        //     vTaskDelay(5 / portTICK_PERIOD_MS);
+        // }
+
+        zxDelay = REPDEL;
+
         while (1) {
+
+            if (ZXKeyb::Exists) {
+
+                ZXKeyb::process();
+
+                if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, false, false);                
+                        zxDelay = REPDEL;
+                    }
+                } else
+                if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, false, false);                        
+                        zxDelay = REPDEL;
+                    }
+                } else
+                if (!bitRead(ZXKeyb::ZXcols[5], 0)) { // P (Pause)
+                    if (zxDelay == 0) {
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, true, false);
+                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, false, false);
+                        zxDelay = REPDEL;
+                    }
+                }
+            
+            }
+
             ESPectrum::readKbdJoy();
-            while (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {        
-                if (ESPectrum::readKbd(&Nextkey))
-                    if (Nextkey.down)
+
+            if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+                if (ESPectrum::readKbd(&Nextkey)) {
+                    if(!Nextkey.down) continue;
                         if (Nextkey.vk == fabgl::VK_PAUSE) {
                             click();
-                            return;
+                            break;
                         } else
                             osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 500);
+                }
             }
+
             vTaskDelay(5 / portTICK_PERIOD_MS);
+
+            if (zxDelay > 0) zxDelay--;
+
         }
+
     }
     else if (KeytoESP == fabgl::VK_F2) {
         menu_level = 0;
@@ -1137,7 +1190,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             drawOSD(true);
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
-            VIDEO::vga.print(Config::lang ? OSD_HELP_ES : OSD_HELP_EN);
+            if (ZXKeyb::Exists)
+                VIDEO::vga.print(Config::lang ? OSD_HELP_ES_ZX : OSD_HELP_EN_ZX);
+            else
+                VIDEO::vga.print(Config::lang ? OSD_HELP_ES : OSD_HELP_EN);
 
             zxDelay = REPDEL;
 
