@@ -337,7 +337,7 @@ int FileUtils::DirToFile(string fpath, string fileExts) {
     filenames.clear(); // Clear vector
     std::vector<std::string>().swap(filenames); // free memory
 
-    printf("Sort done.\n");
+    // printf("Sort done.\n");
 
     return chunk_cnt;
 
@@ -361,7 +361,7 @@ void FileUtils::Mergefiles(string fpath, int chunk_cnt) {
     while (file2 != NULL) {
 
         sprintf(fileName, "/.t%d", n);
-        printf("Creating %s\n",fileName);
+        // printf("Creating %s\n",fileName);
         fout  = fopen((fpath + fileName).c_str(), "w");
 
         fgets(fname1, sizeof(fname1), file1);

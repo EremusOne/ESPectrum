@@ -329,7 +329,7 @@ bool I2S::initParallelOutputMode(const int *pinMap, long sampleRate, const int b
 
 		rtc_clk_apll_enable(true, sdm & 255, (sdm >> 8) & 255, sdm >> 16, odir);
 
-		printf("APLL parameters: sdm0 %d sdm1 %d sdm2 %d odiv %d\n", sdm & 255, (sdm >> 8) & 255, sdm >> 16, odir);
+		// printf("APLL parameters: sdm0 %d sdm1 %d sdm2 %d odiv %d\n", sdm & 255, (sdm >> 8) & 255, sdm >> 16, odir);
 /*
 		// using values calculated by https://github.com/jeanthom/ESP32-APLL-cal
 		// thanks, @ackerman and @eremus!

@@ -223,7 +223,7 @@ static bool persistLoad(uint8_t slotnumber)
         fgets(buf, sizeof(buf),f);
         string persist_arch = buf;
         persist_arch.pop_back();
-        printf("[%s]\n",persist_arch.c_str());
+        // printf("[%s]\n",persist_arch.c_str());
 
         fclose(f);
 
@@ -1321,7 +1321,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                         osdRow  = 0;
                         msgChar = 0;
                         msgIndex++;
-                        if (msgIndex==5) msgIndex = 0;
+                        if (msgIndex==6) msgIndex = 0;
                     }
                 }
 

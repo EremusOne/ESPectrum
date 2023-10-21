@@ -41,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
-#define EMU_VERSION "  v1.0rc3pr "
+#define EMU_VERSION "    v1.0rc3 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -342,18 +342,45 @@ static const char *MENU_CURSORJOY[2] = { MENU_CURSORJOY_EN, MENU_CURSORJOY_ES };
 
 #define PATREONS "\r"\
 	"\nA1The Mega Trees:\r"\
+	"\r"\	
 	"\nB1Victor Llamazares \nC1Antonio Villena\r"\
 	"\r"\
 	"\nA1The Jet Set Willys:\r"\
-	"\nD1Inacio Santos\r"\
 	"\r"\
-	"\nA1The Manic Miners:\r"\
-	"\nE1Fernando Bonilla \nB1Jorge Garcia\r"\
-	"\nC1Ignacio Monge \nD1Jose Maria Rodriguez\r"\
-	"\nB1Julia Salvador \nC1Marta Sicilia\r"\
-	"\nD1Santiago Romero \nE1Radek Wojciechowski\r"
+	"\nD1DopierRex \nE1Igor Peruchi \nB1Inacio Santos\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
 
-static const char *AboutMsg[2][5] = {
+	// Lencio Asimov
+	// Fernando Bonilla
+	// Elena Collantes
+	// Jorge Garcia
+	// kounch
+	// Ignacio Monge
+	// Javi Ortiz
+	// Jordi Ramos
+	// Jose Maria Rodriguez
+	// Santiago Romero
+	// Julia Salvador
+	// Marta Sicilia
+	// Radek Wojciechowski
+
+#define PATREONS2 "\r"\
+	"\nA1The Manic Miners:\r"\
+	"\r"\
+	"\nE1Lencio Asimov \nB1Fernando Bonilla\r"\
+	"\nC1Elena Collantes \nD1Jorge Garcia\r"\
+	"\nB1kounch \nC1Ignacio Monge \nD1Javi Ortiz\r"\
+	"\nD1Jordi Ramos \nE1Jose Maria Rodriguez\r"\
+	"\nB1Santiago Romero \nC1Julia Salvador\r"\
+	"\nD1Marta Sicilia \nE1Radek Wojciechowski\r"\
+	"\r"\
+	"\r"\
+	"\r"
+
+static const char *AboutMsg[2][6] = {
 	{
 	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
 	"        David Crespo  \"dcrespo3d\"\r"\
@@ -385,6 +412,9 @@ static const char *AboutMsg[2][5] = {
 	,
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS
+	,
+	"\nF1Big thanks to our Patreons:\r"\
+	PATREONS2
 	,
 	"\nF1Thanks also to:\r"\
 	"\r"\
@@ -433,6 +463,9 @@ static const char *AboutMsg[2][5] = {
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS
+	,
+	"\nF1Muchas gracias a nuestros Patreons:\r"\
+	PATREONS2
 	,
 	"\nF1Gracias tambien a:\r"\
 	"\r"\

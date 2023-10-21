@@ -782,7 +782,7 @@ string OSD::menuFile(string filedir, string title, string extensions, int curren
     real_rows = (stat_buf.st_size / 32) + 1; // Add 1 for title
     virtual_rows = (real_rows > 19 ? 19 : real_rows);
     
-    printf("Real rows: %d; st_size: %d\n",real_rows,stat_buf.st_size);
+    // printf("Real rows: %d; st_size: %d\n",real_rows,stat_buf.st_size);
 
     // // Get first bunch of rows
     // menu = title + "\n";
@@ -1477,7 +1477,7 @@ int OSD::menuTape(string title) {
                 } else if (Menukey.vk == fabgl::VK_RETURN) {
                     click();
                     Tape::CalcTapBlockPos(begin_row + focus - 2);
-                    printf("Ret value: %d\n", begin_row + focus - 2);
+                    // printf("Ret value: %d\n", begin_row + focus - 2);
                     return (begin_row + focus - 2);
                 } else if (Menukey.vk == fabgl::VK_ESCAPE) {
 

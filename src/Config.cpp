@@ -62,12 +62,11 @@ bool     Config::aspect_16_9 = false;
 uint8_t  Config::videomode = 0; // 0 -> SAFE VGA, 1 -> 50HZ VGA, 2 -> 50HZ CRT
 uint8_t  Config::esp32rev = 0;
 uint8_t  Config::lang = 0;
-bool     Config::AY48 = false;
+bool     Config::AY48 = true;
 bool     Config::Issue2 = true;
 bool     Config::flashload = true;
 uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
 uint8_t  Config::AluTiming = 0;
-uint8_t  Config::ps2_dev1 = 0; // First port  PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
 uint8_t  Config::ps2_dev2 = 0; // Second port PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
 bool     Config::CursorAsJoy = false;
 
@@ -245,11 +244,6 @@ void Config::load() {
             // printf("AluTiming:%u\n",Config::AluTiming);
         }
 
-        err = nvs_get_u8(handle, "PS2Dev1", &Config::ps2_dev1);
-        if (err == ESP_OK) {
-            // printf("PS2Dev1:%u\n",Config::ps2_dev1);
-        }
-
         err = nvs_get_u8(handle, "PS2Dev2", &Config::ps2_dev2);
         if (err == ESP_OK) {
             // printf("PS2Dev2:%u\n",Config::ps2_dev2);
@@ -340,9 +334,6 @@ void Config::save(string value) {
 
         if((value=="AluTiming") || (value=="all"))
             nvs_set_u8(handle,"AluTiming",Config::AluTiming);
-
-        if((value=="PS2Dev1") || (value=="all"))
-            nvs_set_u8(handle,"PS2Dev1",Config::ps2_dev1);
 
         if((value=="PS2Dev2") || (value=="all"))
             nvs_set_u8(handle,"PS2Dev2",Config::ps2_dev2);

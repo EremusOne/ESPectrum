@@ -4587,7 +4587,7 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
 
                 if (REG_HL == 0x1F80) {
 
-                    printf("Saving header!\n");
+                    // printf("Saving header!\n");
 
                     regIXY.word++;
 
@@ -4601,7 +4601,7 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
                     rtrim(name);
                     Tape::tapeSaveName = "/sd/t/" + name + ".tap";
 
-                    printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
+                    // printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
                     /*int result = */remove(Tape::tapeSaveName.c_str());
 
                     // check if file has been deleted successfully
@@ -4613,7 +4613,7 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
                     //     printf("File deleted succesfully\n");
                     // }            
 
-                    printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
+                    // printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
                     
                     REG_DE--;
                     regA = 0x00;
@@ -4624,11 +4624,11 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
 
                 } else {
 
-                    printf("Saving data!\n");
+                    // printf("Saving data!\n");
 
                     // Call Save function
 
-                    printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
+                    // printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
 
                     REG_DE--;
                     regIXY.word++;

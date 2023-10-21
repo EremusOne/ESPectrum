@@ -76,7 +76,7 @@ bool LoadSnapshot(string filename, string force_arch) {
     
     if (FileUtils::hasSNAextension(filename)) {
 
-        printf("FileSNA::load %s\n",filename.c_str());
+        // printf("FileSNA::load %s\n",filename.c_str());
 
         OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
 
@@ -84,7 +84,7 @@ bool LoadSnapshot(string filename, string force_arch) {
 
     } else if (FileUtils::hasZ80extension(filename)) {
 
-        printf("FileZ80::load %s\n",filename.c_str());
+        // printf("FileZ80::load %s\n",filename.c_str());
 
         OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
 
@@ -207,7 +207,7 @@ bool FileSNA::load(string sna_fn, string force_arch) {
     
     ESPectrum::reset();
 
-    printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
+    // printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
 
     MemESP::bankLatch = 0;
     MemESP::pagingLock = 1;
@@ -330,13 +330,13 @@ bool check_and_create_directory(const char* path) {
     struct stat st;
     if (stat(path, &st) == 0) {
         if ((st.st_mode & S_IFDIR) != 0) {
-            printf("Directory exists\n");
+            // printf("Directory exists\n");
             return true;
         } else {
-            printf("Path exists but it is not a directory\n");
+            // printf("Path exists but it is not a directory\n");
             // Create the directory
             if (mkdir(path, 0755) == 0) {
-                printf("Directory created\n");
+                // printf("Directory created\n");
                 return true;
             } else {
                 printf("Failed to create directory\n");
@@ -344,10 +344,10 @@ bool check_and_create_directory(const char* path) {
             }
         }
     } else {
-        printf("Directory does not exist\n");
+        // printf("Directory does not exist\n");
         // Create the directory
         if (mkdir(path, 0755) == 0) {
-            printf("Directory created\n");
+            // printf("Directory created\n");
             return true;
         } else {
             printf("Failed to create directory\n");
@@ -604,7 +604,7 @@ bool FileZ80::load(string z80_fn) {
 
     }
 
-    printf("Z80 version %u, AHB Len: %u, machine code: %u\n",(unsigned char)z80version,(unsigned int)ahb_len, (unsigned char)mch);
+    // printf("Z80 version %u, AHB Len: %u, machine code: %u\n",(unsigned char)z80version,(unsigned int)ahb_len, (unsigned char)mch);
 
     if (z80_arch == "") {
         OSD::osdCenteredMsg("Z80 load: unknown machine", LEVEL_ERROR);
