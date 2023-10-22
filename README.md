@@ -107,6 +107,11 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - PS2 Driver from Fabrizio di Vittorio for his [FabGL library](https://github.com/fdivitto/FabGL).
 - [Ackerman](https://github.com/rpsubc8/ESP32TinyZXSpectrum) for his code and ideas.
 - Azesmbog for testing and providing very valuable info to make the emu more precise.
+- David Carrión for hardware and ZX keyboard code.
+- ZjoyKiLer for his testing and ideas.
+- [Mark Woodmass](https://specemu.zxe.io) and [Juan Carlos González Amestoy](https://www.retrovirtualmachine.org) for his excellent emulators and his help with wd1793 emulation.
+- [Antonio Villena](https://antoniovillena.es/store) for creating the ESPectrum board.
+- Tsvetan Usunov from [Olimex Ltd](https://www.olimex.com).
 - [Amstrad PLC](http://www.amstrad.com) for the ZX-Spectrum ROM binaries [liberated for emulation purposes](http://www.worldofspectrum.org/permits/amstrad-roms.txt).
 - [Jean Thomas](https://github.com/jeanthom/ESP32-APLL-cal) for his ESP32 APLL calculator.
 
@@ -122,6 +127,9 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 ## And all the writters, hobbist and documenters
 
 - [Retrowiki](http://retrowiki.es/) especially the people at [ESP32 TTGO VGA32](http://retrowiki.es/viewforum.php?f=114) subforum.
+- [RetroReal](https://www.youtube.com/@retroreal) for his kindness and hospitality and his great work.
+- Armand López [El Viejoven FX](https://www.youtube.com/@ElViejovenFX)
+- Javi Ortiz [El Spectrumero](https://www.youtube.com/@ElSpectrumeroJaviOrtiz) 
 - [El Mundo del Spectrum](http://www.elmundodelspectrum.com/)
 - [Microhobby magazine](https://es.wikipedia.org/wiki/MicroHobby).
 - [The World of Spectrum](http://www.worldofspectrum.org/)
