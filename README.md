@@ -75,22 +75,41 @@ The SD card should be formatted in FAT16 / FAT32 and you must create the followi
 
 First time the emulator access sna, tape or disk directories, it will create and index for sorting the files in it. It may take some time if you put many archives (15-20 seconds in my tests for about 1000 files, about 3 minutes for about 6000 files). Once created, file dialogs will open fast but if you extract the card and add files, you must later use "Options/Storage/Refresh directories" to be able to view new files on the files dialogs.
 
-## Keyboard functions
+## PS/2 Keyboard functions
 
-- F1 Main menu
-- F2 Load .sna, .z80
-- F3 Load snapshot
-- F4 Save snapshot
-- F5 Select .tap file
+- F1 Menu
+- F2 Load (SNA,Z80)
+- F3 Load custom snapshot
+- F4 Save customn snapshot
+- F5 Select TAP file
 - F6 Play/Stop tape
 - F7 Tape Browser
-- F8 Stats OSD ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
+- F8 OSD Stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
 - F9 Volume down
 - F10 Volume up
 - F11 Hard reset
 - F12 Reset ESP32
 - Pause Pause
 - PrntScr BMP screen capture (Folder /c at SDCard)
+
+## ZX Keyboard functions
+
+Press CAPS SHIFT + SYMBOL SHIFT and:
+
+- 1 Menu
+- 2 Load (SNA,Z80)
+- 3 Load custom snapshot
+- 4 Save custom snapshot
+- 5 Select TAP file
+- 6 Play/Stop tape
+- 7 Tape browser
+- 8 OSD Stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
+- 9 Volume down
+- 0 Volume up
+- Q Hard reset
+- W Reset ESP32
+- P Pause
+- C BMP screen capture (Folder /c at SDCard)
 
 ## Hardware configuration and pinout
 
