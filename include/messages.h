@@ -78,6 +78,18 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
 
+#define OSD_FIRMW_BEGIN_EN "Erasing destination partition."
+#define OSD_FIRMW_BEGIN_ES "Borrando particion de destino."
+static const char *OSD_FIRMW_BEGIN[2] = { OSD_FIRMW_BEGIN_EN,OSD_FIRMW_BEGIN_ES};
+
+#define OSD_FIRMW_WRITE_EN "    Flashing new firmware.    "
+#define OSD_FIRMW_WRITE_ES "   Grabando nuevo firmware.   "
+static const char *OSD_FIRMW_WRITE[2] = { OSD_FIRMW_WRITE_EN,OSD_FIRMW_WRITE_ES};
+
+#define OSD_FIRMW_END_EN "Flashing complete. Rebooting."
+#define OSD_FIRMW_END_ES "  Completado. Reiniciando.   "
+static const char *OSD_FIRMW_END[2] = { OSD_FIRMW_END_EN,OSD_FIRMW_END_ES};
+
 #define OSD_FIRMW_ERR_EN "Problem updating firmware."
 #define OSD_FIRMW_ERR_ES "Error actualizando firmware."
 static const char *OSD_FIRMW_ERR[2] = { OSD_FIRMW_ERR_EN,OSD_FIRMW_ERR_ES};

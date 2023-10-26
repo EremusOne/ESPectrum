@@ -1608,7 +1608,7 @@ if (target == NULL) {
 // printf("Running partition type %d subtype %d at offset 0x%x.\n", partition->type, partition->subtype, partition->address);
 // printf("Target  partition type %d subtype %d at offset 0x%x.\n", target->type, target->subtype, target->address);
 
-osdCenteredMsg("Erasing destination partition.", LEVEL_INFO,0);
+osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
 
 esp_ota_handle_t ota_handle;
 esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);
@@ -1619,7 +1619,7 @@ if (result != ESP_OK) {
 size_t bytesread;
 uint32_t byteswritten = 0;
 
-osdCenteredMsg("    Flashing new firmware.    ", LEVEL_INFO,0);
+osdCenteredMsg(OSD_FIRMW_WRITE[Config::lang], LEVEL_INFO,0);
 
 while (1) {
     bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
@@ -1645,7 +1645,7 @@ if (result != ESP_OK) {
     return result;
 }
 
-osdCenteredMsg("Flashing complete. Rebooting.", LEVEL_INFO, 0);
+osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
 delay(1000);
 
 // Firmware written: reboot
