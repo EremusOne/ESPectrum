@@ -50,6 +50,9 @@ visit https://zxespectrum.speccy.org/contacto
 #ifndef ESP32_SDL2_WRAPPER
 #include "esp_system.h"
 #include "esp_ota_ops.h"
+#include "esp_efuse.h"
+#include "soc/efuse_reg.h"
+
 #include "fabgl.h"
 
 #include "soc/rtc_wdt.h"
@@ -279,24 +282,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
                 ZXKeyb::process();
 
-                if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[5], 0))) { // ENTER, BREAK, P
                     if (zxDelay == 0) {
                         ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, true, false);
                         ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, false, false);                
-                        zxDelay = REPDEL;
-                    }
-                } else
-                if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, false, false);                        
-                        zxDelay = REPDEL;
-                    }
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[5], 0)) { // P (Pause)
-                    if (zxDelay == 0) {
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, true, false);
-                        ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, false, false);
                         zxDelay = REPDEL;
                     }
                 }
@@ -321,6 +310,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             if (zxDelay > 0) zxDelay--;
 
         }
+
+    }
+    else if (KeytoESP == fabgl::VK_GRAVEACCENT) { // Show mem info
+
+        OSD::HWInfo();
 
     }
     else if (KeytoESP == fabgl::VK_F2) {
@@ -444,57 +438,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         click();
     }
     else if (KeytoESP == fabgl::VK_F9) { // Volume down
-
-        // #ifdef TESTING_CODE
-
-        // ESPectrum::target--;
-
-        // // // Check if destination file exists
-        // // struct stat st;
-        // // if (stat("/sd/s/1942.z80", &st) == 0) {
-        // //     //printf("Exists!\n");
-        // // }
-
-        // // FILE *f = fopen("/sd/s/1942.z80", "r");
-        // // if (f == NULL) {
-        // //     printf("Null file!\n");
-        // // } else fclose(f);
-
-        // #else
-
         if (ESPectrum::aud_volume>-16) {
                 click();
                 ESPectrum::aud_volume--;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
         }
-
-        // #endif
-
-        // VIDEO::tStatesScreen += 224;
-        // VIDEO::tStatesScreen += 1;     
-        // printf("%d\n",VIDEO::tStatesScreen);           
-
     }
     else if (KeytoESP == fabgl::VK_F10) { // Volume up
-
-        // #ifdef TESTING_CODE
-        
-        // ESPectrum::target++;
-
-        // #else
-
         if (ESPectrum::aud_volume<0) {
                 click();                
                 ESPectrum::aud_volume++;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
         }
-
-        // VIDEO::tStatesScreen -= 224;
-        // VIDEO::tStatesScreen -= 1;
-        // printf("%d\n",VIDEO::tStatesScreen);
-
-        // #endif
-
     }    
     // else if (KeytoESP == fabgl::VK_F9) {
     //     ESPectrum::ESPoffset -= 5;
@@ -503,7 +458,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
     //     ESPectrum::ESPoffset += 5;
     // }
     else if (KeytoESP == fabgl::VK_F11) { // Hard reset
-        // Hard
         if (Config::ram_file != NO_RAM_FILE) {
             Config::ram_file = NO_RAM_FILE;
             #ifdef SNAPSHOT_LOAD_LAST
@@ -514,38 +468,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         ESPectrum::reset();
     }
     else if (KeytoESP == fabgl::VK_F12) { // ESP32 reset
-        
-        // // Switch boot partition
-        // string splabel;
-        // esp_err_t chg_ota;
-        // const esp_partition_t *ESPectrum_partition = NULL;
-
-        // ESPectrum_partition = esp_ota_get_running_partition();
-        // if (ESPectrum_partition->label=="128k") splabel = "48k"; else splabel= "128k";
-
-        // ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
-        // chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
-
         // ESP host reset
         #ifndef SNAPSHOT_LOAD_LAST
         Config::ram_file = NO_RAM_FILE;
         Config::save("ram");
         #endif
         esp_hard_reset();
-
     }
-    // else if (KeytoESP == fabgl::VK_F12) {
-    //     // Switch boot partition
-    //     esp_err_t chg_ota;
-    //     const esp_partition_t *ESPectrum_partition = NULL;
-
-    //     //ESPectrum_partition = esp_ota_get_next_update_partition(NULL);
-    //     ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,"128k");
-    //     chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
-
-    //     if (chg_ota == ESP_OK ) esp_hard_reset();
-            
-    // }
     else if (KeytoESP == fabgl::VK_F1) {
 
         menu_curopt = 1;
@@ -1179,6 +1108,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                             break;
                         }
                     }
+                } else if (options_num == 7) {
+                    // Open firmware file
+                    FILE *firmware = fopen("/sd/firmware.bin", "rb");
+                    if (firmware == NULL) {
+                        osdCenteredMsg("No firmware file found.", LEVEL_WARN, 2000);
+                        return;
+                    } else {
+                        esp_err_t res = updateFirmware(firmware);
+                        fclose(firmware);
+                        string errMsg = OSD_FIRMW_ERR[Config::lang];
+                        errMsg += " Code = " + to_string(res);
+                        osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                    }
+                    return;
                 } else {
                     menu_curopt = 5;
                     break;
@@ -1203,24 +1146,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
                     ZXKeyb::process();
 
-                    if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER
+                    if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // ENTER, BREAK, 0, 9
                         if (zxDelay == 0) {
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                            zxDelay = REPDEL;
-                        }
-                    } else
-                    if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK
-                        if (zxDelay == 0) {
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
-                            zxDelay = REPDEL;
-                        }
-                    } else
-                    if (!bitRead(ZXKeyb::ZXcols[1], 1)) { // S (Capture screen)
-                        if (zxDelay == 0) {
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
                             zxDelay = REPDEL;
                         }
                     }
@@ -1338,24 +1267,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
                     ZXKeyb::process();
 
-                    if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0))) { // ENTER                
+                    if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // ENTER, BREAK, 0, 9                    
                         if (zxDelay == 0) {
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
                             ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                            zxDelay = REPABOUT;
-                        }
-                    } else
-                    if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // BREAK                
-                        if (zxDelay == 0) {
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, true, false);
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_ESCAPE, false, false);                        
-                            zxDelay = REPABOUT;
-                        }
-                    } else
-                    if (!bitRead(ZXKeyb::ZXcols[1], 1)) { // S (Capture screen)
-                        if (zxDelay == 0) {
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, true, false);
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PRINTSCREEN, false, false);
                             zxDelay = REPABOUT;
                         }
                     }
@@ -1511,4 +1426,229 @@ string OSD::rowGet(string menu, unsigned short row) {
         }
     }
     return "<Unknown menu row>";
+}
+
+void OSD::HWInfo() {
+
+    fabgl::VirtualKeyItem Nextkey;
+
+    click();
+
+    // Draw Hardware and memory info
+    drawOSD(true);
+    osdAt(2, 0);
+
+    VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
+
+    // Get chip information
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+
+    VIDEO::vga.print(" Hardware info\n");
+    VIDEO::vga.print(" --------------------------------------\n");
+
+    // string chipmodel[6]={"","ESP32","ESP32-S2","","ESP32-S3","ESP32-C3"};
+    // string textout = " Chip model    : " + chipmodel[chip_info.model] + "\n";
+    // VIDEO::vga.print(textout.c_str());
+
+    // Chip models for ESP32
+    string textout = " Chip model    : ";
+    uint32_t chip_ver = esp_efuse_get_pkg_ver();
+    uint32_t pkg_ver = chip_ver & 0x7;
+    switch (pkg_ver) {
+        case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6 :
+            if (chip_info.revision == 3)
+                textout += "ESP32-D0WDQ6-V3";  
+            else
+                textout += "ESP32-D0WDQ6";
+            break;
+        case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5 :
+            if (chip_info.revision == 3)
+                textout += "ESP32-D0WD-V3";  
+            else
+                textout += "ESP32-D0WD";
+            break;                
+        case EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 :
+            textout += "ESP32-D2WD";
+            break;            
+        case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 :
+            textout += "ESP32-PICO-D2";
+            break;            
+        case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 :
+            textout += "ESP32-PICO-D4";
+            break;            
+        case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302 :
+            textout += "ESP32-PICO-V3-02";
+            break;            
+        case /*EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3*/ 7 : // Not defined in ESP-IDF version we're using
+             textout += "ESP32-D0WDR2-V3";
+            break;             
+        default:
+            textout += "Unknown";
+    }
+    textout += "\n";
+    VIDEO::vga.print(textout.c_str());    
+
+    textout = " Chip cores    : " + to_string(chip_info.cores) + "\n";
+    VIDEO::vga.print(textout.c_str());
+
+    textout = " Chip revision : " + to_string(chip_info.revision) + "\n";
+    VIDEO::vga.print(textout.c_str());
+
+    textout = " Flash size    : " + to_string(spi_flash_get_chip_size() / (1024 * 1024)) + (chip_info.features & CHIP_FEATURE_EMB_FLASH ? "MB embedded" : "MB external") + "\n";
+    VIDEO::vga.print(textout.c_str());
+
+    multi_heap_info_t info;    
+    heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+    uint32_t psramsize = info.total_free_bytes + info.total_allocated_bytes;
+    // textout = " PSRAM size    : " + to_string(info.total_free_bytes + info.total_allocated_bytes) + "\n";
+    textout = " PSRAM size    : " + ( psramsize == 0 ? "N/A or disabled" : to_string(psramsize) + " MB") + "\n";
+    VIDEO::vga.print(textout.c_str());
+
+    textout = " IDF Version   : " + (string)(esp_get_idf_version()) + "\n";
+    VIDEO::vga.print(textout.c_str());
+
+    VIDEO::vga.print("\n Memory info\n");
+    VIDEO::vga.print(" --------------------------------------\n");
+
+    heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+    textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
+    VIDEO::vga.print(textout.c_str());
+
+    textout = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
+    VIDEO::vga.print(textout.c_str());    
+    
+    textout = " Largest free block         : " + to_string(info.largest_free_block) + "\n";
+    VIDEO::vga.print(textout.c_str());
+    
+    textout = " Free (MALLOC_CAP_32BIT)    : " + to_string(heap_caps_get_free_size(MALLOC_CAP_32BIT)) + "\n";
+    VIDEO::vga.print(textout.c_str());
+        
+    UBaseType_t wm;
+    wm = uxTaskGetStackHighWaterMark(ESPectrum::audioTaskHandle);
+    textout = " Audio Task Stack HWM       : " + to_string(wm) + "\n";
+    VIDEO::vga.print(textout.c_str());
+
+    // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
+    // printf("Loop Task Stack HWM: %u\n", wm);
+
+    wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
+    textout = " Video Task Stack HWM       : " + (Config::videomode ? to_string(wm) : "N/A") + "\n";    
+    VIDEO::vga.print(textout.c_str());
+
+    // Wait for key
+
+    zxDelay = REPDEL;
+
+    while (1) {
+
+        if (ZXKeyb::Exists) {
+
+            ZXKeyb::process();
+
+            if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[5], 2))) { // ENTER, BREAK or I
+                if (zxDelay == 0) {
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
+                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                        
+                    zxDelay = REPDEL;
+                }
+            }
+
+        }
+
+        ESPectrum::readKbdJoy();
+
+        if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+            ESPectrum::PS2Controller.keyboard()->getNextVirtualKey(&Nextkey);
+            if(!Nextkey.down) continue;
+            if (Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_GRAVEACCENT) {
+                click();
+                break;
+            }
+        }
+
+        vTaskDelay(5 / portTICK_PERIOD_MS);
+
+        if (zxDelay > 0) zxDelay--;
+
+    }
+
+}
+
+// // Switch boot partition
+// string splabel;
+// esp_err_t chg_ota;
+// const esp_partition_t *ESPectrum_partition = NULL;
+
+// ESPectrum_partition = esp_ota_get_running_partition();
+// if (ESPectrum_partition->label=="128k") splabel = "48k"; else splabel= "128k";
+
+// ESPectrum_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
+// chg_ota = esp_ota_set_boot_partition(ESPectrum_partition);
+// if (chg_ota == ESP_OK ) esp_hard_reset();
+
+#define FWBUFFSIZE 4096
+
+esp_err_t OSD::updateFirmware(FILE *firmware) {
+
+char ota_write_data[FWBUFFSIZE + 1] = { 0 };
+
+// get the currently running partition
+const esp_partition_t *partition = esp_ota_get_running_partition();
+if (partition == NULL) {
+    return ESP_ERR_NOT_FOUND;
+}
+
+// Grab next update target
+const esp_partition_t *target = esp_ota_get_next_update_partition(NULL);
+if (target == NULL) {
+    return ESP_ERR_NOT_FOUND;
+}
+
+// printf("Running partition type %d subtype %d at offset 0x%x.\n", partition->type, partition->subtype, partition->address);
+// printf("Target  partition type %d subtype %d at offset 0x%x.\n", target->type, target->subtype, target->address);
+
+osdCenteredMsg("Erasing destination partition.", LEVEL_INFO,0);
+
+esp_ota_handle_t ota_handle;
+esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);
+if (result != ESP_OK) {
+    return result;
+}
+
+size_t bytesread;
+uint32_t byteswritten = 0;
+
+osdCenteredMsg("    Flashing new firmware.    ", LEVEL_INFO,0);
+
+while (1) {
+    bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
+    result = esp_ota_write(ota_handle,(const void *) ota_write_data, bytesread);
+    if (result != ESP_OK) {
+        return result;
+    }
+    byteswritten += bytesread;
+    // printf("Bytes written: %d\n",byteswritten);
+    if (feof(firmware)) break;
+}
+
+result = esp_ota_end(ota_handle);
+if (result != ESP_OK) 
+{
+    // printf("esp_ota_end failed, err=0x%x.\n", result);
+    return result;
+}
+
+result = esp_ota_set_boot_partition(target);
+if (result != ESP_OK) {
+    // printf("esp_ota_set_boot_partition failed, err=0x%x.\n", result);
+    return result;
+}
+
+osdCenteredMsg("Flashing complete. Rebooting.", LEVEL_INFO, 0);
+delay(1000);
+
+// Firmware written: reboot
+OSD::esp_hard_reset();
+
 }

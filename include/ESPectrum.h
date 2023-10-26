@@ -109,6 +109,8 @@ public:
 
     // static TaskHandle_t loopTaskHandle;
 
+    static TaskHandle_t audioTaskHandle;    
+
     static bool ps2kbd2;
 
     static bool trdos;

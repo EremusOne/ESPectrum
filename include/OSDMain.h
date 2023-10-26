@@ -75,6 +75,7 @@ public:
     static void drawOSD(bool bottom_info);
     static void drawStats(char *line1, char *line2);    
     static void do_OSD(fabgl::VirtualKey KeytoESP);
+    static void HWInfo();
 
     // // Error
     static void errorPanel(string errormsg);
@@ -114,6 +115,8 @@ public:
     static string rowGet(string menu, unsigned short row_number);
 
     static void esp_hard_reset();
+
+    static esp_err_t updateFirmware(FILE *firmware);
 
 };
 

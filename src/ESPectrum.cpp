@@ -95,7 +95,7 @@ int ESPectrum::TapeNameScroller = 0;
 // bool ESPectrum::Audio_restart = false;
 
 QueueHandle_t audioTaskQueue;
-TaskHandle_t audioTaskHandle;
+TaskHandle_t ESPectrum::audioTaskHandle;
 uint8_t *param;
 
 //=======================================================================================
@@ -485,9 +485,6 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-
-    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
-    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1536, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
     xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
@@ -653,13 +650,8 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             if(ps2kbd2)
                 PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
             Config::save("CursorAsJoy");
-        }
-        #ifdef RAM_INFO_KEY
-        else if (Nextkey->vk == fabgl::VK_GRAVEACCENT) { // Show mem info
-            showMemInfo();
             r = false;
         }
-        #endif
     }
 
     return r;
@@ -713,7 +705,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             KeytoESP = NextKey.vk;
             Kdown = NextKey.down;
 
-            if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE))) {
+            if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE) || (KeytoESP == fabgl::VK_GRAVEACCENT ))) {
                 OSD::do_OSD(KeytoESP);
                 return;
             }
@@ -1002,10 +994,13 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             if (!bitRead(ZXKeyb::ZXcols[2],1)) {
                 OSD::do_OSD(fabgl::VK_F12);
             } else
-            if (!bitRead(ZXKeyb::ZXcols[5],0)) {
+            if (!bitRead(ZXKeyb::ZXcols[5],0)) { // P -> Pause
                 OSD::do_OSD(fabgl::VK_PAUSE);
             } else
-            if (!bitRead(ZXKeyb::ZXcols[1],1)) {
+            if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
+                OSD::do_OSD(fabgl::VK_GRAVEACCENT);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[1],1)) { // S -> Screen capture
                 CaptureToBmp();
             } else
                 zxDelay = 0;

@@ -41,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
-#define EMU_VERSION "    v1.0rc3 "
+#define EMU_VERSION "     v1.0pr "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -77,6 +77,10 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
+
+#define OSD_FIRMW_ERR_EN "Problem updating firmware."
+#define OSD_FIRMW_ERR_ES "Error actualizando firmware."
+static const char *OSD_FIRMW_ERR[2] = { OSD_FIRMW_ERR_EN,OSD_FIRMW_ERR_ES};
 
 #define MENU_SNA_TITLE_EN "Select Snapshot"
 #define MENU_SNA_TITLE_ES "Elija snapshot"
@@ -163,7 +167,8 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Aspect ratio\t>\n"\
     "PS/2 Joystick\t>\n"\
     "Language\t>\n"\
-    "Other\t>\n"
+    "Other\t>\n"\
+	"Firmware update\n"
 #define MENU_OPTIONS_ES \
     "Menu opciones\n"\
     "Almacenamiento\t>\n"\
@@ -171,7 +176,8 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Rel. aspecto\t>\n"\
     "Joystick PS/2\t>\n"\
     "Idioma\t>\n"\
-    "Otros\t>\n"
+    "Otros\t>\n"\
+	"Actualizar firmware\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
 
 #define MENU_ASPECT_EN \
