@@ -20,7 +20,7 @@ class VGA : public I2S
 {
   public:
 	VGA(const int i2sIndex = 0);
-	void setLineBufferCount(int lineBufferCount);
+	// void setLineBufferCount(int lineBufferCount);
 	bool init(const Mode &mode, const int *pinMap, const int bitCount, const int clockPin = -1);
 	virtual bool init(const Mode &mode, const PinConfig &pinConfig) = 0;
 
@@ -45,6 +45,9 @@ class VGA : public I2S
 
 	Mode mode;
 
+	int CenterH = 0;
+	int CenterV = 0;
+
 	virtual int bytesPerSample() const = 0;
 
   protected:
@@ -52,7 +55,7 @@ class VGA : public I2S
 	virtual void initSyncBits() = 0;
 	virtual long syncBits(bool h, bool v) = 0;
  
-	int lineBufferCount;
+	// int lineBufferCount;
 	int vsyncPin;
 	int hsyncPin;
 	int currentLine;
@@ -69,13 +72,13 @@ class VGA : public I2S
 	void *inactiveBuffer;
 	void *blankActiveBuffer;
 
-	void allocateLineBuffers(const int lines);
+	// void allocateLineBuffers(const int lines);
 	virtual void allocateLineBuffers();
 	virtual void allocateLineBuffers(void **frameBuffer);
 	virtual void propagateResolution(const int xres, const int yres) = 0;
 
   protected:
-	virtual void interrupt();
-	virtual void vSync();
-	virtual void interruptPixelLine(int y, unsigned long *pixels, unsigned long syncBits);
+	// virtual void interrupt();
+	// virtual void vSync();
+	// virtual void interruptPixelLine(int y, unsigned long *pixels, unsigned long syncBits);
 };

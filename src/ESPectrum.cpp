@@ -518,7 +518,19 @@ void ESPectrum::setup()
 
     // Load snapshot if present in Config::ram_file
     if (Config::ram_file != NO_RAM_FILE) {
-        
+
+        FileUtils::SNA_Path = Config::SNA_Path;
+        FileUtils::fileTypes[DISK_SNAFILE].begin_row = Config::SNA_begin_row;
+        FileUtils::fileTypes[DISK_SNAFILE].focus = Config::SNA_focus;
+
+        FileUtils::TAP_Path = Config::TAP_Path;
+        FileUtils::fileTypes[DISK_TAPFILE].begin_row = Config::TAP_begin_row;
+        FileUtils::fileTypes[DISK_TAPFILE].focus = Config::TAP_focus;
+
+        FileUtils::DSK_Path = Config::DSK_Path;
+        FileUtils::fileTypes[DISK_DSKFILE].begin_row = Config::DSK_begin_row;
+        FileUtils::fileTypes[DISK_DSKFILE].focus = Config::DSK_focus;
+
         LoadSnapshot(Config::ram_file,"");
 
         Config::last_ram_file = Config::ram_file;
@@ -704,9 +716,10 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
             KeytoESP = NextKey.vk;
             Kdown = NextKey.down;
-
+          
             if ((Kdown) && (((KeytoESP >= fabgl::VK_F1) && (KeytoESP <= fabgl::VK_F12)) || (KeytoESP == fabgl::VK_PAUSE) || (KeytoESP == fabgl::VK_GRAVEACCENT ))) {
-                OSD::do_OSD(KeytoESP);
+                OSD::do_OSD(KeytoESP,NextKey.SHIFT);
+                Kbd->emptyVirtualKeyQueue();
                 return;
             }
 
@@ -959,49 +972,69 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             zxDelay = 15;
 
             if (!bitRead(ZXKeyb::ZXcols[3],0)) {
-                OSD::do_OSD(fabgl::VK_F1);
+                OSD::do_OSD(fabgl::VK_F1,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],1)) {
-                OSD::do_OSD(fabgl::VK_F2);
+                OSD::do_OSD(fabgl::VK_F2,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],2)) {
-                OSD::do_OSD(fabgl::VK_F3);
+                OSD::do_OSD(fabgl::VK_F3,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],3)) {
-                OSD::do_OSD(fabgl::VK_F4);
+                OSD::do_OSD(fabgl::VK_F4,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],4)) {
-                OSD::do_OSD(fabgl::VK_F5);
+                OSD::do_OSD(fabgl::VK_F5,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],4)) {
-                OSD::do_OSD(fabgl::VK_F6);
+                OSD::do_OSD(fabgl::VK_F6,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],3)) {
-                OSD::do_OSD(fabgl::VK_F7);
+                OSD::do_OSD(fabgl::VK_F7,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],2)) {
-                OSD::do_OSD(fabgl::VK_F8);
+                OSD::do_OSD(fabgl::VK_F8,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],1)) {
-                OSD::do_OSD(fabgl::VK_F9);
+                OSD::do_OSD(fabgl::VK_F9,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],0)) {
-                OSD::do_OSD(fabgl::VK_F10);
+                OSD::do_OSD(fabgl::VK_F10,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],0)) {
-                OSD::do_OSD(fabgl::VK_F11);
+                OSD::do_OSD(fabgl::VK_F11,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],1)) {
-                OSD::do_OSD(fabgl::VK_F12);
+                OSD::do_OSD(fabgl::VK_F12,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[5],0)) { // P -> Pause
-                OSD::do_OSD(fabgl::VK_PAUSE);
+                OSD::do_OSD(fabgl::VK_PAUSE,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
-                OSD::do_OSD(fabgl::VK_GRAVEACCENT);
+                OSD::do_OSD(fabgl::VK_GRAVEACCENT,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[1],1)) { // S -> Screen capture
                 CaptureToBmp();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
+                if (Config::CenterH > -16) Config::CenterH--;
+                Config::save("CenterH");
+                OSD::osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],2)) { // X -> CenterH
+                if (Config::CenterH < 16) Config::CenterH++;
+                Config::save("CenterH");
+                OSD::osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],3)) { // C -> CenterV
+                if (Config::CenterV > -16) Config::CenterV--;
+                Config::save("CenterV");
+                OSD::osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],4)) { // V -> CenterV
+                if (Config::CenterV < 16) Config::CenterV++;
+                Config::save("CenterV");
+                OSD::osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
             } else
                 zxDelay = 0;
 
@@ -1230,7 +1263,7 @@ for(;;) {
     // }
 
     // Draw stats, if activated, every 32 frames
-    if (((CPU::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
+    if (((VIDEO::framecnt & 31) == 0) && (VIDEO::OSD)) OSD::drawStats(linea1,linea2); 
 
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
@@ -1269,17 +1302,17 @@ for(;;) {
 
             if (Tape::tapeStatus==TAPE_LOADING) {
 
-                snprintf(linea1, sizeof(linea1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(6 + TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
+                snprintf(linea1, sizeof(linea1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(0 + TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
 
                 float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
                 snprintf(linea2, sizeof(linea2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
 
-                if ((++TapeNameScroller + 18) > Tape::tapeFileName.length()) TapeNameScroller = 0;
+                if ((++TapeNameScroller + 12) > Tape::tapeFileName.length()) TapeNameScroller = 0;
 
             } else {
 
                 snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-                snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+                snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (totalseconds / 1000000), VIDEO::framecnt / (totalsecondsnodelay / 1000000));
 
             }
 
@@ -1288,7 +1321,7 @@ for(;;) {
 
         totalseconds = 0;
         totalsecondsnodelay = 0;
-        CPU::framecnt = 0;
+        VIDEO::framecnt = 0;
 
         // ESPmedian = 0;
 

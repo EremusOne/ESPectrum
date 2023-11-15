@@ -69,6 +69,17 @@ uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
 uint8_t  Config::AluTiming = 0;
 uint8_t  Config::ps2_dev2 = 0; // Second port PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
 bool     Config::CursorAsJoy = false;
+int8_t   Config::CenterH = 0;
+int8_t   Config::CenterV = 0;
+string   Config::SNA_Path = "/";
+string   Config::TAP_Path = "/";
+string   Config::DSK_Path = "/";
+uint16_t Config::SNA_begin_row = 1;
+uint16_t Config::SNA_focus = 1;
+uint16_t Config::TAP_begin_row = 1;
+uint16_t Config::TAP_focus = 1;
+uint16_t Config::DSK_begin_row = 1;
+uint16_t Config::DSK_focus = 1;
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -258,6 +269,73 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_i8(handle, "CenterH", &Config::CenterH);
+        if (err == ESP_OK) {
+            // printf("PS2Dev2:%u\n",Config::ps2_dev2);
+        }
+
+        err = nvs_get_i8(handle, "CenterV", &Config::CenterV);
+        if (err == ESP_OK) {
+            // printf("PS2Dev2:%u\n",Config::ps2_dev2);
+        }
+
+        err = nvs_get_str(handle, "SNA_Path", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "SNA_Path", str_data, &required_size);
+            // printf("SNA_Path:%s\n",str_data);
+            SNA_Path = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "TAP_Path", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "TAP_Path", str_data, &required_size);
+            // printf("TAP_Path:%s\n",str_data);
+            TAP_Path = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "DSK_Path", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "DSK_Path", str_data, &required_size);
+            // printf("DSK_Path:%s\n",str_data);
+            DSK_Path = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_u16(handle, "SNA_begin_row", &Config::SNA_begin_row);
+        if (err == ESP_OK) {
+            // printf("SNA_begin_row:%u\n",Config::SNA_begin_row);
+        }
+
+        err = nvs_get_u16(handle, "TAP_begin_row", &Config::TAP_begin_row);
+        if (err == ESP_OK) {
+            // printf("TAP_begin_row:%u\n",Config::TAP_begin_row);
+        }
+
+        err = nvs_get_u16(handle, "DSK_begin_row", &Config::DSK_begin_row);
+        if (err == ESP_OK) {
+            // printf("begin_row:%u\n",Config::DSK_begin_row);
+        }
+
+        err = nvs_get_u16(handle, "SNA_focus", &Config::SNA_focus);
+        if (err == ESP_OK) {
+            // printf("SNA_focus:%u\n",Config::SNA_focus);
+        }
+
+        err = nvs_get_u16(handle, "TAP_focus", &Config::TAP_focus);
+        if (err == ESP_OK) {
+            // printf("TAP_focus:%u\n",Config::TAP_focus);
+        }
+
+        err = nvs_get_u16(handle, "DSK_focus", &Config::DSK_focus);
+        if (err == ESP_OK) {
+            // printf("DSK_focus:%u\n",Config::DSK_focus);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -340,6 +418,39 @@ void Config::save(string value) {
 
         if((value=="CursorAsJoy") || (value=="all"))
             nvs_set_str(handle,"CursorAsJoy", CursorAsJoy ? "true" : "false");
+
+        if((value=="CenterH") || (value=="all"))
+            nvs_set_i8(handle,"CenterH",Config::CenterH);
+
+        if((value=="CenterV") || (value=="all"))
+            nvs_set_i8(handle,"CenterV",Config::CenterV);
+
+        if((value=="SNA_Path") || (value=="all"))
+            nvs_set_str(handle,"SNA_Path",Config::SNA_Path.c_str());
+
+        if((value=="TAP_Path") || (value=="all"))
+            nvs_set_str(handle,"TAP_Path",Config::TAP_Path.c_str());
+
+        if((value=="DSK_Path") || (value=="all"))
+            nvs_set_str(handle,"DSK_Path",Config::DSK_Path.c_str());
+
+        if((value=="SNA_begin_row") || (value=="all"))
+            nvs_set_u16(handle,"SNA_begin_row",Config::SNA_begin_row);
+
+        if((value=="TAP_begin_row") || (value=="all"))
+            nvs_set_u16(handle,"TAP_begin_row",Config::TAP_begin_row);
+
+        if((value=="DSK_begin_row") || (value=="all"))
+            nvs_set_u16(handle,"DSK_begin_row",Config::DSK_begin_row);
+
+        if((value=="SNA_focus") || (value=="all"))
+            nvs_set_u16(handle,"SNA_focus",Config::SNA_focus);
+
+        if((value=="TAP_focus") || (value=="all"))
+            nvs_set_u16(handle,"TAP_focus",Config::TAP_focus);
+
+        if((value=="DSK_focus") || (value=="all"))
+            nvs_set_u16(handle,"DSK_focus",Config::DSK_focus);
 
         // printf("Committing updates in NVS ... ");
 

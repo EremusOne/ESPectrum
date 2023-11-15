@@ -70,6 +70,17 @@ public:
     static uint8_t  AluTiming;
     static uint8_t  ps2_dev2;
     static bool CursorAsJoy;
+    static int8_t CenterH;
+    static int8_t CenterV;    
+    static string   SNA_Path;
+    static string   TAP_Path;
+    static string   DSK_Path;
+    static uint16_t SNA_begin_row;
+    static uint16_t SNA_focus;
+    static uint16_t TAP_begin_row;
+    static uint16_t TAP_focus;
+    static uint16_t DSK_begin_row;
+    static uint16_t DSK_focus;
 
     // config persistence
     static void load();

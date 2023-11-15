@@ -52,10 +52,13 @@ uint8_t VIDEO::flash_ctr= 0;
 bool VIDEO::OSD = false;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
+// unsigned int VIDEO::tstateDraw; // Drawing start point (in Tstates)
+// unsigned int VIDEO::linedraw_cnt;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 int VIDEO::VsyncFinetune[2];
 // uint8_t VIDEO::dispUpdCycle;
+uint32_t VIDEO::framecnt = 0;
 
 void IRAM_ATTR VGA6Bit::interrupt(void *arg) {
 
@@ -209,6 +212,12 @@ void VIDEO::vgataskinit(void *unused) {
     OSD::scrW = vgaMode.hRes;
     OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
     vga.VGA6Bit_useinterrupt=true;
+    // CRT Centering
+    if (Config::videomode == 2) {
+        vga.CenterH = Config::CenterH;
+        vga.CenterV = Config::CenterV;
+    }
+    // Init mode
     vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
     for (;;){}    
 
@@ -351,7 +360,7 @@ uint8_t VIDEO::getFloatBusData128() {
 
 void VIDEO::NoVideo(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
 
-void VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -390,7 +399,7 @@ void IRAM_ATTR VIDEO::TopBorder_Blank_Pentagon(unsigned int statestoadd, bool co
 
 }
 
-void VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -423,7 +432,7 @@ void IRAM_ATTR VIDEO::TopBorder_Pentagon(unsigned int statestoadd, bool contende
 
 }
 
-void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {    
+void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {    
     
     CPU::tstates += statestoadd;
 
@@ -466,7 +475,7 @@ void IRAM_ATTR VIDEO::MainScreen_Blank_Pentagon(unsigned int statestoadd, bool c
 
 }    
 
-void VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {    
+void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {    
   
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -733,7 +742,7 @@ void VIDEO::MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended) {
 
 }
 
-void VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
 
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -773,7 +782,7 @@ void IRAM_ATTR VIDEO::MainScreenRB_Pentagon(unsigned int statestoadd, bool conte
 
 }
 
-void VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contended) {    
+void IRAM_ATTR VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contended) {    
 
     CPU::tstates += statestoadd;
 
@@ -812,7 +821,7 @@ void IRAM_ATTR VIDEO::BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool
 
 }
 
-void VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {    
+void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {    
 
     CPU::tstates += statestoadd;
 
@@ -848,7 +857,7 @@ void IRAM_ATTR VIDEO::BottomBorder_Pentagon(unsigned int statestoadd, bool conte
 
 }
 
-void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended) {
+void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
@@ -904,22 +913,32 @@ void IRAM_ATTR VIDEO::Blank(unsigned int statestoadd, bool contended) {
 
     CPU::tstates += statestoadd;
 
-    if (CPU::tstates < tStatesPerLine) {
-        linedraw_cnt = 0;
-        tstateDraw = tStatesScreen;
-        Draw = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
-    }
+    // if (CPU::tstates < tStatesPerLine) {
+    //     linedraw_cnt = 0;
+    //     tstateDraw = tStatesScreen;
+    //     Draw = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
+    // }
+
+}
+
+void IRAM_ATTR VIDEO::EndFrame() {
+
+    linedraw_cnt = 0;
+    tstateDraw = tStatesScreen;
+    Draw = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
+    framecnt++;
 
 }
 
 // ///////////////////////////////////////////////////////////////////////////////
 // // Flush -> Flush screen after HALT
 // ///////////////////////////////////////////////////////////////////////////////
-void VIDEO::Flush() {
+void IRAM_ATTR VIDEO::Flush() {
 
-    while (CPU::tstates < CPU::statesInFrame) {
+    // while (CPU::tstates < CPU::statesInFrame) {
+    while (Draw != &Blank)
         Draw(tStatesPerLine,false);
-    }
+    // }
 
 }
 

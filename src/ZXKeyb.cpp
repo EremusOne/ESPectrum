@@ -35,9 +35,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "ZXKeyb.h"
 #include "ESPectrum.h"
-#include "Ports.h"
 
-uint8_t ZXKeyb::ZXcols[8];
+uint8_t ZXKeyb::ZXcols[8] = { 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf };
 bool ZXKeyb::Exists;
 
 void ZXKeyb::setup()
@@ -58,109 +57,72 @@ void ZXKeyb::setup()
     ZXKeyb::putRows(0xFF);
     ZXKeyb::Exists = gpio_get_level((gpio_num_t)KM_COL_1) && gpio_get_level((gpio_num_t)KM_COL_2) && gpio_get_level((gpio_num_t)KM_COL_4);
 
-    // set all keys as not pressed
-    if (ZXKeyb::Exists) for (uint8_t i = 0; i < 8; i++) ZXcols[i] = 0xbf;
+}
+
+void ZXKeyb::process() {
+
+    // Put row pattern to 8-tap membrane connector (using shift register)
+    // and read column pattern from 5-tap membrane connector.
+    // row order depends on actual row association with address lines, see
+    // https://www.1000bit.it/support/manuali/sinclair/zxspectrum/sm/matrix.gif
+    putRows(0b11011111); ZXcols[0] = getCols();
+    putRows(0b11111011); ZXcols[1] = getCols();
+    putRows(0b11111101); ZXcols[2] = getCols();
+    putRows(0b11111110); ZXcols[3] = getCols();
+    putRows(0b11110111); ZXcols[4] = getCols();
+    putRows(0b11101111); ZXcols[5] = getCols();
+    putRows(0b10111111); ZXcols[6] = getCols();    
+    putRows(0b01111111); ZXcols[7] = getCols();                        
 
 }
 
-// row order depends on actual row association with address lines, see
-// https://www.1000bit.it/support/manuali/sinclair/zxspectrum/sm/matrix.gif
-static uint8_t roworder[8] = {
-    0xDF,   // % 11011111
-    0xFB,   // % 11111011
-    0xFD,   // % 11111101
-    0xFE,   // % 11111110
-    0xF7,   // % 11110111
-    0xEF,   // % 11101111
-    0xBF,   // % 10111111
-    0x7F    // % 01111111
-};
-
-void ZXKeyb::process()
-{
-    // traverse row indices
-    for (uint8_t rowidx = 0; rowidx < 8; rowidx++)
-    {
-        // first of all, take row pattern from table
-        uint8_t row_pattern = roworder[rowidx];
-        // put row pattern to 8-tap membrane connector
-        // (using shift register)
-        putRows(row_pattern);
-
-        // read column pattern from 5-tap membrane connector
-        // uint8_t cols = getCols();
-        // // write column to port array at given row index
-        // Ports::port[rowidx] = cols;
-
-        // read column pattern from 5-tap membrane connector
-        ZXcols[rowidx] = getCols();
-
-    }
-}
-
-// This function puts a row pattern
-// into the membrane keyboard, for selecting a given row.
+// This function puts a row pattern into the membrane keyboard, for selecting a given row.
 // Selection logic is active low, a 0 bit will select the row.
-// A shift register is used for this task,
-// so we'll need 3 output pins instead of 8.
-void ZXKeyb::putRows(uint8_t row_pattern)
-{
-    // NOTICE: many usleeps have been commented out.
-    // If keyboard readings are erratic,
-    // maybe they should be recovered.
+// A shift register is used for this task, so we'll need 3 output pins instead of 8.
+void ZXKeyb::putRows(uint8_t row_pattern) {
+    
+    // NOTICE: many delays have been commented out.
+    // If keyboard readings are erratic, maybe they should be recovered.
 
-    // disable load pin, keep previous output
-    gpio_set_level((gpio_num_t)SR_LOAD, 0);
-    // usleep(1);
+    gpio_set_level((gpio_num_t)SR_LOAD, 0); // disable load pin, keep previous output
+    // delayMicroseconds(1);
 
-    // traverse bits in byte
-    for (uint8_t i = 0; i < 8; i++) {
-        // clock falling edge
-        gpio_set_level((gpio_num_t)SR_CLK, 0);
-        // usleep(1);
+    for (uint8_t i = 0; i < 8; i++) {   // traverse bits in byte
 
-        // put row bit to shift register serial input
-        gpio_set_level((gpio_num_t)SR_DATA, row_pattern & 0x80);
+        gpio_set_level((gpio_num_t)SR_CLK, 0);  // clock falling edge
+        // delayMicroseconds(1);
 
-        // just to be safe, wait just before rising edge
-        delayMicroseconds(1);
-        // usleep(1); 
+        gpio_set_level((gpio_num_t)SR_DATA, row_pattern & 0x80);    // put row bit to shift register serial input
 
-        // rising edge occurs here
-        gpio_set_level((gpio_num_t)SR_CLK, 1);
-        // usleep(1);
+        delayMicroseconds(1);   // just to be safe, wait just before rising edge
 
-        // shift row bit pattern
-        row_pattern <<= 1;
+        gpio_set_level((gpio_num_t)SR_CLK, 1);  // rising edge occurs here
+        // delayMicroseconds(1);
+
+        row_pattern <<= 1;  // shift row bit pattern
+
     }
 
-    // enable load pin, update output
-    gpio_set_level((gpio_num_t)SR_LOAD, 1);
+    gpio_set_level((gpio_num_t)SR_LOAD, 1); // enable load pin, update output
 
     // this sleep is MANDATORY, do NOT remove it
     // or else (first column bits read will be wrong)
     delayMicroseconds(1);
-    // usleep(1);
+
 }
 
-// This function reads all 5 columns from the
-// corresponding GPIO pins and concatenates them
+// This function reads all 5 columns from the corresponding GPIO pins and concatenates them
 // into the lowest 5 bits of a byte.
-uint8_t ZXKeyb::getCols()
-{
-    uint8_t cols = 0;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_4);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_3);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_2);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_1);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_0);
+uint8_t ZXKeyb::getCols() {
+
+    uint8_t cols = gpio_get_level((gpio_num_t)KM_COL_4) << 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_3); cols <<= 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_2); cols <<= 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_1); cols <<= 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_0);   
     
-    // Keep bits 5,7 up
-    cols |= 0xa0;
+    cols |= 0xa0;   // Keep bits 5,7 up
     
     return cols;
+
 }

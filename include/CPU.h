@@ -83,9 +83,6 @@ public:
     static uint8_t IntStart;
     static uint8_t IntEnd;
 
-    // Frames elapsed
-    static uint32_t framecnt;
-
 };
 
 static const unsigned char DRAM_ATTR wait_st[243] = { 

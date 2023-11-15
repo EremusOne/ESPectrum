@@ -72,20 +72,21 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Common
   static void NoVideo(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR EndFrame();
   static void IRAM_ATTR Blank(unsigned int statestoadd, bool contended);
-  static void Flush(); // For flushing video buffer as fast as possible after HALT
+  static void IRAM_ATTR Flush(); // For flushing video buffer as fast as possible after HALT
 
   // 48 / 128
-  static void TopBorder_Blank(unsigned int statestoadd, bool contended);
-  static void TopBorder(unsigned int statestoadd, bool contended);
-  static void MainScreen_Blank(unsigned int statestoadd, bool contended);
-  static void MainScreenLB(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR TopBorder_Blank(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR TopBorder(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR MainScreenLB(unsigned int statestoadd, bool contended);
   static void MainScreen(unsigned int statestoadd, bool contended);
   static void MainScreen_OSD(unsigned int statestoadd, bool contended);
-  static void MainScreenRB(unsigned int statestoadd, bool contended);    
-  static void BottomBorder_Blank(unsigned int statestoadd, bool contended);
-  static void BottomBorder(unsigned int statestoadd, bool contended);
-  static void BottomBorder_OSD(unsigned int statestoadd, bool contended);    
+  static void IRAM_ATTR MainScreenRB(unsigned int statestoadd, bool contended);    
+  static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR BottomBorder(unsigned int statestoadd, bool contended);
+  static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd, bool contended);    
     
   // Pentagon
   static void IRAM_ATTR TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
@@ -121,6 +122,9 @@ public:
   static uint8_t tStatesPerLine;
   static int tStatesScreen;
 
+  // static unsigned int tstateDraw; // Drawing start point (in Tstates)
+  // static unsigned int linedraw_cnt;
+
   static uint8_t flashing;
   static uint8_t flash_ctr;
 
@@ -136,6 +140,8 @@ public:
   static TaskHandle_t videoTaskHandle;
 
   static int VsyncFinetune[2];
+
+  static uint32_t framecnt; // Frames elapsed
 
 };
 

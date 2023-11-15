@@ -89,7 +89,9 @@ void Tape::Open(string name) {
         tape = NULL;
     }
 
-    tape = fopen(name.c_str(), "rb");
+    string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+
+    tape = fopen(fname.c_str(), "rb");
     if (tape == NULL) {
         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
         return;
@@ -592,11 +594,16 @@ void Tape::Save() {
 bool Tape::FlashLoad() {
 
     if (tape == NULL) {
-        tape = fopen(Tape::tapeFileName.c_str(), "rb");
+
+        string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;        
+
+        tape = fopen(fname.c_str(), "rb");
         if (tape == NULL) {
             return false;
         }
+
         CalcTapBlockPos(tapeCurBlock);
+
     }
 
     // printf("--< BLOCK: %d >--------------------------------\n",(int)tapeCurBlock);    

@@ -61,13 +61,14 @@ string FileUtils::MountPoint = MOUNT_POINT_SD; // Start with SD
 bool FileUtils::SDReady = false;
 sdmmc_card_t *FileUtils::card;
 
-string FileUtils::SNA_Path = DISK_SNA_DIR; // Current path on the SD (for future folder support)
-string FileUtils::TAP_Path = DISK_TAP_DIR; // Current path on the SD (for future folder support)
-string FileUtils::DSK_Path = DISK_DSK_DIR; // Current path on the SD (for future folder support)
-
-int FileUtils::curSNAFile = 1; // Current SNA file index on browser
-int FileUtils::curTAPFile = 1; // Current TAP file index on browser
-int FileUtils::curDSKFile = 1; // Current TAP file index on browser
+string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (for future folder support)
+string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
+string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
+DISK_FTYPE FileUtils::fileTypes[3] = {
+    {".sna,.SNA,.z80,.Z80",".s",1,1},
+    {".tap,.TAP",".t",1,1},
+    {".trd,.TRD,.scl,.SCL",".d",1,1}
+};
 
 void FileUtils::initFileSystem() {
 
@@ -257,110 +258,153 @@ void FileUtils::unmountSDCard() {
 
 // }
 
-int FileUtils::DirToFile(string fpath, string fileExts) {
+void FileUtils::DirToFile(string fpath, uint8_t ftype) {
 
     char fileName[8];
 
     std::vector<std::string> filenames;
     filenames.reserve(MAX_FNAMES_PER_CHUNK);
 
-    DIR* dir = opendir(fpath.c_str());
-    if (dir == NULL) {
-        printf("Error opening %s",fpath.c_str());
-        return 0;
+    // Populate filexts with valid filename extensions
+    std::vector<std::string> filexts;
+    size_t pos = 0;
+    string ss = fileTypes[ftype].fileExts;
+    while ((pos = ss.find(",")) != std::string::npos) {
+        // printf("%s , ",ss.substr(0,pos).c_str());
+        filexts.push_back(ss.substr(0, pos));
+        ss.erase(0, pos + 1);
     }
+    // printf("%s , ",ss.substr(0).c_str());
+    filexts.push_back(ss.substr(0));
+    // printf("\n");
 
-    struct dirent* de = readdir(dir);
-    if (!de) {
-        printf("No entries found!\n");
-        closedir(dir);
-        return 0;
+    string fdir = fpath.substr(0,fpath.length() - 1);
+    DIR* dir = opendir(fdir.c_str());
+    if (dir == NULL) {
+        printf("Error opening %s\n",fpath.c_str());
+        return;
     }
 
     // Remove previous dir file
-    remove((fpath + "/.d").c_str());
+    remove((fpath + fileTypes[ftype].indexFilename).c_str());
 
     // Read filenames from medium into vector, sort it, and dump into MAX_FNAMES_PER_CHUNK filenames long files
     int cnt = 0;
     int chunk_cnt = 0;
+    struct dirent* de;
 
-    while (true) {
+    unsigned long h = 0, high; // Directory Hash
+
+    while ((de = readdir(dir)) != nullptr) {        
         string fname = de->d_name;
-        if (fname.compare(0,1,".") != 0) {
-            if ((fileExts.find(fname.substr(fname.size()-4)) != string::npos)) {
-                // printf("%s\n",fname.c_str());
-                filenames.push_back(fname.c_str());                    
-                cnt++;
-                if (cnt == MAX_FNAMES_PER_CHUNK) {
-                    // Dump current chunk
-                    sort(filenames.begin(),filenames.end()); // Sort vector
-                    sprintf(fileName, "/.d%d", chunk_cnt);
-                    FILE *f = fopen((fpath + fileName).c_str(), "w");
-                    if (f==NULL) {
-                        printf("Error opening filelist chunk\n");
-                        return 0;
+        // if (fname[0] == 'A') printf("Fname: %s\n",fname.c_str());
+        if (de->d_type == DT_REG || de->d_type == DT_DIR) {
+            if (fname.compare(0,1,".") != 0) {
+                // if (fname[0] == 'A') printf("Fname2: %s\n",fname.c_str());
+                // if ((de->d_type == DT_DIR) || (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end())) {
+                if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+                    // if (fname[0] == 'A') printf("Fname3: %s\n",fname.c_str());
+
+                    if (de->d_type == DT_DIR)
+                        filenames.push_back((char(32) + fname).c_str());
+                    else
+                        filenames.push_back(fname.c_str());
+
+                    // Calc hash
+                    for (int i = 0; i < fname.length(); i++) {
+                        h = (h << 4) + fname[i];
+                        if (high = h & 0xF0000000)
+                            h ^= high >> 24;
+                        h &= ~high;
                     }
-                    for (int n=0; n < MAX_FNAMES_PER_CHUNK; n++) fputs((filenames[n] + std::string(31 - filenames[n].size(), ' ') + "\n").c_str(),f);
-                    fclose(f);
-                    filenames.clear();
-                    cnt = 0;
-                    chunk_cnt++;
+
+                    cnt++;
+                    if (cnt == MAX_FNAMES_PER_CHUNK) {
+                        // Dump current chunk
+                        sort(filenames.begin(),filenames.end()); // Sort vector
+                        sprintf(fileName, "%d", chunk_cnt);
+                        FILE *f = fopen((fpath + fileTypes[ftype].indexFilename + fileName).c_str(), "w");
+                        if (f==NULL) {
+                            printf("Error opening filelist chunk\n");
+                            return;
+                        }
+                        for (int n=0; n < MAX_FNAMES_PER_CHUNK; n++) fputs((filenames[n] + std::string(63 - filenames[n].size(), ' ') + "\n").c_str(),f);
+                        fclose(f);
+                        filenames.clear();
+                        cnt = 0;
+                        chunk_cnt++;
+                    }
+
                 }
-
             }
-
         }
-        de = readdir(dir);
-        if (!de) break;
     }
 
-    if (cnt > 0) { 
-        // Dump last chunk
-        sort(filenames.begin(),filenames.end()); // Sort vector
-        sprintf(fileName, "/.d%d", chunk_cnt);
-        FILE *f = fopen((fpath + fileName).c_str(), "w");
-        if (f == NULL) {
-            printf("Error opening last filelist chunk\n");
-            return 0;
-        }
-        for (int n=0; n < cnt;n++) fputs((filenames[n] + std::string(31 - filenames[n].size(), ' ') + "\n").c_str(),f);
-        fclose(f);
-    }
-
-    if (chunk_cnt == 0) {
-        // Rename unique chunk
-        rename((fpath + "/.d0").c_str(),(fpath + "/.d").c_str());
+    // Add previous directory entry if not on root dir
+    // printf("%s - %s\n",fpath.c_str(),(MountPoint + "/").c_str());
+    if (fpath != (MountPoint + "/")) {
+        filenames.push_back("  ..");
+        cnt++;
     }
 
     closedir(dir);
 
+    filexts.clear(); // Clear vector
+    std::vector<std::string>().swap(filexts); // free memory    
+
+    if (cnt > 0) { 
+        // Dump last chunk
+        sort(filenames.begin(),filenames.end()); // Sort vector
+        sprintf(fileName, "%d", chunk_cnt);
+        FILE *f = fopen((fpath + fileTypes[ftype].indexFilename + fileName).c_str(), "w");
+        if (f == NULL) {
+            printf("Error opening last filelist chunk\n");
+            return;
+        }
+        for (int n=0; n < cnt;n++) fputs((filenames[n] + std::string(63 - filenames[n].size(), ' ') + "\n").c_str(),f);
+        fclose(f);
+    }
+
     filenames.clear(); // Clear vector
     std::vector<std::string>().swap(filenames); // free memory
 
-    // printf("Sort done.\n");
+    if (chunk_cnt == 0) {
+        if (cnt == 0) return;
+        rename((fpath + fileTypes[ftype].indexFilename + "0").c_str(),(fpath + fileTypes[ftype].indexFilename).c_str());   // Rename unique chunk
+    } else {
+        Mergefiles(fpath, ftype, chunk_cnt);
+    }
 
-    return chunk_cnt;
+    // Add directory hash to last line of file
+    // printf("Hashcode: %lu\n",h);
+    FILE *fout;
+    fout  = fopen((fpath + fileTypes[ftype].indexFilename).c_str(), "a");
+    fputs(to_string(h).c_str(),fout);
+    fclose(fout);
+    fout = NULL;
 
 }
 
-void FileUtils::Mergefiles(string fpath, int chunk_cnt) {
+void FileUtils::Mergefiles(string fpath, uint8_t ftype, int chunk_cnt) {
 
     char fileName[8];
 
     // Merge sort
     FILE *file1,*file2,*fout;
-    char fname1[64];
-    char fname2[64];
+    // char fname1[64];
+    // char fname2[64];
+    char fname1[128];
+    char fname2[128];
 
-    file1 = fopen((fpath + "/.d0").c_str(), "r");
-    file2 = fopen((fpath + "/.d1").c_str(), "r");
+    file1 = fopen((fpath + fileTypes[ftype].indexFilename + "0").c_str(), "r");
+    file2 = fopen((fpath + fileTypes[ftype].indexFilename + "1").c_str(), "r");
     string bufout="";
     int bufcnt = 0;
 
     int  n = 1;
     while (file2 != NULL) {
 
-        sprintf(fileName, "/.t%d", n);
+        sprintf(fileName, ".tmp%d", n);
         // printf("Creating %s\n",fileName);
         fout  = fopen((fpath + fileName).c_str(), "w");
 
@@ -388,7 +432,7 @@ void FileUtils::Mergefiles(string fpath, int chunk_cnt) {
 
             bufcnt++;
 
-            if (bufcnt == 128) {
+            if (bufcnt == 64) {
                 fwrite(bufout.c_str(),sizeof(char),bufout.length(),fout);
                 bufout = "";
                 bufcnt = 0;
@@ -405,29 +449,33 @@ void FileUtils::Mergefiles(string fpath, int chunk_cnt) {
         fclose (fout);
 
         // Next cycle: open t<n> for read
-        sprintf(fileName, "/.t%d", n);
+        sprintf(fileName, ".tmp%d", n);
         file1 = fopen((fpath + fileName).c_str(), "r");
 
         n++;
 
-        sprintf(fileName, "/.d%d", n);
-        file2 = fopen((fpath + fileName).c_str(), "r");
+        sprintf(fileName, "%d", n);
+        file2 = fopen((fpath + fileTypes[ftype].indexFilename + fileName).c_str(), "r");
 
     }
 
     fclose(file1);
 
     // Rename final chunk
-    sprintf(fileName, "/.t%d", n - 1);
-    rename((fpath + fileName).c_str(),(fpath + "/.d").c_str());
+    sprintf(fileName, ".tmp%d", n - 1);
+    rename((fpath + fileName).c_str(),(fpath + fileTypes[ftype].indexFilename).c_str());
 
     // Remove temp files
     for (int n = 0; n <= chunk_cnt; n++) {
-        sprintf(fileName, "/.d%d", n);
-        remove((fpath + fileName).c_str());
-        sprintf(fileName, "/.t%d", n);
+        sprintf(fileName, "%d", n);
+        remove((fpath + fileTypes[ftype].indexFilename + fileName).c_str());
+        sprintf(fileName, ".tmp%d", n);
         remove((fpath + fileName).c_str());
     }
+
+    file1 = NULL;
+    file2 = NULL;
+    fout = NULL;
 
 }
 

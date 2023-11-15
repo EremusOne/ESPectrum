@@ -47,7 +47,6 @@ visit https://zxespectrum.speccy.org/contacto
 uint32_t CPU::tstates = 0;
 uint64_t CPU::global_tstates = 0;
 uint32_t CPU::statesInFrame = 0;
-uint32_t CPU::framecnt = 0;
 uint8_t CPU::latetiming = 0;
 uint8_t CPU::IntStart = 0;
 uint8_t CPU::IntEnd = 0;
@@ -118,7 +117,9 @@ void IRAM_ATTR CPU::loop()
     global_tstates += statesInFrame; // increase global Tstates
     tstates -= statesInFrame;
 
-    framecnt++;
+    #ifndef NO_VIDEO
+    VIDEO::EndFrame();
+    #endif
 
 }
 

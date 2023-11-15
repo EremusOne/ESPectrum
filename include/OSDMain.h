@@ -74,7 +74,7 @@ public:
     static void osdAt(uint8_t row, uint8_t col);
     static void drawOSD(bool bottom_info);
     static void drawStats(char *line1, char *line2);    
-    static void do_OSD(fabgl::VirtualKey KeytoESP);
+    static void do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT);
     static void HWInfo();
 
     // // Error
@@ -84,22 +84,18 @@ public:
     static void osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause);
 
     // // Menu
-    // static void newMenu(string new_menu);
-    // static void menuRecalc();
     static unsigned short menuRealRowFor(uint8_t virtual_row_num);
     static bool menuIsSub(uint8_t virtual_row_num);
     static void menuPrintRow(uint8_t virtual_row_num, uint8_t line_type);
-    // static void menuDraw();
     static void menuRedraw();
-    // static string getArchMenu();
-    // static string getRomsetMenu(string arch);
     static void WindowDraw();
     static unsigned short menuRun(string new_menu);
-    static string menuFile(string new_menu, string title, string extensions, int currentFile);
+    static string menuFile(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows);
     static int menuTape(string title);    
     static void menuScroll(bool up);
-    // static void filemenuDraw();
-    static void filemenuRedraw(string title);
+    static void filemenuRedraw(string title, uint8_t ftype);
+    static void filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type);
+    static void filemenuScrollBar(uint8_t ftype);
     static void tapemenuRedraw(string title);
     static void PrintRow(uint8_t virtual_row_num, uint8_t line_type);
     static void menuAt(short int row, short int col);

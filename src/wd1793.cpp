@@ -105,6 +105,8 @@ void WD1793::ExecuteCommand(unsigned char wdCmd) {
 
     }
 
+    // if ((StatusReg & STATUS_BUSY) != 0) return;
+
     // set drive ready status bit
     StatusReg = ~((unsigned char)DriveReady) << 7;
     if(!DriveReady) {

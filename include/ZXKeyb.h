@@ -38,25 +38,22 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include <inttypes.h>
 
-class ZXKeyb
-{
+class ZXKeyb {
+
 public:
 
-    // setup pins for physical keyboard
-    static void setup();
-
-    // process physical keyboard
-    static void process();
+    static void setup();    // setup pins for physical keyboard
+    static void process();  // process physical keyboard
 
     static uint8_t ZXcols[8];
-    
-    static uint8_t PrevFkeyOSD;
-
     static bool Exists;
+    // static uint8_t PrevFkeyOSD;
 
 private:
+
     static void putRows(uint8_t row_pattern);
     static uint8_t getCols();
+
 };
 
 #endif // ZXKEYB_h

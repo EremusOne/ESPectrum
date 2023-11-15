@@ -249,11 +249,11 @@ static const char *MENU_PERSIST_SAVE[2] = { MENU_PERSIST_SAVE_EN, MENU_PERSIST_S
 static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_LOAD_ES };
 
 #define MENU_STORAGE_EN "Storage\n"\
-    "Flash tape load\t>\n"\
-    "Refresh directories\n"
+    "Flash tape load\t>\n"
+    // "Refresh directories\n"
 #define MENU_STORAGE_ES "Almacenamiento\n"\
-    "Carga rapida cinta\t>\n"\
-    "Refrescar directorios\n"
+    "Carga rapida cinta\t>\n"
+    // "Refrescar directorios\n"
 // static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
 #define MENU_FLASHLOAD_EN "Flash load\n"\

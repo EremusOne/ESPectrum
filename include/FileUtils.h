@@ -48,6 +48,17 @@ using namespace std;
 // Defines
 #define ASCII_NL 10
 
+#define DISK_SNAFILE 0
+#define DISK_TAPFILE 1
+#define DISK_DSKFILE 2
+
+struct DISK_FTYPE {
+    string fileExts;
+    string indexFilename;
+    int begin_row;
+    int focus;
+};
+
 class FileUtils
 {
 public:
@@ -59,8 +70,8 @@ public:
     // static void           sanitizeFilename(String filename); // in-place
     // static File           safeOpenFileRead(String filename);
     // static string getFileEntriesFromDir(string path);
-    static int DirToFile(string Dir, string fileExts);
-    static void Mergefiles(string fpath, int chunk_cnt);
+    static void DirToFile(string Dir, uint8_t ftype /*string fileExts*/);
+    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
     // static string getSortedFileList(string fileDir);
     static bool hasSNAextension(string filename);
@@ -71,11 +82,8 @@ public:
 
     static string SNA_Path; // Current SNA path on the SD (for future folder support)
     static string TAP_Path; // Current TAP path on the SD (for future folder support)    
-    static string DSK_Path; // Current DSK path on the SD (for future folder support)        
-
-    static int curSNAFile; // Current SNA file index on browser
-    static int curTAPFile; // Current TAP file index on browser
-    static int curDSKFile; // Current DSK file index on browser    
+    static string DSK_Path; // Current DSK path on the SD (for future folder support)  
+    static DISK_FTYPE fileTypes[3];
 
 private:
     friend class Config;
@@ -100,8 +108,8 @@ private:
 #define DISK_SNA_DIR "/s"
 #define DISK_TAP_DIR "/t"
 #define DISK_DSK_DIR "/d"
-#define DISK_SCR_DIR "/c"
-#define DISK_PSNA_DIR "/p"
+#define DISK_SCR_DIR "/.c"
+#define DISK_PSNA_DIR "/.p"
 #define DISK_PSNA_FILE "persist"
 
 #define NO_RAM_FILE "none"
@@ -110,7 +118,7 @@ private:
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
 
-#define MAX_FNAMES_PER_CHUNK 256
+#define MAX_FNAMES_PER_CHUNK 128
 
 // inline utility functions for uniform access to file/memory
 // and making it easy to to implement SNA/Z80 functions
