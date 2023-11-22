@@ -467,7 +467,7 @@ void Tape::TAP_Stop()
     // tape = NULL;
 }
 
-void IRAM_ATTR Tape::TAP_Read()
+IRAM_ATTR void Tape::TAP_Read()
 {
     uint64_t tapeCurrent = (CPU::global_tstates + CPU::tstates) - tapeStart;
     
@@ -545,11 +545,6 @@ void Tape::Save() {
     unsigned char xxor,salir_s;
 	uint8_t dato;
 	int longitud;
-
-    // if (tapeSaveName == "none") {
-    //     OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
-    //     return;
-    // }
 
     fichero = fopen(tapeSaveName.c_str(), "ab");
     if (fichero == NULL)

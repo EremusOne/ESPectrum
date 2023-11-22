@@ -47,7 +47,6 @@ public:
 
     static uint8_t ZXcols[8];
     static bool Exists;
-    // static uint8_t PrevFkeyOSD;
 
 private:
 

@@ -86,6 +86,9 @@ unsigned int OSD::SaveRectpos = 0;
 unsigned short OSD::scrW = 320;
 unsigned short OSD::scrH = 240;
 
+char OSD::stats_lin1[25]; // "CPU: 00000 / IDL: 00000 ";
+char OSD::stats_lin2[25]; // "FPS:000.00 / FND:000.00 ";
+
 // // X origin to center an element with pixel_width
 unsigned short OSD::scrAlignCenterX(unsigned short pixel_width) { return (scrW / 2) - (pixel_width / 2); }
 
@@ -146,7 +149,7 @@ void OSD::drawOSD(bool bottom_info) {
     osdHome();
 }
 
-void OSD::drawStats(char *line1, char *line2) {
+void OSD::drawStats() {
 
     unsigned short x,y;
 
@@ -161,9 +164,9 @@ void OSD::drawStats(char *line1, char *line2) {
     VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
     VIDEO::vga.setFont(Font6x8);
     VIDEO::vga.setCursor(x,y);
-    VIDEO::vga.print(line1);
+    VIDEO::vga.print(stats_lin1);
     VIDEO::vga.setCursor(x,y+8);
-    VIDEO::vga.print(line2);
+    VIDEO::vga.print(stats_lin2);
 
 }
 
@@ -202,8 +205,6 @@ static bool persistSave(uint8_t slotnumber)
 static bool persistLoad(uint8_t slotnumber)
 {
     
-    OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO, 0);
-
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     char persistfinfo[sizeof(DISK_PSNA_FILE) + 6];        
 
@@ -219,9 +220,11 @@ static bool persistLoad(uint8_t slotnumber)
         string finfo = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfinfo;
         FILE *f = fopen(finfo.c_str(), "r");
         if (f == NULL) {
-            printf("Error opening %s\n",persistfinfo);
+            OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+            // printf("Error opening %s\n",persistfinfo);
             return false;
         }
+
         char buf[256];
         fgets(buf, sizeof(buf),f);
         string persist_arch = buf;
@@ -239,7 +242,6 @@ static bool persistLoad(uint8_t slotnumber)
             Config::save("ram");
             #endif
             Config::last_ram_file = Config::ram_file;
-            // OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
         }
     }
 
@@ -247,16 +249,13 @@ static bool persistLoad(uint8_t slotnumber)
 
 }
 
-#define REPDEL 140 // As in real ZX Spectrum (700 ms.)
-static int zxDelay = 0;
-
 // OSD Main Loop
-void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
+void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
 
     static uint8_t last_sna_row = 0;
     fabgl::VirtualKeyItem Nextkey;
 
-    if (SHIFT) {
+    if (CTRL) {
 
         if (KeytoESP == fabgl::VK_F5) {
             if (Config::CenterH > -16) Config::CenterH--;
@@ -278,52 +277,29 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
             Config::save("CenterV");
             
             osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
+        } else
+        if (KeytoESP == fabgl::VK_F1) { // Show mem info
+            OSD::HWInfo();
         }
 
     } else {
 
         if (KeytoESP == fabgl::VK_PAUSE) {
+
             click();
+
             osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 1000);
-
-            // while (1) {
-            //     ESPectrum::readKbdJoy();
-            //     while (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {        
-            //         if (ESPectrum::readKbd(&Nextkey))
-            //             if (Nextkey.down)
-            //                 if (Nextkey.vk == fabgl::VK_PAUSE) {
-            //                     click();
-            //                     return;
-            //                 } else
-            //                     osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 500);
-            //     }
-            //     vTaskDelay(5 / portTICK_PERIOD_MS);
-            // }
-
-            zxDelay = REPDEL;
 
             while (1) {
 
-                if (ZXKeyb::Exists) {
-
-                    ZXKeyb::process();
-
-                    if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[5], 0))) { // ENTER, BREAK, P
-                        if (zxDelay == 0) {
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, true, false);
-                            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_PAUSE, false, false);                
-                            zxDelay = REPDEL;
-                        }
-                    }
-                
-                }
+                ZXKbdRead();
 
                 ESPectrum::readKbdJoy();
 
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                     if (ESPectrum::readKbd(&Nextkey)) {
                         if(!Nextkey.down) continue;
-                            if (Nextkey.vk == fabgl::VK_PAUSE) {
+                            if (Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_PAUSE) {
                                 click();
                                 break;
                             } else
@@ -333,20 +309,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
 
                 vTaskDelay(5 / portTICK_PERIOD_MS);
 
-                if (zxDelay > 0) zxDelay--;
-
             }
-
-        }
-        else if (KeytoESP == fabgl::VK_GRAVEACCENT) { // Show mem info
-
-            OSD::HWInfo();
 
         }
         else if (KeytoESP == fabgl::VK_F2) {
             menu_level = 0;
             menu_saverect = false;
-            string mFile = menuFile(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
+            string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
             if (mFile != "") {
                 mFile.erase(0, 1);
                 string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
@@ -379,7 +348,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
         else if (KeytoESP == fabgl::VK_F5) {
             menu_level = 0; 
             menu_saverect = false;  
-            string mFile = menuFile(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
+            string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
             if (mFile != "") {
 
                 string keySel = mFile.substr(0,1);
@@ -457,24 +426,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                     VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
                 VIDEO::OSD = true;
                 ESPectrum::TapeNameScroller = 0;
+                OSD::drawStats();
             }    
             click();
         }
         else if (KeytoESP == fabgl::VK_F9) { // Volume down
             if (ESPectrum::aud_volume>-16) {
-                    click();
-                    ESPectrum::aud_volume--;
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
+                ESPectrum::aud_volume--;
+                pwm_audio_set_volume(ESPectrum::aud_volume);
+                click();
             }
-            // osdCenteredMsg("Volume: " + to_string(ESPectrum::aud_volume + 16), LEVEL_INFO, 125);                                
+            // osdCenteredMsg("Volume: " + to_string(ESPectrum::aud_volume + 16), LEVEL_INFO, 125);
         }
         else if (KeytoESP == fabgl::VK_F10) { // Volume up
             if (ESPectrum::aud_volume<0) {
-                    click();                
-                    ESPectrum::aud_volume++;
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
+                ESPectrum::aud_volume++;
+                pwm_audio_set_volume(ESPectrum::aud_volume);
+                click();
             }
-            // osdCenteredMsg("Volume: " + to_string(ESPectrum::aud_volume + 16), LEVEL_INFO, 125);                                
+            // osdCenteredMsg("Volume: " + to_string(ESPectrum::aud_volume + 16), LEVEL_INFO, 125);
         }    
         // else if (KeytoESP == fabgl::VK_F9) {
         //     ESPectrum::ESPoffset -= 5;
@@ -525,7 +495,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (sna_mnu == 1) {
-                            string mFile = menuFile(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,30,16);
+                            string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,30,16);
                             if (mFile != "") {
                                 mFile.erase(0, 1);
                                 string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
@@ -587,7 +557,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                         if (tap_num == 1) {
                             // menu_curopt = 1;
                             // Select TAP File
-                            string mFile = menuFile(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,30,16);
+                            string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,30,16);
                             if (mFile != "") {
 
                                 string keySel = mFile.substr(0,1);
@@ -685,7 +655,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                             if (opt2 > 0) {
                                 if (opt2 == 1) {
                                     menu_saverect = true;
-                                    string mFile = menuFile(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],DISK_DSKFILE,30,16);
+                                    string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],DISK_DSKFILE,30,16);
                                     if (mFile != "") {
                                         mFile.erase(0, 1);
                                         string fname = FileUtils::MountPoint + "/" + FileUtils::DSK_Path + "/" + mFile;
@@ -1169,23 +1139,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                 else
                     VIDEO::vga.print(Config::lang ? OSD_HELP_ES : OSD_HELP_EN);
 
-                zxDelay = REPDEL;
-
                 while (1) {
 
-                    if (ZXKeyb::Exists) {
-
-                        ZXKeyb::process();
-
-                        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // ENTER, BREAK, 0, 9
-                            if (zxDelay == 0) {
-                                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                                zxDelay = REPDEL;
-                            }
-                        }
-                    
-                    }
+                    ZXKbdRead();
 
                     ESPectrum::readKbdJoy();
 
@@ -1197,8 +1153,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                     }
 
                     vTaskDelay(5 / portTICK_PERIOD_MS);
-
-                    if (zxDelay > 0) zxDelay--;
 
                 }
 
@@ -1230,9 +1184,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                 VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
                 // VIDEO::vga.print(Config::lang ? OSD_ABOUT1_ES : OSD_ABOUT1_EN);
                 
-                #define REPABOUT 35
-                zxDelay = REPABOUT;
-
                 pos_x = Config::aspect_16_9 ? 66 : 46;
                 pos_y = Config::aspect_16_9 ? 68 : 88;            
                 int osdRow = 0; int osdCol = 0;
@@ -1294,19 +1245,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
 
                     VIDEO::vga.fillRect(pos_x + ((osdCol + 1) * 6), pos_y + (osdRow * 8), 6,8, cursorCol );
                     
-                    if (ZXKeyb::Exists) {
-
-                        ZXKeyb::process();
-
-                        if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) { // ENTER, BREAK, 0, 9                    
-                            if (zxDelay == 0) {
-                                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                                ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                
-                                zxDelay = REPABOUT;
-                            }
-                        }
-
-                    }
+                    ZXKbdRead();
 
                     ESPectrum::readKbdJoy();
 
@@ -1318,8 +1257,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT) {
                     }
 
                     vTaskDelay(20 / portTICK_PERIOD_MS);
-                                    
-                    if (zxDelay > 0) zxDelay--;
 
                 }
 
@@ -1374,13 +1311,16 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level) {
 
 void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
 
-    const unsigned short w = (msg.length() + 2) * OSD_FONT_W;
     const unsigned short h = OSD_FONT_H * 3;
-    const unsigned short x = scrAlignCenterX(w);
     const unsigned short y = scrAlignCenterY(h);
     unsigned short paper;
     unsigned short ink;
     unsigned int j;
+
+    if (msg.length() > (scrW / 6) - 4) msg = msg.substr(0,(scrW / 6) - 4);
+
+    const unsigned short w = (msg.length() + 2) * OSD_FONT_W;
+    const unsigned short x = scrAlignCenterX(w);
 
     switch (warn_level) {
     case LEVEL_OK:
@@ -1442,7 +1382,6 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
 unsigned short OSD::rowCount(string menu) {
     unsigned short count = 0;
     for (unsigned short i = 0; i < menu.length(); i++) {
-//    for (unsigned short i = 1; i < menu.length(); i++) {
         if (menu.at(i) == ASCII_NL) {
             count++;
         }
@@ -1575,39 +1514,22 @@ void OSD::HWInfo() {
     VIDEO::vga.print(textout.c_str());
 
     // Wait for key
-
-    zxDelay = REPDEL;
-
     while (1) {
 
-        if (ZXKeyb::Exists) {
-
-            ZXKeyb::process();
-
-            if ((!bitRead(ZXKeyb::ZXcols[6], 0)) || (!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[5], 2))) { // ENTER, BREAK or I
-                if (zxDelay == 0) {
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, true, false);
-                    ESPectrum::PS2Controller.keyboard()->injectVirtualKey(fabgl::VK_RETURN, false, false);                        
-                    zxDelay = REPDEL;
-                }
-            }
-
-        }
+        ZXKbdRead();
 
         ESPectrum::readKbdJoy();
 
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
             ESPectrum::PS2Controller.keyboard()->getNextVirtualKey(&Nextkey);
             if(!Nextkey.down) continue;
-            if (Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_GRAVEACCENT) {
+            if (Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_F1) {
                 click();
                 break;
             }
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
-
-        if (zxDelay > 0) zxDelay--;
 
     }
 

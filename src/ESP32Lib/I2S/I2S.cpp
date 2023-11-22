@@ -30,7 +30,7 @@ I2S::I2S(const int i2sIndex)
 	stopSignal = false;
 }
 
-void IRAM_ATTR I2S::interruptStatic(void *arg)
+IRAM_ATTR void I2S::interruptStatic(void *arg)
 {
 	volatile i2s_dev_t &i2s = *i2sDevices[((I2S *)arg)->i2sIndex];
 	//i2s object not safely accesed in DRAM or IRAM

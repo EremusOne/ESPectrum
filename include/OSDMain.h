@@ -69,38 +69,38 @@ public:
     static unsigned short osdInsideX();
     static unsigned short osdInsideY();
 
-    // // OSD
+    // OSD
     static void osdHome();
     static void osdAt(uint8_t row, uint8_t col);
     static void drawOSD(bool bottom_info);
-    static void drawStats(char *line1, char *line2);    
-    static void do_OSD(fabgl::VirtualKey KeytoESP, uint8_t SHIFT);
+    static void drawStats();
+    static void do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL);
     static void HWInfo();
 
-    // // Error
+    // Error
     static void errorPanel(string errormsg);
     static void errorHalt(string errormsg);
     static void osdCenteredMsg(string msg, uint8_t warn_level);
     static void osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause);
 
-    // // Menu
+    // Menu
     static unsigned short menuRealRowFor(uint8_t virtual_row_num);
     static bool menuIsSub(uint8_t virtual_row_num);
     static void menuPrintRow(uint8_t virtual_row_num, uint8_t line_type);
     static void menuRedraw();
     static void WindowDraw();
     static unsigned short menuRun(string new_menu);
-    static string menuFile(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows);
+    static string fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows);
     static int menuTape(string title);    
     static void menuScroll(bool up);
-    static void filemenuRedraw(string title, uint8_t ftype);
-    static void filemenuPrintRow(uint8_t virtual_row_num, uint8_t line_type);
-    static void filemenuScrollBar(uint8_t ftype);
+    static void fd_Redraw(string title, string fdir, uint8_t ftype);
+    static void fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type);
     static void tapemenuRedraw(string title);
     static void PrintRow(uint8_t virtual_row_num, uint8_t line_type);
     static void menuAt(short int row, short int col);
-    static void menuScrollBar();
+    static void menuScrollBar(unsigned short br);
     static void click();
+    static void ZXKbdRead();
     static uint8_t menu_level;
     static bool menu_saverect;    
     static unsigned short menu_curopt;    
@@ -113,6 +113,9 @@ public:
     static void esp_hard_reset();
 
     static esp_err_t updateFirmware(FILE *firmware);
+
+    static char stats_lin1[25]; // "CPU: 00000 / IDL: 00000 ";
+    static char stats_lin2[25]; // "FPS:000.00 / FND:000.00 ";
 
 };
 

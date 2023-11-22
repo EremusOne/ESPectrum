@@ -20,8 +20,6 @@
 
 #include <stdint.h>
 
-#pragma GCC optimize ("O3")
-
 #define Z80CPP_IS_LITTLE_ENDIAN 1
 
 /* Union allowing a register pair to be accessed as bytes or as a word */
@@ -218,7 +216,7 @@ private:
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool breakpointEnabled {false};
 #endif
-    static void IRAM_ATTR copyToRegister(uint8_t value);
+    static void copyToRegister(uint8_t value);
 
 public:
     // Constructor de la clase
@@ -390,13 +388,13 @@ public:
     static void reset(void);
 
     // Execute one instruction
-    static void IRAM_ATTR execute();
-    static void IRAM_ATTR exec_nocheck();
+    static void execute();
+    static void exec_nocheck();
 
     // Check INT
-    static void IRAM_ATTR checkINT(void);
+    static void checkINT(void);
 
-    static void IRAM_ATTR incRegR(uint8_t inc);
+    static void incRegR(uint8_t inc);
 
     static void Xor(uint8_t oper8);
 
@@ -491,28 +489,28 @@ private:
     static inline void push(uint16_t word);
 
     // LDI
-    static void IRAM_ATTR ldi(void);
+    static void ldi(void);
 
     // LDD
-    static void IRAM_ATTR ldd(void);
+    static void ldd(void);
 
     // CPI
-    static void IRAM_ATTR cpi(void);
+    static void cpi(void);
 
     // CPD
-    static void IRAM_ATTR cpd(void);
+    static void cpd(void);
 
     // INI
-    static void IRAM_ATTR ini(void);
+    static void ini(void);
 
     // IND
-    static void IRAM_ATTR ind(void);
+    static void ind(void);
 
     // OUTI
-    static void IRAM_ATTR outi(void);
+    static void outi(void);
 
     // OUTD
-    static void IRAM_ATTR outd(void);
+    static void outd(void);
 
     static void SetAbortedINxR_OTxRFlags();
 
@@ -750,7 +748,7 @@ private:
     static void decodeOpcodebd(void);                    
     static void decodeOpcodebe(void);                    
 
-    static void IRAM_ATTR decodeOpcodebf(void); // Used for LOAD TRAP
+    static void decodeOpcodebf(void); // Used for LOAD TRAP
 
     static void decodeOpcodec0(void);
     static void decodeOpcodec1(void);
@@ -1092,8 +1090,8 @@ private:
     static void dcCBFE(void);                    
     static void dcCBFF(void);                    
 
-    static void IRAM_ATTR check_trdos();                 
-    static void IRAM_ATTR check_trdos_unpage();                 
+    static void check_trdos();                 
+    static void check_trdos_unpage();                 
 };
 
 #endif // Z80CPP_H

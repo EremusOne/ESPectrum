@@ -65,9 +65,9 @@ string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (fo
 string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
 DISK_FTYPE FileUtils::fileTypes[3] = {
-    {".sna,.SNA,.z80,.Z80",".s",1,1},
-    {".tap,.TAP",".t",1,1},
-    {".trd,.TRD,.scl,.SCL",".d",1,1}
+    {".sna,.SNA,.z80,.Z80",".s",2,2},
+    {".tap,.TAP",".t",2,2},
+    {".trd,.TRD,.scl,.SCL",".d",2,2}
 };
 
 void FileUtils::initFileSystem() {

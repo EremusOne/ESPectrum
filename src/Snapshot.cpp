@@ -68,25 +68,17 @@ bool LoadSnapshot(string filename, string force_arch) {
 
     bool res = false;
 
-    // // Stop keyboard input
-    // ESPectrum::PS2Controller.keyboard()->suspendPort();
-    // if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->suspendPort();
-
     bool OSDprev = VIDEO::OSD;
     
     if (FileUtils::hasSNAextension(filename)) {
 
-        // printf("FileSNA::load %s\n",filename.c_str());
-
-        OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename, LEVEL_INFO, 0);
+        OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
 
         res = FileSNA::load(filename, force_arch);
 
     } else if (FileUtils::hasZ80extension(filename)) {
 
-        // printf("FileZ80::load %s\n",filename.c_str());
-
-        OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
+        OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
 
         res = FileZ80::load(filename);
 
@@ -100,10 +92,6 @@ bool LoadSnapshot(string filename, string force_arch) {
             VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
         ESPectrum::TapeNameScroller = 0;
     }    
-
-    // // Resume keyboard input
-    // ESPectrum::PS2Controller.keyboard()->resumePort();
-    // if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
 
     return res;
 

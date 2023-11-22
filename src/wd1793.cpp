@@ -44,7 +44,7 @@ using namespace std;
 
 #include "wd1793.h"
 
-#pragma GCC optimize ("O3")
+// #pragma GCC optimize("O3")
 
 void WD1793::Init() {
 

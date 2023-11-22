@@ -40,7 +40,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "hardconfig.h"
 #include "ESPectrum.h"
 
-#pragma GCC optimize ("O3")
+// #pragma GCC optimize("O3")
 
 /* emulator settings */
 int AySound::table[32];                 /**< table of volumes for chip */
@@ -114,7 +114,7 @@ static uint8_t Envelope [16][128];
 //     5841, 8250, 11654, 16462, 23253, 32845, 46395, 65535
 // };
 
-const uint8_t WORD_ALIGNED_ATTR DRAM_ATTR Rampa_AY_table[16] = {0,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
+DRAM_ATTR static const uint8_t Rampa_AY_table[16] = {0,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
 
 // Borrowed from SoftSpectrum48 source code:
 // Values according to: http://forum.tslabs.info/viewtopic.php?f=6&t=539
@@ -304,7 +304,7 @@ void AySound::prepare_generation()
 // Generate sound.
 // Fill sound buffer with current register data
 //
-void IRAM_ATTR AySound::gen_sound(int sound_bufsize, int bufpos)
+IRAM_ATTR void AySound::gen_sound(int sound_bufsize, int bufpos)
 {
 
     int tmpvol;

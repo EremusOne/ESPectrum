@@ -44,7 +44,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "CPU.h"
 #include "wd1793.h"
 
-#pragma GCC optimize ("O3")
+// #pragma GCC optimize("O3")
 
 // Values calculated for BEEPER, EAR, MIC bit mask (values 0-7)
 // Taken from FPGA values suggested by Rampa
@@ -57,24 +57,24 @@ visit https://zxespectrum.speccy.org/contacto
 //   6: ula <= 8'hF8;
 //   7: ula <= 8'hFF;
 // and adjusted for BEEPER_MAX_VOLUME = 97
-uint8_t speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
-
-uint8_t Ports::port[128];
+uint8_t Ports::speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
+DRAM_ATTR uint8_t Ports::port[128];
 uint8_t Ports::port254 = 0;
 
-uint8_t IRAM_ATTR Ports::input(uint16_t address) {
+IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
     uint8_t data;
+    uint8_t rambank = address >> 14;    
 
     // ** I/O Contention (Early) *************************
-    VIDEO::Draw(1, MemESP::ramContended[address >> 14]);
+    VIDEO::Draw(1, MemESP::ramContended[rambank]);
     // ** I/O Contention (Early) *************************
     
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
         VIDEO::Draw(3, true);
     } else {
-        if (MemESP::ramContended[address >> 14]) {
+        if (MemESP::ramContended[rambank]) {
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);        
@@ -171,7 +171,7 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address) {
                     if (MemESP::videoLatch != bitRead(data, 3)) {
                         MemESP::videoLatch = bitRead(data, 3);
                         // This, if not using the ptime128 draw version, fixs ptime and ptime128
-                        if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                        if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
                             VIDEO::Draw(2, false);
                             CPU::tstates -= 2;
                         }
@@ -192,12 +192,13 @@ uint8_t IRAM_ATTR Ports::input(uint16_t address) {
 
 }
 
-void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {    
+IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {    
     
     int Audiobit;
+    uint8_t rambank = address >> 14;
 
     // ** I/O Contention (Early) *************************
-    VIDEO::Draw(1, MemESP::ramContended[address >> 14]);
+    VIDEO::Draw(1, MemESP::ramContended[rambank]);
     // ** I/O Contention (Early) *************************
 
     // ULA =======================================================================
@@ -265,15 +266,12 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
     // ** I/O Contention (Late) **************************
     if ((address & 0x0001) == 0) {
         VIDEO::Draw(3, true);
-        // printf("Case 1\n");
     } else {
-        if (MemESP::ramContended[address >> 14]) {
+        if (MemESP::ramContended[rambank]) {
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);
             VIDEO::Draw(1, true);        
-            // printf("Case 2\n");
         } else {
-            // printf("Case 3\n");
             VIDEO::Draw(3, false);
         }
     }
@@ -300,7 +298,7 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
                 // Seems not needed in Pentagon
                 // This, if not using the ptime128 draw version, fixs ptime and ptime128
                 if (!Z80Ops::isPentagon) {
-                    if (((address & 0x0001) != 0) && (MemESP::ramContended[address >> 14])) {
+                    if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
                         VIDEO::Draw(2, false);
                         CPU::tstates -= 2;
                     }

@@ -71,35 +71,38 @@ public:
   // Video draw functions
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Common
+  #ifdef NO_VIDEO
   static void NoVideo(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR EndFrame();
-  static void IRAM_ATTR Blank(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR Flush(); // For flushing video buffer as fast as possible after HALT
+  #endif
+  // static void NoDraw(unsigned int statestoadd, bool contended);
+  static void EndFrame();
+  static void Blank(unsigned int statestoadd, bool contended);
+  // static void Flush(); // For flushing video buffer as fast as possible after HALT
 
   // 48 / 128
-  static void IRAM_ATTR TopBorder_Blank(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR TopBorder(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreen_Blank(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreenLB(unsigned int statestoadd, bool contended);
+  static void TopBorder_Blank(unsigned int statestoadd, bool contended);
+  static void TopBorder(unsigned int statestoadd, bool contended);
+  static void MainScreen_Blank(unsigned int statestoadd, bool contended);
+  static void MainScreenLB(unsigned int statestoadd, bool contended);
   static void MainScreen(unsigned int statestoadd, bool contended);
   static void MainScreen_OSD(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreenRB(unsigned int statestoadd, bool contended);    
-  static void IRAM_ATTR BottomBorder_Blank(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR BottomBorder(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR BottomBorder_OSD(unsigned int statestoadd, bool contended);    
+  static void MainScreenRB(unsigned int statestoadd, bool contended);    
+  static void BottomBorder_Blank(unsigned int statestoadd, bool contended);
+  static void BottomBorder(unsigned int statestoadd, bool contended);
+  static void BottomBorder_OSD(unsigned int statestoadd, bool contended);    
     
   // Pentagon
-  static void IRAM_ATTR TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR TopBorder_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreenLB_Pentagon(unsigned int statestoadd, bool contended);    
+  static void TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void TopBorder_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreenLB_Pentagon(unsigned int statestoadd, bool contended);    
   static void MainScreen_Pentagon(unsigned int statestoadd, bool contended);
   static void MainScreen_Pentagon_delay(unsigned int statestoadd, bool contended);  
   static void MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreenRB_Pentagon(unsigned int statestoadd, bool contended);    
-  static void IRAM_ATTR BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreenRB_Pentagon(unsigned int statestoadd, bool contended);    
+  static void BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
+  static void BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
 
   static uint8_t (*getFloatBusData)();
   static uint8_t getFloatBusData48();
@@ -147,8 +150,8 @@ public:
 
 static unsigned int is169;
 
-static WORD_ALIGNED_ATTR DRAM_ATTR uint16_t offBmp[SPEC_H];
-static WORD_ALIGNED_ATTR DRAM_ATTR uint16_t offAtt[SPEC_H];
+static uint16_t offBmp[SPEC_H];
+static uint16_t offAtt[SPEC_H];
 
 // Colors for 6 bit mode
 //                            //   BB GGRR 
@@ -178,7 +181,7 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
 };
 
-static WORD_ALIGNED_ATTR DRAM_ATTR uint32_t* AluBytes[16];
+static uint32_t* AluBytes[16];
 
 // static unsigned char DrawStatus;
 

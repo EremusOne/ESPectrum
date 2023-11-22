@@ -41,7 +41,8 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
-#define EMU_VERSION "     v1.0pr "
+// #define EMU_VERSION "       v1.0 "
+#define EMU_VERSION " Dev 221123 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -62,13 +63,13 @@ visit https://zxespectrum.speccy.org/contacto
 static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 
 #define OSD_PSNA_NOT_AVAIL "No Persist Snapshot Available"
-#define OSD_PSNA_LOADING "Loading Persist Snapshot..."
-#define OSD_PSNA_SAVING "Saving Persist Snapshot..."
+#define OSD_PSNA_LOADING "Loading Persist Snapshot"
+#define OSD_PSNA_SAVING  "Saving Persist Snapshot"
 #define OSD_PSNA_SAVE_WARN "Disk error. Trying slow mode, be patient"
 #define OSD_PSNA_SAVE_ERR "ERROR Saving Persist Snapshot"
-#define OSD_PSNA_LOADED  "  Persist Snapshot Loaded  "
+#define OSD_PSNA_LOADED  "Persist Snapshot Loaded"
 #define OSD_PSNA_LOAD_ERR "ERROR Loading Persist Snapshot"
-#define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
+#define OSD_PSNA_SAVED  "Persist Snapshot Saved"
 #define OSD_TAPE_FLASHLOAD "Flash loading TAP file"
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 #define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
@@ -559,7 +560,7 @@ static const char *AboutMsg[2][6] = {
     " [Q]    Hard reset\n"\
     " [W]    Reset ESP32\n"\
     " [P]    Pause\n"\
-    " [C]    BMP screenshot (SD folder /c)\n"
+    " [S]    BMP screenshot (SD folder /c)\n"
 
 #define OSD_HELP_ES_ZX \
     " Presione CAPS SHIFT + SYMBOL SHIFT y:\n"\
@@ -579,7 +580,7 @@ static const char *AboutMsg[2][6] = {
     " [Q]    Reset completo\n"\
     " [W]    Resetear ESP32\n"\
     " [P]    Pausa\n"\
-    " [C]    Captura BMP (Carpeta SD /c)\n"
+    " [S]    Captura BMP (Carpeta SD /c)\n"
 
 const uint8_t ESPectrum_logo[] = {
 	0x45, 0x42, 0x46, 0x38, 0xBB, 0x00, 0x1B, 0x00, 0xC0, 0xC0, 0xC0, 0xFF,
