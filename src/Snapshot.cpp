@@ -337,15 +337,12 @@ bool FileSNA::load(string sna_fn, string force_arch) {
 // ///////////////////////////////////////////////////////////////////////////////
 
 bool FileSNA::isPersistAvailable(string filename) {
-    // pwm_audio_stop();
 
     FILE *f = fopen(filename.c_str(), "rb");
     if (f == NULL)
         return false;
     else
         fclose(f);
-
-    // pwm_audio_start();
 
     return true;
 
@@ -434,25 +431,10 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
     FILE *file;
 
-    // // Stop keyboard input
-    // ESPectrum::PS2Controller.keyboard()->suspendPort();
-    // if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->suspendPort();    
-
-    // Stop audio
-    // pwm_audio_stop();
-
     file = fopen(sna_file.c_str(), "wb");
     if (file==NULL)
     {
         printf("FileSNA: Error opening %s for writing",sna_file.c_str());
-
-        // Resume audio
-        // pwm_audio_start();
-
-        // Resume keyboard input
-        // ESPectrum::PS2Controller.keyboard()->resumePort();
-        // if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
-
         return false;
     }
 
@@ -500,12 +482,6 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         uint8_t page = pages[ipage];
         if (!writeMemPage(page, file, blockMode)) {
             fclose(file);
-
-            // pwm_audio_start();  // Resume audio
-
-            // ESPectrum::PS2Controller.keyboard()->resumePort();  // Resume keyboard input
-            // if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();            
-
             return false;
 
         }
@@ -535,12 +511,6 @@ bool FileSNA::save(string sna_file, bool blockMode) {
             if (page != MemESP::bankLatch && page != 2 && page != 5) {
                 if (!writeMemPage(page, file, blockMode)) {
                     fclose(file);
-                    
-                    // pwm_audio_start();  // Resume audio
-
-                    // ESPectrum::PS2Controller.keyboard()->resumePort();  // Resume keyboard input
-                    // if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();
-
                     return false;
 
                 }
@@ -550,13 +520,8 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
     fclose(file);
 
-    // pwm_audio_start();    // Resume audio
-
-    // // Resume keyboard input
-    // ESPectrum::PS2Controller.keyboard()->resumePort();
-    // if (!ZXKeyb::Exists) ESPectrum::PS2Controller.keybjoystick()->resumePort();    
-
     return true;
+
 }
 
 static uint16_t mkword(uint8_t lobyte, uint8_t hibyte) {

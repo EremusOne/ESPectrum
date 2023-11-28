@@ -199,6 +199,8 @@ esp_err_t pwm_audio_get_status(pwm_audio_status_t *status);
 
 uint32_t pwm_audio_rbstats(void);
 
+uint32_t pwm_audio_pwmcount(void);
+
 #ifdef __cplusplus
 }
 #endif

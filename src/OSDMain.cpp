@@ -1477,8 +1477,7 @@ void OSD::HWInfo() {
 
     multi_heap_info_t info;    
     heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
-    uint32_t psramsize = info.total_free_bytes + info.total_allocated_bytes;
-    // textout = " PSRAM size    : " + to_string(info.total_free_bytes + info.total_allocated_bytes) + "\n";
+    uint32_t psramsize = (info.total_free_bytes + info.total_allocated_bytes) >> 10;
     textout = " PSRAM size    : " + ( psramsize == 0 ? "N/A or disabled" : to_string(psramsize) + " MB") + "\n";
     VIDEO::vga.print(textout.c_str());
 
@@ -1498,7 +1497,7 @@ void OSD::HWInfo() {
     textout = " Largest free block         : " + to_string(info.largest_free_block) + "\n";
     VIDEO::vga.print(textout.c_str());
     
-    textout = " Free (MALLOC_CAP_32BIT)    : " + to_string(heap_caps_get_free_size(MALLOC_CAP_32BIT)) + "\n";
+    textout = " Free (MALLOC_CAP_32BIT)    : " + to_string(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT)) + "\n";
     VIDEO::vga.print(textout.c_str());
         
     UBaseType_t wm;

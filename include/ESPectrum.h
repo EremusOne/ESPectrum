@@ -85,7 +85,7 @@ public:
     static int lastaudioBit;
     static int faudioBit;
     // static void audioFrameStart();
-    static void BeeperGetSample(int Audiobit);
+    static void BeeperGetSample();
     static void AYGetSample();
     // static void audioFrameEnd();
     static int overSamplesPerFrame;
@@ -95,8 +95,6 @@ public:
     static int sync_cnt;    
 
     static int TapeNameScroller;
-
-    // static bool Audio_restart;
 
     static int64_t target;
 

@@ -487,7 +487,7 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", /* 1024 */ 1536, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
     AySound::init();
@@ -605,6 +605,7 @@ void ESPectrum::reset()
     lastaudioBit=0;
 
     // Set samples per frame and AY_emu flag depending on arch
+    int prevOverSamples = overSamplesPerFrame;
     if (arch == "48K") {
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
@@ -624,16 +625,20 @@ void ESPectrum::reset()
 
     ESPoffset = 0;
 
-    pwm_audio_stop();
-    
-    delay(100); // Maybe this fix random sound lost ?
-    
-    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
-    
-    pwm_audio_start();
-    
-    pwm_audio_set_volume(aud_volume);
+    // Readjust output pwmaudio frequency if needed
+    if (overSamplesPerFrame != prevOverSamples) {
+        
+        // printf("Resetting pwmaudio to freq: %d\n",Audio_freq);
+        pwm_audio_set_sample_rate(Audio_freq);
 
+        // pwm_audio_stop();
+        // delay(100); // Maybe this fix random sound lost ?
+        // pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
+        // pwm_audio_start();
+        // pwm_audio_set_volume(aud_volume);
+
+    }
+    
     // Reset AY emulation
     AySound::init();
     AySound::set_sound_format(Audio_freq,1,8);
@@ -653,9 +658,7 @@ IRAM_ATTR bool ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     // Global keys
     if (Nextkey->down) {
         if (Nextkey->vk == fabgl::VK_PRINTSCREEN) { // Capture framebuffer to BMP file in SD Card (thx @dcrespo3d!)
-            // pwm_audio_stop();
             CaptureToBmp();
-            // pwm_audio_start();
             r = false;
         } else
         if (Nextkey->vk == fabgl::VK_SCROLLLOCK) { // Change CursorAsJoy setting
@@ -1077,12 +1080,16 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
 // static int bmax = 0;
 
+// static int sndalive = 0;
+
 //=======================================================================================
 // AUDIO
 //=======================================================================================
 IRAM_ATTR void ESPectrum::audioTask(void *unused) {
 
     size_t written;
+
+    // esp_err_t err;
 
     // PWM Audio Init
     pwm_audio_config_t pac;
@@ -1094,7 +1101,7 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
     pac.ledc_timer_sel     = LEDC_TIMER_0;
     pac.tg_num             = TIMER_GROUP_0;
     pac.timer_num          = TIMER_0;
-    pac.ringbuf_len        = /* 1024 * 8;*/ /*2560;*/ 2880;
+    pac.ringbuf_len        = /* 1024 * 8;*/ /*2560;*/ /* 2880; */ 1024 * 4;
 
     pwm_audio_init(&pac);
     pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
@@ -1105,7 +1112,11 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        pwm_audio_write(ESPectrum::audioBuffer, samplesPerFrame, &written, 5 / portTICK_PERIOD_MS);
+        /* err = */ pwm_audio_write(ESPectrum::audioBuffer, samplesPerFrame, &written, 5 / portTICK_PERIOD_MS);
+
+        // if (err == ESP_FAIL) printf("Audio fail!\n");
+
+        // sndalive++;
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
@@ -1180,7 +1191,7 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
     }
 }
 
-IRAM_ATTR void ESPectrum::BeeperGetSample(int Audiobit) {
+IRAM_ATTR void ESPectrum::BeeperGetSample() {
     // Beeper audiobuffer generation (oversample)
     uint32_t audbufpos = Z80Ops::is128 ? CPU::tstates / 19 : CPU::tstates >> 4;
     for (;audbufcnt < audbufpos; audbufcnt++) overSamplebuf[audbufcnt] = lastaudioBit;
@@ -1281,6 +1292,11 @@ for(;;) {
                 } else {
 
                     snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
+                    
+                    // Audio tests
+                    // snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / SND: %05d ", (int)(elapsed), (int)pwm_audio_rbstats());
+                    // snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / SND: %05d ", (int)(elapsed), (int)pwm_audio_pwmcount());                    
+                    
                     snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (totalseconds / 1000000), VIDEO::framecnt / (totalsecondsnodelay / 1000000));
 
                 }

@@ -5681,10 +5681,15 @@ void Z80::decodeED(void) {
         }
         case 0x41:
         { /* OUT (C),B */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ, REG_B);
-            REG_WZ++;
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ, REG_B);
+            // REG_WZ++;
+
+            Ports::output(REG_BC, REG_B);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x42:
         { /* SBC HL,BC */
@@ -5757,10 +5762,16 @@ void Z80::decodeED(void) {
         }
         case 0x49:
         { /* OUT (C),C */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ, REG_C);
-            REG_WZ++;
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ, REG_C);
+            // REG_WZ++;
+
+            Ports::output(REG_BC, REG_C);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
+
         }
         case 0x4A:
         { /* ADC HL,BC */
@@ -5797,9 +5808,14 @@ void Z80::decodeED(void) {
         }
         case 0x51:
         { /* OUT (C),D */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_D);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_D);
+
+            Ports::output(REG_BC, REG_D);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x52:
         { /* SBC HL,DE */
@@ -5841,9 +5857,14 @@ void Z80::decodeED(void) {
         }
         case 0x59:
         { /* OUT (C),E */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_E);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_E);
+
+            Ports::output(REG_BC, REG_E);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x5A:
         { /* ADC HL,DE */
@@ -5885,9 +5906,14 @@ void Z80::decodeED(void) {
         }
         case 0x61:
         { /* OUT (C),H */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_H);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_H);
+
+            Ports::output(REG_BC, REG_H);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x62:
         { /* SBC HL,HL */
@@ -5930,9 +5956,14 @@ void Z80::decodeED(void) {
         }
         case 0x69:
         { /* OUT (C),L */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_L);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_L);
+
+            Ports::output(REG_BC, REG_L);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x6A:
         { /* ADC HL,HL */
@@ -5975,9 +6006,14 @@ void Z80::decodeED(void) {
         }
         case 0x71:
         { /* OUT (C),0 */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, 0x00);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, 0x00);
+
+            Ports::output(REG_BC, 0x00);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x72:
         { /* SBC HL,SP */
@@ -6002,9 +6038,14 @@ void Z80::decodeED(void) {
         }
         case 0x79:
         { /* OUT (C),A */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, regA);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, regA);
+
+            Ports::output(REG_BC, regA);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x7A:
         { /* ADC HL,SP */
