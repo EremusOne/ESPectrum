@@ -291,8 +291,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
             osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 1000);
 
             while (1) {
-
-                ZXKbdRead();
+                
+                if (ZXKeyb::Exists) ZXKbdRead();
 
                 ESPectrum::readKbdJoy();
 
@@ -1110,6 +1110,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
                             }
                         }
                     } else if (options_num == 7) {
+
+                        // msgDialog("¿Flashear firmware.bin?","",0);
+
                         // Open firmware file
                         FILE *firmware = fopen("/sd/firmware.bin", "rb");
                         if (firmware == NULL) {
@@ -1141,7 +1144,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
 
                 while (1) {
 
-                    ZXKbdRead();
+                    if (ZXKeyb::Exists) ZXKbdRead();
 
                     ESPectrum::readKbdJoy();
 
@@ -1245,7 +1248,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
 
                     VIDEO::vga.fillRect(pos_x + ((osdCol + 1) * 6), pos_y + (osdRow * 8), 6,8, cursorCol );
                     
-                    ZXKbdRead();
+                    if (ZXKeyb::Exists) ZXKbdRead();
 
                     ESPectrum::readKbdJoy();
 
@@ -1515,7 +1518,7 @@ void OSD::HWInfo() {
     // Wait for key
     while (1) {
 
-        ZXKbdRead();
+        if (ZXKeyb::Exists) ZXKbdRead();
 
         ESPectrum::readKbdJoy();
 
