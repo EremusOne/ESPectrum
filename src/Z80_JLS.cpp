@@ -6071,6 +6071,7 @@ void Z80::decodeED(void) {
             ini();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL - 1, 5);
                 SetAbortedINxR_OTxRFlags();
             }
@@ -6081,6 +6082,7 @@ void Z80::decodeED(void) {
             outi();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_BC, 5);
                 SetAbortedINxR_OTxRFlags();
             }
@@ -6116,6 +6118,7 @@ void Z80::decodeED(void) {
             ind();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL + 1, 5);
                 SetAbortedINxR_OTxRFlags();
             }
@@ -6126,6 +6129,7 @@ void Z80::decodeED(void) {
             outd();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_BC, 5);
                 SetAbortedINxR_OTxRFlags();
             }
