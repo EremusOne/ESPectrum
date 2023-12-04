@@ -736,10 +736,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
                     // Options menu
                     uint8_t options_num = menuRun(MENU_OPTIONS[Config::lang]);
                     if (options_num == 1) {
-                        menu_saverect = true;
+                        menu_level = 2;
                         menu_curopt = 1;
+                        menu_saverect = true;
                         while (1) {
-                            menu_level = 2;
+                            // menu_level = 2;
                             // Storage source
                             // string stor_menu = MENU_STORAGE[Config::lang];
                             string stor_menu = Config::lang ? MENU_STORAGE_ES : MENU_STORAGE_EN;
@@ -778,20 +779,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
                                         }
                                     }
                                 }
-                                // else 
-                                // if (opt2 == 2) {
-
-                                //     OSD::osdCenteredMsg("Refreshing snap dir", LEVEL_INFO, 0);
-                                //     FileUtils::DirToFile(FileUtils::MountPoint + "/" + FileUtils::SNA_Path, DISK_SNAFILE); // Prepare sna filelist
-
-                                //     OSD::osdCenteredMsg("Refreshing tape dir", LEVEL_INFO, 0);
-                                //     FileUtils::DirToFile(FileUtils::MountPoint + "/" + FileUtils::TAP_Path, DISK_TAPFILE); // Prepare tap filelist
-
-                                //     OSD::osdCenteredMsg("Refreshing disk dir", LEVEL_INFO, 0);
-                                //     FileUtils::DirToFile(FileUtils::MountPoint + "/" + FileUtils::DSK_Path, DISK_DSKFILE); // Prepare dsk filelist
-
-                                //     return;
-                                // }
                                 menu_curopt = opt2;
                                 menu_saverect = false;
                             } else {
@@ -1111,21 +1098,36 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
                         }
                     } else if (options_num == 7) {
 
-                        // msgDialog("¿Flashear firmware.bin?","",0);
+                        menu_level = 2;
 
-                        // Open firmware file
-                        FILE *firmware = fopen("/sd/firmware.bin", "rb");
-                        if (firmware == NULL) {
-                            osdCenteredMsg("No firmware file found.", LEVEL_WARN, 2000);
+                        string title = OSD_FIRMW_UPDATE[Config::lang];
+                        string msg = OSD_DLG_SURE[Config::lang];
+                        uint8_t res = msgDialog(title,msg);
+
+                        if (res == DLG_YES) {
+
+                            // Open firmware file
+                            FILE *firmware = fopen("/sd/firmware.bin", "rb");
+                            if (firmware == NULL) {
+                                osdCenteredMsg(OSD_NOFIRMW_ERR[Config::lang], LEVEL_WARN, 2000);
+                                return;
+                            } else {
+                                esp_err_t res = updateFirmware(firmware);
+                                fclose(firmware);
+                                string errMsg = OSD_FIRMW_ERR[Config::lang];
+                                errMsg += " Code = " + to_string(res);
+                                osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                            }
+
                             return;
+
                         } else {
-                            esp_err_t res = updateFirmware(firmware);
-                            fclose(firmware);
-                            string errMsg = OSD_FIRMW_ERR[Config::lang];
-                            errMsg += " Code = " + to_string(res);
-                            osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+
+                            menu_curopt = 7;
+                            menu_saverect = false;
+
                         }
-                        return;
+
                     } else {
                         menu_curopt = 5;
                         break;
@@ -1570,26 +1572,37 @@ if (target == NULL) {
 // printf("Running partition type %d subtype %d at offset 0x%x.\n", partition->type, partition->subtype, partition->address);
 // printf("Target  partition type %d subtype %d at offset 0x%x.\n", target->type, target->subtype, target->address);
 
-osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
+// osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
+
+progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_BEGIN[Config::lang],0,0);
 
 esp_ota_handle_t ota_handle;
 esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);
 if (result != ESP_OK) {
+    progressDialog("","",0,2);
     return result;
 }
 
 size_t bytesread;
 uint32_t byteswritten = 0;
 
-osdCenteredMsg(OSD_FIRMW_WRITE[Config::lang], LEVEL_INFO,0);
+// osdCenteredMsg(OSD_FIRMW_WRITE[Config::lang], LEVEL_INFO,0);
+progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_WRITE[Config::lang],0,1);
+
+// Get firmware size
+fseek(firmware, 0, SEEK_END);
+long bytesfirmware = ftell(firmware);
+rewind(firmware);
 
 while (1) {
     bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
     result = esp_ota_write(ota_handle,(const void *) ota_write_data, bytesread);
     if (result != ESP_OK) {
+        progressDialog("","",0,2);
         return result;
     }
     byteswritten += bytesread;
+    progressDialog("","",(float) 100 / ((float) bytesfirmware / (float) byteswritten),1);
     // printf("Bytes written: %d\n",byteswritten);
     if (feof(firmware)) break;
 }
@@ -1598,16 +1611,20 @@ result = esp_ota_end(ota_handle);
 if (result != ESP_OK) 
 {
     // printf("esp_ota_end failed, err=0x%x.\n", result);
+    progressDialog("","",0,2);
     return result;
 }
 
 result = esp_ota_set_boot_partition(target);
 if (result != ESP_OK) {
     // printf("esp_ota_set_boot_partition failed, err=0x%x.\n", result);
+    progressDialog("","",0,2);
     return result;
 }
 
-osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
+// osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
+progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_END[Config::lang],100,1);
+
 delay(1000);
 
 // Firmware written: reboot

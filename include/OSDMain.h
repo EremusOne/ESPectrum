@@ -50,6 +50,10 @@ using namespace std;
 #define LEVEL_WARN 2
 #define LEVEL_ERROR 3
 
+#define DLG_CANCEL 0
+#define DLG_YES 1
+#define DLG_NO 2
+
 // OSD Interface
 class OSD
 {
@@ -105,6 +109,10 @@ public:
     static bool menu_saverect;    
     static unsigned short menu_curopt;    
     static unsigned int SaveRectpos;    
+
+    static uint8_t msgDialog(string title, string msg);
+
+    static void progressDialog(string title, string msg, int percent, int action);
 
     // Rows
     static unsigned short rowCount(string menu);

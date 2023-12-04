@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 // #define EMU_VERSION "       v1.0 "
-#define EMU_VERSION " Dev 281123 "
+#define EMU_VERSION " Dev 041223 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -79,6 +79,34 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
 
+#define OSD_FILE_INDEXING_EN "Indexing folder"
+#define OSD_FILE_INDEXING_ES "Indexando carpeta"
+static const char *OSD_FILE_INDEXING[2] = { OSD_FILE_INDEXING_EN, OSD_FILE_INDEXING_ES };
+
+#define OSD_FILE_INDEXING_EN_1 "  Sorting & Hashing  "
+#define OSD_FILE_INDEXING_ES_1 "Ordenando y hasheando"
+static const char *OSD_FILE_INDEXING_1[2] = { OSD_FILE_INDEXING_EN_1, OSD_FILE_INDEXING_ES_1 };
+
+#define OSD_FILE_INDEXING_EN_2 "    Merge Sorting    "
+#define OSD_FILE_INDEXING_ES_2 "Realizando merge sort"
+static const char *OSD_FILE_INDEXING_2[2] = { OSD_FILE_INDEXING_EN_2, OSD_FILE_INDEXING_ES_2 };
+
+#define OSD_FILE_INDEXING_EN_3 " Cleaning temp files "
+#define OSD_FILE_INDEXING_ES_3 "Limpiando temporales "
+static const char *OSD_FILE_INDEXING_3[2] = { OSD_FILE_INDEXING_EN_3, OSD_FILE_INDEXING_ES_3 };
+
+#define OSD_FIRMW_UPDATE_EN "Firmware update"
+#define OSD_FIRMW_UPDATE_ES "Actualizar firmware"
+static const char *OSD_FIRMW_UPDATE[2] = { OSD_FIRMW_UPDATE_EN,OSD_FIRMW_UPDATE_ES};
+
+#define OSD_DLG_SURE_EN "Are you sure?"
+static const char DLG_SURE_ES[] = {168,'D','e','s','e','a',' ','c','o','n','t','i','n','u','a','r','?'};
+static const char *OSD_DLG_SURE[2] = { OSD_DLG_SURE_EN, DLG_SURE_ES};
+
+#define OSD_FIRMW_EN "Updating firmware"
+#define OSD_FIRMW_ES "Actualizando firmware"
+static const char *OSD_FIRMW[2] = { OSD_FIRMW_EN,OSD_FIRMW_ES};
+
 #define OSD_FIRMW_BEGIN_EN "Erasing destination partition."
 #define OSD_FIRMW_BEGIN_ES "Borrando particion de destino."
 static const char *OSD_FIRMW_BEGIN[2] = { OSD_FIRMW_BEGIN_EN,OSD_FIRMW_BEGIN_ES};
@@ -90,6 +118,11 @@ static const char *OSD_FIRMW_WRITE[2] = { OSD_FIRMW_WRITE_EN,OSD_FIRMW_WRITE_ES}
 #define OSD_FIRMW_END_EN "Flashing complete. Rebooting."
 #define OSD_FIRMW_END_ES "  Completado. Reiniciando.   "
 static const char *OSD_FIRMW_END[2] = { OSD_FIRMW_END_EN,OSD_FIRMW_END_ES};
+
+
+#define OSD_NOFIRMW_ERR_EN "No firmware file found."
+#define OSD_NOFIRMW_ERR_ES "Firmware no encontrado."
+static const char *OSD_NOFIRMW_ERR[2] = { OSD_NOFIRMW_ERR_EN,OSD_NOFIRMW_ERR_ES};
 
 #define OSD_FIRMW_ERR_EN "Problem updating firmware."
 #define OSD_FIRMW_ERR_ES "Error actualizando firmware."
