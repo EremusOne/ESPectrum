@@ -480,6 +480,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
             menu_saverect = false;
             menu_level = 0;
             uint8_t opt = menuRun("ESPectrum " + Config::getArch() + "\n" + MENU_MAIN[Config::lang]);
+            // uint8_t opt = menuRun(Config::getArch() + "\n" + MENU_MAIN[Config::lang]);            
     
             if (opt == 1) {
                 // ***********************************************************************************
@@ -495,7 +496,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (sna_mnu == 1) {
-                            string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,30,16);
+                            string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,28,16);
                             if (mFile != "") {
                                 mFile.erase(0, 1);
                                 string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
@@ -557,7 +558,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
                         if (tap_num == 1) {
                             // menu_curopt = 1;
                             // Select TAP File
-                            string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,30,16);
+                            string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,28,16);
                             if (mFile != "") {
 
                                 string keySel = mFile.substr(0,1);
@@ -655,7 +656,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
                             if (opt2 > 0) {
                                 if (opt2 == 1) {
                                     menu_saverect = true;
-                                    string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],DISK_DSKFILE,30,16);
+                                    string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],DISK_DSKFILE,26,15);
                                     if (mFile != "") {
                                         mFile.erase(0, 1);
                                         string fname = FileUtils::MountPoint + "/" + FileUtils::DSK_Path + "/" + mFile;
@@ -1574,7 +1575,15 @@ if (target == NULL) {
 
 // osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
 
+
 progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_BEGIN[Config::lang],0,0);
+
+// Fake erase progress bar ;D
+delay(100);
+for(int n=0; n <= 100; n += 10) {
+    progressDialog("","",n,1);
+    delay(100);
+}
 
 esp_ota_handle_t ota_handle;
 esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);

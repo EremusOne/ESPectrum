@@ -272,6 +272,7 @@ unsigned short OSD::menuRun(string new_menu) {
         }
         col_count++;
     }
+    // printf("Cols: %d\n",cols);
     cols += 8;
     cols = (cols > 28 ? 28 : cols);
 
@@ -639,9 +640,9 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         }
 
-        // // Force reindex (for testing)
-        // fclose(dirfile);
-        // reIndex = true;
+        // Force reindex (for testing)
+        fclose(dirfile);
+        reIndex = true;
 
         // There was no index or hashes are different: reIndex
         if (reIndex) {
@@ -1590,6 +1591,8 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
                 SaveRectpos++;
             }
         }
+        
+        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);        
 
         // Set font
         VIDEO::vga.setFont(Font6x8);
@@ -1622,9 +1625,9 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
         }
 
         // Progress bar frame
-        progress_x = scrAlignCenterX(102);
+        progress_x = scrAlignCenterX(72);
         progress_y = y + (OSD_FONT_H * 4);
-        VIDEO::vga.rect(progress_x, progress_y, 102, OSD_FONT_H + 2, OSD::zxColor(0, 0));
+        VIDEO::vga.rect(progress_x, progress_y, 72, OSD_FONT_H + 2, OSD::zxColor(0, 0));
         progress_x++;
         progress_y++;
 
@@ -1636,8 +1639,9 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
         VIDEO::vga.print(msg.c_str());
 
         // Progress bar
-        VIDEO::vga.fillRect(progress_x, progress_y, percent, OSD_FONT_H, zxColor(5,1));
-        VIDEO::vga.fillRect(progress_x + percent, progress_y, 100 - percent, OSD_FONT_H, zxColor(7,1));        
+        int barsize = 70 * ((float) percent / (float) 100);
+        VIDEO::vga.fillRect(progress_x, progress_y, barsize, OSD_FONT_H, zxColor(5,1));
+        VIDEO::vga.fillRect(progress_x + barsize, progress_y, 70 - barsize, OSD_FONT_H, zxColor(7,1));        
 
     } else if (action == 2) { // CLOSE
 

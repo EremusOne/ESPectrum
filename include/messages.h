@@ -79,20 +79,20 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
 
-#define OSD_FILE_INDEXING_EN "Indexing folder"
-#define OSD_FILE_INDEXING_ES "Indexando carpeta"
+#define OSD_FILE_INDEXING_EN "Indexing"
+#define OSD_FILE_INDEXING_ES "Indexando"
 static const char *OSD_FILE_INDEXING[2] = { OSD_FILE_INDEXING_EN, OSD_FILE_INDEXING_ES };
 
-#define OSD_FILE_INDEXING_EN_1 "  Sorting & Hashing  "
-#define OSD_FILE_INDEXING_ES_1 "Ordenando y hasheando"
+#define OSD_FILE_INDEXING_EN_1 "  Sorting   "
+#define OSD_FILE_INDEXING_ES_1 "   Ordenando   "
 static const char *OSD_FILE_INDEXING_1[2] = { OSD_FILE_INDEXING_EN_1, OSD_FILE_INDEXING_ES_1 };
 
-#define OSD_FILE_INDEXING_EN_2 "    Merge Sorting    "
-#define OSD_FILE_INDEXING_ES_2 "Realizando merge sort"
+#define OSD_FILE_INDEXING_EN_2 "Saving index"
+#define OSD_FILE_INDEXING_ES_2 "Grabando indice"
 static const char *OSD_FILE_INDEXING_2[2] = { OSD_FILE_INDEXING_EN_2, OSD_FILE_INDEXING_ES_2 };
 
-#define OSD_FILE_INDEXING_EN_3 " Cleaning temp files "
-#define OSD_FILE_INDEXING_ES_3 "Limpiando temporales "
+#define OSD_FILE_INDEXING_EN_3 "  Cleaning  "
+#define OSD_FILE_INDEXING_ES_3 "   Limpiando   "
 static const char *OSD_FILE_INDEXING_3[2] = { OSD_FILE_INDEXING_EN_3, OSD_FILE_INDEXING_ES_3 };
 
 #define OSD_FIRMW_UPDATE_EN "Firmware update"
