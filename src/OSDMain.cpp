@@ -1640,3 +1640,241 @@ delay(1000);
 OSD::esp_hard_reset();
 
 }
+
+void OSD::progressDialog(string title, string msg, int percent, int action) {
+
+    static unsigned short h;
+    static unsigned short y;
+    static unsigned short w;
+    static unsigned short x;
+    static unsigned short progress_x;    
+    static unsigned short progress_y;        
+    static unsigned int j;
+
+    if (action == 0 ) { // SHOW
+
+        h = (OSD_FONT_H * 6) + 2;
+        y = scrAlignCenterY(h);
+
+        if (msg.length() > (scrW / 6) - 4) msg = msg.substr(0,(scrW / 6) - 4);
+        if (title.length() > (scrW / 6) - 4) title = title.substr(0,(scrW / 6) - 4);
+
+        w = (((msg.length() > title.length() + 6 ? msg.length(): title.length() + 6) + 2) * OSD_FONT_W) + 2;
+        x = scrAlignCenterX(w);
+
+        // Save backbuffer data
+        j = SaveRectpos;
+        for (int  m = y; m < y + h; m++) {
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+                SaveRectpos++;
+            }
+        }
+        
+        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);        
+
+        // Set font
+        VIDEO::vga.setFont(Font6x8);
+
+        // Menu border
+        VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
+
+        VIDEO::vga.fillRect(x + 1, y + 1, w - 2, OSD_FONT_H, zxColor(0,0));
+        VIDEO::vga.fillRect(x + 1, y + 1 + OSD_FONT_H, w - 2, h - OSD_FONT_H - 2, zxColor(7,1));
+
+        // Title
+        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));        
+        VIDEO::vga.setCursor(x + OSD_FONT_W + 1, y + 1);
+        VIDEO::vga.print(title.c_str());
+        
+        // Msg
+        VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(7, 1));        
+        VIDEO::vga.setCursor(scrAlignCenterX(msg.length() * OSD_FONT_W), y + 1 + (OSD_FONT_H * 2));
+        VIDEO::vga.print(msg.c_str());
+
+        // Rainbow
+        unsigned short rb_y = y + 8;
+        unsigned short rb_paint_x = x + w - 30;
+        uint8_t rb_colors[] = {2, 6, 4, 5};
+        for (uint8_t c = 0; c < 4; c++) {
+            for (uint8_t i = 0; i < 5; i++) {
+                VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, OSD::zxColor(rb_colors[c], 1));
+            }
+            rb_paint_x += 5;
+        }
+
+        // Progress bar frame
+        progress_x = scrAlignCenterX(72);
+        progress_y = y + (OSD_FONT_H * 4);
+        VIDEO::vga.rect(progress_x, progress_y, 72, OSD_FONT_H + 2, OSD::zxColor(0, 0));
+        progress_x++;
+        progress_y++;
+
+    } else if (action == 1 ) { // UPDATE
+
+        // Msg
+        VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(7, 1));        
+        VIDEO::vga.setCursor(scrAlignCenterX(msg.length() * OSD_FONT_W), y + 1 + (OSD_FONT_H * 2));
+        VIDEO::vga.print(msg.c_str());
+
+        // Progress bar
+        int barsize = (70 * percent) / 100;
+        VIDEO::vga.fillRect(progress_x, progress_y, barsize, OSD_FONT_H, zxColor(5,1));
+        VIDEO::vga.fillRect(progress_x + barsize, progress_y, 70 - barsize, OSD_FONT_H, zxColor(7,1));        
+
+    } else if (action == 2) { // CLOSE
+
+        // Restore backbuffer data
+        SaveRectpos = j;
+        for (int  m = y; m < y + h; m++) {
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+                backbuffer32[n] = VIDEO::SaveRect[j];
+                j++;
+            }
+        }
+
+    }
+
+}
+
+uint8_t OSD::msgDialog(string title, string msg) {
+
+    const unsigned short h = (OSD_FONT_H * 6) + 2;
+    const unsigned short y = scrAlignCenterY(h);
+    uint8_t res = DLG_NO;
+
+    if (msg.length() > (scrW / 6) - 4) msg = msg.substr(0,(scrW / 6) - 4);
+    if (title.length() > (scrW / 6) - 4) title = title.substr(0,(scrW / 6) - 4);
+
+    const unsigned short w = (((msg.length() > title.length() + 6 ? msg.length() : title.length() + 6) + 2) * OSD_FONT_W) + 2;
+    const unsigned short x = scrAlignCenterX(w);
+
+    // Save backbuffer data
+    unsigned int j = SaveRectpos;
+    for (int  m = y; m < y + h; m++) {
+        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+        for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+            VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+            SaveRectpos++;
+        }
+    }
+
+     // Set font
+    VIDEO::vga.setFont(Font6x8);
+
+    // Menu border
+    VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
+
+    VIDEO::vga.fillRect(x + 1, y + 1, w - 2, OSD_FONT_H, zxColor(0,0));
+    VIDEO::vga.fillRect(x + 1, y + 1 + OSD_FONT_H, w - 2, h - OSD_FONT_H - 2, zxColor(7,1));
+
+    // Title
+    VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));        
+    VIDEO::vga.setCursor(x + OSD_FONT_W + 1, y + 1);
+    VIDEO::vga.print(title.c_str());
+    
+    // Msg
+    VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(7, 1));        
+    VIDEO::vga.setCursor(scrAlignCenterX(msg.length() * OSD_FONT_W), y + 1 + (OSD_FONT_H * 2));
+    VIDEO::vga.print(msg.c_str());
+
+    // Yes
+    VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(7, 1));        
+    VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
+    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+
+    // // Ruler
+    // VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(7, 1));        
+    // VIDEO::vga.setCursor(x + 1, y + 1 + (OSD_FONT_H * 3));
+    // VIDEO::vga.print("123456789012345678901234567");
+
+    // No
+    VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(5, 1));
+    VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
+    VIDEO::vga.print("  No  ");
+
+    // Rainbow
+    unsigned short rb_y = y + 8;
+    unsigned short rb_paint_x = x + w - 30;
+    uint8_t rb_colors[] = {2, 6, 4, 5};
+    for (uint8_t c = 0; c < 4; c++) {
+        for (uint8_t i = 0; i < 5; i++) {
+            VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, OSD::zxColor(rb_colors[c], 1));
+        }
+        rb_paint_x += 5;
+    }
+
+    // VIDEO::vga.fillRect(x, y, w, h, paper);
+    // // VIDEO::vga.rect(x - 1, y - 1, w + 2, h + 2, ink);
+    // VIDEO::vga.setTextColor(ink, paper);
+    // VIDEO::vga.setFont(Font6x8);
+    // VIDEO::vga.setCursor(x + OSD_FONT_W, y + OSD_FONT_H);
+    // VIDEO::vga.print(msg.c_str());
+    
+    // Keyboard loop
+    fabgl::VirtualKeyItem Menukey;
+    while (1) {
+
+        if (ZXKeyb::Exists) OSD::ZXKbdRead();
+
+        ESPectrum::readKbdJoy();
+
+        // Process external keyboard
+        if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+            if (ESPectrum::readKbd(&Menukey)) {
+                if (!Menukey.down) continue;
+
+                if (Menukey.vk == fabgl::VK_LEFT) {
+                    // Yes
+                    VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(5, 1));
+                    VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
+                    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+                    // No
+                    VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(7, 1));        
+                    VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
+                    VIDEO::vga.print("  No  ");
+                    click();
+                    res = DLG_YES;
+                } else if (Menukey.vk == fabgl::VK_RIGHT) {
+                    // Yes
+                    VIDEO::vga.setTextColor(OSD::zxColor(0, 0), OSD::zxColor(7, 1));        
+                    VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
+                    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+                    // No
+                    VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(5, 1));
+                    VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
+                    VIDEO::vga.print("  No  ");
+                    click();
+                    res = DLG_NO;
+                } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE) {
+                    break;
+                } else if (Menukey.vk == fabgl::VK_ESCAPE) {
+                    res = DLG_CANCEL;
+                    break;
+                }
+            }
+
+        }
+
+        vTaskDelay(5 / portTICK_PERIOD_MS);
+
+    }
+
+    click();
+
+    // Restore backbuffer data
+    SaveRectpos = j;
+    for (int  m = y; m < y + h; m++) {
+        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+        for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+            backbuffer32[n] = VIDEO::SaveRect[j];
+            j++;
+        }
+    }
+
+    return res;
+
+}
+
