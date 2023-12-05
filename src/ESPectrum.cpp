@@ -605,7 +605,7 @@ void ESPectrum::reset()
     lastaudioBit=0;
 
     // Set samples per frame and AY_emu flag depending on arch
-    int prevOverSamples = overSamplesPerFrame;
+    int prevAudio_freq = Audio_freq;
     if (arch == "48K") {
         overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
@@ -626,10 +626,15 @@ void ESPectrum::reset()
     ESPoffset = 0;
 
     // Readjust output pwmaudio frequency if needed
-    if (overSamplesPerFrame != prevOverSamples) {
+    if (prevAudio_freq != Audio_freq) {
         
         // printf("Resetting pwmaudio to freq: %d\n",Audio_freq);
-        pwm_audio_set_sample_rate(Audio_freq);
+
+        esp_err_t res;
+        res = pwm_audio_set_sample_rate(Audio_freq);
+        if (res != ESP_OK) {
+            printf("Can't set sample rate\n");
+        }
 
         // pwm_audio_stop();
         // delay(100); // Maybe this fix random sound lost ?
