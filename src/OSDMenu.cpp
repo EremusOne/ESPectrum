@@ -640,9 +640,9 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         }
 
-        // Force reindex (for testing)
-        fclose(dirfile);
-        reIndex = true;
+        // // Force reindex (for testing)
+        // fclose(dirfile);
+        // reIndex = true;
 
         // There was no index or hashes are different: reIndex
         if (reIndex) {
