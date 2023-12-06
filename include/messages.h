@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 // #define EMU_VERSION "       v1.0 "
-#define EMU_VERSION " Dev 041223 "
+#define EMU_VERSION " Dev 061223 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -80,7 +80,7 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 static const char *OSD_PSNA_SAVE[2] = { OSD_PSNA_SAVE_EN, OSD_PSNA_SAVE_ES };
 
 #define OSD_PSNA_EXISTS_EN "Overwrite slot?"
-#define OSD_PSNA_EXISTS_ES "\xA8" "Sobreescribir slot?"
+#define OSD_PSNA_EXISTS_ES "\xA8" "Sobreescribir ranura?"
 static const char *OSD_PSNA_EXISTS[2] = { OSD_PSNA_EXISTS_EN, OSD_PSNA_EXISTS_ES };
 
 #define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
