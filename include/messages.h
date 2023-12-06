@@ -75,6 +75,14 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
 #define OSD_BETADISK_LOAD_ERR "ERROR Loading Disk file"
 
+#define OSD_PSNA_SAVE_EN "Save snapshot"
+#define OSD_PSNA_SAVE_ES "Guardar snapshot"
+static const char *OSD_PSNA_SAVE[2] = { OSD_PSNA_SAVE_EN, OSD_PSNA_SAVE_ES };
+
+#define OSD_PSNA_EXISTS_EN "Overwrite slot?"
+#define OSD_PSNA_EXISTS_ES "\xA8" "Sobreescribir slot?"
+static const char *OSD_PSNA_EXISTS[2] = { OSD_PSNA_EXISTS_EN, OSD_PSNA_EXISTS_ES };
+
 #define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
@@ -100,8 +108,8 @@ static const char *OSD_FILE_INDEXING_3[2] = { OSD_FILE_INDEXING_EN_3, OSD_FILE_I
 static const char *OSD_FIRMW_UPDATE[2] = { OSD_FIRMW_UPDATE_EN,OSD_FIRMW_UPDATE_ES};
 
 #define OSD_DLG_SURE_EN "Are you sure?"
-static const char DLG_SURE_ES[] = {168,'D','e','s','e','a',' ','c','o','n','t','i','n','u','a','r','?'};
-static const char *OSD_DLG_SURE[2] = { OSD_DLG_SURE_EN, DLG_SURE_ES};
+#define OSD_DLG_SURE_ES "\xA8" "Desea continuar?"
+static const char *OSD_DLG_SURE[2] = { OSD_DLG_SURE_EN, OSD_DLG_SURE_ES};
 
 #define OSD_FIRMW_EN "Updating firmware"
 #define OSD_FIRMW_ES "Actualizando firmware"

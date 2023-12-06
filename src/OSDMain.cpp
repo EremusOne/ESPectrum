@@ -172,31 +172,38 @@ void OSD::drawStats() {
 
 static bool persistSave(uint8_t slotnumber)
 {
+    struct stat stat_buf;
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     char persistfinfo[sizeof(DISK_PSNA_FILE) + 6];    
 
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     sprintf(persistfinfo,DISK_PSNA_FILE "%u.esp",slotnumber);
+    string finfo = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfinfo;
+
+    // Slot isn't void
+    if (stat(finfo.c_str(), &stat_buf) == 0) {
+        string title = OSD_PSNA_SAVE[Config::lang];
+        string msg = OSD_PSNA_EXISTS[Config::lang];
+        uint8_t res = OSD::msgDialog(title,msg);
+        if (res != DLG_YES) return false;
+    }
 
     OSD::osdCenteredMsg(OSD_PSNA_SAVING, LEVEL_INFO, 0);
 
     // Save info file
-    string finfo = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfinfo;
     FILE *f = fopen(finfo.c_str(), "w");
     if (f == NULL) {
+
         printf("Error opening %s\n",persistfinfo);
-        return false;
-    }
-    // Put architecture on info file
-    fputs((Config::getArch() + "\n").c_str(),f);
-    fclose(f);    
 
-    if (!FileSNA::save(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
-        OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
-        return false;
-    }
+    } else {
 
-    // OSD::osdCenteredMsg(OSD_PSNA_SAVED, LEVEL_INFO);
+        fputs((Config::getArch() + "\n").c_str(),f);    // Put architecture on info file
+        fclose(f);    
+
+        if (!FileSNA::save(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
+    
+    }
 
     return true;
 
@@ -337,12 +344,15 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL) {
             }
         }
         else if (KeytoESP == fabgl::VK_F4) {
+            // Persist Save
             menu_level = 0;
             menu_curopt = 1;
-            // Persist Save
-            uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
-            if (opt2 > 0 && opt2<11) {
-                persistSave(opt2);
+            while (1) {
+                uint8_t opt2 = menuRun(MENU_PERSIST_SAVE[Config::lang]);
+                if (opt2 > 0 && opt2<11) {
+                    if (persistSave(opt2)) return;
+                    menu_curopt = opt2;
+                } else break;
             }
         }
         else if (KeytoESP == fabgl::VK_F5) {
@@ -1760,6 +1770,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
             SaveRectpos++;
         }
     }
+    // printf("SaveRectPos: %04X\n",SaveRectpos << 2);    
 
      // Set font
     VIDEO::vga.setFont(Font6x8);
