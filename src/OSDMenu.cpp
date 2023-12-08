@@ -519,13 +519,15 @@ static inline void trim(std::string &s) {
 // }
 
 FILE *dirfile;
+unsigned int OSD::elements;
+unsigned int OSD::ndirs;
 
 // Run a new file menu
 string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows) {
 
     struct stat stat_buf;
     bool reIndex;
-    
+   
     // Position
     if (menu_level == 0) {
         x = (Config::aspect_16_9 ? 24 : 4);
@@ -537,7 +539,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
     // Columns and Rows
     cols = mfcols;
-    mf_rows = mfrows + (Config::aspect_16_9 ? 0 : 2);
+    mf_rows = mfrows + (Config::aspect_16_9 ? 0 : 1);
 
     // printf("Focus: %d, Begin_row: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) mf_rows);
     if (FileUtils::fileTypes[ftype].focus > mf_rows - 1) {
@@ -547,7 +549,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
     // Size
     w = (cols * OSD_FONT_W) + 2;
-    h = (mf_rows * OSD_FONT_H) + 2;
+    h = ((mf_rows + 1) * OSD_FONT_H) + 2;
     
     // menu = title + "\n" + fdir + "\n";
     menu = title + "\n" + ( fdir.length() == 1 ? fdir : fdir.substr(0,fdir.length()-1)) + "\n";
@@ -555,11 +557,17 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     fd_PrintRow(1, IS_INFO);    // Path
 
     // Draw blank rows
-    for (uint8_t row = 2; row < mf_rows; row++) {
+    uint8_t row = 2;
+    for (; row < mf_rows; row++) {
         VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(7, 1));
         menuAt(row, 0);
         VIDEO::vga.print(std::string(cols, ' ').c_str());
     }
+
+    // Print status bar
+    menuAt(row, 0);
+    VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
+    VIDEO::vga.print(std::string(cols, ' ').c_str());    
 
     while(1) {
 
@@ -601,6 +609,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
             string fdir = filedir.substr(0,filedir.length() - 1);
             if ((dir = opendir(fdir.c_str())) != nullptr) {
                 
+                elements = 0;
+                ndirs = 0;
                 while ((de = readdir(dir)) != nullptr) {
                     string fname = de->d_name;
                     if (de->d_type == DT_REG || de->d_type == DT_DIR) {
@@ -613,6 +623,10 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                                     if (high = hash & 0xF0000000) hash ^= high >> 24;
                                     hash &= ~high;
                                 }
+                                if (de->d_type == DT_REG) 
+                                    elements++; // Count elements in dir
+                                else if (de->d_type == DT_DIR)
+                                        ndirs++;
                             }
                         }
                     }
@@ -688,6 +702,21 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             // Process external keyboard
             if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+
+                // Print elements
+                VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
+                if (elements) {
+                    menuAt(mfrows + 1, cols - (real_rows > virtual_rows ? 13 : 12));
+                    char elements_txt[13];
+                    int nitem = (FileUtils::fileTypes[ftype].begin_row + FileUtils::fileTypes[ftype].focus ) - (4 + ndirs) + (fdir.length() == 1);
+                    snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elements);
+                    VIDEO::vga.print(std::string(12 - strlen(elements_txt), ' ').c_str());
+                    VIDEO::vga.print(elements_txt);
+                } else {
+                    menuAt(mfrows + 1, cols - 13);
+                    VIDEO::vga.print("             ");
+                }
+
                 if (ESPectrum::readKbd(&Menukey)) {
                     if (!Menukey.down) continue;
 

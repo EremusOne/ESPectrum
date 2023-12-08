@@ -75,6 +75,14 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
 #define OSD_BETADISK_LOAD_ERR "ERROR Loading Disk file"
 
+#define OSD_TAPE_SAVE_EN "SAVE command"
+#define OSD_TAPE_SAVE_ES "Comando SAVE"
+static const char *OSD_TAPE_SAVE[2] = { OSD_TAPE_SAVE_EN, OSD_TAPE_SAVE_ES };
+
+#define OSD_TAPE_SAVE_EXIST_EN "File exists. Overwrite?"
+#define OSD_TAPE_SAVE_EXIST_ES "El fichero ya existe " "\xA8" "Sobreescribir?"
+static const char *OSD_TAPE_SAVE_EXIST[2] = { OSD_TAPE_SAVE_EXIST_EN, OSD_TAPE_SAVE_EXIST_ES };
+
 #define OSD_PSNA_SAVE_EN "Save snapshot"
 #define OSD_PSNA_SAVE_ES "Guardar snapshot"
 static const char *OSD_PSNA_SAVE[2] = { OSD_PSNA_SAVE_EN, OSD_PSNA_SAVE_ES };
@@ -144,8 +152,8 @@ static const char *MENU_SNA_TITLE[2] = { MENU_SNA_TITLE_EN,MENU_SNA_TITLE_ES };
 #define MENU_TAP_TITLE_ES "Elija fichero TAP"
 static const char *MENU_TAP_TITLE[2] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES };
 
-#define MENU_DSK_TITLE_EN "Select disk image"
-#define MENU_DSK_TITLE_ES "Elija imagen de disco"
+#define MENU_DSK_TITLE_EN "Select disk"
+#define MENU_DSK_TITLE_ES "Elija disco"
 static const char *MENU_DSK_TITLE[2] = { MENU_DSK_TITLE_EN,MENU_DSK_TITLE_ES };
 
 #define MENU_SNA_EN \

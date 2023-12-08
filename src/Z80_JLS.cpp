@@ -26,6 +26,8 @@
 #include "Tape.h"
 #include "Config.h"
 #include "FileUtils.h"
+#include "OSDMain.h"
+#include "messages.h"
 
 // #pragma GCC optimize("O3")
 
@@ -4520,6 +4522,8 @@ static inline void rtrim(std::string &s) {
     }).base(), s.end());
 }
 
+static uint8_t SaveRes;
+
 //Subconjunto de instrucciones 0xDD / 0xFD
 /*
  * Hay que tener en cuenta el manejo de secuencias códigos DD/FD que no
@@ -4619,26 +4623,38 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
                     rtrim(name);
                     Tape::tapeSaveName = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name + ".tap";
 
-                    // printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
-                    /*int result = */remove(Tape::tapeSaveName.c_str());
+                    struct stat stat_buf;
+                    SaveRes = DLG_YES;
+                    if (stat(Tape::tapeSaveName.c_str(), &stat_buf) == 0) {
+                        string title = OSD_TAPE_SAVE[Config::lang];
+                        string msg = OSD_TAPE_SAVE_EXIST[Config::lang];
+                        SaveRes = OSD::msgDialog(title,msg);
+                    }
 
-                    // check if file has been deleted successfully
-                    // if (result != 0) {
-                    //     // print error message
-                    //     printf("File deletion failed\n");
-                    // }
-                    // else {
-                    //     printf("File deleted succesfully\n");
-                    // }            
+                    if (SaveRes == DLG_YES) {
 
-                    // printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
+                        // printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
+                        /*int result = */remove(Tape::tapeSaveName.c_str());
+
+                        // check if file has been deleted successfully
+                        // if (result != 0) {
+                        //     // print error message
+                        //     printf("File deletion failed\n");
+                        // }
+                        // else {
+                        //     printf("File deleted succesfully\n");
+                        // }            
+
+                        // printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
+                        
+                        REG_DE--;
+                        regA = 0x00;
+
+                        Tape::Save();
+
+                        REG_PC = 0x555;
                     
-                    REG_DE--;
-                    regA = 0x00;
-
-                    Tape::Save();
-
-                    REG_PC = 0x555;
+                    }
 
                 } else {
 
@@ -4648,13 +4664,17 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
 
                     // printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
 
-                    REG_DE--;
-                    regIXY.word++;
-                    regA = 0xFF;
+                    if (SaveRes == DLG_YES) {
 
-                    Tape::Save();
+                        REG_DE--;
+                        regIXY.word++;
+                        regA = 0xFF;
 
-                    REG_PC = 0x555;
+                        Tape::Save();
+
+                        REG_PC = 0x555;
+
+                    }
 
                 }
 

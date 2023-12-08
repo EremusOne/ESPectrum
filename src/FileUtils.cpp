@@ -308,6 +308,9 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype) {
 
     unsigned long h = 0, high; // Directory Hash
 
+    OSD::elements = 0;
+    OSD::ndirs = 0;
+
     while ((de = readdir(dir)) != nullptr) {        
         string fname = de->d_name;
         // if (fname[0] == 'A') printf("Fname: %s\n",fname.c_str());
@@ -318,10 +321,13 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype) {
                 if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
                     // if (fname[0] == 'A') printf("Fname3: %s\n",fname.c_str());
 
-                    if (de->d_type == DT_DIR)
+                    if (de->d_type == DT_DIR) {
                         filenames.push_back((char(32) + fname).c_str());
-                    else
+                        OSD::ndirs++;
+                    } else {
                         filenames.push_back(fname.c_str());
+                        OSD::elements++;
+                    }
 
                     // Calc hash
                     for (int i = 0; i < fname.length(); i++) {

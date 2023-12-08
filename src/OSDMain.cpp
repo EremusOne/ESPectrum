@@ -1889,3 +1889,8 @@ uint8_t OSD::msgDialog(string title, string msg) {
 
 }
 
+string OSD::inputBox(int x, int y, string text) {
+
+return text;
+
+}

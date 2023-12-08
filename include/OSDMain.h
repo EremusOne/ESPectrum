@@ -110,9 +110,12 @@ public:
     static unsigned short menu_curopt;    
     static unsigned int SaveRectpos;    
 
-    static uint8_t msgDialog(string title, string msg);
+    static unsigned int elements;
+    static unsigned int ndirs;
 
+    static uint8_t msgDialog(string title, string msg);
     static void progressDialog(string title, string msg, int percent, int action);
+    string inputBox(int x, int y, string text);
 
     // Rows
     static unsigned short rowCount(string menu);
