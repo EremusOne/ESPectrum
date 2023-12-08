@@ -706,14 +706,14 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 // Print elements
                 VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
                 if (elements) {
-                    menuAt(mfrows + 1, cols - (real_rows > virtual_rows ? 13 : 12));
+                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
                     char elements_txt[13];
                     int nitem = (FileUtils::fileTypes[ftype].begin_row + FileUtils::fileTypes[ftype].focus ) - (4 + ndirs) + (fdir.length() == 1);
                     snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elements);
                     VIDEO::vga.print(std::string(12 - strlen(elements_txt), ' ').c_str());
                     VIDEO::vga.print(elements_txt);
                 } else {
-                    menuAt(mfrows + 1, cols - 13);
+                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - 13);
                     VIDEO::vga.print("             ");
                 }
 
