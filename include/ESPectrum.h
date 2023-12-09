@@ -111,6 +111,8 @@ public:
     static bool trdos;
     static WD1793 Betadisk;
 
+    // static uint32_t sessid;
+
 private:
 
     static void audioTask(void* unused);

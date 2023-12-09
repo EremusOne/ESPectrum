@@ -62,6 +62,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+// #include "bootloader_random.h"
 #endif
 
 using namespace std;
@@ -304,8 +305,18 @@ void ESPectrum::bootKeyboard() {
 //=======================================================================================
 // TaskHandle_t ESPectrum::loopTaskHandle;
 
+// uint32_t ESPectrum::sessid;
+
 void ESPectrum::setup() 
 {
+
+    // //=======================================================================================
+    // // GENERATE SESSION ID
+    // //=======================================================================================
+    // bootloader_random_enable();
+    // sessid = esp_random();
+    // printf("SESSION ID: %08X\n",(unsigned int)sessid);
+    // bootloader_random_disable();    
 
     #ifndef ESP32_SDL2_WRAPPER
 

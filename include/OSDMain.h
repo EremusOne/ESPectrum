@@ -110,6 +110,9 @@ public:
     static unsigned short menu_curopt;    
     static unsigned int SaveRectpos;    
 
+    static int8_t fdScrollPos;
+    static int timeStartScroll;
+    static int timeScroll;
     static unsigned int elements;
     static unsigned int ndirs;
 

@@ -521,11 +521,15 @@ static inline void trim(std::string &s) {
 FILE *dirfile;
 unsigned int OSD::elements;
 unsigned int OSD::ndirs;
+int8_t OSD::fdScrollPos;
+int OSD::timeStartScroll;
+int OSD::timeScroll;
 
 // Run a new file menu
 string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows) {
 
-    struct stat stat_buf;
+    // struct stat stat_buf;
+    long dirfilesize;    
     bool reIndex;
    
     // Position
@@ -569,10 +573,27 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
     VIDEO::vga.print(std::string(cols, ' ').c_str());    
 
+    // char fsessid[32];
     while(1) {
 
         reIndex = false;
         string filedir = FileUtils::MountPoint + fdir;
+
+        // // Get / Create sessid
+        // bool sessid_ok = false;
+        // if (stat((filedir + ".sessid").c_str(), &stat_buf) == 0) {
+        //     dirfile = fopen((filedir + ".sessid").c_str(), "r");
+        //     fgets(fsessid, sizeof(fsessid), dirfile);
+        //     printf("FSessId: %s Sessid: %u\n",fsessid,ESPectrum::sessid);
+        //     if (stoul(fsessid) == ESPectrum::sessid) sessid_ok = true;
+        // }
+
+        // if (!sessid_ok) {
+        //     dirfile = fopen((filedir + ".sessid").c_str(), "w");
+        //     fputs(to_string(ESPectrum::sessid).c_str(),dirfile);
+        // }
+
+        // fclose(dirfile);
 
         // Open dir file for read
         dirfile = fopen((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), "r");
@@ -583,74 +604,82 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         } else {
 
-            // Read dir hash from file
-            stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
-            fseek(dirfile, (stat_buf.st_size >> 5) << 5,SEEK_SET);
-            char fhash[32];
-            fgets(fhash, sizeof(fhash), dirfile);
-            // printf("File Hash: %s\n",fhash);
-            rewind(dirfile);
+            // stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
+            fseek(dirfile,0,SEEK_END);
+            dirfilesize = ftell(dirfile);
+            
+            // if (!sessid_ok) {
 
-            // Calc dir hash
-            DIR *dir;
-            struct dirent* de;
+                // Read dir hash from file
+                // fseek(dirfile, (stat_buf.st_size >> 5) << 5,SEEK_SET);
+                fseek(dirfile, (dirfilesize >> 5) << 5,SEEK_SET);                
 
-            std::vector<std::string> filexts;
-            size_t pos = 0;
-            string ss = FileUtils::fileTypes[ftype].fileExts;
-            while ((pos = ss.find(",")) != std::string::npos) {
-                filexts.push_back(ss.substr(0, pos));
-                ss.erase(0, pos + 1);
-            }
-            filexts.push_back(ss.substr(0));
+                char fhash[32];
+                fgets(fhash, sizeof(fhash), dirfile);
+                // printf("File Hash: %s\n",fhash);
 
-            unsigned long hash = 0, high; // Name checksum variables
+                // Count dir items and calc hash
+                DIR *dir;
+                struct dirent* de;
 
-            string fdir = filedir.substr(0,filedir.length() - 1);
-            if ((dir = opendir(fdir.c_str())) != nullptr) {
-                
-                elements = 0;
-                ndirs = 0;
-                while ((de = readdir(dir)) != nullptr) {
-                    string fname = de->d_name;
-                    if (de->d_type == DT_REG || de->d_type == DT_DIR) {
-                        if (fname.compare(0,1,".") != 0) {
-                            // printf("Fname: %s Fname size: %d\n",fname.c_str(),fname.size());
-                            if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
-                                // Calculate name checksum
-                                for (int i = 0; i < fname.length(); i++) {
-                                    hash = (hash << 4) + fname[i];
-                                    if (high = hash & 0xF0000000) hash ^= high >> 24;
-                                    hash &= ~high;
+                std::vector<std::string> filexts;
+                size_t pos = 0;
+                string ss = FileUtils::fileTypes[ftype].fileExts;
+                while ((pos = ss.find(",")) != std::string::npos) {
+                    filexts.push_back(ss.substr(0, pos));
+                    ss.erase(0, pos + 1);
+                }
+                filexts.push_back(ss.substr(0));
+
+                unsigned long hash = 0, high; // Name checksum variables
+
+                string fdir = filedir.substr(0,filedir.length() - 1);
+                if ((dir = opendir(fdir.c_str())) != nullptr) {
+                    
+                    elements = 0;
+                    ndirs = 0;
+                    while ((de = readdir(dir)) != nullptr) {
+                        string fname = de->d_name;
+                        if (de->d_type == DT_REG || de->d_type == DT_DIR) {
+                            if (fname.compare(0,1,".") != 0) {
+                                // printf("Fname: %s Fname size: %d\n",fname.c_str(),fname.size());
+                                if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+                                    // Calculate name checksum
+                                    for (int i = 0; i < fname.length(); i++) {
+                                        hash = (hash << 4) + fname[i];
+                                        if (high = hash & 0xF0000000) hash ^= high >> 24;
+                                        hash &= ~high;
+                                    }
+                                    if (de->d_type == DT_REG) 
+                                        elements++; // Count elements in dir
+                                    else if (de->d_type == DT_DIR)
+                                            ndirs++;
                                 }
-                                if (de->d_type == DT_REG) 
-                                    elements++; // Count elements in dir
-                                else if (de->d_type == DT_DIR)
-                                        ndirs++;
                             }
                         }
                     }
+
+                    // printf("Hashcode : %lu\n",hash);
+                    
+                    closedir(dir);
+
+                } else {
+
+                    printf("Error opening %s\n",filedir.c_str());
+                    return "";
+
                 }
 
-                // printf("Hashcode : %lu\n",hash);
-                
-                closedir(dir);
+                filexts.clear(); // Clear vector
+                std::vector<std::string>().swap(filexts); // free memory   
 
-            } else {
+                // If calc hash and file hash are different refresh dir index
+                if (stoul(fhash) != hash) {
+                    fclose(dirfile);
+                    reIndex = true;
+                }
 
-                printf("Error opening %s\n",filedir.c_str());
-                return "";
-
-            }
-
-            filexts.clear(); // Clear vector
-            std::vector<std::string>().swap(filexts); // free memory   
-
-            // If calc hash and file hash are different refresh dir index
-            if (stoul(fhash) != hash) {
-                fclose(dirfile);
-                reIndex = true;
-            }
+            // }
 
         }
 
@@ -661,10 +690,9 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
         // There was no index or hashes are different: reIndex
         if (reIndex) {
 
-            // OSD::osdCenteredMsg("Please wait: sorting directory", LEVEL_INFO, 0); // TO DO: Move this into DirtoFile function
             FileUtils::DirToFile(filedir, ftype); // Prepare filelist
 
-            stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
+            // stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
 
             dirfile = fopen((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), "r");
             if (dirfile == NULL) {
@@ -672,12 +700,16 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 return "";
             }
 
+            fseek(dirfile,0,SEEK_END);
+            dirfilesize = ftell(dirfile);
+
             // Reset position
             FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
 
         }
 
-        real_rows = (stat_buf.st_size / 64) + 2; // Add 2 for title and status bar
+        // real_rows = (stat_buf.st_size / 64) + 2; // Add 2 for title and status bar
+        real_rows = (dirfilesize / 64) + 2; // Add 2 for title and status bar        
         virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
         
         // printf("Real rows: %d; st_size: %d; Virtual rows: %d\n",real_rows,stat_buf.st_size,virtual_rows);
@@ -693,6 +725,10 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         fd_Redraw(title, fdir, ftype); // Draw content
 
+        // Focus line scroll position
+        fdScrollPos = 0;
+        timeStartScroll = 0;
+        timeScroll = 0;
         fabgl::VirtualKeyItem Menukey;
         while (1) {
 
@@ -702,6 +738,10 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             // Process external keyboard
             if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+
+                timeStartScroll = 0;
+                timeScroll = 0;
+                fdScrollPos = 0;
 
                 // Print elements
                 VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
@@ -718,6 +758,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 }
 
                 if (ESPectrum::readKbd(&Menukey)) {
+
                     if (!Menukey.down) continue;
 
                     // Search first ocurrence of letter if we're not on that letter yet
@@ -902,13 +943,21 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     }
                 }
 
-            } /*else {
+            } else {
 
-                // TO DO: COUNT TIME TO SIGNAL START OF FOCUSED LINE SCROLL
+                if (timeStartScroll < 200) timeStartScroll++;
 
-            }*/
+            }
 
             // TO DO: SCROLL FOCUSED LINE IF SIGNALED
+            if (timeStartScroll == 200) {
+                timeScroll++;
+                if (timeScroll == 50) {  
+                    fdScrollPos++;
+                    fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_FOCUSED);
+                    timeScroll = 0;
+                }
+            }
 
             vTaskDelay(5 / portTICK_PERIOD_MS);
 
@@ -1065,6 +1114,10 @@ void OSD::fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
     string line = rowGet(menu, virtual_row_num);
     
+    bool isDir = (line[0] == ASCII_SPC);
+
+    trim(line);
+
     switch (line_type) {
     case IS_TITLE:
         VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
@@ -1087,14 +1140,25 @@ void OSD::fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
     VIDEO::vga.print(" ");
 
-    if (line[0] == ASCII_SPC) {
+    if (isDir) {
+
         // Directory
-        ltrim(line);
-        if (line.length() < cols - margin)
+        if (line.length() <= cols - margin - 6)
             line = line + std::string(cols - margin - line.length(), ' ');
+        else
+            if (line_type == IS_FOCUSED) {
+                line = line.substr(fdScrollPos);
+                if (line.length() <= cols - margin - 6) {
+                    fdScrollPos = -1;
+                    timeStartScroll = 0; 
+                }
+            }
+
         line = line.substr(0,cols - margin - 6) + " <DIR>";
+
     } else {
-        if (line.length() < cols - margin) {
+
+        if (line.length() <= cols - margin) {
             line = line + std::string(cols - margin - line.length(), ' ');
             line = line.substr(0, cols - margin);
         } else {
@@ -1102,8 +1166,16 @@ void OSD::fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
                 // printf("%s %d\n",line.c_str(),line.length() - (cols - margin));
                 line = ".." + line.substr(line.length() - (cols - margin) + 2);
                 // printf("%s\n",line.c_str());                
-            } else
+            } else {
+                if (line_type == IS_FOCUSED) {
+                    line = line.substr(fdScrollPos);
+                    if (line.length() <= cols - margin) {
+                        fdScrollPos = -1;
+                        timeStartScroll = 0;                    
+                    }
+                }                   
                 line = line.substr(0, cols - margin);
+            }
         }
 
     }
