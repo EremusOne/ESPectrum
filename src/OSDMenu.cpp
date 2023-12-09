@@ -84,51 +84,16 @@ static uint8_t focus = 1;                    // Focused virtual row
 static uint8_t last_focus = 0;               // To check for changes
 static unsigned short last_begin_row = 0; // To check for changes
 
-DRAM_ATTR static const uint8_t click48[12]={ 0,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x16,0 };
-
-DRAM_ATTR static const uint8_t click128[116]= { 0x00,0x16,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
-                                                0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
-                                                0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
-                                                0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
-                                                0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
-                                                0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
-                                                0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,0x61,
-                                                0x61,0x61,0x16,0x00
-                                            };
-
-IRAM_ATTR void OSD::click() {
-
-    size_t written;
-
-    pwm_audio_set_volume(ESP_DEFAULT_VOLUME);
-
-    if (Z80Ops::is48) {
-        pwm_audio_write((uint8_t *) click48, 12, &written,  5 / portTICK_PERIOD_MS);
-    } else {
-        pwm_audio_write((uint8_t *) click128, 116, &written, 5 / portTICK_PERIOD_MS);
-    }
-
-    pwm_audio_set_volume(ESPectrum::aud_volume);
-
-    // printf("Written: %d\n",written);
-
-}
-
-uint16_t OSD::zxColor(uint8_t color, uint8_t bright) {
-    if (bright) color += 8;
-    return spectrum_colors[color];
-}
-
 // Get real row number for a virtual one
 unsigned short OSD::menuRealRowFor(uint8_t virtual_row_num) { return begin_row + virtual_row_num - 1; }
 
-// Get real row number for a virtual one
-bool OSD::menuIsSub(uint8_t virtual_row_num) { 
-    string line = rowGet(menu, menuRealRowFor(virtual_row_num));
-    int n = line.find(ASCII_TAB);
-    if (n == line.npos) return false;
-    return (line.substr(n+1).find(">") != line.npos);
-}
+// // Get real row number for a virtual one
+// bool OSD::menuIsSub(uint8_t virtual_row_num) { 
+//     string line = rowGet(menu, menuRealRowFor(virtual_row_num));
+//     int n = line.find(ASCII_TAB);
+//     if (n == line.npos) return false;
+//     return (line.substr(n+1).find(">") != line.npos);
+// }
 
 // Menu relative AT
 void OSD::menuAt(short int row, short int col) {
@@ -148,15 +113,15 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     switch (line_type) {
     case IS_TITLE:
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
         margin = 2;
         break;
     case IS_FOCUSED:
-        VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(5, 1));
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
         break;
     default:
-        VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(7, 1));
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
     }
 
@@ -169,9 +134,9 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     VIDEO::vga.print(" ");
 
     if (line.substr(0,9) == "ESPectrum") {
-        VIDEO::vga.setTextColor(ESP_ORANGE, OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(ESP_ORANGE, zxColor(0, 0));
         VIDEO::vga.print("ESP");        
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));        
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
         VIDEO::vga.print(("ectrum " + Config::getArch()).c_str());
         for (uint8_t i = line.length(); i < (cols - margin); i++)
             VIDEO::vga.print(" ");
@@ -215,7 +180,7 @@ void OSD::WindowDraw() {
     }
 
     // Menu border
-    VIDEO::vga.rect(x, y, w, h, OSD::zxColor(0, 0));
+    VIDEO::vga.rect(x, y, w, h, zxColor(0, 0));
 
     // Title
     PrintRow(0, IS_TITLE);
@@ -226,7 +191,7 @@ void OSD::WindowDraw() {
     uint8_t rb_colors[] = {2, 6, 4, 5};
     for (uint8_t c = 0; c < 4; c++) {
         for (uint8_t i = 0; i < 5; i++) {
-            VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, OSD::zxColor(rb_colors[c], 1));
+            VIDEO::vga.line(rb_paint_x + i, rb_y, rb_paint_x + 8 + i, rb_y - 8, zxColor(rb_colors[c], 1));
         }
         rb_paint_x += 5;
     }
@@ -440,10 +405,10 @@ void OSD::menuScrollBar(unsigned short br) {
         // Top handle
         menuAt(1, -1);
         if (br > 1) {
-            VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(0, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(0, 0));
             VIDEO::vga.print("+");
         } else {
-            VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(0, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(0, 0));
             VIDEO::vga.print("-");
         }
 
@@ -452,7 +417,7 @@ void OSD::menuScrollBar(unsigned short br) {
         unsigned short holder_y = y + (OSD_FONT_H * 2);
         unsigned short holder_h = OSD_FONT_H * (virtual_rows - 3);
         unsigned short holder_w = OSD_FONT_W;
-        VIDEO::vga.fillRect(holder_x, holder_y, holder_w, holder_h + 1, OSD::zxColor(7, 0));
+        VIDEO::vga.fillRect(holder_x, holder_y, holder_w, holder_h + 1, zxColor(7, 0));
         holder_y++;
 
         // Scroll bar
@@ -467,15 +432,15 @@ void OSD::menuScrollBar(unsigned short br) {
 
         if (bar_h == 0) bar_h = 1;
 
-        VIDEO::vga.fillRect(holder_x + 1, holder_y + bar_y, holder_w - 2, bar_h, OSD::zxColor(0, 0));
+        VIDEO::vga.fillRect(holder_x + 1, holder_y + bar_y, holder_w - 2, bar_h, zxColor(0, 0));
 
         // Bottom handle
         menuAt(-1, -1);
         if ((br + virtual_rows - 1) < real_rows) {
-            VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(0, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(0, 0));
             VIDEO::vga.print("+");
         } else {
-            VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(0, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(0, 0));
             VIDEO::vga.print("-");
         }
     }
@@ -563,14 +528,14 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     // Draw blank rows
     uint8_t row = 2;
     for (; row < mf_rows; row++) {
-        VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(7, 1));
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
         menuAt(row, 0);
         VIDEO::vga.print(std::string(cols, ' ').c_str());
     }
 
     // Print status bar
     menuAt(row, 0);
-    VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
+    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
     VIDEO::vga.print(std::string(cols, ' ').c_str());    
 
     // char fsessid[32];
@@ -744,7 +709,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 fdScrollPos = 0;
 
                 // Print elements
-                VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
+                VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                 if (elements) {
                     menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
                     char elements_txt[13];
@@ -967,96 +932,6 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
 }
 
-
-void OSD::ZXKbdRead() {
-
-    #define REPDEL 140 // As in real ZX Spectrum (700 ms.) if this function is called every 5 ms. 
-    #define REPPER 20 // As in real ZX Spectrum (100 ms.) if this function is called every 5 ms. 
-
-    static int zxDel = REPDEL;
-    static int lastzxK = fabgl::VK_NONE;
-
-    ZXKeyb::process();
-
-    fabgl::VirtualKey injectKey = fabgl::VK_NONE;
-
-    if (bitRead(ZXKeyb::ZXcols[7], 1)) { // Not Symbol Shift pressed ?
-
-        if (!bitRead(ZXKeyb::ZXcols[4], 3)) injectKey = fabgl::VK_UP; // 7 -> UP
-        else if (!bitRead(ZXKeyb::ZXcols[4], 4)) injectKey = fabgl::VK_DOWN; // 6 -> DOWN
-        else if (!bitRead(ZXKeyb::ZXcols[6], 0)) injectKey = fabgl::VK_RETURN; // ENTER
-        else if ((!bitRead(ZXKeyb::ZXcols[0], 0)) && (!bitRead(ZXKeyb::ZXcols[4], 0))) injectKey = fabgl::VK_BACKSPACE; // CS + 0 -> BACKSPACE
-        else if (!bitRead(ZXKeyb::ZXcols[4], 0)) injectKey = fabgl::VK_SPACE; // 0 -> SPACE
-        else if ((!bitRead(ZXKeyb::ZXcols[7], 0)) || (!bitRead(ZXKeyb::ZXcols[4], 1))) injectKey = fabgl::VK_ESCAPE; // BREAK -> ESCAPE
-        else if (!bitRead(ZXKeyb::ZXcols[3], 4)) injectKey = fabgl::VK_LEFT; // 5 -> PGUP
-        else if (!bitRead(ZXKeyb::ZXcols[4], 2)) injectKey = fabgl::VK_RIGHT; // 8 -> PGDOWN
-        else if (!bitRead(ZXKeyb::ZXcols[1], 1)) injectKey = fabgl::VK_PRINTSCREEN; // S -> PRINTSCREEN
-        else if (!bitRead(ZXKeyb::ZXcols[5], 0)) injectKey = fabgl::VK_PAUSE; // P -> PAUSE
-
-    } else {
-
-        if (!bitRead(ZXKeyb::ZXcols[0], 1)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_Z : fabgl::VK_z;
-        else if (!bitRead(ZXKeyb::ZXcols[0], 2)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_X : fabgl::VK_x;
-        else if (!bitRead(ZXKeyb::ZXcols[0], 3)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_C : fabgl::VK_c;
-        else if (!bitRead(ZXKeyb::ZXcols[0], 4)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_V : fabgl::VK_v;
-
-        else if (!bitRead(ZXKeyb::ZXcols[1], 0)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_A : fabgl::VK_a;
-        else if (!bitRead(ZXKeyb::ZXcols[1], 1)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_S : fabgl::VK_s;
-        else if (!bitRead(ZXKeyb::ZXcols[1], 2)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_D : fabgl::VK_d;
-        else if (!bitRead(ZXKeyb::ZXcols[1], 3)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_F : fabgl::VK_f;
-        else if (!bitRead(ZXKeyb::ZXcols[1], 4)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_G : fabgl::VK_g;
-
-        else if (!bitRead(ZXKeyb::ZXcols[2], 0)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_Q : fabgl::VK_q;
-        else if (!bitRead(ZXKeyb::ZXcols[2], 1)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_W : fabgl::VK_w;
-        else if (!bitRead(ZXKeyb::ZXcols[2], 2)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_E : fabgl::VK_e;
-        else if (!bitRead(ZXKeyb::ZXcols[2], 3)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_R : fabgl::VK_r;
-        else if (!bitRead(ZXKeyb::ZXcols[2], 4)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_T : fabgl::VK_t;
-
-        else if (!bitRead(ZXKeyb::ZXcols[5], 0)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_P : fabgl::VK_p;
-        else if (!bitRead(ZXKeyb::ZXcols[5], 1)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_O : fabgl::VK_o;
-        else if (!bitRead(ZXKeyb::ZXcols[5], 2)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_I : fabgl::VK_i;
-        else if (!bitRead(ZXKeyb::ZXcols[5], 3)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_U : fabgl::VK_u;
-        else if (!bitRead(ZXKeyb::ZXcols[5], 4)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_Y : fabgl::VK_y;
-
-        else if (!bitRead(ZXKeyb::ZXcols[6], 1)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_L : fabgl::VK_l;
-        else if (!bitRead(ZXKeyb::ZXcols[6], 2)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_K : fabgl::VK_k;
-        else if (!bitRead(ZXKeyb::ZXcols[6], 3)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_J : fabgl::VK_j;
-        else if (!bitRead(ZXKeyb::ZXcols[6], 4)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_H : fabgl::VK_h;
-
-        else if (!bitRead(ZXKeyb::ZXcols[7], 2)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_M : fabgl::VK_m;
-        else if (!bitRead(ZXKeyb::ZXcols[7], 3)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_N : fabgl::VK_n;
-        else if (!bitRead(ZXKeyb::ZXcols[7], 4)) injectKey = !bitRead(ZXKeyb::ZXcols[0], 0) ? fabgl::VK_B : fabgl::VK_b;
-
-        else if (!bitRead(ZXKeyb::ZXcols[3], 0)) injectKey = fabgl::VK_1;
-        else if (!bitRead(ZXKeyb::ZXcols[3], 1)) injectKey = fabgl::VK_2;
-        else if (!bitRead(ZXKeyb::ZXcols[3], 2)) injectKey = fabgl::VK_3;
-        else if (!bitRead(ZXKeyb::ZXcols[3], 3)) injectKey = fabgl::VK_4;
-        else if (!bitRead(ZXKeyb::ZXcols[3], 4)) injectKey = fabgl::VK_5;                        
-
-        else if (!bitRead(ZXKeyb::ZXcols[4], 0)) injectKey = fabgl::VK_0;
-        else if (!bitRead(ZXKeyb::ZXcols[4], 1)) injectKey = fabgl::VK_9;
-        else if (!bitRead(ZXKeyb::ZXcols[4], 2)) injectKey = fabgl::VK_8;
-        else if (!bitRead(ZXKeyb::ZXcols[4], 3)) injectKey = fabgl::VK_7;
-        else if (!bitRead(ZXKeyb::ZXcols[4], 4)) injectKey = fabgl::VK_6;
-
-    }
-
-    if (injectKey != fabgl::VK_NONE) {
-        if (zxDel == 0) {
-            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(injectKey, true, false);
-            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(injectKey, false, false);
-            zxDel = lastzxK == injectKey ? REPPER : REPDEL;
-            lastzxK = injectKey;
-        }
-    } else {
-        zxDel = 0;
-        lastzxK = fabgl::VK_NONE;
-    }
-
-    if (zxDel > 0) zxDel--;
-
-}
-
 // Print a virtual row
 void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
@@ -1066,15 +941,15 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     switch (line_type) {
     case IS_TITLE:
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
         margin = 2;
         break;
     case IS_FOCUSED:
-        VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(5, 1));
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
         break;
     default:
-        VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(7, 1));
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
     }
 
@@ -1087,9 +962,9 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     VIDEO::vga.print(" ");
 
     if ((virtual_row_num == 0) && (line.substr(0,9) == "ESPectrum")) {
-        VIDEO::vga.setTextColor(ESP_ORANGE, OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(ESP_ORANGE, zxColor(0, 0));
         VIDEO::vga.print("ESP");        
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));        
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
         VIDEO::vga.print(("ectrum " + Config::getArch()).c_str());
         for (uint8_t i = line.length(); i < (cols - margin); i++)
             VIDEO::vga.print(" ");
@@ -1120,19 +995,19 @@ void OSD::fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
     switch (line_type) {
     case IS_TITLE:
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(0, 0));
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
         margin = 2;
         break;
     case IS_INFO:
-        VIDEO::vga.setTextColor(OSD::zxColor(7, 1), OSD::zxColor(5, 0));
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
         margin = (real_rows > virtual_rows ? 3 : 2);
         break;
     case IS_FOCUSED:
-        VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(5, 1));
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
         break;
     default:
-        VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(7, 1));
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
     }
 
@@ -1218,7 +1093,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
             menuScrollBar(FileUtils::fileTypes[ftype].begin_row);
         } else {
             for (; row < mf_rows; row++) {
-                VIDEO::vga.setTextColor(OSD::zxColor(0, 1), OSD::zxColor(7, 1));
+                VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                 menuAt(row, 0);
                 VIDEO::vga.print(std::string(cols, ' ').c_str());
             }

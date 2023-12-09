@@ -59,7 +59,7 @@ class OSD
 {
 public:
     // ZX Color
-    static uint16_t zxColor(uint8_t color, uint8_t bright);
+    // static uint16_t zxColor(uint8_t color, uint8_t bright);
 
     // Screen size to be set at initialization
     static unsigned short scrW;
@@ -89,7 +89,7 @@ public:
 
     // Menu
     static unsigned short menuRealRowFor(uint8_t virtual_row_num);
-    static bool menuIsSub(uint8_t virtual_row_num);
+    // static bool menuIsSub(uint8_t virtual_row_num);
     static void menuPrintRow(uint8_t virtual_row_num, uint8_t line_type);
     static void menuRedraw();
     static void WindowDraw();
