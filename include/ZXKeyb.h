@@ -44,6 +44,7 @@ public:
 
     static void setup();    // setup pins for physical keyboard
     static void process();  // process physical keyboard
+    static void ZXKbdRead();
 
     static uint8_t ZXcols[8];
     static bool Exists;

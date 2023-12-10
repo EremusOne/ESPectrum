@@ -54,8 +54,8 @@ void ZXKeyb::setup()
     gpio_set_direction((gpio_num_t)KM_COL_4, (gpio_mode_t)GPIO_MODE_INPUT);
 
     // Check if membrane keyboard is present
-    ZXKeyb::putRows(0xFF);
-    ZXKeyb::Exists = gpio_get_level((gpio_num_t)KM_COL_1) && gpio_get_level((gpio_num_t)KM_COL_2) && gpio_get_level((gpio_num_t)KM_COL_4);
+    putRows(0xFF);
+    Exists = gpio_get_level((gpio_num_t)KM_COL_1) && gpio_get_level((gpio_num_t)KM_COL_2) && gpio_get_level((gpio_num_t)KM_COL_4);
 
 }
 
@@ -124,5 +124,94 @@ uint8_t ZXKeyb::getCols() {
     cols |= 0xa0;   // Keep bits 5,7 up
     
     return cols;
+
+}
+
+void ZXKeyb::ZXKbdRead() {
+
+    #define REPDEL 140 // As in real ZX Spectrum (700 ms.) if this function is called every 5 ms. 
+    #define REPPER 20 // As in real ZX Spectrum (100 ms.) if this function is called every 5 ms. 
+
+    static int zxDel = REPDEL;
+    static int lastzxK = fabgl::VK_NONE;
+
+    process();
+
+    fabgl::VirtualKey injectKey = fabgl::VK_NONE;
+
+    if (bitRead(ZXcols[7], 1)) { // Not Symbol Shift pressed ?
+
+        if (!bitRead(ZXcols[4], 3)) injectKey = fabgl::VK_UP; // 7 -> UP
+        else if (!bitRead(ZXcols[4], 4)) injectKey = fabgl::VK_DOWN; // 6 -> DOWN
+        else if (!bitRead(ZXcols[6], 0)) injectKey = fabgl::VK_RETURN; // ENTER
+        else if ((!bitRead(ZXcols[0], 0)) && (!bitRead(ZXcols[4], 0))) injectKey = fabgl::VK_BACKSPACE; // CS + 0 -> BACKSPACE
+        else if (!bitRead(ZXcols[4], 0)) injectKey = fabgl::VK_SPACE; // 0 -> SPACE
+        else if ((!bitRead(ZXcols[7], 0)) || (!bitRead(ZXcols[4], 1))) injectKey = fabgl::VK_ESCAPE; // BREAK -> ESCAPE
+        else if (!bitRead(ZXcols[3], 4)) injectKey = fabgl::VK_LEFT; // 5 -> PGUP
+        else if (!bitRead(ZXcols[4], 2)) injectKey = fabgl::VK_RIGHT; // 8 -> PGDOWN
+        else if (!bitRead(ZXcols[1], 1)) injectKey = fabgl::VK_PRINTSCREEN; // S -> PRINTSCREEN
+        else if (!bitRead(ZXcols[5], 0)) injectKey = fabgl::VK_PAUSE; // P -> PAUSE
+
+    } else {
+
+        if (!bitRead(ZXcols[0], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_Z : fabgl::VK_z;
+        else if (!bitRead(ZXcols[0], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_X : fabgl::VK_x;
+        else if (!bitRead(ZXcols[0], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_C : fabgl::VK_c;
+        else if (!bitRead(ZXcols[0], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_V : fabgl::VK_v;
+
+        else if (!bitRead(ZXcols[1], 0)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_A : fabgl::VK_a;
+        else if (!bitRead(ZXcols[1], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_S : fabgl::VK_s;
+        else if (!bitRead(ZXcols[1], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_D : fabgl::VK_d;
+        else if (!bitRead(ZXcols[1], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_F : fabgl::VK_f;
+        else if (!bitRead(ZXcols[1], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_G : fabgl::VK_g;
+
+        else if (!bitRead(ZXcols[2], 0)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_Q : fabgl::VK_q;
+        else if (!bitRead(ZXcols[2], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_W : fabgl::VK_w;
+        else if (!bitRead(ZXcols[2], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_E : fabgl::VK_e;
+        else if (!bitRead(ZXcols[2], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_R : fabgl::VK_r;
+        else if (!bitRead(ZXcols[2], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_T : fabgl::VK_t;
+
+        else if (!bitRead(ZXcols[5], 0)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_P : fabgl::VK_p;
+        else if (!bitRead(ZXcols[5], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_O : fabgl::VK_o;
+        else if (!bitRead(ZXcols[5], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_I : fabgl::VK_i;
+        else if (!bitRead(ZXcols[5], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_U : fabgl::VK_u;
+        else if (!bitRead(ZXcols[5], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_Y : fabgl::VK_y;
+
+        else if (!bitRead(ZXcols[6], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_L : fabgl::VK_l;
+        else if (!bitRead(ZXcols[6], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_K : fabgl::VK_k;
+        else if (!bitRead(ZXcols[6], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_J : fabgl::VK_j;
+        else if (!bitRead(ZXcols[6], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_H : fabgl::VK_h;
+
+        else if (!bitRead(ZXcols[7], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_M : fabgl::VK_m;
+        else if (!bitRead(ZXcols[7], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_N : fabgl::VK_n;
+        else if (!bitRead(ZXcols[7], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_B : fabgl::VK_b;
+
+        else if (!bitRead(ZXcols[3], 0)) injectKey = fabgl::VK_1;
+        else if (!bitRead(ZXcols[3], 1)) injectKey = fabgl::VK_2;
+        else if (!bitRead(ZXcols[3], 2)) injectKey = fabgl::VK_3;
+        else if (!bitRead(ZXcols[3], 3)) injectKey = fabgl::VK_4;
+        else if (!bitRead(ZXcols[3], 4)) injectKey = fabgl::VK_5;                        
+
+        else if (!bitRead(ZXcols[4], 0)) injectKey = fabgl::VK_0;
+        else if (!bitRead(ZXcols[4], 1)) injectKey = fabgl::VK_9;
+        else if (!bitRead(ZXcols[4], 2)) injectKey = fabgl::VK_8;
+        else if (!bitRead(ZXcols[4], 3)) injectKey = fabgl::VK_7;
+        else if (!bitRead(ZXcols[4], 4)) injectKey = fabgl::VK_6;
+
+    }
+
+    if (injectKey != fabgl::VK_NONE) {
+        if (zxDel == 0) {
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(injectKey, true, false);
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(injectKey, false, false);
+            zxDel = lastzxK == injectKey ? REPPER : REPDEL;
+            lastzxK = injectKey;
+        }
+    } else {
+        zxDel = 0;
+        lastzxK = fabgl::VK_NONE;
+    }
+
+    if (zxDel > 0) zxDel--;
 
 }

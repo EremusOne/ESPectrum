@@ -38,10 +38,18 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "fabgl.h"
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
 // Defines
+
+// Line type
+#define IS_TITLE 0
+#define IS_FOCUSED 1
+#define IS_NORMAL 2
+#define IS_INFO 3
+
 #define OSD_FONT_W 6
 #define OSD_FONT_H 8
 
@@ -55,11 +63,11 @@ using namespace std;
 #define DLG_NO 2
 
 // OSD Interface
-class OSD
-{
+class OSD {
+
 public:
     // ZX Color
-    // static uint16_t zxColor(uint8_t color, uint8_t bright);
+    static uint16_t zxColor(uint8_t color, uint8_t bright);
 
     // Screen size to be set at initialization
     static unsigned short scrW;
@@ -104,7 +112,6 @@ public:
     static void menuAt(short int row, short int col);
     static void menuScrollBar(unsigned short br);
     static void click();
-    static void ZXKbdRead();
     static uint8_t menu_level;
     static bool menu_saverect;    
     static unsigned short menu_curopt;    
@@ -131,6 +138,60 @@ public:
     static char stats_lin1[25]; // "CPU: 00000 / IDL: 00000 ";
     static char stats_lin2[25]; // "FPS:000.00 / FND:000.00 ";
 
+    static uint8_t cols;                     // Maximum columns
+    static uint8_t mf_rows;                  // File menu maximum rows
+    static unsigned short real_rows;      // Real row count
+    static uint8_t virtual_rows;             // Virtual maximum rows on screen
+    static uint16_t w;                        // Width in pixels
+    static uint16_t h;                        // Height in pixels
+    static uint16_t x;                        // X vertical position
+    static uint16_t y;                        // Y horizontal position
+    static uint16_t prev_y[5];                // Y prev. position
+    static unsigned short menu_prevopt;
+    static string menu;                   // Menu string
+    static unsigned short begin_row;      // First real displayed row
+    static uint8_t focus;                    // Focused virtual row
+    static uint8_t last_focus;               // To check for changes
+    static unsigned short last_begin_row; // To check for changes
+
 };
+
+// trim from start (in place)
+static inline void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
+// trim from both ends (in place)
+static inline void trim(std::string &s) {
+    rtrim(s);
+    ltrim(s);
+}
+
+// trim from start (copying)
+static inline std::string ltrim_copy(std::string s) {
+    ltrim(s);
+    return s;
+}
+
+// trim from end (copying)
+static inline std::string rtrim_copy(std::string s) {
+    rtrim(s);
+    return s;
+}
+
+// trim from both ends (copying)
+static inline std::string trim_copy(std::string s) {
+    trim(s);
+    return s;
+}
 
 #endif // ESPECTRUM_OSD_H

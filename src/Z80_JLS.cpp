@@ -4515,14 +4515,12 @@ void (*Z80::dcCB[256])() = {
 
 };
 
-// Trim from end (in place) (for SAVE trap, clean this up later)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
-
-static uint8_t SaveRes;
+// // Trim from end (in place) (for SAVE trap, clean this up later)
+// static inline void rtrim(std::string &s) {
+//     s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+//         return !std::isspace(ch);
+//     }).base(), s.end());
+// }
 
 //Subconjunto de instrucciones 0xDD / 0xFD
 /*
@@ -4606,6 +4604,8 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
             regIXY.word--;
 
             if (REG_PC == 0x04d4) { // Save trap
+
+                static uint8_t SaveRes;
 
                 if (REG_HL == 0x1F80) {
 

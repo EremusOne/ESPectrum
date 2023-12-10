@@ -723,11 +723,7 @@ void VIDEO::MainScreen_Pentagon_delay(unsigned int statestoadd, bool contended) 
     for (int i=0; i < statestoadd; i++) {
         if (++coldraw_cnt > 1) {
             coldraw_cnt = col_end;
-            if (is169) {
-                col_end = 170;
-            } else {
-                col_end = 160;
-            }
+            col_end = is169 ? 170 : 160;
             Draw = MainScreenRB_Pentagon;
             video_rest += statestoadd - (i + 1);
             MainScreenRB_Pentagon(0,false);
@@ -957,41 +953,24 @@ IRAM_ATTR void VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
 
     video_rest = statestoadd & 0x03; // Mod 4
     
-    // for (int i=0; i < (statestoadd >> 2); i++) {    
+    unsigned int i = coldraw_cnt;
 
-    //     *lineptr32++ = brd;
-    //     *lineptr32++ = brd;
-    //     if (++coldraw_cnt == 40) {
-    //         Draw = ++linedraw_cnt == (is169 ? 200 : 240) ? &Blank : &BottomBorder_Blank ;
-    //         return;
-    //     }
-    // }
+    coldraw_cnt += statestoadd >> 2;
+    
+    if (coldraw_cnt > 39) {
 
-    int loopCount = statestoadd >> 2;
-   
-    if (coldraw_cnt + loopCount > 39) {
-
-        for (;;) {
-            
+        for (;i < 40;i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
-
-            if (++coldraw_cnt > 39) {
-                Draw = ++linedraw_cnt == (is169 ? 200 : 240) ? &Blank : &BottomBorder_Blank ;
-                return;
-            }
-
         }
+
+        Draw = ++linedraw_cnt == (is169 ? 200 : 240) ? &Blank : &BottomBorder_Blank ;
 
     } else {
 
-        coldraw_cnt += loopCount;
-
-        for (;loopCount > 0 ; loopCount--) {
-
+        for (;i < coldraw_cnt; i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
-
         }
 
     }
@@ -1023,22 +1002,48 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
 
     video_rest = statestoadd & 0x03; // Mod 4
 
-    for (int i=0; i < statestoadd >> 2; i++) {    
-        
-        if (linedraw_cnt < 220 || linedraw_cnt>235) {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        } else {
-            if (coldraw_cnt < 21 || coldraw_cnt > 38) {
+    if (linedraw_cnt < 220 || linedraw_cnt > 235) {
+
+        unsigned int i = coldraw_cnt;
+
+        coldraw_cnt += statestoadd >> 2;
+    
+        if (coldraw_cnt > 39) {
+
+            for (;i < 40;i++) {
                 *lineptr32++ = brd;
                 *lineptr32++ = brd;
-            } else lineptr32 += 2;
-        }
-        
-        if (++coldraw_cnt > 39) {
+            }
+
             Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
-            return;
+
+        } else {
+
+            for (;i < coldraw_cnt; i++) {
+                *lineptr32++ = brd;
+                *lineptr32++ = brd;
+            }
+
         }
+
+    } else {
+
+        for (unsigned int i=0; i < statestoadd >> 2; i++) {    
+            
+            if (coldraw_cnt < 21) {
+                *lineptr32++ = brd;
+                *lineptr32++ = brd;
+            } else if (coldraw_cnt > 38) {
+                *lineptr32++ = brd;
+                *lineptr32++ = brd;
+                Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
+                return;
+            } else lineptr32 += 2;
+
+            coldraw_cnt++;
+
+        }
+
     }
 
 }
@@ -1080,16 +1085,3 @@ IRAM_ATTR void VIDEO::EndFrame() {
     framecnt++;
 
 }
-
-// ///////////////////////////////////////////////////////////////////////////////
-// // Flush -> Flush screen after HALT
-// ///////////////////////////////////////////////////////////////////////////////
-// IRAM_ATTR void VIDEO::Flush() {
-
-//     // while (CPU::tstates < CPU::statesInFrame) {
-//     while (Draw != &Blank)
-//         Draw(tStatesPerLine,false);
-//     // }
-
-// }
-

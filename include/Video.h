@@ -77,8 +77,7 @@ public:
   // static void NoDraw(unsigned int statestoadd, bool contended);
   static void EndFrame();
   static void Blank(unsigned int statestoadd, bool contended);
-  // static void Flush(); // For flushing video buffer as fast as possible after HALT
-
+  
   // 48 / 128
   static void TopBorder_Blank(unsigned int statestoadd, bool contended);
   static void TopBorder(unsigned int statestoadd, bool contended);
@@ -181,7 +180,7 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
     BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
 };
 
-uint16_t zxColor(uint8_t color, uint8_t bright);
+// uint16_t zxColor(uint8_t color, uint8_t bright);
 
 static uint32_t* AluBytes[16];
 
