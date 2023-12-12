@@ -151,6 +151,7 @@ void ZXKeyb::ZXKbdRead() {
         else if (!bitRead(ZXcols[4], 2)) injectKey = fabgl::VK_RIGHT; // 8 -> PGDOWN
         else if (!bitRead(ZXcols[1], 1)) injectKey = fabgl::VK_PRINTSCREEN; // S -> PRINTSCREEN
         else if (!bitRead(ZXcols[5], 0)) injectKey = fabgl::VK_PAUSE; // P -> PAUSE
+        else if ((!bitRead(ZXcols[7], 4)) || (!bitRead(ZXcols[1], 3))) injectKey = fabgl::VK_F3; // F,B -> FIND / BUSQUEDA
 
     } else {
 

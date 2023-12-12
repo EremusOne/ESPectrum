@@ -34,7 +34,6 @@ visit https://zxespectrum.speccy.org/contacto
 */
 
 #include <string>
-#include <iostream>
 #include <algorithm>
 #include <sys/stat.h>
 #include "errno.h"
