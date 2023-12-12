@@ -257,20 +257,6 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         if (FileUtils::fileTypes[ftype].fdMode) {
 
-            // menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
-            // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-            // VIDEO::vga.print("Find: ");
-            // VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
-            // if (++fdCursorFlash > 63) {
-            //     VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
-            //     if (fdCursorFlash == 128) fdCursorFlash = 0;
-            // }
-            // VIDEO::vga.print("K");
-            // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-            // VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
-
-            // if (fdSearchRefresh) {
-
                 // Recalc items number
                 long prevpos = ftell(dirfile);
 
@@ -307,8 +293,6 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 }
 
                 fdSearchRefresh = false;
-
-            // }
 
         } else {
 
@@ -439,7 +423,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             fdCursorFlash = 0;
                             menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            VIDEO::vga.print("Find: ");
+                            VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
                             VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
                             VIDEO::vga.print("K");
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
@@ -634,7 +618,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                 menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
                 VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                VIDEO::vga.print("Find: ");
+                VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
                 VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
                 if (++fdCursorFlash > 63) {
                     VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
