@@ -57,6 +57,8 @@ struct DISK_FTYPE {
     string indexFilename;
     int begin_row;
     int focus;
+    uint8_t fdMode;
+    string fileSearch;    
 };
 
 class FileUtils

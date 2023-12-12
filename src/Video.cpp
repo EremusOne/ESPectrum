@@ -437,31 +437,24 @@ IRAM_ATTR void VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
 
     video_rest = statestoadd & 0x03; // Mod 4
 
-    int loopCount = statestoadd >> 2;
-   
-    if (coldraw_cnt + loopCount > 39) {
+    unsigned int i = coldraw_cnt;
 
-        for (;;) {
-            
+    coldraw_cnt += statestoadd >> 2;
+    
+    if (coldraw_cnt > 39) {
+
+        for (;i < 40;i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
-
-            if (++coldraw_cnt > 39) {
-                Draw = ++linedraw_cnt == (is169 ? 4 : 24) ? &MainScreen_Blank : &TopBorder_Blank; 
-                return;
-            }
-
         }
+
+        Draw = ++linedraw_cnt == (is169 ? 4 : 24) ? &MainScreen_Blank : &TopBorder_Blank;
 
     } else {
 
-        coldraw_cnt += loopCount;
-
-        for (;loopCount > 0 ; loopCount--) {
-
+        for (;i < coldraw_cnt; i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
-
         }
 
     }
@@ -614,40 +607,42 @@ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
     
     int loopCount = statestoadd >> 2;
 
-    if (loopCount == 0) return;
+    if (loopCount) {
 
-    if (coldraw_cnt + loopCount > 35) {
+        if (coldraw_cnt + loopCount > 35) {
 
-        for (;;) {
+            for (;;) {
 
-            att = grmem[attOffset++];
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+                att = grmem[attOffset++];
+                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+                *lineptr32++ = AluBytes[bmp >> 4][att];
+                *lineptr32++ = AluBytes[bmp & 0xF][att];
 
-            loopCount--;
+                loopCount--;
 
-            if (++coldraw_cnt > 35) {
-                Draw = MainScreenRB;
-                video_rest += loopCount << 2;
-                MainScreenRB(0,false);
-                return;
+                if (++coldraw_cnt > 35) {
+                    Draw = MainScreenRB;
+                    video_rest += loopCount << 2;
+                    MainScreenRB(0,false);
+                    return;
+                }
+
             }
 
-        }
+        } else {
 
-    } else {
+            coldraw_cnt += loopCount;
 
-        coldraw_cnt += loopCount;
+            for (;loopCount > 0 ; loopCount--) {
 
-        for (;loopCount > 0 ; loopCount--) {
+                att = grmem[attOffset++];       // get attribute byte
+                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
-            att = grmem[attOffset++];       // get attribute byte
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+                *lineptr32++ = AluBytes[bmp >> 4][att];
+                *lineptr32++ = AluBytes[bmp & 0xF][att];
 
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+            }
 
         }
 
@@ -668,41 +663,43 @@ void VIDEO::MainScreen_Pentagon(unsigned int statestoadd, bool contended) {
    
     int loopCount = statestoadd >> 2;
    
-    if (loopCount == 0) return;
+    if (loopCount) {
 
-    if (coldraw_cnt + loopCount > 35) {
+        if (coldraw_cnt + loopCount > 35) {
 
-        for (;;) {
-            
-            att = grmem[attOffset++];
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+            for (;;) {
+                
+                att = grmem[attOffset++];
+                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+                *lineptr32++ = AluBytes[bmp >> 4][att];
+                *lineptr32++ = AluBytes[bmp & 0xF][att];
 
-            loopCount--;
+                loopCount--;
 
-            if (++coldraw_cnt > 35) {
-                coldraw_cnt = 0;
-                Draw = MainScreen_Pentagon_delay;            
-                video_rest += loopCount << 2;
-                MainScreen_Pentagon_delay(0,false);
-                return;
+                if (++coldraw_cnt > 35) {
+                    coldraw_cnt = 0;
+                    Draw = MainScreen_Pentagon_delay;            
+                    video_rest += loopCount << 2;
+                    MainScreen_Pentagon_delay(0,false);
+                    return;
+                }
+
             }
 
-        }
+        } else {
 
-    } else {
+            coldraw_cnt += loopCount;
 
-        coldraw_cnt += loopCount;
+            for (;loopCount > 0 ; loopCount--) {
 
-        for (;loopCount > 0 ; loopCount--) {
+                att = grmem[attOffset++];
+                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
-            att = grmem[attOffset++];
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+                *lineptr32++ = AluBytes[bmp >> 4][att];
+                *lineptr32++ = AluBytes[bmp & 0xF][att];
 
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+            }
 
         }
 

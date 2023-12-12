@@ -34,6 +34,7 @@ visit https://zxespectrum.speccy.org/contacto
 */
 
 #include <string>
+#include <iostream>
 #include <algorithm>
 #include <sys/stat.h>
 #include "errno.h"
@@ -58,10 +59,13 @@ using namespace std;
 
 FILE *dirfile;
 unsigned int OSD::elements;
+unsigned int OSD::fdSearchElements;
 unsigned int OSD::ndirs;
 int8_t OSD::fdScrollPos;
 int OSD::timeStartScroll;
 int OSD::timeScroll;
+uint8_t OSD::fdCursorFlash;
+bool OSD::fdSearchRefresh;    
 
 // Run a new file menu
 string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows) {
@@ -69,7 +73,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     // struct stat stat_buf;
     long dirfilesize;    
     bool reIndex;
-   
+  
     // Position
     if (menu_level == 0) {
         x = (Config::aspect_16_9 ? 24 : 4);
@@ -112,7 +116,12 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     VIDEO::vga.print(std::string(cols, ' ').c_str());    
 
     // char fsessid[32];
+
+    // fdSearchRefresh = true;
+
     while(1) {
+
+        fdCursorFlash = 0;
 
         reIndex = false;
         string filedir = FileUtils::MountPoint + fdir;
@@ -246,13 +255,71 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         }
 
-        // real_rows = (stat_buf.st_size / 64) + 2; // Add 2 for title and status bar
-        real_rows = (dirfilesize / 64) + 2; // Add 2 for title and status bar        
-        virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
-        
-        // printf("Real rows: %d; st_size: %d; Virtual rows: %d\n",real_rows,stat_buf.st_size,virtual_rows);
+        if (FileUtils::fileTypes[ftype].fdMode) {
 
-        last_begin_row = last_focus = 0;
+            // menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+            // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            // VIDEO::vga.print("Find: ");
+            // VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+            // if (++fdCursorFlash > 63) {
+            //     VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
+            //     if (fdCursorFlash == 128) fdCursorFlash = 0;
+            // }
+            // VIDEO::vga.print("K");
+            // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            // VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+
+            // if (fdSearchRefresh) {
+
+                // Recalc items number
+                long prevpos = ftell(dirfile);
+
+                unsigned int foundcount = 0;
+                fdSearchElements = 0;
+                rewind(dirfile);
+                char buf[128];
+                while(1) {
+                    fgets(buf, sizeof(buf), dirfile);
+                    if (feof(dirfile)) break;
+                    if (buf[0] == ASCII_SPC) {
+                            foundcount++;
+                            // printf("%s",buf);
+                    }else {
+                        char *pch = strstr(buf, FileUtils::fileTypes[ftype].fileSearch.c_str());
+                        if (pch != NULL) {
+                            foundcount++;
+                            fdSearchElements++;
+                            // printf("%s",buf);
+                        }
+                    }
+                }
+
+                if (foundcount) {
+                    // Redraw rows
+                    real_rows = foundcount + 2; // Add 2 for title and status bar
+                    virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
+                    last_begin_row = last_focus = 0;
+                    // FileUtils::fileTypes[ftype].focus = 2;
+                    // FileUtils::fileTypes[ftype].begin_row = 2;
+                    // fd_Redraw(title, fdir, ftype);
+                } else {
+                    fseek(dirfile,prevpos,SEEK_SET);
+                }
+
+                fdSearchRefresh = false;
+
+            // }
+
+        } else {
+
+            // real_rows = (stat_buf.st_size / 64) + 2; // Add 2 for title and status bar
+            real_rows = (dirfilesize / 64) + 2; // Add 2 for title and status bar        
+            virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
+            // printf("Real rows: %d; st_size: %d; Virtual rows: %d\n",real_rows,stat_buf.st_size,virtual_rows);
+
+            last_begin_row = last_focus = 0;
+
+        }        
 
         // printf("Focus: %d, Begin_row: %d, real_rows: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) real_rows, (int) mf_rows);
         if ((real_rows > mf_rows) && ((FileUtils::fileTypes[ftype].begin_row + mf_rows - 2) > real_rows)) {
@@ -267,6 +334,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
         fdScrollPos = 0;
         timeStartScroll = 0;
         timeScroll = 0;
+
         fabgl::VirtualKeyItem Menukey;
         while (1) {
 
@@ -283,11 +351,13 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                 // Print elements
                 VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                if (elements) {
+
+                unsigned int elem = FileUtils::fileTypes[ftype].fdMode ? fdSearchElements : elements;
+                if (elem) {
                     menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
                     char elements_txt[13];
                     int nitem = (FileUtils::fileTypes[ftype].begin_row + FileUtils::fileTypes[ftype].focus ) - (4 + ndirs) + (fdir.length() == 1);
-                    snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elements);
+                    snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elem);
                     VIDEO::vga.print(std::string(12 - strlen(elements_txt), ' ').c_str());
                     VIDEO::vga.print(elements_txt);
                 } else {
@@ -301,6 +371,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                     // Search first ocurrence of letter if we're not on that letter yet
                     if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
+
                         int fsearch;
                         if (Menukey.vk<=fabgl::VK_9)
                             fsearch = Menukey.vk + 46;
@@ -308,43 +379,94 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             fsearch = Menukey.vk + 75;
                         else if (Menukey.vk<=fabgl::VK_Z)
                             fsearch = Menukey.vk + 17;
-                        uint8_t letra = rowGet(menu,FileUtils::fileTypes[ftype].focus).at(0);
-                        // printf("%d %d\n",(int)letra,fsearch);
-                        if (letra != fsearch) { 
-                            // Seek first ocurrence of letter/number
-                            long prevpos = ftell(dirfile);
-                            char buf[128];
-                            int cnt = 0;
-                            fseek(dirfile,0,SEEK_SET);
-                            while(!feof(dirfile)) {
-                                fgets(buf, sizeof(buf), dirfile);
-                                // printf("%c %d\n",buf[0],int(buf[0]));
-                                if (buf[0] == char(fsearch)) break;
-                                cnt++;
+
+                        if (FileUtils::fileTypes[ftype].fdMode) {
+
+                            if (FileUtils::fileTypes[ftype].fileSearch.length()<10) {
+                                FileUtils::fileTypes[ftype].fileSearch += char(fsearch);
+                                fdSearchRefresh = true;
+                                click();
                             }
-                            // printf("Cnt: %d Letra: %d\n",cnt,int(letra));
-                            if (!feof(dirfile)) {
-                                last_begin_row = FileUtils::fileTypes[ftype].begin_row;
-                                last_focus = FileUtils::fileTypes[ftype].focus;                                    
-                                if (real_rows > virtual_rows) {
-                                    int m = cnt + virtual_rows - real_rows;
-                                    if (m > 0) {
-                                        FileUtils::fileTypes[ftype].focus = m + 2;
-                                        FileUtils::fileTypes[ftype].begin_row = cnt - m + 2;
-                                    } else {
-                                        FileUtils::fileTypes[ftype].focus = 2;
-                                        FileUtils::fileTypes[ftype].begin_row = cnt + 2;
-                                    }
-                                } else {
-                                    FileUtils::fileTypes[ftype].focus = cnt + 2;
-                                    FileUtils::fileTypes[ftype].begin_row = 2;
+
+                        } else {
+                            uint8_t letra = rowGet(menu,FileUtils::fileTypes[ftype].focus).at(0);
+                            // printf("%d %d\n",(int)letra,fsearch);
+                            if (letra != fsearch) { 
+                                // Seek first ocurrence of letter/number
+                                long prevpos = ftell(dirfile);
+                                char buf[128];
+                                int cnt = 0;
+                                fseek(dirfile,0,SEEK_SET);
+                                while(!feof(dirfile)) {
+                                    fgets(buf, sizeof(buf), dirfile);
+                                    // printf("%c %d\n",buf[0],int(buf[0]));
+                                    if (buf[0] == char(fsearch)) break;
+                                    cnt++;
                                 }
-                                // printf("Real rows: %d; Virtual rows: %d\n",real_rows,virtual_rows);
-                                // printf("Focus: %d, Begin_row: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row);
-                                fd_Redraw(title,fdir,ftype);
-                            } else
-                                fseek(dirfile,prevpos,SEEK_SET);
+                                // printf("Cnt: %d Letra: %d\n",cnt,int(letra));
+                                if (!feof(dirfile)) {
+                                    last_begin_row = FileUtils::fileTypes[ftype].begin_row;
+                                    last_focus = FileUtils::fileTypes[ftype].focus;                                    
+                                    if (real_rows > virtual_rows) {
+                                        int m = cnt + virtual_rows - real_rows;
+                                        if (m > 0) {
+                                            FileUtils::fileTypes[ftype].focus = m + 2;
+                                            FileUtils::fileTypes[ftype].begin_row = cnt - m + 2;
+                                        } else {
+                                            FileUtils::fileTypes[ftype].focus = 2;
+                                            FileUtils::fileTypes[ftype].begin_row = cnt + 2;
+                                        }
+                                    } else {
+                                        FileUtils::fileTypes[ftype].focus = cnt + 2;
+                                        FileUtils::fileTypes[ftype].begin_row = 2;
+                                    }
+                                    // printf("Real rows: %d; Virtual rows: %d\n",real_rows,virtual_rows);
+                                    // printf("Focus: %d, Begin_row: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row);
+                                    fd_Redraw(title,fdir,ftype);
+                                    click();
+                                } else
+                                    fseek(dirfile,prevpos,SEEK_SET);
+
+                            }
                         }
+
+                    } else if (Menukey.vk == fabgl::VK_F3) {
+
+                        FileUtils::fileTypes[ftype].fdMode ^= 1;
+
+                        if (FileUtils::fileTypes[ftype].fdMode) {
+
+                            fdCursorFlash = 0;
+                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            VIDEO::vga.print("Find: ");
+                            VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+                            VIDEO::vga.print("K");
+                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+
+                            fdSearchRefresh = FileUtils::fileTypes[ftype].fileSearch != "";
+
+                        } else {
+
+                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            VIDEO::vga.print("      " "          ");
+
+                            if (FileUtils::fileTypes[ftype].fileSearch != "") {
+                                // FileUtils::fileTypes[ftype].fileSearch="";
+                                real_rows = (dirfilesize / 64) + 2; // Add 2 for title and status bar        
+                                virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
+                                last_begin_row = last_focus = 0;
+                                FileUtils::fileTypes[ftype].focus = 2;
+                                FileUtils::fileTypes[ftype].begin_row = 2;
+                                fd_Redraw(title, fdir, ftype);
+                            }
+
+                        }
+
+                        click();
+
                     } else if (Menukey.vk == fabgl::VK_UP) {
                         if (FileUtils::fileTypes[ftype].focus == 2 && FileUtils::fileTypes[ftype].begin_row > 2) {
                             last_begin_row = FileUtils::fileTypes[ftype].begin_row;
@@ -405,19 +527,30 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                         fd_Redraw(title, fdir, ftype);
                         click();
                     } else if (Menukey.vk == fabgl::VK_BACKSPACE) {
-                        if (fdir != "/") {
+                        if (FileUtils::fileTypes[ftype].fdMode) {
+                            if (FileUtils::fileTypes[ftype].fileSearch.length()) {
+                                FileUtils::fileTypes[ftype].fileSearch.pop_back();
+                                fdSearchRefresh = true;
+                                click();
+                            }
+                        } else {
+                            if (fdir != "/") {
 
-                            fclose(dirfile);
-                            dirfile = NULL;
+                                fclose(dirfile);
+                                dirfile = NULL;
 
-                            fdir.pop_back();
-                            fdir = fdir.substr(0,fdir.find_last_of("/") + 1);
+                                fdir.pop_back();
+                                fdir = fdir.substr(0,fdir.find_last_of("/") + 1);
 
-                            FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
-                            // printf("Fdir: %s\n",fdir.c_str());
-                            break;
+                                FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
+                                // printf("Fdir: %s\n",fdir.c_str());
 
-                        }                         
+                                click();
+                                
+                                break;
+
+                            }       
+                        }                  
                     } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE) {
 
                         fclose(dirfile);
@@ -497,6 +630,62 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 }
             }
 
+            if (FileUtils::fileTypes[ftype].fdMode) {
+
+                menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                VIDEO::vga.print("Find: ");
+                VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+                if (++fdCursorFlash > 63) {
+                    VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
+                    if (fdCursorFlash == 128) fdCursorFlash = 0;
+                }
+                VIDEO::vga.print("K");
+                VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+
+                if (fdSearchRefresh) {
+
+                    // Recalc items number
+                    long prevpos = ftell(dirfile);
+
+                    unsigned int foundcount = 0;
+                    fdSearchElements = 0;
+                    rewind(dirfile);
+                    char buf[128];
+                    while(1) {
+                        fgets(buf, sizeof(buf), dirfile);
+                        if (feof(dirfile)) break;
+                        if (buf[0] == ASCII_SPC) {
+                                foundcount++;
+                                // printf("%s",buf);
+                        }else {
+                            char *pch = strstr(buf, FileUtils::fileTypes[ftype].fileSearch.c_str());
+                            if (pch != NULL) {
+                                foundcount++;
+                                fdSearchElements++;
+                                // printf("%s",buf);
+                            }
+                        }
+                    }
+
+                    if (foundcount) {
+                        // Redraw rows
+                        real_rows = foundcount + 2; // Add 2 for title and status bar
+                        virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
+                        last_begin_row = last_focus = 0;
+                        FileUtils::fileTypes[ftype].focus = 2;
+                        FileUtils::fileTypes[ftype].begin_row = 2;
+                        fd_Redraw(title, fdir, ftype);
+                    } else {
+                        fseek(dirfile,prevpos,SEEK_SET);
+                    }
+
+                    fdSearchRefresh = false;
+                }
+
+            }
+
             vTaskDelay(5 / portTICK_PERIOD_MS);
 
         }
@@ -513,13 +702,39 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
         // printf("fd_Redraw\n");
 
         // Read bunch of rows
-        fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * 64,SEEK_SET);
         menu = title + "\n" + ( fdir.length() == 1 ? fdir : fdir.substr(0,fdir.length()-1)) + "\n";
-        for (int i = 2; i < virtual_rows; i++) {
-            char buf[128];
-            fgets(buf, sizeof(buf), dirfile);
-            if (feof(dirfile)) break;
-            menu += buf;
+        char buf[128];
+        if (FileUtils::fileTypes[ftype].fdMode == 0 || FileUtils::fileTypes[ftype].fileSearch == "") {
+            fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * 64,SEEK_SET);
+            for (int i = 2; i < virtual_rows; i++) {
+                fgets(buf, sizeof(buf), dirfile);
+                if (feof(dirfile)) break;
+                menu += buf;
+            }
+        } else {
+            rewind(dirfile);
+            int i = 2;
+            int count = 2;
+            while (1) {
+                fgets(buf, sizeof(buf), dirfile);
+                if (feof(dirfile)) break;
+                if (buf[0] == ASCII_SPC) {
+                    if (i >= FileUtils::fileTypes[ftype].begin_row) {
+                        menu += buf;
+                        if (++count == virtual_rows) break;                        
+                    }
+                    i++;
+                } else {
+                    char *pch = strstr(buf, FileUtils::fileTypes[ftype].fileSearch.c_str());
+                    if (pch != NULL) {
+                        if (i >= FileUtils::fileTypes[ftype].begin_row) {
+                            menu += buf;
+                            if (++count == virtual_rows) break;                        
+                        }
+                        i++;
+                    }
+                }
+            }
         }
 
         fd_PrintRow(1, IS_INFO); // Print status bar

@@ -154,6 +154,10 @@ public:
     static uint8_t last_focus;               // To check for changes
     static unsigned short last_begin_row; // To check for changes
 
+    static uint8_t fdCursorFlash;    
+    static bool fdSearchRefresh;    
+    static unsigned int fdSearchElements;    
+
 };
 
 // trim from start (in place)

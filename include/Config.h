@@ -72,15 +72,25 @@ public:
     static bool CursorAsJoy;
     static int8_t CenterH;
     static int8_t CenterV;    
+
     static string   SNA_Path;
     static string   TAP_Path;
     static string   DSK_Path;
+
     static uint16_t SNA_begin_row;
     static uint16_t SNA_focus;
+    static uint8_t  SNA_fdMode;
+    static string   SNA_fileSearch;
+
     static uint16_t TAP_begin_row;
     static uint16_t TAP_focus;
+    static uint8_t  TAP_fdMode;
+    static string   TAP_fileSearch;
+
     static uint16_t DSK_begin_row;
     static uint16_t DSK_focus;
+    static uint8_t  DSK_fdMode;
+    static string   DSK_fileSearch;
 
     // config persistence
     static void load();

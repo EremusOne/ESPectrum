@@ -71,15 +71,25 @@ uint8_t  Config::ps2_dev2 = 0; // Second port PS/2 device: 0 -> None, 1 -> PS/2 
 bool     Config::CursorAsJoy = false;
 int8_t   Config::CenterH = 0;
 int8_t   Config::CenterV = 0;
+
 string   Config::SNA_Path = "/";
 string   Config::TAP_Path = "/";
 string   Config::DSK_Path = "/";
+
 uint16_t Config::SNA_begin_row = 1;
 uint16_t Config::SNA_focus = 1;
+uint8_t  Config::SNA_fdMode = 0;
+string   Config::SNA_fileSearch = "";
+
 uint16_t Config::TAP_begin_row = 1;
 uint16_t Config::TAP_focus = 1;
+uint8_t  Config::TAP_fdMode = 0;
+string   Config::TAP_fileSearch = "";
+
 uint16_t Config::DSK_begin_row = 1;
 uint16_t Config::DSK_focus = 1;
+uint8_t  Config::DSK_fdMode = 0;
+string   Config::DSK_fileSearch = "";
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -333,6 +343,48 @@ void Config::load() {
             // printf("DSK_focus:%u\n",Config::DSK_focus);
         }
 
+        err = nvs_get_u8(handle, "SNA_fdMode", &Config::SNA_fdMode);
+        if (err == ESP_OK) {
+            // printf("SNA_fdMode:%u\n",Config::SNA_fdMode);
+        }
+
+        err = nvs_get_u8(handle, "TAP_fdMode", &Config::TAP_fdMode);
+        if (err == ESP_OK) {
+            // printf("TAP_fdMode:%u\n",Config::TAP_fdMode);
+        }
+
+        err = nvs_get_u8(handle, "DSK_fdMode", &Config::DSK_fdMode);
+        if (err == ESP_OK) {
+            // printf("DSK_fdMode:%u\n",Config::DSK_fdMode);
+        }
+
+        err = nvs_get_str(handle, "SNA_fileSearch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "SNA_fileSearch", str_data, &required_size);
+            // printf("SNA_fileSearch:%s\n",str_data);
+            SNA_fileSearch = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "TAP_fileSearch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "TAP_fileSearch", str_data, &required_size);
+            // printf("TAP_fileSearch:%s\n",str_data);
+            TAP_fileSearch = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "DSK_fileSearch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "DSK_fileSearch", str_data, &required_size);
+            // printf("DSK_fileSearch:%s\n",str_data);
+            DSK_fileSearch = str_data;
+            free(str_data);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -444,6 +496,24 @@ void Config::save(string value) {
 
         if((value=="DSK_focus") || (value=="all"))
             nvs_set_u16(handle,"DSK_focus",Config::DSK_focus);
+
+        if((value=="SNA_fdMode") || (value=="all"))
+            nvs_set_u8(handle,"SNA_fdMode",Config::SNA_fdMode);
+
+        if((value=="TAP_fdMode") || (value=="all"))
+            nvs_set_u8(handle,"TAP_fdMode",Config::TAP_fdMode);
+
+        if((value=="DSK_fdMode") || (value=="all"))
+            nvs_set_u8(handle,"DSK_fdMode",Config::DSK_fdMode);
+
+        if((value=="SNA_fileSearch") || (value=="all"))
+            nvs_set_str(handle,"SNA_fileSearch",Config::SNA_fileSearch.c_str());
+
+        if((value=="TAP_fileSearch") || (value=="all"))
+            nvs_set_str(handle,"TAP_fileSearch",Config::TAP_fileSearch.c_str());
+
+        if((value=="DSK_fileSearch") || (value=="all"))
+            nvs_set_str(handle,"DSK_fileSearch",Config::DSK_fileSearch.c_str());
 
         // printf("Committing updates in NVS ... ");
 

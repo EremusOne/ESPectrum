@@ -149,14 +149,20 @@ bool FileSNA::load(string sna_fn, string force_arch) {
                     Config::SNA_Path = FileUtils::SNA_Path;
                     Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
                     Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+                    Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
+                    Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
 
                     Config::TAP_Path = FileUtils::TAP_Path;
                     Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
                     Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+                    Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
+                    Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
 
                     Config::DSK_Path = FileUtils::DSK_Path;
                     Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
                     Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+                    Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
+                    Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
 
                     Config::ram_file = sna_fn;
                     Config::save();
@@ -179,14 +185,20 @@ bool FileSNA::load(string sna_fn, string force_arch) {
                     Config::SNA_Path = FileUtils::SNA_Path;
                     Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
                     Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+                    Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
+                    Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
 
                     Config::TAP_Path = FileUtils::TAP_Path;
                     Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
                     Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+                    Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
+                    Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
 
                     Config::DSK_Path = FileUtils::DSK_Path;
                     Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
                     Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+                    Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
+                    Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
 
                     Config::ram_file = sna_fn;
                     Config::save();
@@ -214,14 +226,20 @@ bool FileSNA::load(string sna_fn, string force_arch) {
                 Config::SNA_Path = FileUtils::SNA_Path;
                 Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
                 Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+                Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
+                Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
 
                 Config::TAP_Path = FileUtils::TAP_Path;
                 Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
                 Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+                Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
+                Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
 
                 Config::DSK_Path = FileUtils::DSK_Path;
                 Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
                 Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+                Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
+                Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
 
                 Config::ram_file = sna_fn;
                 Config::save();
@@ -617,14 +635,20 @@ bool FileZ80::load(string z80_fn) {
             Config::SNA_Path = FileUtils::SNA_Path;
             Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
             Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+            Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
+            Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
 
             Config::TAP_Path = FileUtils::TAP_Path;
             Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
             Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+            Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
+            Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
 
             Config::DSK_Path = FileUtils::DSK_Path;
             Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
             Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+            Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
+            Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
 
             Config::ram_file = z80_fn;
             Config::save();
