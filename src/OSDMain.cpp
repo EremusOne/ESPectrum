@@ -1379,7 +1379,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
     unsigned short ink;
     unsigned int j;
 
-    if (msg.length() > (scrW / 6) - 4) msg = msg.substr(0,(scrW / 6) - 4);
+    if (msg.length() > (scrW / 6) - 10) msg = msg.substr(0,(scrW / 6) - 10);
 
     const unsigned short w = (msg.length() + 2) * OSD_FONT_W;
     const unsigned short x = scrAlignCenterX(w);

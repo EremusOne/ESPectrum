@@ -72,13 +72,13 @@ bool LoadSnapshot(string filename, string force_arch) {
     
     if (FileUtils::hasSNAextension(filename)) {
 
-        OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
+        // OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
 
         res = FileSNA::load(filename, force_arch);
 
     } else if (FileUtils::hasZ80extension(filename)) {
 
-        OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
+        // OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
 
         res = FileZ80::load(filename);
 

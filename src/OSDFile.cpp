@@ -303,6 +303,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             last_begin_row = last_focus = 0;
 
+            fdSearchElements = elements;
+
         }        
 
         // printf("Focus: %d, Begin_row: %d, real_rows: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) real_rows, (int) mf_rows);
