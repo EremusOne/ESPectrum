@@ -158,7 +158,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                 // Read dir hash from file
                 // fseek(dirfile, (stat_buf.st_size >> 5) << 5,SEEK_SET);
-                fseek(dirfile, (dirfilesize >> 5) << 5,SEEK_SET);                
+                fseek(dirfile, (dirfilesize >> 6) << 6,SEEK_SET);                
 
                 char fhash[32];
                 fgets(fhash, sizeof(fhash), dirfile);
@@ -263,6 +263,9 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 fdSearchElements = 0;
                 rewind(dirfile);
                 char buf[128];
+                char upperbuf[128];
+                string search = FileUtils::fileTypes[ftype].fileSearch;
+                transform(search.begin(), search.end(), search.begin(), ::toupper);
                 while(1) {
                     fgets(buf, sizeof(buf), dirfile);
                     if (feof(dirfile)) break;
@@ -270,7 +273,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             foundcount++;
                             // printf("%s",buf);
                     }else {
-                        char *pch = strstr(buf, FileUtils::fileTypes[ftype].fileSearch.c_str());
+                        for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
+                        char *pch = strstr(upperbuf, search.c_str());
                         if (pch != NULL) {
                             foundcount++;
                             fdSearchElements++;
@@ -421,14 +425,16 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                         if (FileUtils::fileTypes[ftype].fdMode) {
 
-                            fdCursorFlash = 0;
-                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
-                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
-                            VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
-                            VIDEO::vga.print("K");
-                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+                            fdCursorFlash = 63;
+
+                            // menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                            // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            // VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
+                            // VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+                            // VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
+                            // VIDEO::vga.print("K");
+                            // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            // VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
 
                             fdSearchRefresh = FileUtils::fileTypes[ftype].fileSearch != "";
 
@@ -617,17 +623,20 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             if (FileUtils::fileTypes[ftype].fdMode) {
 
-                menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
-                VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
-                VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
-                if (++fdCursorFlash > 63) {
-                    VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
-                    if (fdCursorFlash == 128) fdCursorFlash = 0;
+                if ((++fdCursorFlash & 0x15) == 0) {
+
+                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                    VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
+                    VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+                    if (fdCursorFlash > 63) {
+                        VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
+                        if (fdCursorFlash == 128) fdCursorFlash = 0;
+                    }
+                    VIDEO::vga.print("K");
+                    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                    VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
                 }
-                VIDEO::vga.print("K");
-                VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
 
                 if (fdSearchRefresh) {
 
@@ -638,6 +647,9 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     fdSearchElements = 0;
                     rewind(dirfile);
                     char buf[128];
+                    char upperbuf[128];
+                    string search = FileUtils::fileTypes[ftype].fileSearch;
+                    transform(search.begin(), search.end(), search.begin(), ::toupper);
                     while(1) {
                         fgets(buf, sizeof(buf), dirfile);
                         if (feof(dirfile)) break;
@@ -645,7 +657,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                                 foundcount++;
                                 // printf("%s",buf);
                         }else {
-                            char *pch = strstr(buf, FileUtils::fileTypes[ftype].fileSearch.c_str());
+                            for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
+                            char *pch = strstr(upperbuf, search.c_str());
                             if (pch != NULL) {
                                 foundcount++;
                                 fdSearchElements++;
@@ -700,6 +713,9 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
             rewind(dirfile);
             int i = 2;
             int count = 2;
+            string search = FileUtils::fileTypes[ftype].fileSearch;
+            transform(search.begin(), search.end(), search.begin(), ::toupper);
+            char upperbuf[128];
             while (1) {
                 fgets(buf, sizeof(buf), dirfile);
                 if (feof(dirfile)) break;
@@ -710,7 +726,8 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
                     }
                     i++;
                 } else {
-                    char *pch = strstr(buf, FileUtils::fileTypes[ftype].fileSearch.c_str());
+                    for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
+                    char *pch = strstr(upperbuf, search.c_str());
                     if (pch != NULL) {
                         if (i >= FileUtils::fileTypes[ftype].begin_row) {
                             menu += buf;
