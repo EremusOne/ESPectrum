@@ -66,8 +66,6 @@ using namespace std;
 class OSD {
 
 public:
-    // ZX Color
-    static uint16_t zxColor(uint8_t color, uint8_t bright);
 
     // Screen size to be set at initialization
     static unsigned short scrW;
@@ -86,7 +84,7 @@ public:
     static void osdAt(uint8_t row, uint8_t col);
     static void drawOSD(bool bottom_info);
     static void drawStats();
-    static void do_OSD(fabgl::VirtualKey KeytoESP, uint8_t CTRL);
+    static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL);
     static void HWInfo();
 
     // Error
@@ -102,6 +100,7 @@ public:
     static void menuRedraw();
     static void WindowDraw();
     static unsigned short menuRun(string new_menu);
+    static unsigned short simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy);
     static string fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows);
     static int menuTape(string title);    
     static void menuScroll(bool up);
@@ -126,6 +125,7 @@ public:
     static uint8_t msgDialog(string title, string msg);
     static void progressDialog(string title, string msg, int percent, int action);
     string inputBox(int x, int y, string text);
+    static void joyDialog(uint8_t joynum);
 
     // Rows
     static unsigned short rowCount(string menu);

@@ -73,6 +73,7 @@ public:
     static bool readKbd(fabgl::VirtualKeyItem *Nextkey);
     static void readKbdJoy();
     static fabgl::PS2Controller PS2Controller;
+    static fabgl::VirtualKey JoyVKTranslation[24];
 
     // Audio
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_PENTAGON];

@@ -44,12 +44,29 @@ using namespace std;
 
 // #include "esp_attr.h"
 
+#define JOY_CURSOR 0
+#define JOY_KEMPSTON 1
+#define JOY_SINCLAIR1 2
+#define JOY_SINCLAIR2 3
+#define JOY_FULLER 4
+#define JOY_CUSTOM 5
+#define JOY_NONE 6
+
+#define JOYPS2_CURSOR 0
+#define JOYPS2_KEMPSTON 1
+#define JOYPS2_SINCLAIR1 2
+#define JOYPS2_SINCLAIR2 3
+#define JOYPS2_FULLER 4
+#define JOYPS2_CUSTOM 5
+#define JOYPS2_NONE 6
 class Config
 {
 public:
 
     // machine type change request
     static void requestMachine(string newArch, string newRomSet);
+
+    static void setJoyMap(uint8_t joynum, uint8_t joy_type);
 
     static const string archnames[3];
 
@@ -65,7 +82,10 @@ public:
     static bool     AY48;
     static bool     Issue2;    
     static bool     flashload;    
-    static uint8_t  joystick;
+    static uint8_t  joystick1;
+    static uint8_t  joystick2;
+    static uint16_t joydef[24];
+    static uint8_t  joyPS2;    
     static uint8_t  videomode;
     static uint8_t  AluTiming;
     static uint8_t  ps2_dev2;

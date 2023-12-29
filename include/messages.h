@@ -41,8 +41,8 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
-// #define EMU_VERSION "       v1.0 "
-#define EMU_VERSION " Dev 121223 "
+
+#define EMU_VERSION "       v1.0 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -118,6 +118,18 @@ static const char *OSD_FIRMW_UPDATE[2] = { OSD_FIRMW_UPDATE_EN,OSD_FIRMW_UPDATE_
 #define OSD_DLG_SURE_EN "Are you sure?"
 #define OSD_DLG_SURE_ES "\xA8" "Desea continuar?"
 static const char *OSD_DLG_SURE[2] = { OSD_DLG_SURE_EN, OSD_DLG_SURE_ES};
+
+#define OSD_DLG_JOYSAVE_EN "Save changes?"
+#define OSD_DLG_JOYSAVE_ES "\xA8" "Guardar cambios?"
+static const char *OSD_DLG_JOYSAVE[2] = { OSD_DLG_JOYSAVE_EN, OSD_DLG_JOYSAVE_ES};
+
+#define OSD_DLG_JOYDISCARD_EN "Discard changes?"
+#define OSD_DLG_JOYDISCARD_ES "\xA8" "Descartar cambios?"
+static const char *OSD_DLG_JOYDISCARD[2] = { OSD_DLG_JOYDISCARD_EN, OSD_DLG_JOYDISCARD_ES};
+
+#define OSD_DLG_SETJOYMAPDEFAULTS_EN "Load joy type default map?"
+#define OSD_DLG_SETJOYMAPDEFAULTS_ES "\xA8" "Cargar mapeo por defecto?"
+static const char *OSD_DLG_SETJOYMAPDEFAULTS[2] = { OSD_DLG_SETJOYMAPDEFAULTS_EN, OSD_DLG_SETJOYMAPDEFAULTS_ES};
 
 #define OSD_FIRMW_EN "Updating firmware"
 #define OSD_FIRMW_ES "Actualizando firmware"
@@ -227,6 +239,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Storage\t>\n"\
     "Machine\t>\n"\
     "Aspect ratio\t>\n"\
+    "Joystick\t>\n"\
     "PS/2 Joystick\t>\n"\
     "Language\t>\n"\
     "Other\t>\n"\
@@ -236,6 +249,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Almacenamiento\t>\n"\
     "Modelo\t>\n"\
     "Rel. aspecto\t>\n"\
+    "Joystick\t>\n"\
     "Joystick PS/2\t>\n"\
     "Idioma\t>\n"\
     "Otros\t>\n"\
@@ -376,15 +390,49 @@ static const char *MENU_ARCH[2] = { MENU_ARCH_EN, MENU_ARCH_ES };
     "Espanol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
 
-#define MENU_JOY_EN "PS/2 Joystick\n"\
-    "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"\
-	"Cursor Keys as Joy\t>\n"
-#define MENU_JOY_ES "Joystick PS/2\n"\
-    "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"\
-	"Joy en teclas de cursor\t>\n"
+#define MENU_JOY_EN "Joystick menu\n"\
+    "Joystick 1\n"\
+    "Joystick 2\n"
+#define MENU_JOY_ES "Menu Joystick\n"\
+    "Joystick 1\n"\
+    "Joystick 2\n"
 static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
+
+#define MENU_DEFJOY_EN "Joystick#\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\
+	"Assign keys\n"
+	// "Load map\n"\
+	// "Save map\n"
+#define MENU_DEFJOY_ES "Joystick#\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\
+	"Definir\n"
+	// "Cargar mapa\n"\
+	// "Guardar mapa\n"
+static const char *MENU_DEFJOY[2] = { MENU_DEFJOY_EN, MENU_DEFJOY_ES };
+
+#define MENU_JOYPS2_EN "PS/2 Joystick\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\	
+	"Cursor Keys as Joy\t>\n"
+#define MENU_JOYPS2_ES "Joystick PS/2\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\	
+	"Joy en teclas de cursor\t>\n"
+static const char *MENU_JOYPS2[2] = { MENU_JOYPS2_EN, MENU_JOYPS2_ES };
 
 #define MENU_CURSORJOY_EN "Cursor as Joy\n"\
     "Yes\t[Y]\n"\
@@ -415,40 +463,26 @@ static const char *MENU_CURSORJOY[2] = { MENU_CURSORJOY_EN, MENU_CURSORJOY_ES };
 	"\r"\
 	"\nA1The Jet Set Willys:\r"\
 	"\r"\
-	"\nD1DopierRex \nE1Igor Peruchi \nB1Inacio Santos\r"\
-	"\r"\
+	"\nD1DopierRex \nE1Eduard Ruiz \nC1Igor Peruchi\r"\
+	"\nB1Inacio Santos\r"\
 	"\r"\
 	"\r"\
 	"\r"
-
-	// Lencio Asimov
-	// Fernando Bonilla
-	// Elena Collantes
-	// Jorge Garcia
-	// kounch
-	// Ignacio Monge
-	// Javi Ortiz
-	// Jordi Ramos
-	// Jose Maria Rodriguez
-	// Santiago Romero
-	// Julia Salvador
-	// Marta Sicilia
-	// Radek Wojciechowski
 
 #define PATREONS2 "\r"\
 	"\nA1The Manic Miners:\r"\
 	"\r"\
 	"\nE1Lencio Asimov \nB1Fernando Bonilla\r"\
-	"\nC1Elena Collantes \nD1Jorge Garcia\r"\
-	"\nB1kounch \nC1Ignacio Monge \nD1Javi Ortiz\r"\
+	"\nC1Elena Collantes \nD1Fidel Fernandez\r"\
+	"\nE1Jorge Garcia \nC1Jose Luis Garcia\r"\
+	"\nB1kounch \nD1Ignacio Monge \nE1Serafin Moraton\r"\
+	"\nB1Javi Ortiz \nC1Miguel Angel Perez\r"\
 	"\nD1Jordi Ramos \nE1Jose Maria Rodriguez\r"\
-	"\nB1Santiago Romero \nC1Julia Salvador\r"\
-	"\nD1Marta Sicilia \nE1Radek Wojciechowski\r"\
-	"\r"\
-	"\r"\
-	"\r"
+	"\nB1Marco A. Rodriguez \nC1Santiago Romero\r"\
+	"\nD1Julia Salvador \nE1Marta Sicilia\r"\
+	"\nB1Radek Wojciechowski\r"
 
-static const char *AboutMsg[2][6] = {
+static const char *AboutMsg[2][7] = {
 	{
 	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
 	"        David Crespo  \"dcrespo3d\"\r"\
@@ -475,7 +509,7 @@ static const char *AboutMsg[2][6] = {
 	"\nB1J. L. Sanchez   \nF1Z80 core improvements\r"\
 	"\nC1Antonio Villena \nF1Hardware support\r"\
 	"\nD1ZjoyKiLer       \nF1Testing & ideas\r"\
-	"\r"
+	"\r"\
 	"\r"		
 	,
 	"\nF1Big thanks to our Patreons:\r"\
@@ -484,19 +518,33 @@ static const char *AboutMsg[2][6] = {
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS2
 	,
+	"\nF1Thanks for help and donations to:\r"\
+	"\r"\
+	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
+	"\nB1Pablo Forcen Soler \nF1AUA\r"\
+	"\nC1Jordi Ramos Montes\r"
+	"\nD1Tsvetan Usunov \nF1Olimex Ltd.\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
+	,
 	"\nF1Thanks also to:\r"\
 	"\r"\
 	"\nA1Retrowiki.es \nF1and its great community\r"\
 	"\nB1Ron \nF1for his cool RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
 	"\nE1J.C. Gonzalez Amestoy \nF1for RVM\r"\
-	"\nA1Tsvetan Usunov from Olimex Ltd.\r"\
 	"\nB1All creators in ZX Spectrum server at\r"\
 	"Discord\r"\
 	"\r"\
+	"\r"\
 	"\nF1and, of course, to:\r"\
 	"\r"\
-	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
+	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"
 	,
 	DEDICATORIA
 	},
@@ -526,7 +574,7 @@ static const char *AboutMsg[2][6] = {
 	"\nB1J. L. Sanchez   \nF1Mejoras core Z80\r"\
 	"\nC1Antonio Villena \nF1Soporte hardware\r"\
 	"\nD1ZjoyKiLer       \nF1Testing e ideas\r"\
-	"\r"
+	"\r"\
 	"\r"		
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
@@ -535,19 +583,33 @@ static const char *AboutMsg[2][6] = {
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS2
 	,
+	"\nF1Gracias por su ayuda y donaciones a:\r"\
+	"\r"\
+	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
+	"\nB1Pablo Forcen Soler \nF1AUA\r"\
+	"\nC1Jordi Ramos Montes\r"
+	"\nD1Tsvetan Usunov \nF1Olimex Ltd.\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
+	,
 	"\nF1Gracias tambien a:\r"\
 	"\r"\
 	"\nA1Retrowiki.es \nF1y su magnifica comunidad\r"\
 	"\nB1Ron \nF1por su genial RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
 	"\nE1J.C. Gonzalez Amestoy \nF1por RVM\r"\
-	"\nA1Tsvetan Usunov de Olimex Ltd.\r"\
 	"\nB1Todos los creadores en el servidor\r"\
 	"ZX Spectrum en Discord\r"\
 	"\r"\
+	"\r"\	
 	"\nF1y, por supuesto, a:\r"\
 	"\r"\
-	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
+	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"
 	,
 	DEDICATORIA
 	}

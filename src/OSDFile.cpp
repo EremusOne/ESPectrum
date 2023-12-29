@@ -265,7 +265,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 char buf[128];
                 char upperbuf[128];
                 string search = FileUtils::fileTypes[ftype].fileSearch;
-                transform(search.begin(), search.end(), search.begin(), ::toupper);
+                std::transform(search.begin(), search.end(), search.begin(), ::toupper);
                 while(1) {
                     fgets(buf, sizeof(buf), dirfile);
                     if (feof(dirfile)) break;
@@ -458,7 +458,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                         click();
 
-                    } else if (Menukey.vk == fabgl::VK_UP) {
+                    } else if (Menukey.vk == fabgl::VK_UP || Menukey.vk == fabgl::VK_JOY1UP || Menukey.vk == fabgl::VK_JOY2UP) {
                         if (FileUtils::fileTypes[ftype].focus == 2 && FileUtils::fileTypes[ftype].begin_row > 2) {
                             last_begin_row = FileUtils::fileTypes[ftype].begin_row;
                             FileUtils::fileTypes[ftype].begin_row--;
@@ -470,7 +470,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             // printf("Focus: %d, Lastfocus: %d\n",FileUtils::fileTypes[ftype].focus,(int) last_focus);
                         }
                         click();
-                    } else if (Menukey.vk == fabgl::VK_DOWN) {
+                    } else if (Menukey.vk == fabgl::VK_DOWN || Menukey.vk == fabgl::VK_JOY1DOWN || Menukey.vk == fabgl::VK_JOY2DOWN) {
                         if (FileUtils::fileTypes[ftype].focus == virtual_rows - 1 && FileUtils::fileTypes[ftype].begin_row + virtual_rows - 2 < real_rows) {
                             last_begin_row = FileUtils::fileTypes[ftype].begin_row;
                             FileUtils::fileTypes[ftype].begin_row++;
@@ -482,7 +482,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             // printf("Focus: %d, Lastfocus: %d\n",FileUtils::fileTypes[ftype].focus,(int) last_focus);
                         }
                         click();
-                    } else if ((Menukey.vk == fabgl::VK_PAGEUP) || (Menukey.vk == fabgl::VK_LEFT)) {
+                    } else if (Menukey.vk == fabgl::VK_PAGEUP || Menukey.vk == fabgl::VK_LEFT || Menukey.vk == fabgl::VK_JOY1LEFT || Menukey.vk == fabgl::VK_JOY2LEFT) {
                         if (FileUtils::fileTypes[ftype].begin_row > virtual_rows) {
                             FileUtils::fileTypes[ftype].focus = 2;
                             FileUtils::fileTypes[ftype].begin_row -= virtual_rows - 2;
@@ -492,7 +492,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                         }
                         fd_Redraw(title, fdir, ftype);
                         click();
-                    } else if ((Menukey.vk == fabgl::VK_PAGEDOWN) || (Menukey.vk == fabgl::VK_RIGHT)) {
+                    } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
                         if (real_rows - FileUtils::fileTypes[ftype].begin_row  - virtual_rows > virtual_rows) {
                             FileUtils::fileTypes[ftype].focus = 2;
                             FileUtils::fileTypes[ftype].begin_row += virtual_rows - 2;
@@ -542,7 +542,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             }       
                         }                  
-                    } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE) {
+                    } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
 
                         fclose(dirfile);
                         dirfile = NULL;
@@ -579,10 +579,10 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             rtrim(filedir);
                             click();
-                            return (Menukey.vk == fabgl::VK_RETURN ? "R" : "S") + filedir;
+                            return (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B ? "R" : "S") + filedir;
                         }
 
-                    } else if (Menukey.vk == fabgl::VK_ESCAPE) {
+                    } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
 
                         // Restore backbuffer data
                         if (menu_saverect) {
@@ -649,7 +649,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     char buf[128];
                     char upperbuf[128];
                     string search = FileUtils::fileTypes[ftype].fileSearch;
-                    transform(search.begin(), search.end(), search.begin(), ::toupper);
+                    std::transform(search.begin(), search.end(), search.begin(), ::toupper);
                     while(1) {
                         fgets(buf, sizeof(buf), dirfile);
                         if (feof(dirfile)) break;
@@ -714,7 +714,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
             int i = 2;
             int count = 2;
             string search = FileUtils::fileTypes[ftype].fileSearch;
-            transform(search.begin(), search.end(), search.begin(), ::toupper);
+            std::transform(search.begin(), search.end(), search.begin(), ::toupper);
             char upperbuf[128];
             while (1) {
                 fgets(buf, sizeof(buf), dirfile);

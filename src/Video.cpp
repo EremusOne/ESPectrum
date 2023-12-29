@@ -55,13 +55,32 @@ uint8_t VIDEO::flash_ctr= 0;
 bool VIDEO::OSD = false;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
-// unsigned int VIDEO::tstateDraw; // Drawing start point (in Tstates)
-// unsigned int VIDEO::linedraw_cnt;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 int VIDEO::VsyncFinetune[2];
-// uint8_t VIDEO::dispUpdCycle;
 uint32_t VIDEO::framecnt = 0;
+
+static unsigned int is169;
+
+static uint16_t offBmp[SPEC_H];
+static uint16_t offAtt[SPEC_H];
+
+static uint32_t* AluBytes[16];
+
+// static unsigned char DrawStatus;
+
+static uint32_t* lineptr32;
+static uint16_t* lineptr16;
+
+static unsigned int tstateDraw; // Drawing start point (in Tstates)
+static unsigned int linedraw_cnt;
+static unsigned int lin_end;
+static unsigned int coldraw_cnt;
+static unsigned int col_end;
+static unsigned int video_rest;
+
+static unsigned int bmpOffset;  // offset for bitmap in graphic memory
+static unsigned int attOffset;  // offset for attrib in graphic memory
 
 DRAM_ATTR static const uint8_t wait_st[243] = { 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -141,9 +160,8 @@ void (*VIDEO::DrawOSD169)(unsigned int, bool) = &VIDEO::MainScreen;
 
 void precalcColors() {
     
-    for (int i = 0; i < NUM_SPECTRUM_COLORS; i++) {
+    for (int i = 0; i < NUM_SPECTRUM_COLORS; i++)
         spectrum_colors[i] = (spectrum_colors[i] & VIDEO::vga.RGBAXMask) | VIDEO::vga.SBits;
-    }
 
 }
 
@@ -184,9 +202,9 @@ void precalcAluBytes() {
     }
 
     // Alloc ALUbytes
-        for (int i = 0; i < 16; i++) {
-            AluBytes[i] = (uint32_t *) heap_caps_malloc(0x400, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
-        }
+    for (int i = 0; i < 16; i++) {
+        AluBytes[i] = (uint32_t *) heap_caps_malloc(0x400, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);
+    }
 
     for (int i = 0; i < 16; i++) {
         for (int n = 0; n < 256; n++) {
@@ -200,11 +218,6 @@ void precalcAluBytes() {
         }
     }    
 
-}
-
-uint16_t zxColor(uint8_t color, uint8_t bright) {
-    if (bright) color += 8;
-    return spectrum_colors[color];
 }
 
 // Precalc ULA_SWAP
@@ -605,7 +618,7 @@ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     video_rest = statestoadd & 0x03;
     
-    int loopCount = statestoadd >> 2;
+    unsigned int loopCount = statestoadd >> 2;
 
     if (loopCount) {
 

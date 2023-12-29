@@ -140,7 +140,10 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
         }
 
         // Kempston Joystick
-        if ((Config::joystick) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
+        if ((Config::joystick1 == JOY_KEMPSTON || Config::joystick2 == JOY_KEMPSTON || Config::joyPS2 == JOYPS2_KEMPSTON) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
+
+        // Fuller Joystick
+        if ((Config::joystick1 == JOY_FULLER || Config::joystick2 == JOY_FULLER || Config::joyPS2 == JOYPS2_FULLER) && (address & 0xFF) == 0x7F) return port[0x7f];
 
         // Sound (AY-3-8912)
         if (ESPectrum::AY_emu) {

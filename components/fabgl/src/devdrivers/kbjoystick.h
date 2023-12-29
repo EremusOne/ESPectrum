@@ -403,6 +403,7 @@ public:
 private:
 
   VirtualKey scancodeToVK(uint8_t scancode, bool isExtended, KeyboardLayout const * layout = nullptr);
+  VirtualKey scancodeTojoyVK(uint8_t scancode, KeyboardLayout const * layout = nullptr);  
   VirtualKey VKtoAlternateVK(VirtualKey in_vk, bool down, KeyboardLayout const * layout = nullptr);
   VirtualKey manageCAPSLOCK(VirtualKey vk);
   void updateLEDs();

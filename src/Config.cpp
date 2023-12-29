@@ -51,6 +51,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 #include "pwm_audio.h"
 #include "roms.h"
+#include "OSDMain.h"
 
 const string Config::archnames[3] = { "48K", "128K", "Pentagon"};
 string   Config::arch = "48K";
@@ -65,7 +66,37 @@ uint8_t  Config::lang = 0;
 bool     Config::AY48 = true;
 bool     Config::Issue2 = true;
 bool     Config::flashload = true;
-uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
+
+uint8_t  Config::joystick1 = JOY_SINCLAIR1;
+uint8_t  Config::joystick2 = JOY_SINCLAIR2;
+uint16_t Config::joydef[24] = { 
+    fabgl::VK_6,
+    fabgl::VK_7,
+    fabgl::VK_9,
+    fabgl::VK_8,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_0,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_1,
+    fabgl::VK_2,
+    fabgl::VK_4,
+    fabgl::VK_3,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_5,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE
+};
+
+uint8_t  Config::joyPS2 = JOY_KEMPSTON;
 uint8_t  Config::AluTiming = 0;
 uint8_t  Config::ps2_dev2 = 0; // Second port PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
 bool     Config::CursorAsJoy = false;
@@ -99,25 +130,25 @@ static inline void erase_cntrl(std::string &s) {
             s.end());
 }
 
-// trim from start (in place)
-static inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-}
+// // trim from start (in place)
+// static inline void ltrim(std::string &s) {
+//     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+//         return !std::isspace(ch);
+//     }));
+// }
 
-// trim from end (in place)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
+// // trim from end (in place)
+// static inline void rtrim(std::string &s) {
+//     s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+//         return !std::isspace(ch);
+//     }).base(), s.end());
+// }
 
-// trim from both ends (in place)
-static inline void trim(std::string &s) {
-    rtrim(s);
-    ltrim(s);
-}
+// // trim from both ends (in place)
+// static inline void trim(std::string &s) {
+//     rtrim(s);
+//     ltrim(s);
+// }
 
 // Read config from FS
 void Config::load() {
@@ -252,9 +283,30 @@ void Config::load() {
             free(str_data);
         }
 
-        err = nvs_get_u8(handle, "joystick", &Config::joystick);
+        err = nvs_get_u8(handle, "joystick1", &Config::joystick1);
         if (err == ESP_OK) {
-            // printf("joystick:%u\n",Config::joystick);
+            // printf("joystick1:%u\n",Config::joystick1);
+        }
+
+        err = nvs_get_u8(handle, "joystick2", &Config::joystick2);
+        if (err == ESP_OK) {
+            // printf("joystick2:%u\n",Config::joystick2);
+        }
+
+        // Read joystick definition
+        for (int n=0; n < 24; n++) {
+            char joykey[9];
+            sprintf(joykey,"joydef%02u",n);
+            // printf("%s\n",joykey);
+            err = nvs_get_u16(handle, joykey, &Config::joydef[n]);
+            if (err == ESP_OK) {
+                // printf("joydef00:%u\n",Config::joydef[n]);
+            }
+        }
+
+        err = nvs_get_u8(handle, "joyPS2", &Config::joyPS2);
+        if (err == ESP_OK) {
+            // printf("joyPS2:%u\n",Config::joyPS2);
         }
 
         err = nvs_get_u8(handle, "AluTiming", &Config::AluTiming);
@@ -452,8 +504,24 @@ void Config::save(string value) {
         if((value=="flashload") || (value=="all"))
             nvs_set_str(handle,"flashload",flashload ? "true" : "false");
 
-        if((value=="joystick") || (value=="all"))
-            nvs_set_u8(handle,"joystick",Config::joystick);
+        if((value=="joystick1") || (value=="all"))
+            nvs_set_u8(handle,"joystick1",Config::joystick1);
+
+        if((value=="joystick2") || (value=="all"))
+            nvs_set_u8(handle,"joystick2",Config::joystick2);
+
+        // Write joystick definition
+        for (int n=0; n < 24; n++) {
+            char joykey[9];
+            sprintf(joykey,"joydef%02u",n);
+            if((value == joykey) || (value=="all")) {
+                nvs_set_u16(handle,joykey,Config::joydef[n]);
+                // printf("%s %u\n",joykey, joydef[n]);
+            }
+        }
+
+        if((value=="joyPS2") || (value=="all"))
+            nvs_set_u8(handle,"joyPS2",Config::joyPS2);
 
         if((value=="AluTiming") || (value=="all"))
             nvs_set_u8(handle,"AluTiming",Config::AluTiming);
@@ -566,4 +634,112 @@ void Config::requestMachine(string newArch, string newRomSet)
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
   
+}
+
+//   fabgl::VK_FULLER_LEFT, // Left
+//     fabgl::VK_FULLER_RIGHT, // Right
+//     fabgl::VK_FULLER_UP, // Up
+//     fabgl::VK_FULLER_DOWN, // Down
+//     fabgl::VK_S, // Start
+//     fabgl::VK_M, // Mode
+//     fabgl::VK_FULLER_FIRE, // A
+//     fabgl::VK_9, // B
+//     fabgl::VK_SPACE, // C
+//     fabgl::VK_X, // X
+//     fabgl::VK_Y, // Y
+//     fabgl::VK_Z, // Z
+
+void Config::setJoyMap(uint8_t joynum, uint8_t joytype) {
+
+fabgl::VirtualKey newJoy[12];
+
+for (int n=0; n < 12; n++) newJoy[n] = fabgl::VK_NONE;
+
+// Ask to overwrite map with default joytype values
+string title = (joynum == 1 ? "Joystick 1" : "Joystick 2");
+string msg = OSD_DLG_SETJOYMAPDEFAULTS[Config::lang];
+uint8_t res = OSD::msgDialog(title,msg);
+if (res == DLG_YES) {
+
+    switch (joytype) {
+    case JOY_CURSOR:
+        newJoy[0] = fabgl::VK_5;
+        newJoy[1] = fabgl::VK_8;
+        newJoy[2] = fabgl::VK_7;
+        newJoy[3] = fabgl::VK_6;
+        newJoy[6] = fabgl::VK_0;
+        break;
+    case JOY_KEMPSTON:
+        newJoy[0] = fabgl::VK_KEMPSTON_LEFT;
+        newJoy[1] = fabgl::VK_KEMPSTON_RIGHT;
+        newJoy[2] = fabgl::VK_KEMPSTON_UP;
+        newJoy[3] = fabgl::VK_KEMPSTON_DOWN;
+        newJoy[6] = fabgl::VK_KEMPSTON_FIRE;
+        newJoy[7] = fabgl::VK_KEMPSTON_ALTFIRE;
+        break;
+    case JOY_SINCLAIR1:
+        newJoy[0] = fabgl::VK_6;
+        newJoy[1] = fabgl::VK_7;
+        newJoy[2] = fabgl::VK_9;
+        newJoy[3] = fabgl::VK_8;
+        newJoy[6] = fabgl::VK_0;
+        break;
+    case JOY_SINCLAIR2:
+        newJoy[0] = fabgl::VK_1;
+        newJoy[1] = fabgl::VK_2;
+        newJoy[2] = fabgl::VK_4;
+        newJoy[3] = fabgl::VK_3;
+        newJoy[6] = fabgl::VK_5;
+        break;
+    case JOY_FULLER:
+        newJoy[0] = fabgl::VK_FULLER_LEFT;
+        newJoy[1] = fabgl::VK_FULLER_RIGHT;
+        newJoy[2] = fabgl::VK_FULLER_UP;
+        newJoy[3] = fabgl::VK_FULLER_DOWN;
+        newJoy[6] = fabgl::VK_FULLER_FIRE;
+        break;
+    }
+
+}
+
+// Fill joystick values in Config and clean Kempston or Fuller values if needed
+int m = (joynum == 1) ? 0 : 12;
+
+for (int n = m; n < m + 12; n++) {
+
+    bool save = false;
+    if (newJoy[n - m] != fabgl::VK_NONE) {
+        ESPectrum::JoyVKTranslation[n] = newJoy[n - m];
+        save = true;
+    } else {
+
+        if (joytype != JOY_KEMPSTON) {
+            if (ESPectrum::JoyVKTranslation[n] >= fabgl::VK_KEMPSTON_RIGHT && ESPectrum::JoyVKTranslation[n] <= fabgl::VK_KEMPSTON_ALTFIRE) {
+                ESPectrum::JoyVKTranslation[n] = fabgl::VK_NONE;
+                save = true;
+            }
+        }
+
+        if (joytype != JOY_FULLER) {
+            if (ESPectrum::JoyVKTranslation[n] >= fabgl::VK_FULLER_RIGHT && ESPectrum::JoyVKTranslation[n] <= fabgl::VK_FULLER_FIRE) {
+                ESPectrum::JoyVKTranslation[n] = fabgl::VK_NONE;
+                save = true;                
+            }
+        }
+
+    }
+
+    if (save) {
+        // Save to config (only changes)
+        if (Config::joydef[n] != (uint16_t) ESPectrum::JoyVKTranslation[n]) {
+            Config::joydef[n] = (uint16_t) ESPectrum::JoyVKTranslation[n];
+            char joykey[9];
+            sprintf(joykey,"joydef%02u",n);
+            Config::save(joykey);
+            // printf("%s %u\n",joykey, joydef[n]);
+        }
+    }
+
+}
+
 }

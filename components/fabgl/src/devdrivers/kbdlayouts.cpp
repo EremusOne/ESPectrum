@@ -258,6 +258,35 @@ const KeyboardLayout USLayout {
   // deadkeys translation
   {
   },
+
+  // extended joy scancodes (0xE2..)
+  {
+    { 0x40, VK_JOY1LEFT },
+    { 0x41, VK_JOY1RIGHT },
+    { 0x42, VK_JOY1UP },
+    { 0x43, VK_JOY1DOWN },
+    { 0x44, VK_JOY1START },
+    { 0x45, VK_JOY1MODE },
+    { 0x46, VK_JOY1A },
+    { 0x47, VK_JOY1B },
+    { 0x48, VK_JOY1C },
+    { 0x49, VK_JOY1X },
+    { 0x4A, VK_JOY1Y },
+    { 0x4B, VK_JOY1Z },
+    { 0x4C, VK_JOY2LEFT },
+    { 0x4D, VK_JOY2RIGHT },
+    { 0x4E, VK_JOY2UP },
+    { 0x4F, VK_JOY2DOWN },
+    { 0x50, VK_JOY2START },
+    { 0x51, VK_JOY2MODE },
+    { 0x52, VK_JOY2A },
+    { 0x53, VK_JOY2B },
+    { 0x54, VK_JOY2C },
+    { 0x55, VK_JOY2X },
+    { 0x56, VK_JOY2Y },
+    { 0x57, VK_JOY2Z },
+  },
+
 };
 
 
