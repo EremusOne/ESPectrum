@@ -341,6 +341,27 @@ VirtualKey Keyboard::scancodeToVK(uint8_t scancode, bool isExtended, KeyboardLay
 }
 
 
+VirtualKey Keyboard::scancodeTojoyVK(uint8_t scancode, KeyboardLayout const * layout)
+{
+  VirtualKey vk = VK_NONE;
+
+  if (layout == nullptr)
+    layout = m_layout;
+
+  VirtualKeyDef const * def = layout->exJoyScancodeToVK;
+  for (; def->scancode; ++def)
+    if (def->scancode == scancode) {
+      vk = def->virtualKey;
+      break;
+    }
+
+  if (vk == VK_NONE && layout->inherited)
+    vk = scancodeTojoyVK(scancode, layout->inherited);
+
+  return vk;
+
+}
+
 VirtualKey Keyboard::manageCAPSLOCK(VirtualKey vk)
 {
   if (m_CAPSLOCK) {
@@ -415,8 +436,10 @@ bool Keyboard::blockingGetVirtualKey(VirtualKeyItem * item)
   uint8_t * scode = item->scancode;
 
   *scode = getNextScancode();
+  // printf("Scode: %x\n",*scode);      
   if (*scode == 0xE0) {
     // two bytes scancode
+    // printf("  E0 Scode: %x\n",*scode);
     *(++scode) = getNextScancode(100, true);
     if (*scode == 0xF0) {
       // two bytes scancode key up
@@ -436,6 +459,19 @@ bool Keyboard::blockingGetVirtualKey(VirtualKeyItem * item)
         break;
       else if (i == sizeof(PAUSECODES) - 1)
         item->vk = VK_PAUSE;
+    }
+  } else if (*scode == 0xE2) {
+    // printf("  E2 Scode: %x\n",*scode);
+    // two bytes joy scancode
+    *(++scode) = getNextScancode(100, true);
+    if (*scode == 0xF0) {
+      // two bytes scancode key up
+      *(++scode) = getNextScancode(100, true);
+      item->vk = scancodeTojoyVK(*scode);
+      item->down = false;
+    } else {
+      // two bytes scancode key down
+      item->vk = scancodeTojoyVK(*scode);
     }
   } else if (*scode == 0xF0) {
     // one byte scancode, key up

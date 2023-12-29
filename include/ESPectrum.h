@@ -62,23 +62,22 @@ class ESPectrum
 public:
 
     static void setup();
-    // static void IRAM_ATTR loop(void* unused);
-    static void IRAM_ATTR loop();
+    // static void loop(void* unused);
+    static void loop();
     static void reset();
     // static void loadRom(string arch, string romset);
 
     // Kbd
-    static void IRAM_ATTR processKeyboard();
+    static void processKeyboard();
     static void bootKeyboard();
-    static bool IRAM_ATTR readKbd(fabgl::VirtualKeyItem *Nextkey);
-    static void IRAM_ATTR readKbdJoy();
+    static bool readKbd(fabgl::VirtualKeyItem *Nextkey);
+    static void readKbdJoy();
     static fabgl::PS2Controller PS2Controller;
-    static uint8_t PS2cols[8];
+    static fabgl::VirtualKey JoyVKTranslation[24];
 
     // Audio
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_PENTAGON];
     static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES_PENTAGON];
-    // static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
     static signed char aud_volume;
     static uint32_t audbufcnt;
     static uint32_t audbufcntAY;
@@ -86,20 +85,17 @@ public:
     static uint32_t faudbufcntAY;
     static int lastaudioBit;
     static int faudioBit;
-    static void audioFrameStart();
-    static void IRAM_ATTR BeeperGetSample(int Audiobit);
-    static void IRAM_ATTR AYGetSample();
-    static void audioFrameEnd();
+    // static void audioFrameStart();
+    static void BeeperGetSample();
+    static void AYGetSample();
+    // static void audioFrameEnd();
     static int overSamplesPerFrame;
     static int samplesPerFrame;
     static bool AY_emu;
     static int Audio_freq;
     static int sync_cnt;    
-    static uint8_t *audbuffertosend;    
 
     static int TapeNameScroller;
-
-    // static bool Audio_restart;
 
     static int64_t target;
 
@@ -109,14 +105,18 @@ public:
 
     // static TaskHandle_t loopTaskHandle;
 
+    static TaskHandle_t audioTaskHandle;    
+
     static bool ps2kbd2;
 
     static bool trdos;
     static WD1793 Betadisk;
 
+    // static uint32_t sessid;
+
 private:
 
-    static void IRAM_ATTR audioTask(void* unused);
+    static void audioTask(void* unused);
 
 };
 
@@ -125,15 +125,15 @@ private:
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
 
-// int64_t IRAM_ATTR micros();
+// int64_t micros();
 
-unsigned long IRAM_ATTR millis();
+unsigned long millis();
 
-inline void IRAM_ATTR delay(uint32_t ms)
+inline void delay(uint32_t ms)
 {
     vTaskDelay(ms / portTICK_PERIOD_MS);
 }
 
-void IRAM_ATTR delayMicroseconds(int64_t us);
+void delayMicroseconds(int64_t us);
 
 #endif

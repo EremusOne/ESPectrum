@@ -2,6 +2,8 @@
 .pio
 .vscode
 .vscode/**
+.VSCodeCounter
+.VSCodeCounter/**
 data/s/**
 !data/s/sppong.sna
 !data/s/fantasy.sna
@@ -16,3 +18,4 @@ downloaded_fs*.bin
 /doc/**
 /releases
 /releases/**
+

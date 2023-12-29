@@ -89,6 +89,7 @@ struct KeyboardLayout {
 
   VirtualKey               deadKeysVK[8];       /**< Dead keys identifiers. */
   DeadKeyVirtualKeyDef     deadkeysToVK[60];    /**< Translation dead key + virtual key = replaced virtual key */
+  VirtualKeyDef            exJoyScancodeToVK[24];  /**< Direct extended-joy-scancode->virtualkey associations. Extended joy scancodes begin with 0xE1. */
 };
 
 

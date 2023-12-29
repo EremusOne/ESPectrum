@@ -136,6 +136,6 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 		return VGA6Bit_useinterrupt;
 	};
 
-	static void IRAM_ATTR interrupt(void *arg);
+	static void interrupt(void *arg);
 
 };

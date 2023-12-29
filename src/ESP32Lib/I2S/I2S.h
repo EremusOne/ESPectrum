@@ -63,5 +63,5 @@ class I2S
 	void setClock(long sampleRate, int bitCount, bool useAPLL = true);
 	
   private:
-	static void IRAM_ATTR interruptStatic(void *arg);
+	static void interruptStatic(void *arg);
 };

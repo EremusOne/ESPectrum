@@ -51,6 +51,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 #include "pwm_audio.h"
 #include "roms.h"
+#include "OSDMain.h"
 
 const string Config::archnames[3] = { "48K", "128K", "Pentagon"};
 string   Config::arch = "48K";
@@ -65,10 +66,61 @@ uint8_t  Config::lang = 0;
 bool     Config::AY48 = true;
 bool     Config::Issue2 = true;
 bool     Config::flashload = true;
-uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
+
+uint8_t  Config::joystick1 = JOY_SINCLAIR1;
+uint8_t  Config::joystick2 = JOY_SINCLAIR2;
+uint16_t Config::joydef[24] = { 
+    fabgl::VK_6,
+    fabgl::VK_7,
+    fabgl::VK_9,
+    fabgl::VK_8,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_0,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_1,
+    fabgl::VK_2,
+    fabgl::VK_4,
+    fabgl::VK_3,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_5,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE,
+    fabgl::VK_NONE
+};
+
+uint8_t  Config::joyPS2 = JOY_KEMPSTON;
 uint8_t  Config::AluTiming = 0;
 uint8_t  Config::ps2_dev2 = 0; // Second port PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
 bool     Config::CursorAsJoy = false;
+int8_t   Config::CenterH = 0;
+int8_t   Config::CenterV = 0;
+
+string   Config::SNA_Path = "/";
+string   Config::TAP_Path = "/";
+string   Config::DSK_Path = "/";
+
+uint16_t Config::SNA_begin_row = 1;
+uint16_t Config::SNA_focus = 1;
+uint8_t  Config::SNA_fdMode = 0;
+string   Config::SNA_fileSearch = "";
+
+uint16_t Config::TAP_begin_row = 1;
+uint16_t Config::TAP_focus = 1;
+uint8_t  Config::TAP_fdMode = 0;
+string   Config::TAP_fileSearch = "";
+
+uint16_t Config::DSK_begin_row = 1;
+uint16_t Config::DSK_focus = 1;
+uint8_t  Config::DSK_fdMode = 0;
+string   Config::DSK_fileSearch = "";
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -78,30 +130,28 @@ static inline void erase_cntrl(std::string &s) {
             s.end());
 }
 
-// trim from start (in place)
-static inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-}
+// // trim from start (in place)
+// static inline void ltrim(std::string &s) {
+//     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+//         return !std::isspace(ch);
+//     }));
+// }
 
-// trim from end (in place)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
+// // trim from end (in place)
+// static inline void rtrim(std::string &s) {
+//     s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+//         return !std::isspace(ch);
+//     }).base(), s.end());
+// }
 
-// trim from both ends (in place)
-static inline void trim(std::string &s) {
-    rtrim(s);
-    ltrim(s);
-}
+// // trim from both ends (in place)
+// static inline void trim(std::string &s) {
+//     rtrim(s);
+//     ltrim(s);
+// }
 
 // Read config from FS
 void Config::load() {
-
-    // pwm_audio_stop();
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
@@ -141,7 +191,6 @@ void Config::load() {
             // No nvs data found. Save it
             nvs_close(handle);
             Config::save();
-            // pwm_audio_start();
             return;
         }
 
@@ -234,9 +283,30 @@ void Config::load() {
             free(str_data);
         }
 
-        err = nvs_get_u8(handle, "joystick", &Config::joystick);
+        err = nvs_get_u8(handle, "joystick1", &Config::joystick1);
         if (err == ESP_OK) {
-            // printf("joystick:%u\n",Config::joystick);
+            // printf("joystick1:%u\n",Config::joystick1);
+        }
+
+        err = nvs_get_u8(handle, "joystick2", &Config::joystick2);
+        if (err == ESP_OK) {
+            // printf("joystick2:%u\n",Config::joystick2);
+        }
+
+        // Read joystick definition
+        for (int n=0; n < 24; n++) {
+            char joykey[9];
+            sprintf(joykey,"joydef%02u",n);
+            // printf("%s\n",joykey);
+            err = nvs_get_u16(handle, joykey, &Config::joydef[n]);
+            if (err == ESP_OK) {
+                // printf("joydef00:%u\n",Config::joydef[n]);
+            }
+        }
+
+        err = nvs_get_u8(handle, "joyPS2", &Config::joyPS2);
+        if (err == ESP_OK) {
+            // printf("joyPS2:%u\n",Config::joyPS2);
         }
 
         err = nvs_get_u8(handle, "AluTiming", &Config::AluTiming);
@@ -258,11 +328,118 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_i8(handle, "CenterH", &Config::CenterH);
+        if (err == ESP_OK) {
+            // printf("PS2Dev2:%u\n",Config::ps2_dev2);
+        }
+
+        err = nvs_get_i8(handle, "CenterV", &Config::CenterV);
+        if (err == ESP_OK) {
+            // printf("PS2Dev2:%u\n",Config::ps2_dev2);
+        }
+
+        err = nvs_get_str(handle, "SNA_Path", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "SNA_Path", str_data, &required_size);
+            // printf("SNA_Path:%s\n",str_data);
+            SNA_Path = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "TAP_Path", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "TAP_Path", str_data, &required_size);
+            // printf("TAP_Path:%s\n",str_data);
+            TAP_Path = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "DSK_Path", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "DSK_Path", str_data, &required_size);
+            // printf("DSK_Path:%s\n",str_data);
+            DSK_Path = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_u16(handle, "SNA_begin_row", &Config::SNA_begin_row);
+        if (err == ESP_OK) {
+            // printf("SNA_begin_row:%u\n",Config::SNA_begin_row);
+        }
+
+        err = nvs_get_u16(handle, "TAP_begin_row", &Config::TAP_begin_row);
+        if (err == ESP_OK) {
+            // printf("TAP_begin_row:%u\n",Config::TAP_begin_row);
+        }
+
+        err = nvs_get_u16(handle, "DSK_begin_row", &Config::DSK_begin_row);
+        if (err == ESP_OK) {
+            // printf("begin_row:%u\n",Config::DSK_begin_row);
+        }
+
+        err = nvs_get_u16(handle, "SNA_focus", &Config::SNA_focus);
+        if (err == ESP_OK) {
+            // printf("SNA_focus:%u\n",Config::SNA_focus);
+        }
+
+        err = nvs_get_u16(handle, "TAP_focus", &Config::TAP_focus);
+        if (err == ESP_OK) {
+            // printf("TAP_focus:%u\n",Config::TAP_focus);
+        }
+
+        err = nvs_get_u16(handle, "DSK_focus", &Config::DSK_focus);
+        if (err == ESP_OK) {
+            // printf("DSK_focus:%u\n",Config::DSK_focus);
+        }
+
+        err = nvs_get_u8(handle, "SNA_fdMode", &Config::SNA_fdMode);
+        if (err == ESP_OK) {
+            // printf("SNA_fdMode:%u\n",Config::SNA_fdMode);
+        }
+
+        err = nvs_get_u8(handle, "TAP_fdMode", &Config::TAP_fdMode);
+        if (err == ESP_OK) {
+            // printf("TAP_fdMode:%u\n",Config::TAP_fdMode);
+        }
+
+        err = nvs_get_u8(handle, "DSK_fdMode", &Config::DSK_fdMode);
+        if (err == ESP_OK) {
+            // printf("DSK_fdMode:%u\n",Config::DSK_fdMode);
+        }
+
+        err = nvs_get_str(handle, "SNA_fileSearch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "SNA_fileSearch", str_data, &required_size);
+            // printf("SNA_fileSearch:%s\n",str_data);
+            SNA_fileSearch = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "TAP_fileSearch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "TAP_fileSearch", str_data, &required_size);
+            // printf("TAP_fileSearch:%s\n",str_data);
+            TAP_fileSearch = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "DSK_fileSearch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "DSK_fileSearch", str_data, &required_size);
+            // printf("DSK_fileSearch:%s\n",str_data);
+            DSK_fileSearch = str_data;
+            free(str_data);
+        }
+
         // Close
         nvs_close(handle);
     }
-
-    // pwm_audio_start();
 
 }
 
@@ -272,8 +449,6 @@ void Config::save() {
 
 // Dump actual config to FS
 void Config::save(string value) {
-
-    // pwm_audio_stop();
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
@@ -329,8 +504,24 @@ void Config::save(string value) {
         if((value=="flashload") || (value=="all"))
             nvs_set_str(handle,"flashload",flashload ? "true" : "false");
 
-        if((value=="joystick") || (value=="all"))
-            nvs_set_u8(handle,"joystick",Config::joystick);
+        if((value=="joystick1") || (value=="all"))
+            nvs_set_u8(handle,"joystick1",Config::joystick1);
+
+        if((value=="joystick2") || (value=="all"))
+            nvs_set_u8(handle,"joystick2",Config::joystick2);
+
+        // Write joystick definition
+        for (int n=0; n < 24; n++) {
+            char joykey[9];
+            sprintf(joykey,"joydef%02u",n);
+            if((value == joykey) || (value=="all")) {
+                nvs_set_u16(handle,joykey,Config::joydef[n]);
+                // printf("%s %u\n",joykey, joydef[n]);
+            }
+        }
+
+        if((value=="joyPS2") || (value=="all"))
+            nvs_set_u8(handle,"joyPS2",Config::joyPS2);
 
         if((value=="AluTiming") || (value=="all"))
             nvs_set_u8(handle,"AluTiming",Config::AluTiming);
@@ -340,6 +531,57 @@ void Config::save(string value) {
 
         if((value=="CursorAsJoy") || (value=="all"))
             nvs_set_str(handle,"CursorAsJoy", CursorAsJoy ? "true" : "false");
+
+        if((value=="CenterH") || (value=="all"))
+            nvs_set_i8(handle,"CenterH",Config::CenterH);
+
+        if((value=="CenterV") || (value=="all"))
+            nvs_set_i8(handle,"CenterV",Config::CenterV);
+
+        if((value=="SNA_Path") || (value=="all"))
+            nvs_set_str(handle,"SNA_Path",Config::SNA_Path.c_str());
+
+        if((value=="TAP_Path") || (value=="all"))
+            nvs_set_str(handle,"TAP_Path",Config::TAP_Path.c_str());
+
+        if((value=="DSK_Path") || (value=="all"))
+            nvs_set_str(handle,"DSK_Path",Config::DSK_Path.c_str());
+
+        if((value=="SNA_begin_row") || (value=="all"))
+            nvs_set_u16(handle,"SNA_begin_row",Config::SNA_begin_row);
+
+        if((value=="TAP_begin_row") || (value=="all"))
+            nvs_set_u16(handle,"TAP_begin_row",Config::TAP_begin_row);
+
+        if((value=="DSK_begin_row") || (value=="all"))
+            nvs_set_u16(handle,"DSK_begin_row",Config::DSK_begin_row);
+
+        if((value=="SNA_focus") || (value=="all"))
+            nvs_set_u16(handle,"SNA_focus",Config::SNA_focus);
+
+        if((value=="TAP_focus") || (value=="all"))
+            nvs_set_u16(handle,"TAP_focus",Config::TAP_focus);
+
+        if((value=="DSK_focus") || (value=="all"))
+            nvs_set_u16(handle,"DSK_focus",Config::DSK_focus);
+
+        if((value=="SNA_fdMode") || (value=="all"))
+            nvs_set_u8(handle,"SNA_fdMode",Config::SNA_fdMode);
+
+        if((value=="TAP_fdMode") || (value=="all"))
+            nvs_set_u8(handle,"TAP_fdMode",Config::TAP_fdMode);
+
+        if((value=="DSK_fdMode") || (value=="all"))
+            nvs_set_u8(handle,"DSK_fdMode",Config::DSK_fdMode);
+
+        if((value=="SNA_fileSearch") || (value=="all"))
+            nvs_set_str(handle,"SNA_fileSearch",Config::SNA_fileSearch.c_str());
+
+        if((value=="TAP_fileSearch") || (value=="all"))
+            nvs_set_str(handle,"TAP_fileSearch",Config::TAP_fileSearch.c_str());
+
+        if((value=="DSK_fileSearch") || (value=="all"))
+            nvs_set_str(handle,"DSK_fileSearch",Config::DSK_fileSearch.c_str());
 
         // printf("Committing updates in NVS ... ");
 
@@ -355,8 +597,6 @@ void Config::save(string value) {
     }
 
     // printf("Config saved OK\n");
-
-    // pwm_audio_start();
 
 }
 
@@ -394,4 +634,112 @@ void Config::requestMachine(string newArch, string newRomSet)
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
   
+}
+
+//   fabgl::VK_FULLER_LEFT, // Left
+//     fabgl::VK_FULLER_RIGHT, // Right
+//     fabgl::VK_FULLER_UP, // Up
+//     fabgl::VK_FULLER_DOWN, // Down
+//     fabgl::VK_S, // Start
+//     fabgl::VK_M, // Mode
+//     fabgl::VK_FULLER_FIRE, // A
+//     fabgl::VK_9, // B
+//     fabgl::VK_SPACE, // C
+//     fabgl::VK_X, // X
+//     fabgl::VK_Y, // Y
+//     fabgl::VK_Z, // Z
+
+void Config::setJoyMap(uint8_t joynum, uint8_t joytype) {
+
+fabgl::VirtualKey newJoy[12];
+
+for (int n=0; n < 12; n++) newJoy[n] = fabgl::VK_NONE;
+
+// Ask to overwrite map with default joytype values
+string title = (joynum == 1 ? "Joystick 1" : "Joystick 2");
+string msg = OSD_DLG_SETJOYMAPDEFAULTS[Config::lang];
+uint8_t res = OSD::msgDialog(title,msg);
+if (res == DLG_YES) {
+
+    switch (joytype) {
+    case JOY_CURSOR:
+        newJoy[0] = fabgl::VK_5;
+        newJoy[1] = fabgl::VK_8;
+        newJoy[2] = fabgl::VK_7;
+        newJoy[3] = fabgl::VK_6;
+        newJoy[6] = fabgl::VK_0;
+        break;
+    case JOY_KEMPSTON:
+        newJoy[0] = fabgl::VK_KEMPSTON_LEFT;
+        newJoy[1] = fabgl::VK_KEMPSTON_RIGHT;
+        newJoy[2] = fabgl::VK_KEMPSTON_UP;
+        newJoy[3] = fabgl::VK_KEMPSTON_DOWN;
+        newJoy[6] = fabgl::VK_KEMPSTON_FIRE;
+        newJoy[7] = fabgl::VK_KEMPSTON_ALTFIRE;
+        break;
+    case JOY_SINCLAIR1:
+        newJoy[0] = fabgl::VK_6;
+        newJoy[1] = fabgl::VK_7;
+        newJoy[2] = fabgl::VK_9;
+        newJoy[3] = fabgl::VK_8;
+        newJoy[6] = fabgl::VK_0;
+        break;
+    case JOY_SINCLAIR2:
+        newJoy[0] = fabgl::VK_1;
+        newJoy[1] = fabgl::VK_2;
+        newJoy[2] = fabgl::VK_4;
+        newJoy[3] = fabgl::VK_3;
+        newJoy[6] = fabgl::VK_5;
+        break;
+    case JOY_FULLER:
+        newJoy[0] = fabgl::VK_FULLER_LEFT;
+        newJoy[1] = fabgl::VK_FULLER_RIGHT;
+        newJoy[2] = fabgl::VK_FULLER_UP;
+        newJoy[3] = fabgl::VK_FULLER_DOWN;
+        newJoy[6] = fabgl::VK_FULLER_FIRE;
+        break;
+    }
+
+}
+
+// Fill joystick values in Config and clean Kempston or Fuller values if needed
+int m = (joynum == 1) ? 0 : 12;
+
+for (int n = m; n < m + 12; n++) {
+
+    bool save = false;
+    if (newJoy[n - m] != fabgl::VK_NONE) {
+        ESPectrum::JoyVKTranslation[n] = newJoy[n - m];
+        save = true;
+    } else {
+
+        if (joytype != JOY_KEMPSTON) {
+            if (ESPectrum::JoyVKTranslation[n] >= fabgl::VK_KEMPSTON_RIGHT && ESPectrum::JoyVKTranslation[n] <= fabgl::VK_KEMPSTON_ALTFIRE) {
+                ESPectrum::JoyVKTranslation[n] = fabgl::VK_NONE;
+                save = true;
+            }
+        }
+
+        if (joytype != JOY_FULLER) {
+            if (ESPectrum::JoyVKTranslation[n] >= fabgl::VK_FULLER_RIGHT && ESPectrum::JoyVKTranslation[n] <= fabgl::VK_FULLER_FIRE) {
+                ESPectrum::JoyVKTranslation[n] = fabgl::VK_NONE;
+                save = true;                
+            }
+        }
+
+    }
+
+    if (save) {
+        // Save to config (only changes)
+        if (Config::joydef[n] != (uint16_t) ESPectrum::JoyVKTranslation[n]) {
+            Config::joydef[n] = (uint16_t) ESPectrum::JoyVKTranslation[n];
+            char joykey[9];
+            sprintf(joykey,"joydef%02u",n);
+            Config::save(joykey);
+            // printf("%s %u\n",joykey, joydef[n]);
+        }
+    }
+
+}
+
 }

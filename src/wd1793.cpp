@@ -44,7 +44,7 @@ using namespace std;
 
 #include "wd1793.h"
 
-#pragma GCC optimize ("O3")
+// #pragma GCC optimize("O3")
 
 void WD1793::Init() {
 
@@ -104,6 +104,8 @@ void WD1793::ExecuteCommand(unsigned char wdCmd) {
         // printf("    Command: Force Interrupt, Input value: %d\n",(int)wdCmd);
 
     }
+
+    // if ((StatusReg & STATUS_BUSY) != 0) return;
 
     // set drive ready status bit
     StatusReg = ~((unsigned char)DriveReady) << 7;

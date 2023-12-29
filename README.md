@@ -10,8 +10,8 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 ## Features
 
-- ZX Spectrum 48K, 128K and Pentagon 128K emulation (no PSRAM needed).
-- Accurate Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
+- ZX Spectrum 48K, 128K and Pentagon 128K 100% cycle accurate emulation (no PSRAM needed).
+- Perfect Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
 - 6 bpp VGA output in three modes: Standard VGA (60 and 70hz), VGA 50hz and CRT 15khz 50hz.
 - Support for two aspect ratios: 16:9 or 4:3 monitors (using 360x200 or 320x240 modes)
 - Multicolor attribute effects emulated (Bifrost*2, Nirvana and Nirvana+ engines).
@@ -21,19 +21,19 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - AY-3-8912 sound emulation.
 - Beeper & Mic emulation (Cobra’s Arc).
 - Dual PS/2 keyboard support: you can connect two devices using PS/2 protocol at the same time.
-- Kempston and Cursor type Joystick emulation.
+- PS/2 Joystick emulation (Cursor, Sinclair, Kempston and Fuller).
+- Two real joysticks support (Up to 8 button joysticks) using [ESPjoy adapter](https://antoniovillena.es/store/product/espjoy-for-espectrum/) or DIY DB9 to PS/2 converter.
 - Emulation of Betadisk interface with four drives and TRD (read and write) and SCL (read only) support.
 - Realtime and fast TAP file loading.
 - TAP file saving to SD card.
 - SNA and Z80 snapshot loading.
 - Snapshot saving and loading.
+- Complete file navigation system with autoindexing, folder support and search functions.
 - Complete OSD menu in two languages: English & Spanish.
 - BMP screen capture to SD Card (thanks David Crespo 😉).
 
 ## Work in progress
 
-- Folder support.
-- Customizable joystick maps.
 - On screen keyboard.
 - TZX support.
 
@@ -67,13 +67,8 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 
 The SD card should be formatted in FAT16 / FAT32 and you must create the following folders in root directory:
 
-- "p" folder     -> Will be used for persist snapshots.
-- "s" folder     -> Put .SNA and .Z80 files here.
-- "d" folder     -> Put .TRD and .SCL files here.
-- "t" folder     -> Put .TAP files here.
-- "c" folder     -> For SCR (not yet!) and BMP screen captures.
-
-First time the emulator access sna, tape or disk directories, it will create and index for sorting the files in it. It may take some time if you put many archives (15-20 seconds in my tests for about 1000 files, about 3 minutes for about 6000 files). Once created, file dialogs will open fast but if you extract the card and add files, you must later use "Options/Storage/Refresh directories" to be able to view new files on the files dialogs.
+- ".p" folder     -> Will be used for persist snapshots.
+- ".c" folder     -> For BMP screen captures.
 
 ## PS/2 Keyboard functions
 
@@ -91,6 +86,8 @@ First time the emulator access sna, tape or disk directories, it will create and
 - F12 Reset ESP32
 - Pause Pause
 - PrntScr BMP screen capture (Folder /c at SDCard)
+- CTRL + F1 Hardware info
+- CTRL + F5..F8 Screen centering in CRT 15K/50hz mode
 
 ## ZX Keyboard functions
 
@@ -109,7 +106,10 @@ Press CAPS SHIFT + SYMBOL SHIFT and:
 - Q Hard reset
 - W Reset ESP32
 - P Pause
-- C BMP screen capture (Folder /c at SDCard)
+- S BMP screen capture (Folder /c at SDCard)
+- I Hardware info
+- Z, X, C and V Screen centering in CRT 15K/50hz mode
+
 
 ## Hardware configuration and pinout
 

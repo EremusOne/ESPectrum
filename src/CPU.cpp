@@ -42,12 +42,11 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Video.h"
 #include "Z80_JLS/z80.h"
 
-#pragma GCC optimize ("O3")
+// #pragma GCC optimize("O3")
 
 uint32_t CPU::tstates = 0;
 uint64_t CPU::global_tstates = 0;
 uint32_t CPU::statesInFrame = 0;
-uint32_t CPU::framecnt = 0;
 uint8_t CPU::latetiming = 0;
 uint8_t CPU::IntStart = 0;
 uint8_t CPU::IntEnd = 0;
@@ -103,8 +102,7 @@ void CPU::reset() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void IRAM_ATTR CPU::loop()
-{
+IRAM_ATTR void CPU::loop() {
 
     while (tstates < IntEnd) Z80::execute();
     
@@ -118,13 +116,15 @@ void IRAM_ATTR CPU::loop()
     global_tstates += statesInFrame; // increase global Tstates
     tstates -= statesInFrame;
 
-    framecnt++;
+    #ifndef NO_VIDEO
+    VIDEO::EndFrame();
+    #endif
 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void CPU::FlushOnHalt() {
+IRAM_ATTR void CPU::FlushOnHalt() {
         
     tstates &= 0x00FFFFFF;
 
@@ -140,7 +140,11 @@ void CPU::FlushOnHalt() {
     } else {
 
         uint32_t pre_tstates = tstates;
-        VIDEO::Flush(); // Draw the rest of the frame
+
+        // Flush the rest of frame
+        while (VIDEO::Draw != &VIDEO::Blank)
+            VIDEO::Draw(VIDEO::tStatesPerLine, false);
+
         tstates = pre_tstates;
         
         pre_tstates += latetiming;
@@ -160,21 +164,21 @@ void CPU::FlushOnHalt() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Read byte from RAM
-uint8_t IRAM_ATTR Z80Ops::peek8(uint16_t address) {
+IRAM_ATTR uint8_t Z80Ops::peek8(uint16_t address) {
     uint8_t page = address >> 14;
     VIDEO::Draw(3,MemESP::ramContended[page]);
     return MemESP::ramCurrent[page][address & 0x3fff];
 }
 
 // Write byte to RAM
-void IRAM_ATTR Z80Ops::poke8(uint16_t address, uint8_t value) {
+IRAM_ATTR void Z80Ops::poke8(uint16_t address, uint8_t value) {
     uint8_t page = address >> 14;
     VIDEO::Draw(3, MemESP::ramContended[page]);
     if (page != 0) MemESP::ramCurrent[page][address & 0x3fff] = value;
 }
 
 // Read word from RAM
-uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
+IRAM_ATTR uint16_t Z80Ops::peek16(uint16_t address) {
 
     uint8_t page = address >> 14;
 
@@ -200,7 +204,7 @@ uint16_t IRAM_ATTR Z80Ops::peek16(uint16_t address) {
 }
 
 // Write word to RAM
-void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
+IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
     uint8_t page = address >> 14;
 
@@ -228,7 +232,7 @@ void IRAM_ATTR Z80Ops::poke16(uint16_t address, RegisterPair word) {
 }
 
 /* Put an address on bus lasting 'tstates' cycles */
-void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates) {
+IRAM_ATTR void Z80Ops::addressOnBus(uint16_t address, int32_t wstates) {
     if (MemESP::ramContended[address >> 14]) {
         for (int idx = 0; idx < wstates; idx++)
             VIDEO::Draw(1, true);
@@ -237,7 +241,7 @@ void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates) {
 }
 
 /* Callback to know when the INT signal is active */
-bool IRAM_ATTR Z80Ops::isActiveINT(void) {
+IRAM_ATTR bool Z80Ops::isActiveINT(void) {
     int tmp = CPU::tstates + CPU::latetiming;
     if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
     return ((tmp >= CPU::IntStart) && (tmp < CPU::IntEnd));

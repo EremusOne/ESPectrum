@@ -19,7 +19,7 @@ class Font
 	const unsigned char *pixels;
 	const int charWidth;
 	const int charHeight;
-	Font(int charWidth, int charHeight, const unsigned char *pixels, int firstChar = 32, int charCount = 96)
+	Font(int charWidth, int charHeight, const unsigned char *pixels, int firstChar = 32, int charCount = 144 ) // 96
 		:firstChar(firstChar),
 		charCount(charCount),
 		pixels(pixels),

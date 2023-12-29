@@ -35,9 +35,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "ZXKeyb.h"
 #include "ESPectrum.h"
-#include "Ports.h"
 
-uint8_t ZXKeyb::ZXcols[8];
+uint8_t ZXKeyb::ZXcols[8] = { 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf, 0xbf };
 bool ZXKeyb::Exists;
 
 void ZXKeyb::setup()
@@ -55,112 +54,165 @@ void ZXKeyb::setup()
     gpio_set_direction((gpio_num_t)KM_COL_4, (gpio_mode_t)GPIO_MODE_INPUT);
 
     // Check if membrane keyboard is present
-    ZXKeyb::putRows(0xFF);
-    ZXKeyb::Exists = gpio_get_level((gpio_num_t)KM_COL_1) && gpio_get_level((gpio_num_t)KM_COL_2) && gpio_get_level((gpio_num_t)KM_COL_4);
-
-    // set all keys as not pressed
-    if (ZXKeyb::Exists) for (uint8_t i = 0; i < 8; i++) ZXcols[i] = 0xbf;
+    putRows(0xFF);
+    Exists = gpio_get_level((gpio_num_t)KM_COL_1) && gpio_get_level((gpio_num_t)KM_COL_2) && gpio_get_level((gpio_num_t)KM_COL_4);
 
 }
 
-// row order depends on actual row association with address lines, see
-// https://www.1000bit.it/support/manuali/sinclair/zxspectrum/sm/matrix.gif
-static uint8_t roworder[8] = {
-    0xDF,   // % 11011111
-    0xFB,   // % 11111011
-    0xFD,   // % 11111101
-    0xFE,   // % 11111110
-    0xF7,   // % 11110111
-    0xEF,   // % 11101111
-    0xBF,   // % 10111111
-    0x7F    // % 01111111
-};
+void ZXKeyb::process() {
 
-void ZXKeyb::process()
-{
-    // traverse row indices
-    for (uint8_t rowidx = 0; rowidx < 8; rowidx++)
-    {
-        // first of all, take row pattern from table
-        uint8_t row_pattern = roworder[rowidx];
-        // put row pattern to 8-tap membrane connector
-        // (using shift register)
-        putRows(row_pattern);
+    // Put row pattern to 8-tap membrane connector (using shift register)
+    // and read column pattern from 5-tap membrane connector.
+    // row order depends on actual row association with address lines, see
+    // https://www.1000bit.it/support/manuali/sinclair/zxspectrum/sm/matrix.gif
+    putRows(0b11011111); ZXcols[0] = getCols();
+    putRows(0b11111011); ZXcols[1] = getCols();
+    putRows(0b11111101); ZXcols[2] = getCols();
+    putRows(0b11111110); ZXcols[3] = getCols();
+    putRows(0b11110111); ZXcols[4] = getCols();
+    putRows(0b11101111); ZXcols[5] = getCols();
+    putRows(0b10111111); ZXcols[6] = getCols();    
+    putRows(0b01111111); ZXcols[7] = getCols();                        
 
-        // read column pattern from 5-tap membrane connector
-        // uint8_t cols = getCols();
-        // // write column to port array at given row index
-        // Ports::port[rowidx] = cols;
-
-        // read column pattern from 5-tap membrane connector
-        ZXcols[rowidx] = getCols();
-
-    }
 }
 
-// This function puts a row pattern
-// into the membrane keyboard, for selecting a given row.
+// This function puts a row pattern into the membrane keyboard, for selecting a given row.
 // Selection logic is active low, a 0 bit will select the row.
-// A shift register is used for this task,
-// so we'll need 3 output pins instead of 8.
-void ZXKeyb::putRows(uint8_t row_pattern)
-{
-    // NOTICE: many usleeps have been commented out.
-    // If keyboard readings are erratic,
-    // maybe they should be recovered.
+// A shift register is used for this task, so we'll need 3 output pins instead of 8.
+void ZXKeyb::putRows(uint8_t row_pattern) {
+    
+    // NOTICE: many delays have been commented out.
+    // If keyboard readings are erratic, maybe they should be recovered.
 
-    // disable load pin, keep previous output
-    gpio_set_level((gpio_num_t)SR_LOAD, 0);
-    // usleep(1);
+    gpio_set_level((gpio_num_t)SR_LOAD, 0); // disable load pin, keep previous output
+    // delayMicroseconds(1);
 
-    // traverse bits in byte
-    for (uint8_t i = 0; i < 8; i++) {
-        // clock falling edge
-        gpio_set_level((gpio_num_t)SR_CLK, 0);
-        // usleep(1);
+    for (uint8_t i = 0; i < 8; i++) {   // traverse bits in byte
 
-        // put row bit to shift register serial input
-        gpio_set_level((gpio_num_t)SR_DATA, row_pattern & 0x80);
+        gpio_set_level((gpio_num_t)SR_CLK, 0);  // clock falling edge
+        // delayMicroseconds(1);
 
-        // just to be safe, wait just before rising edge
-        delayMicroseconds(1);
-        // usleep(1); 
+        gpio_set_level((gpio_num_t)SR_DATA, row_pattern & 0x80);    // put row bit to shift register serial input
 
-        // rising edge occurs here
-        gpio_set_level((gpio_num_t)SR_CLK, 1);
-        // usleep(1);
+        delayMicroseconds(1);   // just to be safe, wait just before rising edge
 
-        // shift row bit pattern
-        row_pattern <<= 1;
+        gpio_set_level((gpio_num_t)SR_CLK, 1);  // rising edge occurs here
+        // delayMicroseconds(1);
+
+        row_pattern <<= 1;  // shift row bit pattern
+
     }
 
-    // enable load pin, update output
-    gpio_set_level((gpio_num_t)SR_LOAD, 1);
+    gpio_set_level((gpio_num_t)SR_LOAD, 1); // enable load pin, update output
 
     // this sleep is MANDATORY, do NOT remove it
     // or else (first column bits read will be wrong)
     delayMicroseconds(1);
-    // usleep(1);
+
 }
 
-// This function reads all 5 columns from the
-// corresponding GPIO pins and concatenates them
+// This function reads all 5 columns from the corresponding GPIO pins and concatenates them
 // into the lowest 5 bits of a byte.
-uint8_t ZXKeyb::getCols()
-{
-    uint8_t cols = 0;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_4);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_3);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_2);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_1);
-    cols <<= 1;
-    cols |= gpio_get_level((gpio_num_t)KM_COL_0);
+uint8_t ZXKeyb::getCols() {
+
+    uint8_t cols = gpio_get_level((gpio_num_t)KM_COL_4) << 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_3); cols <<= 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_2); cols <<= 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_1); cols <<= 1;
+    cols |= gpio_get_level((gpio_num_t)KM_COL_0);   
     
-    // Keep bits 5,7 up
-    cols |= 0xa0;
+    cols |= 0xa0;   // Keep bits 5,7 up
     
     return cols;
+
+}
+
+void ZXKeyb::ZXKbdRead() {
+
+    #define REPDEL 140 // As in real ZX Spectrum (700 ms.) if this function is called every 5 ms. 
+    #define REPPER 20 // As in real ZX Spectrum (100 ms.) if this function is called every 5 ms. 
+
+    static int zxDel = REPDEL;
+    static int lastzxK = fabgl::VK_NONE;
+
+    process();
+
+    fabgl::VirtualKey injectKey = fabgl::VK_NONE;
+
+    if (bitRead(ZXcols[7], 1)) { // Not Symbol Shift pressed ?
+
+        if (!bitRead(ZXcols[4], 3)) injectKey = fabgl::VK_UP; // 7 -> UP
+        else if (!bitRead(ZXcols[4], 4)) injectKey = fabgl::VK_DOWN; // 6 -> DOWN
+        else if (!bitRead(ZXcols[6], 0)) injectKey = fabgl::VK_RETURN; // ENTER
+        else if ((!bitRead(ZXcols[0], 0)) && (!bitRead(ZXcols[4], 0))) injectKey = fabgl::VK_BACKSPACE; // CS + 0 -> BACKSPACE
+        else if (!bitRead(ZXcols[4], 0)) injectKey = fabgl::VK_SPACE; // 0 -> SPACE
+        else if ((!bitRead(ZXcols[7], 0)) || (!bitRead(ZXcols[4], 1))) injectKey = fabgl::VK_ESCAPE; // BREAK -> ESCAPE
+        else if (!bitRead(ZXcols[3], 4)) injectKey = fabgl::VK_LEFT; // 5 -> PGUP
+        else if (!bitRead(ZXcols[4], 2)) injectKey = fabgl::VK_RIGHT; // 8 -> PGDOWN
+        else if (!bitRead(ZXcols[1], 1)) injectKey = fabgl::VK_PRINTSCREEN; // S -> PRINTSCREEN
+        else if (!bitRead(ZXcols[5], 0)) injectKey = fabgl::VK_PAUSE; // P -> PAUSE
+        else if ((!bitRead(ZXcols[7], 4)) || (!bitRead(ZXcols[1], 3))) injectKey = fabgl::VK_F3; // F,B -> FIND / BUSQUEDA
+
+    } else {
+
+        if (!bitRead(ZXcols[0], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_Z : fabgl::VK_z;
+        else if (!bitRead(ZXcols[0], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_X : fabgl::VK_x;
+        else if (!bitRead(ZXcols[0], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_C : fabgl::VK_c;
+        else if (!bitRead(ZXcols[0], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_V : fabgl::VK_v;
+
+        else if (!bitRead(ZXcols[1], 0)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_A : fabgl::VK_a;
+        else if (!bitRead(ZXcols[1], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_S : fabgl::VK_s;
+        else if (!bitRead(ZXcols[1], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_D : fabgl::VK_d;
+        else if (!bitRead(ZXcols[1], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_F : fabgl::VK_f;
+        else if (!bitRead(ZXcols[1], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_G : fabgl::VK_g;
+
+        else if (!bitRead(ZXcols[2], 0)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_Q : fabgl::VK_q;
+        else if (!bitRead(ZXcols[2], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_W : fabgl::VK_w;
+        else if (!bitRead(ZXcols[2], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_E : fabgl::VK_e;
+        else if (!bitRead(ZXcols[2], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_R : fabgl::VK_r;
+        else if (!bitRead(ZXcols[2], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_T : fabgl::VK_t;
+
+        else if (!bitRead(ZXcols[5], 0)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_P : fabgl::VK_p;
+        else if (!bitRead(ZXcols[5], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_O : fabgl::VK_o;
+        else if (!bitRead(ZXcols[5], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_I : fabgl::VK_i;
+        else if (!bitRead(ZXcols[5], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_U : fabgl::VK_u;
+        else if (!bitRead(ZXcols[5], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_Y : fabgl::VK_y;
+
+        else if (!bitRead(ZXcols[6], 1)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_L : fabgl::VK_l;
+        else if (!bitRead(ZXcols[6], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_K : fabgl::VK_k;
+        else if (!bitRead(ZXcols[6], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_J : fabgl::VK_j;
+        else if (!bitRead(ZXcols[6], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_H : fabgl::VK_h;
+
+        else if (!bitRead(ZXcols[7], 2)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_M : fabgl::VK_m;
+        else if (!bitRead(ZXcols[7], 3)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_N : fabgl::VK_n;
+        else if (!bitRead(ZXcols[7], 4)) injectKey = !bitRead(ZXcols[0], 0) ? fabgl::VK_B : fabgl::VK_b;
+
+        else if (!bitRead(ZXcols[3], 0)) injectKey = fabgl::VK_1;
+        else if (!bitRead(ZXcols[3], 1)) injectKey = fabgl::VK_2;
+        else if (!bitRead(ZXcols[3], 2)) injectKey = fabgl::VK_3;
+        else if (!bitRead(ZXcols[3], 3)) injectKey = fabgl::VK_4;
+        else if (!bitRead(ZXcols[3], 4)) injectKey = fabgl::VK_5;                        
+
+        else if (!bitRead(ZXcols[4], 0)) injectKey = fabgl::VK_0;
+        else if (!bitRead(ZXcols[4], 1)) injectKey = fabgl::VK_9;
+        else if (!bitRead(ZXcols[4], 2)) injectKey = fabgl::VK_8;
+        else if (!bitRead(ZXcols[4], 3)) injectKey = fabgl::VK_7;
+        else if (!bitRead(ZXcols[4], 4)) injectKey = fabgl::VK_6;
+
+    }
+
+    if (injectKey != fabgl::VK_NONE) {
+        if (zxDel == 0) {
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(injectKey, true, false);
+            ESPectrum::PS2Controller.keyboard()->injectVirtualKey(injectKey, false, false);
+            zxDel = lastzxK == injectKey ? REPPER : REPDEL;
+            lastzxK = injectKey;
+        }
+    } else {
+        zxDel = 0;
+        lastzxK = fabgl::VK_NONE;
+    }
+
+    if (zxDel > 0) zxDel--;
+
 }

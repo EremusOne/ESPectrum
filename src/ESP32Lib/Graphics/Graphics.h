@@ -145,7 +145,8 @@ class Graphics: public ImageDrawer
 	{
 		if (!font)
 			return;
-		if (!font->valid(ch))
+		// if (!font->valid(ch))
+		if (!(ch >= 32 && ch < 176))
 			return;
 		const unsigned char *pix = &font->pixels[font->charWidth * font->charHeight * (ch - font->firstChar)];
 		for (int py = 0; py < font->charHeight; py++)
@@ -160,7 +161,8 @@ class Graphics: public ImageDrawer
 	{
 		if (!font)
 			return;
-		if (font->valid(ch))
+		// if (font->valid(ch))
+		if (ch >= 32 && ch < 176)
 			drawChar(cursorX, cursorY, ch);
 		else
 			drawChar(cursorX, cursorY, ' ');		

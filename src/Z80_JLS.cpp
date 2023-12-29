@@ -25,11 +25,14 @@
 #include "CPU.h"
 #include "Tape.h"
 #include "Config.h"
+#include "FileUtils.h"
+#include "OSDMain.h"
+#include "messages.h"
 
-#pragma GCC optimize ("O3")
+// #pragma GCC optimize("O3")
 
 uint8_t page;
-#define FETCH_OPCODE(result,address) page = address >> 14; VIDEO::Draw(4,MemESP::ramContended[page]); result = MemESP::ramCurrent[page][address & 0x3fff];
+// #define FETCH_OPCODE(result,address) page = address >> 14; VIDEO::Draw(4,MemESP::ramContended[page]); result = MemESP::ramCurrent[page][address & 0x3fff];
 #define PEEK8(result,address) page = address >> 14; VIDEO::Draw(3,MemESP::ramContended[page]); result = MemESP::ramCurrent[page][address & 0x3fff];
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -651,7 +654,7 @@ void Z80::push(uint16_t word) {
 }
 
 // LDI
-void IRAM_ATTR Z80::ldi(void) {
+IRAM_ATTR void Z80::ldi(void) {
 
     // uint8_t work8 = Z80Ops::peek8(REG_HL);
     PEEK8(uint8_t work8,REG_HL);
@@ -676,7 +679,7 @@ void IRAM_ATTR Z80::ldi(void) {
 }
 
 // LDD
-void IRAM_ATTR Z80::ldd(void) {
+IRAM_ATTR void Z80::ldd(void) {
     // uint8_t work8 = Z80Ops::peek8(REG_HL);
     PEEK8(uint8_t work8,REG_HL);
 
@@ -700,7 +703,7 @@ void IRAM_ATTR Z80::ldd(void) {
 }
 
 // CPI
-void IRAM_ATTR Z80::cpi(void) {
+IRAM_ATTR void Z80::cpi(void) {
     // uint8_t memHL = Z80Ops::peek8(REG_HL);
     PEEK8(uint8_t memHL,REG_HL);
 
@@ -726,7 +729,7 @@ void IRAM_ATTR Z80::cpi(void) {
 }
 
 // CPD
-void IRAM_ATTR Z80::cpd(void) {
+IRAM_ATTR void Z80::cpd(void) {
     // uint8_t memHL = Z80Ops::peek8(REG_HL);
     PEEK8(uint8_t memHL,REG_HL);
 
@@ -752,7 +755,7 @@ void IRAM_ATTR Z80::cpd(void) {
 }
 
 // INI
-void IRAM_ATTR Z80::ini(void) {
+IRAM_ATTR void Z80::ini(void) {
     REG_WZ = REG_BC;
     Z80Ops::addressOnBus(getPairIR().word, 1);
     uint8_t work8 = Ports::input(REG_WZ++);
@@ -783,7 +786,7 @@ void IRAM_ATTR Z80::ini(void) {
 }
 
 // IND
-void IRAM_ATTR Z80::ind(void) {
+IRAM_ATTR void Z80::ind(void) {
     REG_WZ = REG_BC;
     Z80Ops::addressOnBus(getPairIR().word, 1);
     uint8_t work8 = Ports::input(REG_WZ--);
@@ -814,7 +817,7 @@ void IRAM_ATTR Z80::ind(void) {
 }
 
 // OUTI
-void IRAM_ATTR Z80::outi(void) {
+IRAM_ATTR void Z80::outi(void) {
 
     Z80Ops::addressOnBus(getPairIR().word, 1);
 
@@ -848,7 +851,7 @@ void IRAM_ATTR Z80::outi(void) {
 }
 
 // OUTD
-void IRAM_ATTR Z80::outd(void) {
+IRAM_ATTR void Z80::outd(void) {
 
     Z80Ops::addressOnBus(getPairIR().word, 1);
 
@@ -908,7 +911,7 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
     flagQ = true;
 }
 
-void IRAM_ATTR Z80::check_trdos() {
+IRAM_ATTR void Z80::check_trdos() {
 
     if (!ESPectrum::trdos) {
 
@@ -927,7 +930,7 @@ void IRAM_ATTR Z80::check_trdos() {
 
 }
 
-void IRAM_ATTR Z80::check_trdos_unpage() {
+IRAM_ATTR void Z80::check_trdos_unpage() {
 
     if (ESPectrum::trdos) {
 
@@ -1021,7 +1024,9 @@ void Z80::nmi(void) {
     //      2.- Si estaba en un HALT esperando una INT, lo saca de la espera
     // Z80Ops::fetchOpcode(REG_PC);
     // Z80Ops::interruptHandlingTime(1);
-    FETCH_OPCODE(uint8_t discardOpCode, REG_PC);
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    // FETCH_OPCODE(uint8_t discardOpCode, REG_PC);
     VIDEO::Draw(1, false);    
 
     // if (halted) {
@@ -1035,7 +1040,7 @@ void Z80::nmi(void) {
     REG_PC = REG_WZ = 0x0066;
 }
 
-void IRAM_ATTR Z80::checkINT(void) {
+IRAM_ATTR void Z80::checkINT(void) {
 
     // Comprueba si está activada la señal INT
     if (ffIFF1 && !pendingEI && Z80Ops::isActiveINT()) {
@@ -1045,13 +1050,13 @@ void IRAM_ATTR Z80::checkINT(void) {
 
 }
 
-void IRAM_ATTR Z80::incRegR(uint8_t inc) {
+IRAM_ATTR void Z80::incRegR(uint8_t inc) {
 
     regR += inc;
 
 }
 
-void IRAM_ATTR Z80::execute() {
+IRAM_ATTR void Z80::execute() {
 
     uint8_t pg = REG_PC >> 14;
     VIDEO::Draw(4,MemESP::ramContended[pg]);
@@ -1108,7 +1113,7 @@ void IRAM_ATTR Z80::execute() {
 
 }
 
-void IRAM_ATTR Z80::exec_nocheck() {
+IRAM_ATTR void Z80::exec_nocheck() {
 
     uint8_t pg = REG_PC >> 14;
     VIDEO::Draw(4,MemESP::ramContended[pg]);
@@ -2318,7 +2323,7 @@ void Z80::decodeOpcodebe()
     
 }
 
-void IRAM_ATTR Z80::decodeOpcodebf()
+IRAM_ATTR void Z80::decodeOpcodebf()
 { /* CP A */
 
     cp(regA);
@@ -2450,7 +2455,12 @@ void Z80::decodeOpcodeca()
 void Z80::decodeOpcodecb()
 { /* Subconjunto de instrucciones */
 
-    FETCH_OPCODE(opCode, REG_PC);
+
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+    // FETCH_OPCODE(opCode, REG_PC);
+
     REG_PC++;
     regR++;
 
@@ -2647,7 +2657,11 @@ void Z80::decodeOpcodedc()
 void Z80::decodeOpcodedd()
 { /* Subconjunto de instrucciones */
     // opCode = Z80Ops::fetchOpcode(REG_PC++);
-    FETCH_OPCODE(opCode,REG_PC);
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+    // FETCH_OPCODE(opCode,REG_PC);
+
     REG_PC++;
     regR++;
     decodeDDFD(regIX);
@@ -2805,7 +2819,10 @@ void Z80::decodeOpcodeec() /* CALL PE,nn */
 void Z80::decodeOpcodeed() /*Subconjunto de instrucciones*/
 { 
     // opCode = Z80Ops::fetchOpcode(REG_PC++);
-    FETCH_OPCODE(opCode,REG_PC);
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+    // FETCH_OPCODE(opCode,REG_PC);
     REG_PC++;
     regR++;
     decodeED();
@@ -2952,7 +2969,10 @@ void Z80::decodeOpcodefc() /* CALL M,nn */
 void Z80::decodeOpcodefd() /* Subconjunto de instrucciones */
 {     
     // opCode = Z80Ops::fetchOpcode(REG_PC++);
-    FETCH_OPCODE(opCode,REG_PC);
+    uint8_t pg = REG_PC >> 14;
+    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+    // FETCH_OPCODE(opCode,REG_PC);
     REG_PC++;
     regR++;
     decodeDDFD(regIY);
@@ -4495,12 +4515,12 @@ void (*Z80::dcCB[256])() = {
 
 };
 
-// Trim from end (in place) (for SAVE trap, clean this up later)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
+// // Trim from end (in place) (for SAVE trap, clean this up later)
+// static inline void rtrim(std::string &s) {
+//     s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+//         return !std::isspace(ch);
+//     }).base(), s.end());
+// }
 
 //Subconjunto de instrucciones 0xDD / 0xFD
 /*
@@ -4585,6 +4605,8 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
 
             if (REG_PC == 0x04d4) { // Save trap
 
+                static uint8_t SaveRes;
+
                 if (REG_HL == 0x1F80) {
 
                     // printf("Saving header!\n");
@@ -4599,28 +4621,40 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
                     for (int i=0; i < 10; i++)
                         name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
                     rtrim(name);
-                    Tape::tapeSaveName = "/sd/t/" + name + ".tap";
+                    Tape::tapeSaveName = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name + ".tap";
 
-                    // printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
-                    /*int result = */remove(Tape::tapeSaveName.c_str());
+                    struct stat stat_buf;
+                    SaveRes = DLG_YES;
+                    if (stat(Tape::tapeSaveName.c_str(), &stat_buf) == 0) {
+                        string title = OSD_TAPE_SAVE[Config::lang];
+                        string msg = OSD_TAPE_SAVE_EXIST[Config::lang];
+                        SaveRes = OSD::msgDialog(title,msg);
+                    }
 
-                    // check if file has been deleted successfully
-                    // if (result != 0) {
-                    //     // print error message
-                    //     printf("File deletion failed\n");
-                    // }
-                    // else {
-                    //     printf("File deleted succesfully\n");
-                    // }            
+                    if (SaveRes == DLG_YES) {
 
-                    // printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
+                        // printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
+                        /*int result = */remove(Tape::tapeSaveName.c_str());
+
+                        // check if file has been deleted successfully
+                        // if (result != 0) {
+                        //     // print error message
+                        //     printf("File deletion failed\n");
+                        // }
+                        // else {
+                        //     printf("File deleted succesfully\n");
+                        // }            
+
+                        // printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
+                        
+                        REG_DE--;
+                        regA = 0x00;
+
+                        Tape::Save();
+
+                        REG_PC = 0x555;
                     
-                    REG_DE--;
-                    regA = 0x00;
-
-                    Tape::Save();
-
-                    REG_PC = 0x555;
+                    }
 
                 } else {
 
@@ -4630,13 +4664,17 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
 
                     // printf("Saving %s block.\n",Tape::tapeSaveName.c_str());
 
-                    REG_DE--;
-                    regIXY.word++;
-                    regA = 0xFF;
+                    if (SaveRes == DLG_YES) {
 
-                    Tape::Save();
+                        REG_DE--;
+                        regIXY.word++;
+                        regA = 0xFF;
 
-                    REG_PC = 0x555;
+                        Tape::Save();
+
+                        REG_PC = 0x555;
+
+                    }
 
                 }
 
@@ -5663,10 +5701,15 @@ void Z80::decodeED(void) {
         }
         case 0x41:
         { /* OUT (C),B */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ, REG_B);
-            REG_WZ++;
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ, REG_B);
+            // REG_WZ++;
+
+            Ports::output(REG_BC, REG_B);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x42:
         { /* SBC HL,BC */
@@ -5739,10 +5782,16 @@ void Z80::decodeED(void) {
         }
         case 0x49:
         { /* OUT (C),C */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ, REG_C);
-            REG_WZ++;
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ, REG_C);
+            // REG_WZ++;
+
+            Ports::output(REG_BC, REG_C);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
+
         }
         case 0x4A:
         { /* ADC HL,BC */
@@ -5779,9 +5828,14 @@ void Z80::decodeED(void) {
         }
         case 0x51:
         { /* OUT (C),D */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_D);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_D);
+
+            Ports::output(REG_BC, REG_D);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x52:
         { /* SBC HL,DE */
@@ -5823,9 +5877,14 @@ void Z80::decodeED(void) {
         }
         case 0x59:
         { /* OUT (C),E */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_E);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_E);
+
+            Ports::output(REG_BC, REG_E);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x5A:
         { /* ADC HL,DE */
@@ -5867,9 +5926,14 @@ void Z80::decodeED(void) {
         }
         case 0x61:
         { /* OUT (C),H */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_H);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_H);
+
+            Ports::output(REG_BC, REG_H);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x62:
         { /* SBC HL,HL */
@@ -5912,9 +5976,14 @@ void Z80::decodeED(void) {
         }
         case 0x69:
         { /* OUT (C),L */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, REG_L);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, REG_L);
+
+            Ports::output(REG_BC, REG_L);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x6A:
         { /* ADC HL,HL */
@@ -5957,9 +6026,14 @@ void Z80::decodeED(void) {
         }
         case 0x71:
         { /* OUT (C),0 */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, 0x00);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, 0x00);
+
+            Ports::output(REG_BC, 0x00);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x72:
         { /* SBC HL,SP */
@@ -5984,9 +6058,14 @@ void Z80::decodeED(void) {
         }
         case 0x79:
         { /* OUT (C),A */
-            REG_WZ = REG_BC;
-            Ports::output(REG_WZ++, regA);
-            break;
+            // REG_WZ = REG_BC;
+            // Ports::output(REG_WZ++, regA);
+
+            Ports::output(REG_BC, regA);
+            REG_WZ = REG_BC + 1;
+
+            return;
+            // break;
         }
         case 0x7A:
         { /* ADC HL,SP */
@@ -6071,6 +6150,7 @@ void Z80::decodeED(void) {
             ini();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL - 1, 5);
                 SetAbortedINxR_OTxRFlags();
             }
@@ -6081,6 +6161,7 @@ void Z80::decodeED(void) {
             outi();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_BC, 5);
                 SetAbortedINxR_OTxRFlags();
             }
@@ -6116,6 +6197,7 @@ void Z80::decodeED(void) {
             ind();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_HL + 1, 5);
                 SetAbortedINxR_OTxRFlags();
             }
@@ -6126,6 +6208,7 @@ void Z80::decodeED(void) {
             outd();
             if (REG_B != 0) {
                 REG_PC = REG_PC - 2;
+                REG_WZ = REG_PC + 1;
                 Z80Ops::addressOnBus(REG_BC, 5);
                 SetAbortedINxR_OTxRFlags();
             }
@@ -6145,7 +6228,7 @@ void Z80::decodeED(void) {
     }
 }
 
-void IRAM_ATTR Z80::copyToRegister(uint8_t value)
+IRAM_ATTR void Z80::copyToRegister(uint8_t value)
 {
     switch (opCode & 0x07)
     {

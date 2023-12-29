@@ -119,7 +119,7 @@ public:
     static void Open(string name);
     static void TAP_Play();
     static void TAP_Stop();    
-    static void IRAM_ATTR TAP_Read();
+    static void TAP_Read();
     static bool FlashLoad();
     static void Save();
     static uint32_t CalcTapBlockPos(int block);

@@ -57,6 +57,37 @@ visit https://zxespectrum.speccy.org/contacto
                                     // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)                                    
 #define TS_SCREEN_360x200_PENTAGON 17074 // START OF VISIBLE ULA DRAW PENTAGON @ 360x200, SCANLINE 76, +48TS + 2TS (NEEDED TO FIT BORDER)
 
+// Colors for 6 bit mode
+//                            //   BB GGRR 
+#define BLACK       0xC0      // 1100 0000
+#define BLUE        0xE0      // 1110 0000
+#define RED         0xC2      // 1100 0010
+#define MAGENTA     0xE2      // 1110 0010
+#define GREEN       0xC8      // 1100 1000
+#define CYAN        0xE8      // 1110 1000
+#define YELLOW      0xCA      // 1100 1010
+#define WHITE       0xEA      // 1110 1010
+#define BRI_BLACK   0xC0      // 1100 0000
+#define BRI_BLUE    0xF0      // 1111 0000
+#define BRI_RED     0xC3      // 1100 0011
+#define BRI_MAGENTA 0xF3      // 1111 0011
+#define BRI_GREEN   0xCC      // 1100 1100
+#define BRI_CYAN    0xFC      // 1111 1100
+#define BRI_YELLOW  0xCF      // 1100 1111
+#define BRI_WHITE   0xFF      // 1111 1111
+
+// used in ESPectrum logo text
+#define ESP_ORANGE  0xC7      // 1100 0111
+
+#define NUM_SPECTRUM_COLORS 16
+
+static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
+    BLACK,     BLUE,     RED,     MAGENTA,     GREEN,     CYAN,     YELLOW,     WHITE,
+    BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
+};
+
+#define zxColor(color,bright) spectrum_colors[bright ? color + 8 : color]
+
 class VIDEO
 {
 public:
@@ -71,10 +102,13 @@ public:
   // Video draw functions
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Common
+  #ifdef NO_VIDEO
   static void NoVideo(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR Blank(unsigned int statestoadd, bool contended);
-  static void Flush(); // For flushing video buffer as fast as possible after HALT
-
+  #endif
+  // static void NoDraw(unsigned int statestoadd, bool contended);
+  static void EndFrame();
+  static void Blank(unsigned int statestoadd, bool contended);
+  
   // 48 / 128
   static void TopBorder_Blank(unsigned int statestoadd, bool contended);
   static void TopBorder(unsigned int statestoadd, bool contended);
@@ -88,25 +122,25 @@ public:
   static void BottomBorder_OSD(unsigned int statestoadd, bool contended);    
     
   // Pentagon
-  static void IRAM_ATTR TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR TopBorder_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreenLB_Pentagon(unsigned int statestoadd, bool contended);    
+  static void TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void TopBorder_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreenLB_Pentagon(unsigned int statestoadd, bool contended);    
   static void MainScreen_Pentagon(unsigned int statestoadd, bool contended);
   static void MainScreen_Pentagon_delay(unsigned int statestoadd, bool contended);  
   static void MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR MainScreenRB_Pentagon(unsigned int statestoadd, bool contended);    
-  static void IRAM_ATTR BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
-  static void IRAM_ATTR BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreenRB_Pentagon(unsigned int statestoadd, bool contended);    
+  static void BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
+  static void BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
+  static void BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
 
   static uint8_t (*getFloatBusData)();
   static uint8_t getFloatBusData48();
   static uint8_t getFloatBusData128();    
 
-  static void (*Draw)(unsigned int, bool contended);
-  static void (*DrawOSD43)(unsigned int, bool contended);
-  static void (*DrawOSD169)(unsigned int, bool contended);
+  static void (*Draw)(unsigned int, bool);
+  static void (*DrawOSD43)(unsigned int, bool);
+  static void (*DrawOSD169)(unsigned int, bool);
 
   static void vgataskinit(void *unused);
 
@@ -137,59 +171,8 @@ public:
 
   static int VsyncFinetune[2];
 
+  static uint32_t framecnt; // Frames elapsed
+
 };
-
-static unsigned int is169;
-
-static WORD_ALIGNED_ATTR DRAM_ATTR uint16_t offBmp[SPEC_H];
-static WORD_ALIGNED_ATTR DRAM_ATTR uint16_t offAtt[SPEC_H];
-
-// Colors for 6 bit mode
-//                            //   BB GGRR 
-#define BLACK       0xC0      // 1100 0000
-#define BLUE        0xE0      // 1110 0000
-#define RED         0xC2      // 1100 0010
-#define MAGENTA     0xE2      // 1110 0010
-#define GREEN       0xC8      // 1100 1000
-#define CYAN        0xE8      // 1110 1000
-#define YELLOW      0xCA      // 1100 1010
-#define WHITE       0xEA      // 1110 1010
-#define BRI_BLACK   0xC0      // 1100 0000
-#define BRI_BLUE    0xF0      // 1111 0000
-#define BRI_RED     0xC3      // 1100 0011
-#define BRI_MAGENTA 0xF3      // 1111 0011
-#define BRI_GREEN   0xCC      // 1100 1100
-#define BRI_CYAN    0xFC      // 1111 1100
-#define BRI_YELLOW  0xCF      // 1100 1111
-#define BRI_WHITE   0xFF      // 1111 1111
-
-// used in ESPectrum logo text
-#define ESP_ORANGE  0xC7      // 1100 0111
-
-#define NUM_SPECTRUM_COLORS 16
-static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
-    BLACK,     BLUE,     RED,     MAGENTA,     GREEN,     CYAN,     YELLOW,     WHITE,
-    BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
-};
-
-static WORD_ALIGNED_ATTR DRAM_ATTR uint32_t* AluBytes[16];
-
-// static unsigned char DrawStatus;
-
-static uint32_t* lineptr32;
-static uint16_t* lineptr16;
-
-static unsigned int tstateDraw; // Drawing start point (in Tstates)
-static unsigned int linedraw_cnt;
-static unsigned int lin_end;
-// static unsigned int mainscrline_cnt;
-static unsigned int coldraw_cnt;
-static unsigned int col_end;
-static unsigned int video_rest;
-
-static unsigned int bmpOffset;  // offset for bitmap in graphic memory
-static unsigned int attOffset;  // offset for attrib in graphic memory
-
-void precalcAluBytes();
 
 #endif // VIDEO_h

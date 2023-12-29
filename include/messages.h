@@ -41,7 +41,8 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
-#define EMU_VERSION "    v1.0rc3 "
+
+#define EMU_VERSION "       v1.0 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -62,21 +63,98 @@ visit https://zxespectrum.speccy.org/contacto
 static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 
 #define OSD_PSNA_NOT_AVAIL "No Persist Snapshot Available"
-#define OSD_PSNA_LOADING "Loading Persist Snapshot..."
-#define OSD_PSNA_SAVING "Saving Persist Snapshot..."
+#define OSD_PSNA_LOADING "Loading Persist Snapshot"
+#define OSD_PSNA_SAVING  "Saving Persist Snapshot"
 #define OSD_PSNA_SAVE_WARN "Disk error. Trying slow mode, be patient"
 #define OSD_PSNA_SAVE_ERR "ERROR Saving Persist Snapshot"
-#define OSD_PSNA_LOADED  "  Persist Snapshot Loaded  "
+#define OSD_PSNA_LOADED  "Persist Snapshot Loaded"
 #define OSD_PSNA_LOAD_ERR "ERROR Loading Persist Snapshot"
-#define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
+#define OSD_PSNA_SAVED  "Persist Snapshot Saved"
 #define OSD_TAPE_FLASHLOAD "Flash loading TAP file"
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 #define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
 #define OSD_BETADISK_LOAD_ERR "ERROR Loading Disk file"
 
+#define OSD_TAPE_SAVE_EN "SAVE command"
+#define OSD_TAPE_SAVE_ES "Comando SAVE"
+static const char *OSD_TAPE_SAVE[2] = { OSD_TAPE_SAVE_EN, OSD_TAPE_SAVE_ES };
+
+#define OSD_TAPE_SAVE_EXIST_EN "File exists. Overwrite?"
+#define OSD_TAPE_SAVE_EXIST_ES "El fichero ya existe " "\xA8" "Sobreescribir?"
+static const char *OSD_TAPE_SAVE_EXIST[2] = { OSD_TAPE_SAVE_EXIST_EN, OSD_TAPE_SAVE_EXIST_ES };
+
+#define OSD_PSNA_SAVE_EN "Save snapshot"
+#define OSD_PSNA_SAVE_ES "Guardar snapshot"
+static const char *OSD_PSNA_SAVE[2] = { OSD_PSNA_SAVE_EN, OSD_PSNA_SAVE_ES };
+
+#define OSD_PSNA_EXISTS_EN "Overwrite slot?"
+#define OSD_PSNA_EXISTS_ES "\xA8" "Sobreescribir ranura?"
+static const char *OSD_PSNA_EXISTS[2] = { OSD_PSNA_EXISTS_EN, OSD_PSNA_EXISTS_ES };
+
 #define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
 static const char *OSD_TAPE_SELECT_ERR[2] = { OSD_TAPE_SELECT_ERR_EN,OSD_TAPE_SELECT_ERR_ES };
+
+#define OSD_FILE_INDEXING_EN "Indexing"
+#define OSD_FILE_INDEXING_ES "Indexando"
+static const char *OSD_FILE_INDEXING[2] = { OSD_FILE_INDEXING_EN, OSD_FILE_INDEXING_ES };
+
+#define OSD_FILE_INDEXING_EN_1 "  Sorting   "
+#define OSD_FILE_INDEXING_ES_1 "   Ordenando   "
+static const char *OSD_FILE_INDEXING_1[2] = { OSD_FILE_INDEXING_EN_1, OSD_FILE_INDEXING_ES_1 };
+
+#define OSD_FILE_INDEXING_EN_2 "Saving index"
+#define OSD_FILE_INDEXING_ES_2 "Grabando indice"
+static const char *OSD_FILE_INDEXING_2[2] = { OSD_FILE_INDEXING_EN_2, OSD_FILE_INDEXING_ES_2 };
+
+#define OSD_FILE_INDEXING_EN_3 "  Cleaning  "
+#define OSD_FILE_INDEXING_ES_3 "   Limpiando   "
+static const char *OSD_FILE_INDEXING_3[2] = { OSD_FILE_INDEXING_EN_3, OSD_FILE_INDEXING_ES_3 };
+
+#define OSD_FIRMW_UPDATE_EN "Firmware update"
+#define OSD_FIRMW_UPDATE_ES "Actualizar firmware"
+static const char *OSD_FIRMW_UPDATE[2] = { OSD_FIRMW_UPDATE_EN,OSD_FIRMW_UPDATE_ES};
+
+#define OSD_DLG_SURE_EN "Are you sure?"
+#define OSD_DLG_SURE_ES "\xA8" "Desea continuar?"
+static const char *OSD_DLG_SURE[2] = { OSD_DLG_SURE_EN, OSD_DLG_SURE_ES};
+
+#define OSD_DLG_JOYSAVE_EN "Save changes?"
+#define OSD_DLG_JOYSAVE_ES "\xA8" "Guardar cambios?"
+static const char *OSD_DLG_JOYSAVE[2] = { OSD_DLG_JOYSAVE_EN, OSD_DLG_JOYSAVE_ES};
+
+#define OSD_DLG_JOYDISCARD_EN "Discard changes?"
+#define OSD_DLG_JOYDISCARD_ES "\xA8" "Descartar cambios?"
+static const char *OSD_DLG_JOYDISCARD[2] = { OSD_DLG_JOYDISCARD_EN, OSD_DLG_JOYDISCARD_ES};
+
+#define OSD_DLG_SETJOYMAPDEFAULTS_EN "Load joy type default map?"
+#define OSD_DLG_SETJOYMAPDEFAULTS_ES "\xA8" "Cargar mapeo por defecto?"
+static const char *OSD_DLG_SETJOYMAPDEFAULTS[2] = { OSD_DLG_SETJOYMAPDEFAULTS_EN, OSD_DLG_SETJOYMAPDEFAULTS_ES};
+
+#define OSD_FIRMW_EN "Updating firmware"
+#define OSD_FIRMW_ES "Actualizando firmware"
+static const char *OSD_FIRMW[2] = { OSD_FIRMW_EN,OSD_FIRMW_ES};
+
+#define OSD_FIRMW_BEGIN_EN "Erasing destination partition."
+#define OSD_FIRMW_BEGIN_ES "Borrando particion de destino."
+static const char *OSD_FIRMW_BEGIN[2] = { OSD_FIRMW_BEGIN_EN,OSD_FIRMW_BEGIN_ES};
+
+#define OSD_FIRMW_WRITE_EN "    Flashing new firmware.    "
+#define OSD_FIRMW_WRITE_ES "   Grabando nuevo firmware.   "
+static const char *OSD_FIRMW_WRITE[2] = { OSD_FIRMW_WRITE_EN,OSD_FIRMW_WRITE_ES};
+
+#define OSD_FIRMW_END_EN "Flashing complete. Rebooting."
+#define OSD_FIRMW_END_ES "  Completado. Reiniciando.   "
+static const char *OSD_FIRMW_END[2] = { OSD_FIRMW_END_EN,OSD_FIRMW_END_ES};
+
+
+#define OSD_NOFIRMW_ERR_EN "No firmware file found."
+#define OSD_NOFIRMW_ERR_ES "Firmware no encontrado."
+static const char *OSD_NOFIRMW_ERR[2] = { OSD_NOFIRMW_ERR_EN,OSD_NOFIRMW_ERR_ES};
+
+#define OSD_FIRMW_ERR_EN "Problem updating firmware."
+#define OSD_FIRMW_ERR_ES "Error actualizando firmware."
+static const char *OSD_FIRMW_ERR[2] = { OSD_FIRMW_ERR_EN,OSD_FIRMW_ERR_ES};
 
 #define MENU_SNA_TITLE_EN "Select Snapshot"
 #define MENU_SNA_TITLE_ES "Elija snapshot"
@@ -86,8 +164,8 @@ static const char *MENU_SNA_TITLE[2] = { MENU_SNA_TITLE_EN,MENU_SNA_TITLE_ES };
 #define MENU_TAP_TITLE_ES "Elija fichero TAP"
 static const char *MENU_TAP_TITLE[2] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES };
 
-#define MENU_DSK_TITLE_EN "Select disk image"
-#define MENU_DSK_TITLE_ES "Elija imagen de disco"
+#define MENU_DSK_TITLE_EN "Select disk"
+#define MENU_DSK_TITLE_ES "Elija disco"
 static const char *MENU_DSK_TITLE[2] = { MENU_DSK_TITLE_EN,MENU_DSK_TITLE_ES };
 
 #define MENU_SNA_EN \
@@ -161,17 +239,21 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Storage\t>\n"\
     "Machine\t>\n"\
     "Aspect ratio\t>\n"\
+    "Joystick\t>\n"\
     "PS/2 Joystick\t>\n"\
     "Language\t>\n"\
-    "Other\t>\n"
+    "Other\t>\n"\
+	"Firmware update\n"
 #define MENU_OPTIONS_ES \
     "Menu opciones\n"\
     "Almacenamiento\t>\n"\
     "Modelo\t>\n"\
     "Rel. aspecto\t>\n"\
+    "Joystick\t>\n"\
     "Joystick PS/2\t>\n"\
     "Idioma\t>\n"\
-    "Otros\t>\n"
+    "Otros\t>\n"\
+	"Actualizar firmware\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
 
 #define MENU_ASPECT_EN \
@@ -231,11 +313,11 @@ static const char *MENU_PERSIST_SAVE[2] = { MENU_PERSIST_SAVE_EN, MENU_PERSIST_S
 static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_LOAD_ES };
 
 #define MENU_STORAGE_EN "Storage\n"\
-    "Flash tape load\t>\n"\
-    "Refresh directories\n"
+    "Flash tape load\t>\n"
+    // "Refresh directories\n"
 #define MENU_STORAGE_ES "Almacenamiento\n"\
-    "Carga rapida cinta\t>\n"\
-    "Refrescar directorios\n"
+    "Carga rapida cinta\t>\n"
+    // "Refrescar directorios\n"
 // static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
 #define MENU_FLASHLOAD_EN "Flash load\n"\
@@ -308,15 +390,49 @@ static const char *MENU_ARCH[2] = { MENU_ARCH_EN, MENU_ARCH_ES };
     "Espanol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
 
-#define MENU_JOY_EN "PS/2 Joystick\n"\
-    "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"\
-	"Cursor Keys as Joy\t>\n"
-#define MENU_JOY_ES "Joystick PS/2\n"\
-    "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"\
-	"Joy en teclas de cursor\t>\n"
+#define MENU_JOY_EN "Joystick menu\n"\
+    "Joystick 1\n"\
+    "Joystick 2\n"
+#define MENU_JOY_ES "Menu Joystick\n"\
+    "Joystick 1\n"\
+    "Joystick 2\n"
 static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
+
+#define MENU_DEFJOY_EN "Joystick#\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\
+	"Assign keys\n"
+	// "Load map\n"\
+	// "Save map\n"
+#define MENU_DEFJOY_ES "Joystick#\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\
+	"Definir\n"
+	// "Cargar mapa\n"\
+	// "Guardar mapa\n"
+static const char *MENU_DEFJOY[2] = { MENU_DEFJOY_EN, MENU_DEFJOY_ES };
+
+#define MENU_JOYPS2_EN "PS/2 Joystick\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\	
+	"Cursor Keys as Joy\t>\n"
+#define MENU_JOYPS2_ES "Joystick PS/2\n"\
+    "Cursor\t[ ]\n"\
+    "Kempston\t[ ]\n"\
+    "Sinclair 1\t[ ]\n"\
+    "Sinclair 2\t[ ]\n"\
+    "Fuller\t[ ]\n"\	
+	"Joy en teclas de cursor\t>\n"
+static const char *MENU_JOYPS2[2] = { MENU_JOYPS2_EN, MENU_JOYPS2_ES };
 
 #define MENU_CURSORJOY_EN "Cursor as Joy\n"\
     "Yes\t[Y]\n"\
@@ -347,40 +463,26 @@ static const char *MENU_CURSORJOY[2] = { MENU_CURSORJOY_EN, MENU_CURSORJOY_ES };
 	"\r"\
 	"\nA1The Jet Set Willys:\r"\
 	"\r"\
-	"\nD1DopierRex \nE1Igor Peruchi \nB1Inacio Santos\r"\
-	"\r"\
+	"\nD1DopierRex \nE1Eduard Ruiz \nC1Igor Peruchi\r"\
+	"\nB1Inacio Santos\r"\
 	"\r"\
 	"\r"\
 	"\r"
-
-	// Lencio Asimov
-	// Fernando Bonilla
-	// Elena Collantes
-	// Jorge Garcia
-	// kounch
-	// Ignacio Monge
-	// Javi Ortiz
-	// Jordi Ramos
-	// Jose Maria Rodriguez
-	// Santiago Romero
-	// Julia Salvador
-	// Marta Sicilia
-	// Radek Wojciechowski
 
 #define PATREONS2 "\r"\
 	"\nA1The Manic Miners:\r"\
 	"\r"\
 	"\nE1Lencio Asimov \nB1Fernando Bonilla\r"\
-	"\nC1Elena Collantes \nD1Jorge Garcia\r"\
-	"\nB1kounch \nC1Ignacio Monge \nD1Javi Ortiz\r"\
+	"\nC1Elena Collantes \nD1Fidel Fernandez\r"\
+	"\nE1Jorge Garcia \nC1Jose Luis Garcia\r"\
+	"\nB1kounch \nD1Ignacio Monge \nE1Serafin Moraton\r"\
+	"\nB1Javi Ortiz \nC1Miguel Angel Perez\r"\
 	"\nD1Jordi Ramos \nE1Jose Maria Rodriguez\r"\
-	"\nB1Santiago Romero \nC1Julia Salvador\r"\
-	"\nD1Marta Sicilia \nE1Radek Wojciechowski\r"\
-	"\r"\
-	"\r"\
-	"\r"
+	"\nB1Marco A. Rodriguez \nC1Santiago Romero\r"\
+	"\nD1Julia Salvador \nE1Marta Sicilia\r"\
+	"\nB1Radek Wojciechowski\r"
 
-static const char *AboutMsg[2][6] = {
+static const char *AboutMsg[2][7] = {
 	{
 	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
 	"        David Crespo  \"dcrespo3d\"\r"\
@@ -407,7 +509,7 @@ static const char *AboutMsg[2][6] = {
 	"\nB1J. L. Sanchez   \nF1Z80 core improvements\r"\
 	"\nC1Antonio Villena \nF1Hardware support\r"\
 	"\nD1ZjoyKiLer       \nF1Testing & ideas\r"\
-	"\r"
+	"\r"\
 	"\r"		
 	,
 	"\nF1Big thanks to our Patreons:\r"\
@@ -416,19 +518,33 @@ static const char *AboutMsg[2][6] = {
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS2
 	,
+	"\nF1Thanks for help and donations to:\r"\
+	"\r"\
+	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
+	"\nB1Pablo Forcen Soler \nF1AUA\r"\
+	"\nC1Jordi Ramos Montes\r"
+	"\nD1Tsvetan Usunov \nF1Olimex Ltd.\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
+	,
 	"\nF1Thanks also to:\r"\
 	"\r"\
 	"\nA1Retrowiki.es \nF1and its great community\r"\
 	"\nB1Ron \nF1for his cool RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
 	"\nE1J.C. Gonzalez Amestoy \nF1for RVM\r"\
-	"\nA1Tsvetan Usunov from Olimex Ltd.\r"\
 	"\nB1All creators in ZX Spectrum server at\r"\
 	"Discord\r"\
 	"\r"\
+	"\r"\
 	"\nF1and, of course, to:\r"\
 	"\r"\
-	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
+	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"
 	,
 	DEDICATORIA
 	},
@@ -458,7 +574,7 @@ static const char *AboutMsg[2][6] = {
 	"\nB1J. L. Sanchez   \nF1Mejoras core Z80\r"\
 	"\nC1Antonio Villena \nF1Soporte hardware\r"\
 	"\nD1ZjoyKiLer       \nF1Testing e ideas\r"\
-	"\r"
+	"\r"\
 	"\r"		
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
@@ -467,19 +583,33 @@ static const char *AboutMsg[2][6] = {
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS2
 	,
+	"\nF1Gracias por su ayuda y donaciones a:\r"\
+	"\r"\
+	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
+	"\nB1Pablo Forcen Soler \nF1AUA\r"\
+	"\nC1Jordi Ramos Montes\r"
+	"\nD1Tsvetan Usunov \nF1Olimex Ltd.\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
+	,
 	"\nF1Gracias tambien a:\r"\
 	"\r"\
 	"\nA1Retrowiki.es \nF1y su magnifica comunidad\r"\
 	"\nB1Ron \nF1por su genial RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
 	"\nE1J.C. Gonzalez Amestoy \nF1por RVM\r"\
-	"\nA1Tsvetan Usunov de Olimex Ltd.\r"\
 	"\nB1Todos los creadores en el servidor\r"\
 	"ZX Spectrum en Discord\r"\
 	"\r"\
+	"\r"\	
 	"\nF1y, por supuesto, a:\r"\
 	"\r"\
-	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"\
+	"\nD1Sir Clive Sinclair \nF1& \nA1M\nE1a\nC1t\nD1t\nB1h\nA1e\nE1w \nC1S\nD1m\nB1i\nA1t\nE1h\r"
 	,
 	DEDICATORIA
 	}
@@ -541,7 +671,7 @@ static const char *AboutMsg[2][6] = {
     " [Q]    Hard reset\n"\
     " [W]    Reset ESP32\n"\
     " [P]    Pause\n"\
-    " [C]    BMP screenshot (SD folder /c)\n"
+    " [S]    BMP screenshot (SD folder /c)\n"
 
 #define OSD_HELP_ES_ZX \
     " Presione CAPS SHIFT + SYMBOL SHIFT y:\n"\
@@ -561,7 +691,7 @@ static const char *AboutMsg[2][6] = {
     " [Q]    Reset completo\n"\
     " [W]    Resetear ESP32\n"\
     " [P]    Pausa\n"\
-    " [C]    Captura BMP (Carpeta SD /c)\n"
+    " [S]    Captura BMP (Carpeta SD /c)\n"
 
 const uint8_t ESPectrum_logo[] = {
 	0x45, 0x42, 0x46, 0x38, 0xBB, 0x00, 0x1B, 0x00, 0xC0, 0xC0, 0xC0, 0xFF,

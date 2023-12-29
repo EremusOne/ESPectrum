@@ -76,13 +76,9 @@ public:
     static void writeword(uint16_t addr, uint16_t data);
 };
 
-static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage0[0x4000] = { 0 };
-static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage1[0x4000] = { 0 };
-static WORD_ALIGNED_ATTR DRAM_ATTR uint8_t staticMemPage2[0x4000] = { 0 };
-
-// static uint8_t staticMemPage0[0x4000] = { 0 };
-// static uint8_t staticMemPage1[0x4000] = { 0 };
-// static uint8_t staticMemPage2[0x4000] = { 0 };
+static uint8_t staticMemPage0[0x4000] = { 0 };
+static uint8_t staticMemPage1[0x4000] = { 0 };
+static uint8_t staticMemPage2[0x4000] = { 0 };
 
 ///////////////////////////////////////////////////////////////////////////////
 //

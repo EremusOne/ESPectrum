@@ -38,8 +38,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "hardconfig.h"
 
-// Pin definition for LILYGO TTGO VGA32
-
+// Audio Out
 #define SPEAKER_PIN 25
 
 // Storage mode: pins for external SD card (LILYGO TTGO VGA32 Board and ESPectrum Board)

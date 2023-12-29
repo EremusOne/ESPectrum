@@ -89,7 +89,9 @@ void Tape::Open(string name) {
         tape = NULL;
     }
 
-    tape = fopen(name.c_str(), "rb");
+    string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+
+    tape = fopen(fname.c_str(), "rb");
     if (tape == NULL) {
         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
         return;
@@ -465,7 +467,7 @@ void Tape::TAP_Stop()
     // tape = NULL;
 }
 
-void IRAM_ATTR Tape::TAP_Read()
+IRAM_ATTR void Tape::TAP_Read()
 {
     uint64_t tapeCurrent = (CPU::global_tstates + CPU::tstates) - tapeStart;
     
@@ -544,11 +546,6 @@ void Tape::Save() {
 	uint8_t dato;
 	int longitud;
 
-    // if (tapeSaveName == "none") {
-    //     OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
-    //     return;
-    // }
-
     fichero = fopen(tapeSaveName.c_str(), "ab");
     if (fichero == NULL)
     {
@@ -592,11 +589,16 @@ void Tape::Save() {
 bool Tape::FlashLoad() {
 
     if (tape == NULL) {
-        tape = fopen(Tape::tapeFileName.c_str(), "rb");
+
+        string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;        
+
+        tape = fopen(fname.c_str(), "rb");
         if (tape == NULL) {
             return false;
         }
+
         CalcTapBlockPos(tapeCurBlock);
+
     }
 
     // printf("--< BLOCK: %d >--------------------------------\n",(int)tapeCurBlock);    
