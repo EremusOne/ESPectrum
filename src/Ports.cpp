@@ -61,6 +61,44 @@ uint8_t Ports::speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
 DRAM_ATTR uint8_t Ports::port[128];
 uint8_t Ports::port254 = 0;
 
+uint8_t (*Ports::getFloatBusData)() = &Ports::getFloatBusData48;
+
+uint8_t Ports::getFloatBusData48() {
+
+    unsigned int currentTstates = CPU::tstates;
+
+	unsigned int line = (currentTstates / 224) - 64;
+	if (line >= 192) return 0xFF;
+
+	unsigned char halfpix = (currentTstates % 224) - 3;
+	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
+
+    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
+    
+    if (halfpix & 0x01) return(VIDEO::grmem[offAtt[line] + hpoffset]);
+
+    return(VIDEO::grmem[offBmp[line] + hpoffset]);
+
+}
+
+uint8_t Ports::getFloatBusData128() {
+
+    unsigned int currentTstates = CPU::tstates - 1;
+
+	unsigned int line = (currentTstates / 228) - 63;
+	if (line >= 192) return 0xFF;
+
+	unsigned char halfpix = currentTstates % 228;
+	if ((halfpix >= 128) || (halfpix & 0x04)) return 0xFF;
+
+    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
+    
+    if (halfpix & 0x01) return(VIDEO::grmem[offAtt[line] + hpoffset]);
+
+    return(VIDEO::grmem[offBmp[line] + hpoffset]);
+
+}
+
 IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
     uint8_t data;
@@ -153,7 +191,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
         if (!Z80Ops::isPentagon) {
 
-            data = VIDEO::getFloatBusData();
+            data = getFloatBusData();
             
             if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 

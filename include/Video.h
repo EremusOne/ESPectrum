@@ -88,6 +88,8 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
 
 #define zxColor(color,bright) spectrum_colors[bright ? color + 8 : color]
 
+static uint16_t offBmp[SPEC_H];
+static uint16_t offAtt[SPEC_H];
 class VIDEO
 {
 public:
@@ -133,11 +135,7 @@ public:
   static void BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
   static void BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
   static void BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
-
-  static uint8_t (*getFloatBusData)();
-  static uint8_t getFloatBusData48();
-  static uint8_t getFloatBusData128();    
-
+  
   static void (*Draw)(unsigned int, bool);
   static void (*DrawOSD43)(unsigned int, bool);
   static void (*DrawOSD169)(unsigned int, bool);

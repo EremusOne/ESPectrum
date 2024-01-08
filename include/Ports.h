@@ -47,6 +47,10 @@ public:
     static void output(uint16_t address, uint8_t data);
     static uint8_t port[128];
 
+    static uint8_t (*getFloatBusData)();
+    static uint8_t getFloatBusData48();
+    static uint8_t getFloatBusData128();    
+
 private:
 
     static void ioContentionLate(bool contend);

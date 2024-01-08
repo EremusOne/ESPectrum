@@ -12,8 +12,6 @@
 #pragma once
 #include "VGA.h"
 #include "../Graphics/GraphicsR2G2B2S2Swapped.h"
-#include "hardconfig.h"
-
 
 class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 {
@@ -27,23 +25,8 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 		interruptStaticChild = &VGA6Bit::interrupt;
 	}
 
-	bool init(Mode &mode,
-			  const int R0Pin, const int R1Pin,
-			  const int G0Pin, const int G1Pin,
-			  const int B0Pin, const int B1Pin,
-			  const int hsyncPin, const int vsyncPin, const int clockPin = -1)
-	{
-		int pinMap[8] = {
-			R0Pin, R1Pin,
-			G0Pin, G1Pin,
-			B0Pin, B1Pin,
-			hsyncPin, vsyncPin
-		};
-
-		return VGA::init(mode, pinMap, 8, clockPin);
-	}
-
-	bool init(const Mode &mode, const int *redPins, const int *greenPins, const int *bluePins, const int hsyncPin, const int vsyncPin, const int clockPin = -1)
+	// bool init(const Mode &mode, const int *redPins, const int *greenPins, const int *bluePins, const int hsyncPin, const int vsyncPin, const int clockPin = -1)
+	bool init(int mode, const int *redPins, const int *greenPins, const int *bluePins, const int hsyncPin, const int vsyncPin, const int clockPin = -1)	
 	{
 		int pinMap[8];
 		for (int i = 0; i < 2; i++)
@@ -57,17 +40,10 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 		return VGA::init(mode, pinMap, 8, clockPin);
 	}
 
-	bool init(const Mode &mode, const PinConfig &pinConfig)
-	{
-		int pins[8];
-		pinConfig.fill6Bit(pins);
-		return VGA::init(mode, pins, 8, pinConfig.clock);
-	}
-
 	virtual void initSyncBits()
 	{
-		hsyncBitI = mode.hSyncPolarity ? 0x40 : 0;
-		vsyncBitI = mode.vSyncPolarity ? 0x80 : 0;
+		hsyncBitI = vidmodes[mode][vmodeproperties::hSyncPolarity] ? 0x40 : 0;
+		vsyncBitI = vidmodes[mode][vmodeproperties::vSyncPolarity] ? 0x80 : 0;
 		hsyncBit = hsyncBitI ^ 0x40;
 		vsyncBit = vsyncBitI ^ 0x80;
 		SBits = hsyncBitI | vsyncBitI;
@@ -76,11 +52,6 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 	virtual long syncBits(bool hSync, bool vSync)
 	{
 		return ((hSync ? hsyncBit : hsyncBitI) | (vSync ? vsyncBit : vsyncBitI)) * 0x1010101;
-	}
-
-	virtual int bytesPerSample() const
-	{
-		return 1;
 	}
 
 	virtual float pixelAspect() const
@@ -100,7 +71,7 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 
 	virtual Color **allocateFrameBuffer()
 	{
-		return (Color **)DMABufferDescriptor::allocateDMABufferArray(yres, mode.hRes * bytesPerSample(), true, syncBits(false, false));
+		return (Color **)DMABufferDescriptor::allocateDMABufferArray(yres, vidmodes[mode][vmodeproperties::hRes], true, syncBits(false, false));
 	}
 
 	virtual void allocateLineBuffers()
@@ -118,8 +89,8 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 		}
 		Graphics::show(vSync);
 		if(dmaBufferDescriptors)
-		for (int i = 0; i < yres * mode.vDiv; i++)
-			dmaBufferDescriptors[(mode.vFront + mode.vSync + mode.vBack + i) * 2 + 1].setBuffer(frontBuffer[i / mode.vDiv], mode.hRes * bytesPerSample());
+		for (int i = 0; i < yres * vidmodes[mode][vmodeproperties::vDiv]; i++)
+			dmaBufferDescriptors[(vidmodes[mode][vmodeproperties::vFront] + vidmodes[mode][vmodeproperties::vSync] + vidmodes[mode][vmodeproperties::vBack] + i) * 2 + 1].setBuffer(frontBuffer[i / vidmodes[mode][vmodeproperties::vDiv]], vidmodes[mode][vmodeproperties::hRes]);
 	}
 
 	virtual void scroll(int dy, Color color)

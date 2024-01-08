@@ -65,7 +65,7 @@ void CPU::reset() {
 
     string arch = Config::getArch();
     if (arch == "48K") {
-        VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
+        Ports::getFloatBusData = &Ports::getFloatBusData48;
         Z80Ops::is48 = true;
         Z80Ops::is128 = false;
         Z80Ops::isPentagon = false;
@@ -75,7 +75,7 @@ void CPU::reset() {
         // Set emulation loop sync target
         ESPectrum::target = MICROS_PER_FRAME_48;
     } else if (arch == "128K") {
-        VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
+        Ports::getFloatBusData = &Ports::getFloatBusData128;
         Z80Ops::is48 = false;
         Z80Ops::is128 = true;
         Z80Ops::isPentagon = false;
