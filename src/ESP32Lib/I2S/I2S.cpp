@@ -232,31 +232,6 @@ bool I2S::initParallelOutputMode(const int *pinMap, int mode, const int bitCount
 	return true;
 }
 
-/// simple ringbuffer of blocks of size bytes each
-void I2S::allocateDMABuffers(int count, int bytes)
-{
-	dmaBufferDescriptorCount = count;
-	dmaBufferDescriptors = DMABufferDescriptor::allocateDescriptors(count);
-	for (int i = 0; i < dmaBufferDescriptorCount; i++)
-	{
-		dmaBufferDescriptors[i].setBuffer(DMABufferDescriptor::allocateBuffer(bytes, true), bytes);
-		if (i)
-			dmaBufferDescriptors[i - 1].next(dmaBufferDescriptors[i]);
-	}
-	dmaBufferDescriptors[dmaBufferDescriptorCount - 1].next(dmaBufferDescriptors[0]);
-}
-
-void I2S::deleteDMABuffers()
-{
-	if (!dmaBufferDescriptors)
-		return;
-	for (int i = 0; i < dmaBufferDescriptorCount; i++)
-		free(dmaBufferDescriptors[i].buffer());
-	free(dmaBufferDescriptors);
-	dmaBufferDescriptors = 0;
-	dmaBufferDescriptorCount = 0;
-}
-
 void I2S::stop()
 {
 	stopSignal = true;

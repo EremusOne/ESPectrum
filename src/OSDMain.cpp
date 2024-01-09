@@ -1459,7 +1459,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
         // Save backbuffer data
         j = SaveRectpos;
         for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                 VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
                 SaveRectpos++;
@@ -1482,7 +1482,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
 
         SaveRectpos = j;
         for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                 backbuffer32[n] = VIDEO::SaveRect[j];
                 j++;
@@ -1773,7 +1773,7 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
         // Save backbuffer data
         j = SaveRectpos;
         for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                 VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
                 SaveRectpos++;
@@ -1836,7 +1836,7 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
         // Restore backbuffer data
         SaveRectpos = j;
         for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                 backbuffer32[n] = VIDEO::SaveRect[j];
                 j++;
@@ -1862,7 +1862,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
     // Save backbuffer data
     unsigned int j = SaveRectpos;
     for (int  m = y; m < y + h; m++) {
-        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
         for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
             VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
             SaveRectpos++;
@@ -1976,7 +1976,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
     // Restore backbuffer data
     SaveRectpos = j;
     for (int  m = y; m < y + h; m++) {
-        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
         for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
             backbuffer32[n] = VIDEO::SaveRect[j];
             j++;

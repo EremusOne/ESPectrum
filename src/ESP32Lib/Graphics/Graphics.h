@@ -21,13 +21,7 @@ class Graphics {
 	int cursorX, cursorY, cursorBaseX;
 	long frontColor, backColor;
 	Font *font;
-	int frameBufferCount;
-	int currentFrameBuffer;
-	Color **frameBuffers[3];
-	Color **frontBuffer;
-	Color **backBuffer;
-	bool autoScroll;
-
+	Color **frameBuffers;
 	int xres;
 	int yres;
 
@@ -36,27 +30,16 @@ class Graphics {
 	virtual void dotAdd(int x, int y, Color color) = 0;
 	virtual void dotMix(int x, int y, Color color) = 0;
 	virtual Color get(int x, int y) = 0;
+
 	virtual Color** allocateFrameBuffer() = 0;
-	virtual Color** allocateFrameBuffer(int xres, int yres, Color value)
-	{
-		Color** frame = (Color **)malloc(yres * sizeof(Color *));
-		if(!frame)
-			ERROR("Not enough memory for frame buffer");				
-		for (int y = 0; y < yres; y++)
-		{
-			frame[y] = (Color *)malloc(xres * sizeof(Color));
-			if(!frame[y])
-				ERROR("Not enough memory for frame buffer");
-			for (int x = 0; x < xres; x++)
-				frame[y][x] = value;
-		}
-		return frame;
-	}
+
 	virtual Color RGBA(int r, int g, int b, int a = 255) const = 0;
+
 	virtual int R(Color c) const = 0;
 	virtual int G(Color c) const = 0;
 	virtual int B(Color c) const = 0;
 	virtual int A(Color c) const = 0;
+
 	Color RGB(unsigned long rgb) const 
 	{
 		return RGBA(rgb & 255, (rgb >> 8) & 255, (rgb >> 16) & 255);
@@ -70,78 +53,48 @@ class Graphics {
 		return RGBA(r, g, b);
 	}
 
-	void setFrameBufferCount(unsigned char i)
-	{
-		frameBufferCount = i > 3 ? 3 : i;
-	}
-
-	virtual void show(bool vSync = false)
-	{
-		if(!frameBufferCount)
-			return;
-		currentFrameBuffer = (currentFrameBuffer + 1) % frameBufferCount;
-		frontBuffer = frameBuffers[currentFrameBuffer];
-		backBuffer = frameBuffers[(currentFrameBuffer + frameBufferCount - 1) % frameBufferCount];
-	}
-
-	Graphics(int xres = 0, int yres = 0)
-	{
+	Graphics(int xres = 0, int yres = 0) {
 		this->xres = xres;
 		this->yres = yres;
 		font = 0;
 		cursorX = cursorY = cursorBaseX = 0;
 		frontColor = -1;
 		backColor = 0;
-		frameBufferCount = 1;
-		for(int i = 0; i < 3; i++)
-			frameBuffers[i] = 0;
-		frontBuffer = 0;
-		backBuffer = 0;
-		autoScroll = true;
+		frameBuffers = 0;
 	}
 
-	virtual bool allocateFrameBuffers()
-	{
+	virtual bool allocateFrameBuffers()	{
+
 		if(yres <= 0 || xres <= 0)
 			return false;
-		for(int i = 0; i < frameBufferCount; i++)
-			frameBuffers[i] = allocateFrameBuffer();
-		currentFrameBuffer = 0;
-		show();
+
+		frameBuffers = allocateFrameBuffer();
+
 		return true;
+
 	}
 
-	virtual void setResolution(int xres, int yres)
-	{
+	virtual void setResolution(int xres, int yres) {
 		this->xres = xres;
 		this->yres = yres;
 		allocateFrameBuffers();
 	}
 
-	virtual float pixelAspect() const
-	{
-		return 1;
-	}
-
-	void setTextColor(long front, long back = 0)
-	{
+	void setTextColor(long front, long back = 0) {
 		frontColor = front;
 		backColor = back;
 	}
 
-	void setFont(Font &font)
-	{
+	void setFont(Font &font) {
 		this->font = &font;
 	}
 
-	void setCursor(int x, int y)
-	{
+	void setCursor(int x, int y) {
 		cursorX = cursorBaseX = x;
 		cursorY = y;
 	}
 
-	virtual void drawChar(int x, int y, int ch)
-	{
+	virtual void drawChar(int x, int y, int ch)	{
 		if (!font)
 			return;
 		// if (!font->valid(ch))
@@ -156,8 +109,7 @@ class Graphics {
 					dotMix(px + x, py + y, backColor);
 	}
 
-	void print(const char ch)
-	{
+	void print(const char ch) {
 		if (!font)
 			return;
 		// if (font->valid(ch))
@@ -166,23 +118,18 @@ class Graphics {
 		else
 			drawChar(cursorX, cursorY, ' ');		
 		cursorX += font->charWidth;
-		if (cursorX + font->charWidth > xres)
-		{
+		if (cursorX + font->charWidth > xres) {
 			cursorX = cursorBaseX;
 			cursorY += font->charHeight;
-			if(autoScroll && cursorY + font->charHeight > yres)
-				scroll(cursorY + font->charHeight - yres, backColor);
 		}
 	}
 
-	void println(const char ch)
-	{
+	void println(const char ch)	{
 		print(ch);
 		print("\n");
 	}
 
-	void print(const char *str)
-	{
+	void print(const char *str)	{
 		if (!font)
 			return;
 		while (*str)
@@ -198,14 +145,12 @@ class Graphics {
 		}
 	}
 
-	void println(const char *str)
-	{
+	void println(const char *str) {
 		print(str); 
 		print("\n");
 	}
 
-	void print(long number, int base = 10, int minCharacters = 1)
-	{
+	void print(long number, int base = 10, int minCharacters = 1) {
 		if(minCharacters < 1)
 			minCharacters = 1;
 		bool sign = number < 0;
@@ -227,8 +172,7 @@ class Graphics {
 		print(&temp[i + 1]);
 	}
 
-	void print(unsigned long number, int base = 10, int minCharacters = 1)
-	{
+	void print(unsigned long number, int base = 10, int minCharacters = 1) {
 		if(minCharacters < 1)
 			minCharacters = 1;
 		const char baseChars[] = "0123456789ABCDEF";
@@ -245,73 +189,59 @@ class Graphics {
 		print(&temp[i + 1]);
 	}	
 
-	void println(long number, int base = 10, int minCharacters = 1)
-	{
+	void println(long number, int base = 10, int minCharacters = 1)	{
 		print(number, base, minCharacters); print("\n");
 	}
 
-	void println(unsigned long number, int base = 10, int minCharacters = 1)
-	{
+	void println(unsigned long number, int base = 10, int minCharacters = 1) {
 		print(number, base, minCharacters); print("\n");
 	}
 
-	void print(int number, int base = 10, int minCharacters = 1)
-	{
+	void print(int number, int base = 10, int minCharacters = 1) {
 		print(long(number), base, minCharacters);
 	}
 
-	void println(int number, int base = 10, int minCharacters = 1)
-	{
+	void println(int number, int base = 10, int minCharacters = 1) {
 		println(long(number), base, minCharacters);
 	}
 
-	void print(unsigned int number, int base = 10, int minCharacters = 1)
-	{
+	void print(unsigned int number, int base = 10, int minCharacters = 1) {
 		print((unsigned long)(number), base, minCharacters);
 	}
 
-	void println(unsigned int number, int base = 10, int minCharacters = 1)
-	{
+	void println(unsigned int number, int base = 10, int minCharacters = 1)	{
 		println((unsigned long)(number), base, minCharacters);
 	}
 
-	void print(short number, int base = 10, int minCharacters = 1)
-	{
+	void print(short number, int base = 10, int minCharacters = 1) {
 		print(long(number), base, minCharacters);
 	}
 
-	void println(short number, int base = 10, int minCharacters = 1)
-	{
+	void println(short number, int base = 10, int minCharacters = 1) {
 		println(long(number), base, minCharacters);
 	}
 
-	void print(unsigned short number, int base = 10, int minCharacters = 1)
-	{
+	void print(unsigned short number, int base = 10, int minCharacters = 1)	{
 		print(long(number), base, minCharacters);
 	}
 
-	void println(unsigned short number, int base = 10, int minCharacters = 1)
-	{
+	void println(unsigned short number, int base = 10, int minCharacters = 1) {
 		println(long(number), base, minCharacters);
 	}
 
-	void print(unsigned char number, int base = 10, int minCharacters = 1)
-	{
+	void print(unsigned char number, int base = 10, int minCharacters = 1) {
 		print(long(number), base, minCharacters);
 	}
 
-	void println(unsigned char number, int base = 10, int minCharacters = 1)
-	{
+	void println(unsigned char number, int base = 10, int minCharacters = 1) {
 		println(long(number), base, minCharacters);
 	}
 
-	void println()
-	{
+	void println() {
 		print("\n");
 	}
 
-	void print(double number, int fractionalDigits = 2, int minCharacters = 1)
-	{
+	void print(double number, int fractionalDigits = 2, int minCharacters = 1) {
 		long p = long(pow(10, fractionalDigits));
 		long long n = (double(number) * p + 0.5f);
 		print(long(n / p), 10, minCharacters - 1 - fractionalDigits);
@@ -326,21 +256,18 @@ class Graphics {
 		}
 	}
 
-	void println(double number, int fractionalDigits = 2, int minCharacters = 1)
-	{
+	void println(double number, int fractionalDigits = 2, int minCharacters = 1) {
 		print(number, fractionalDigits, minCharacters); 
 		print("\n");
 	}
 
-	virtual void clear(Color color = 0)
-	{
+	virtual void clear(Color color = 0) {
 		for (int y = 0; y < yres; y++)
 			for (int x = 0; x < xres; x++)
 				dotFast(x, y, color);
 	}
 
-	virtual void xLine(int x0, int x1, int y, Color color)
-	{
+	virtual void xLine(int x0, int x1, int y, Color color) {
 		if (y < 0 || y >= yres)
 			return;
 		if (x0 > x1)
@@ -357,59 +284,7 @@ class Graphics {
 			dotFast(x, y, color);
 	}
 
-	void triangle(short *v0, short *v1, short *v2, Color color)
-	{
-		short *v[3] = {v0, v1, v2};
-		if (v[1][1] < v[0][1])
-		{
-			short *vb = v[0];
-			v[0] = v[1];
-			v[1] = vb;
-		}
-		if (v[2][1] < v[1][1])
-		{
-			short *vb = v[1];
-			v[1] = v[2];
-			v[2] = vb;
-		}
-		if (v[1][1] < v[0][1])
-		{
-			short *vb = v[0];
-			v[0] = v[1];
-			v[1] = vb;
-		}
-		int y = v[0][1];
-		int xac = v[0][0] << 16;
-		int xab = v[0][0] << 16;
-		int xbc = v[1][0] << 16;
-		int xaci = 0;
-		int xabi = 0;
-		int xbci = 0;
-		if (v[1][1] != v[0][1])
-			xabi = ((v[1][0] - v[0][0]) << 16) / (v[1][1] - v[0][1]);
-		if (v[2][1] != v[0][1])
-			xaci = ((v[2][0] - v[0][0]) << 16) / (v[2][1] - v[0][1]);
-		if (v[2][1] != v[1][1])
-			xbci = ((v[2][0] - v[1][0]) << 16) / (v[2][1] - v[1][1]);
-
-		for (; y < v[1][1] && y < yres; y++)
-		{
-			if (y >= 0)
-				xLine(xab >> 16, xac >> 16, y, color);
-			xab += xabi;
-			xac += xaci;
-		}
-		for (; y < v[2][1] && y < yres; y++)
-		{
-			if (y >= 0)
-				xLine(xbc >> 16, xac >> 16, y, color);
-			xbc += xbci;
-			xac += xaci;
-		}
-	}
-
-	void line(int x1, int y1, int x2, int y2, Color color)
-	{
+	void line(int x1, int y1, int x2, int y2, Color color) {
 		int x, y, xe, ye;
 		int dx = x2 - x1;
 		int dy = y2 - y1;
@@ -493,8 +368,7 @@ class Graphics {
 		}
 	}
 
-	void fillRect(int x, int y, int w, int h, Color color)
-	{
+	void fillRect(int x, int y, int w, int h, Color color) {
 		if (x < 0)
 		{
 			w += x;
@@ -514,16 +388,14 @@ class Graphics {
 				dotFast(i, j, color);
 	}
 
-	void rect(int x, int y, int w, int h, Color color)
-	{
+	void rect(int x, int y, int w, int h, Color color) {
 		fillRect(x, y, w, 1, color);
 		fillRect(x, y, 1, h, color);
 		fillRect(x, y + h - 1, w, 1, color);
 		fillRect(x + w - 1, y, 1, h, color);
 	}
 
-	void circle(int x, int y, int r, Color color)
-	{
+	void circle(int x, int y, int r, Color color) {
 		int oxr = r;
 		for(int i = 0; i < r + 1; i++)
 		{
@@ -539,8 +411,7 @@ class Graphics {
 		}
 	}
 
-	void fillCircle(int x, int y, int r, Color color)
-	{
+	void fillCircle(int x, int y, int r, Color color) {
 		for(int i = 0; i < r + 1; i++)
 		{
 			int xr = (int)sqrt(r * r - i * i);
@@ -548,107 +419,6 @@ class Graphics {
 			if(i) 
 				xLine(x - xr, x + xr + 1, y - i, color);
 		}
-	}
-
-	void ellipse(int x, int y, int rx, int ry, Color color)
-	{
-		if(ry == 0)
-			return;
-		int oxr = rx;
-		float f = float(rx) / ry;
-		f *= f;
-		for(int i = 0; i < ry + 1; i++)
-		{
-			float s = rx * rx - i * i * f;
-			int xr = (int)sqrt(s <= 0 ? 0 : s);
-			xLine(x - oxr, x - xr + 1, y + i, color);
-			xLine(x + xr, x + oxr + 1, y + i, color);
-			if(i) 
-			{
-				xLine(x - oxr, x - xr + 1, y - i, color);
-				xLine(x + xr, x + oxr + 1, y - i, color);
-			}
-			oxr = xr;
-		}
-	}
-
-	void fillEllipse(int x, int y, int rx, int ry, Color color)
-	{
-		if(ry == 0)
-			return;
-		float f = float(rx) / ry;
-		f *= f;		
-		for(int i = 0; i < ry + 1; i++)
-		{
-			float s = rx * rx - i * i * f;
-			int xr = (int)sqrt(s <= 0 ? 0 : s);
-			xLine(x - xr, x + xr + 1, y + i, color);
-			if(i) 
-				xLine(x - xr, x + xr + 1, y - i, color);
-		}
-	}
-
-	virtual void scroll(int dy, Color color)
-	{
-		if(dy > 0)
-		{
-			for(int d = 0; d < dy; d++)
-			{
-				Color *l = backBuffer[0];
-				for(int i = 0; i < yres - 1; i++)
-				{
-					backBuffer[i] = backBuffer[i + 1];
-				}
-				backBuffer[yres - 1] = l;
-				xLine(0, xres, yres - 1, color);
-			}
-		}
-		else
-		{
-			for(int d = 0; d < -dy; d++)
-			{
-				Color *l = backBuffer[yres - 1];
-				for(int i = 1; i < yres; i++)
-				{
-					backBuffer[i] = backBuffer[i - 1];
-				}
-				backBuffer[0] = l;
-				xLine(0, xres, 0, color);
-			}
-		}
-		cursorY -= dy;
-	}
-
-	virtual Color R5G5B4A2ToColor(unsigned short c)
-	{
-		int r = (((c << 1) & 0x3e) * 255 + 1) / 0x3e;
-		int g = (((c >> 4) & 0x3e) * 255 + 1) / 0x3e;
-		int b = (((c >> 9) & 0x1e) * 255 + 1) / 0x1e;
-		int a = (((c >> 13) & 6) * 255 + 1) / 6;
-		return RGBA(r, g, b, a);
-	}
-
-	virtual Color R2G2B2A2ToColor(unsigned char c)
-	{
-		int r = ((int(c) & 3) * 255 + 1) / 3;
-		int g = (((int(c) >> 2) & 3) * 255 + 1) / 3;
-		int b = (((int(c) >> 4) & 3) * 255 + 1) / 3;
-		int a = (((int(c) >> 6) & 3) * 255 + 1) / 3;
-		return RGBA(r, g, b, a);
-	}
-
-	virtual Color R4G4B4A4ToColor(unsigned short c)
-	{
-		int r = (((c << 1) & 0x1e) * 255 + 1) / 0x1e;
-		int g = (((c >> 3) & 0x1e) * 255 + 1) / 0x1e;
-		int b = (((c >> 7) & 0x1e) * 255 + 1) / 0x1e;
-		int a = (((c >> 11) & 0x1e) * 255 + 1) / 0x1e;
-		return RGBA(r, g, b, a);
-	}
-
-	virtual Color R8G8B8A8ToColor(unsigned long c)
-	{
-		return RGBA(c & 255, (c >> 8) & 255, (c >> 16) & 255, (c >> 24) & 255);
 	}
 
 };

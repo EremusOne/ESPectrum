@@ -19,15 +19,11 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 
 	bool VGA6Bit_useinterrupt;
 
-	VGA6Bit() //8 bit based modes only work with I2S1
-		: VGA(1)
-	{
+	VGA6Bit() : VGA(1) { //8 bit based modes only work with I2S1
 		interruptStaticChild = &VGA6Bit::interrupt;
 	}
 
-	// bool init(const Mode &mode, const int *redPins, const int *greenPins, const int *bluePins, const int hsyncPin, const int vsyncPin, const int clockPin = -1)
-	bool init(int mode, const int *redPins, const int *greenPins, const int *bluePins, const int hsyncPin, const int vsyncPin, const int clockPin = -1)	
-	{
+	bool init(int mode, const int *redPins, const int *greenPins, const int *bluePins, const int hsyncPin, const int vsyncPin, const int clockPin = -1)	{
 		int pinMap[8];
 		for (int i = 0; i < 2; i++)
 		{
@@ -40,8 +36,7 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 		return VGA::init(mode, pinMap, 8, clockPin);
 	}
 
-	virtual void initSyncBits()
-	{
+	virtual void initSyncBits()	{
 		hsyncBitI = vidmodes[mode][vmodeproperties::hSyncPolarity] ? 0x40 : 0;
 		vsyncBitI = vidmodes[mode][vmodeproperties::vSyncPolarity] ? 0x80 : 0;
 		hsyncBit = hsyncBitI ^ 0x40;
@@ -49,61 +44,25 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 		SBits = hsyncBitI | vsyncBitI;
 	}
 		
-	virtual long syncBits(bool hSync, bool vSync)
-	{
+	virtual long syncBits(bool hSync, bool vSync) {
 		return ((hSync ? hsyncBit : hsyncBitI) | (vSync ? vsyncBit : vsyncBitI)) * 0x1010101;
 	}
 
-	virtual float pixelAspect() const
-	{
-		return 1;
-	}
-
-	virtual void propagateResolution(const int xres, const int yres)
-	{
+	virtual void propagateResolution(const int xres, const int yres) {
 		setResolution(xres, yres);
 	}
 
-	void *vSyncInactiveBuffer;
-	void *vSyncActiveBuffer;
-	void *inactiveBuffer;
-	void *blankActiveBuffer;
-
-	virtual Color **allocateFrameBuffer()
-	{
+	virtual Color **allocateFrameBuffer() {
 		return (Color **)DMABufferDescriptor::allocateDMABufferArray(yres, vidmodes[mode][vmodeproperties::hRes], true, syncBits(false, false));
 	}
 
-	virtual void allocateLineBuffers()
-	{
-		VGA::allocateLineBuffers((void **)frameBuffers[0]);
-	}
-
-	virtual void show(bool vSync = false)
-	{
-		if (!frameBufferCount)
-			return;
-		if (vSync)
-		{
-			//TODO read the I2S docs to find out
-		}
-		Graphics::show(vSync);
-		if(dmaBufferDescriptors)
-		for (int i = 0; i < yres * vidmodes[mode][vmodeproperties::vDiv]; i++)
-			dmaBufferDescriptors[(vidmodes[mode][vmodeproperties::vFront] + vidmodes[mode][vmodeproperties::vSync] + vidmodes[mode][vmodeproperties::vBack] + i) * 2 + 1].setBuffer(frontBuffer[i / vidmodes[mode][vmodeproperties::vDiv]], vidmodes[mode][vmodeproperties::hRes]);
-	}
-
-	virtual void scroll(int dy, Color color)
-	{
-		Graphics::scroll(dy, color);
-		if (frameBufferCount == 1)
-			show();
+	virtual void allocateLineBuffers() {
+		VGA::allocateLineBuffers((void **)frameBuffers);
 	}
 
   protected:
 
-	bool useInterrupt()
-	{ 
+	bool useInterrupt()	{ 
 		return VGA6Bit_useinterrupt;
 	};
 

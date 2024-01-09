@@ -22,9 +22,10 @@
 #include "rom/lldesc.h"
 #include "DMABufferDescriptor.h"
 
-class I2S
-{
+class I2S {
+
   public:
+
 	int i2sIndex;
 	intr_handle_t interruptHandle;
 	int dmaBufferDescriptorCount;
@@ -46,14 +47,14 @@ class I2S
 	bool initParallelOutputMode(const int *pinMap, int mode, const int bitCount = 8, int wordSelect = -1, int baseClock = -1);
 	virtual DMABufferDescriptor *firstDescriptorAddress() const;
 
-	void allocateDMABuffers(int count, int bytes);
-	void deleteDMABuffers();
-
 	void (*interruptStaticChild)(void *arg) = 0;
 
   protected:
+
 	virtual bool useInterrupt();
 	
   private:
+
 	static void interruptStatic(void *arg);
+
 };

@@ -92,12 +92,12 @@ const unsigned short int vidmodes[14][17]={
 	VgaMode_320x240_TV_48, VgaMode_360x200_TV_48, VgaMode_320x240_TV_128, VgaMode_360x200_TV_128, VgaMode_320x240_TV_PENTAGON , VgaMode_360x200_TV_PENTAGON		
 };
 
-class VGA : public I2S
-{
+class VGA : public I2S {
+
   public:
+
 	VGA(const int i2sIndex = 0);
 	
-	// bool init(const Mode &mode, const int *pinMap, const int bitCount, const int clockPin = -1);
 	bool init(int mode, const int *pinMap, const int bitCount, const int clockPin = -1);
 
 	int mode;
@@ -110,19 +110,10 @@ class VGA : public I2S
 	virtual void initSyncBits() = 0;
 	virtual long syncBits(bool h, bool v) = 0;
  
-	int currentLine;
 	long vsyncBit;
 	long hsyncBit;
 	long vsyncBitI;
 	long hsyncBitI;
-
-	// int totalLines;
-	volatile bool vSyncPassed;
-
-	void *vSyncInactiveBuffer;
-	void *vSyncActiveBuffer;
-	void *inactiveBuffer;
-	void *blankActiveBuffer;
 
 	virtual void allocateLineBuffers();
 	virtual void allocateLineBuffers(void **frameBuffer);

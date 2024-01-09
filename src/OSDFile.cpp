@@ -568,7 +568,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                                 int j = SaveRectpos - (((w >> 2) + 1) * h);
                                 SaveRectpos = j - 4;
                                 for (int  m = y; m < y + h; m++) {
-                                    uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                                    uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
                                     for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                         backbuffer32[n] = VIDEO::SaveRect[j];
                                         j++;
@@ -589,7 +589,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             int j = SaveRectpos - (((w >> 2) + 1) * h);
                             SaveRectpos = j - 4;
                             for (int  m = y; m < y + h; m++) {
-                                uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                                uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
                                 for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                     backbuffer32[n] = VIDEO::SaveRect[j];
                                     j++;

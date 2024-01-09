@@ -150,7 +150,7 @@ void OSD::WindowDraw() {
         VIDEO::SaveRect[SaveRectpos + 3] = h;
         SaveRectpos += 4;
         for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                 VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
                 SaveRectpos++;
@@ -323,7 +323,7 @@ unsigned short OSD::menuRun(string new_menu) {
                         //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
                         SaveRectpos = j - 4;
                         for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
                             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                 backbuffer32[n] = VIDEO::SaveRect[j];
                                 j++;
@@ -380,7 +380,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy)
         VIDEO::SaveRect[SaveRectpos + 3] = h;
         SaveRectpos += 4;
         for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                 VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
                 SaveRectpos++;
@@ -486,7 +486,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy)
                         //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
                         SaveRectpos = j - 4;
                         for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
                             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                 backbuffer32[n] = VIDEO::SaveRect[j];
                                 j++;
@@ -507,7 +507,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy)
                         //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
                         SaveRectpos = j - 4;
                         for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
                             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                 backbuffer32[n] = VIDEO::SaveRect[j];
                                 j++;
@@ -934,7 +934,7 @@ int OSD::menuTape(string title) {
                         int j = SaveRectpos - (((w >> 2) + 1) * h);
                         SaveRectpos = j - 4;
                         for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
                             for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                 backbuffer32[n] = VIDEO::SaveRect[j];
                                 j++;

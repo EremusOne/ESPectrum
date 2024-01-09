@@ -129,7 +129,7 @@ void CaptureToBmp()
 
     // process every scanline in reverse order (BMP is topdown)
     for (int y = h - 1; y >= 0; y--) {
-        uint32_t* src = (uint32_t*)VIDEO::vga.backBuffer[y];
+        uint32_t* src = (uint32_t*)VIDEO::vga.frameBuffers[y];
         uint32_t* dst = linebuf;
         // process every uint32 in scanline
         for (int i = 0; i < count; i++) {
