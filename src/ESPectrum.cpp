@@ -1203,6 +1203,9 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             if (!bitRead(ZXKeyb::ZXcols[1],1)) { // S -> Screen capture
                 CaptureToBmp();
             } else
+            if (!bitRead(ZXKeyb::ZXcols[5],1)) { // O -> Poke
+                OSD::pokeDialog();
+            } else
             if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
                 if (Config::CenterH > -16) Config::CenterH--;
                 Config::save("CenterH");

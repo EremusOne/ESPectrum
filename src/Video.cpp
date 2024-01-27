@@ -400,7 +400,7 @@ IRAM_ATTR void VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) 
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
         tstateDraw += tStatesPerLine;
-        lineptr32 = (uint32_t *)(vga.frameBuffers[linedraw_cnt]) + (is169 ? 5: 0);
+        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 5: 0);
         coldraw_cnt = 0;
         Draw = &TopBorder;
         TopBorder(0,false);
@@ -415,7 +415,7 @@ IRAM_ATTR void VIDEO::TopBorder_Blank_Pentagon(unsigned int statestoadd, bool co
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
         tstateDraw += tStatesPerLine;
-        lineptr16 = (uint16_t *)(vga.frameBuffers[linedraw_cnt]);
+        lineptr16 = (uint16_t *)(vga.frameBuffer[linedraw_cnt]);
         if (is169) {
             coldraw_cnt = 10;
             col_end = 170;
@@ -499,7 +499,7 @@ IRAM_ATTR void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
 
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
-        lineptr32 = (uint32_t *)(vga.frameBuffers[linedraw_cnt]) + (is169 ? 5: 0);
+        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 5: 0);
         coldraw_cnt = 0;
         unsigned int curline = linedraw_cnt - lin_end;
         bmpOffset = offBmp[curline];
@@ -516,8 +516,8 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Pentagon(unsigned int statestoadd, bool c
 
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
-        lineptr32 = (uint32_t *)(vga.frameBuffers[linedraw_cnt]);
-        lineptr16 = (uint16_t *)(vga.frameBuffers[linedraw_cnt]);
+        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]);
+        lineptr16 = (uint16_t *)(vga.frameBuffer[linedraw_cnt]);
         unsigned int curline = linedraw_cnt - lin_end;        
         bmpOffset = offBmp[curline];
         attOffset = offAtt[curline];
@@ -604,7 +604,7 @@ IRAM_ATTR void VIDEO::MainScreenLB_Pentagon(unsigned int statestoadd, bool conte
 
 }
 
-IRAM_ATTR void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
+/* IRAM_ATTR */void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
 
     uint8_t att, bmp;
 
@@ -661,7 +661,7 @@ IRAM_ATTR void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
 }
 
-IRAM_ATTR void VIDEO::MainScreen_Pentagon(unsigned int statestoadd, bool contended) {    
+/* IRAM_ATTR */void VIDEO::MainScreen_Pentagon(unsigned int statestoadd, bool contended) {    
 
     uint8_t att, bmp;
 
@@ -917,7 +917,7 @@ IRAM_ATTR void VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contende
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
         tstateDraw += tStatesPerLine;
-        lineptr32 = (uint32_t *)(vga.frameBuffers[linedraw_cnt]) + (is169 ? 5 : 0);
+        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 5 : 0);
         coldraw_cnt = 0;
         Draw = DrawOSD43;
         Draw(0,contended);
@@ -932,7 +932,7 @@ IRAM_ATTR void VIDEO::BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool
     if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
         tstateDraw += tStatesPerLine;
-        lineptr16 = (uint16_t *)(vga.frameBuffers[linedraw_cnt]); // Pentagon
+        lineptr16 = (uint16_t *)(vga.frameBuffer[linedraw_cnt]); // Pentagon
         if (is169) {
             coldraw_cnt = 10;
             col_end = 170;

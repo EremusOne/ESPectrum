@@ -568,7 +568,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                                 int j = SaveRectpos - (((w >> 2) + 1) * h);
                                 SaveRectpos = j - 4;
                                 for (int  m = y; m < y + h; m++) {
-                                    uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
+                                    uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
                                     for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                         backbuffer32[n] = VIDEO::SaveRect[j];
                                         j++;
@@ -589,7 +589,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             int j = SaveRectpos - (((w >> 2) + 1) * h);
                             SaveRectpos = j - 4;
                             for (int  m = y; m < y + h; m++) {
-                                uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffers[m]);
+                                uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
                                 for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                     backbuffer32[n] = VIDEO::SaveRect[j];
                                     j++;
@@ -623,7 +623,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             if (FileUtils::fileTypes[ftype].fdMode) {
 
-                if ((++fdCursorFlash & 0x15) == 0) {
+                if ((++fdCursorFlash & 0xf) == 0) {
 
                     menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));

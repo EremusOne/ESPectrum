@@ -57,7 +57,7 @@ class VGA6Bit : public VGA, public GraphicsR2G2B2S2Swapped
 	}
 
 	virtual void allocateLineBuffers() {
-		VGA::allocateLineBuffers((void **)frameBuffers);
+		VGA::allocateLineBuffers((void **)frameBuffer);
 	}
 
   protected:

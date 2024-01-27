@@ -21,7 +21,7 @@ class Graphics {
 	int cursorX, cursorY, cursorBaseX;
 	long frontColor, backColor;
 	Font *font;
-	Color **frameBuffers;
+	Color **frameBuffer;
 	int xres;
 	int yres;
 
@@ -60,7 +60,7 @@ class Graphics {
 		cursorX = cursorY = cursorBaseX = 0;
 		frontColor = -1;
 		backColor = 0;
-		frameBuffers = 0;
+		frameBuffer = 0;
 	}
 
 	virtual bool allocateFrameBuffers()	{
@@ -68,7 +68,7 @@ class Graphics {
 		if(yres <= 0 || xres <= 0)
 			return false;
 
-		frameBuffers = allocateFrameBuffer();
+		frameBuffer = allocateFrameBuffer();
 
 		return true;
 

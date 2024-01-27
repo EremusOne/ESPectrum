@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "       v1.0 "
+#define EMU_VERSION "      v1.01 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -74,6 +74,18 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
 #define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
 #define OSD_BETADISK_LOAD_ERR "ERROR Loading Disk file"
+
+#define POKE_ERR_ADDR1_EN "Address should be between 16384 and 65535"
+#define POKE_ERR_ADDR1_ES "Direccion debe estar entre 16384 y 65535"
+static const char *POKE_ERR_ADDR1[2] = { POKE_ERR_ADDR1_EN, POKE_ERR_ADDR1_ES };
+
+#define POKE_ERR_ADDR2_EN "Address should be lower than 16384"
+#define POKE_ERR_ADDR2_ES "Direccion debe ser menor que 16384"
+static const char *POKE_ERR_ADDR2[2] = { POKE_ERR_ADDR2_EN, POKE_ERR_ADDR2_ES };
+
+#define POKE_ERR_VALUE_EN "Value should be lower than 256"
+#define POKE_ERR_VALUE_ES "Valor debe ser menor que 256"
+static const char *POKE_ERR_VALUE[2] = { POKE_ERR_VALUE_EN, POKE_ERR_VALUE_ES };
 
 #define OSD_TAPE_SAVE_EN "SAVE command"
 #define OSD_TAPE_SAVE_ES "Comando SAVE"
@@ -146,7 +158,6 @@ static const char *OSD_FIRMW_WRITE[2] = { OSD_FIRMW_WRITE_EN,OSD_FIRMW_WRITE_ES}
 #define OSD_FIRMW_END_EN "Flashing complete. Rebooting."
 #define OSD_FIRMW_END_ES "  Completado. Reiniciando.   "
 static const char *OSD_FIRMW_END[2] = { OSD_FIRMW_END_EN,OSD_FIRMW_END_ES};
-
 
 #define OSD_NOFIRMW_ERR_EN "No firmware file found."
 #define OSD_NOFIRMW_ERR_ES "Firmware no encontrado."
