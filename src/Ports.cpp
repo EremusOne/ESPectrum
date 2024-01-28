@@ -75,9 +75,9 @@ uint8_t Ports::getFloatBusData48() {
 
     int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
     
-    if (halfpix & 0x01) return(VIDEO::grmem[offAtt[line] + hpoffset]);
+    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
 
-    return(VIDEO::grmem[offBmp[line] + hpoffset]);
+    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
 
 }
 
@@ -93,9 +93,9 @@ uint8_t Ports::getFloatBusData128() {
 
     int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
     
-    if (halfpix & 0x01) return(VIDEO::grmem[offAtt[line] + hpoffset]);
+    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
 
-    return(VIDEO::grmem[offBmp[line] + hpoffset]);
+    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
 
 }
 

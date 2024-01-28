@@ -87,9 +87,6 @@ static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
 };
 
 #define zxColor(color,bright) spectrum_colors[bright ? color + 8 : color]
-
-static uint16_t offBmp[SPEC_H];
-static uint16_t offAtt[SPEC_H];
 class VIDEO
 {
 public:
@@ -143,6 +140,9 @@ public:
   static void vgataskinit(void *unused);
 
   static uint8_t* grmem;
+
+  static uint16_t offBmp[SPEC_H];
+  static uint16_t offAtt[SPEC_H];
 
   static VGA6Bit vga;
 

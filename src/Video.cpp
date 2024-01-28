@@ -57,6 +57,8 @@ bool VIDEO::OSD = false;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
+uint16_t VIDEO::offBmp[SPEC_H];
+uint16_t VIDEO::offAtt[SPEC_H];
 uint32_t* VIDEO::SaveRect;
 int VIDEO::VsyncFinetune[2];
 uint32_t VIDEO::framecnt = 0;
@@ -220,8 +222,8 @@ void (*VIDEO::DrawOSD169)(unsigned int, bool) = &VIDEO::MainScreen;
 #define ULA_SWAP(y) ((y & 0xC0) | ((y & 0x38) >> 3) | ((y & 0x07) << 3))
 void precalcULASWAP() {
     for (int i = 0; i < SPEC_H; i++) {
-        offBmp[i] = ULA_SWAP(i) << 5;
-        offAtt[i] = ((i >> 3) << 5) + 0x1800;
+        VIDEO::offBmp[i] = ULA_SWAP(i) << 5;
+        VIDEO::offAtt[i] = ((i >> 3) << 5) + 0x1800;
     }
 }
 
