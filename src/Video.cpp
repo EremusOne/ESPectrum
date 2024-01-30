@@ -48,6 +48,12 @@ visit https://zxespectrum.speccy.org/contacto
 #pragma GCC optimize("O3")
 
 VGA6Bit VIDEO::vga;
+
+uint16_t VIDEO::spectrum_colors[NUM_SPECTRUM_COLORS] = {
+    BLACK,     BLUE,     RED,     MAGENTA,     GREEN,     CYAN,     YELLOW,     WHITE,
+    BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE, ORANGE
+};
+
 uint8_t VIDEO::borderColor = 0;
 uint32_t VIDEO::brd;
 uint32_t VIDEO::border32[8];

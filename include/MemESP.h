@@ -39,10 +39,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <inttypes.h>
 #include <esp_attr.h>
 
-// #define address_is_contended(addr) (1 == (addr >> 14))
-
 #define MEM_PG_SZ 0x4000
-
 class MemESP
 {
 public:
@@ -74,11 +71,8 @@ public:
     static uint16_t readword(uint16_t addr);
     static void writebyte(uint16_t addr, uint8_t data);
     static void writeword(uint16_t addr, uint16_t data);
-};
 
-static uint8_t staticMemPage0[0x4000] = { 0 };
-static uint8_t staticMemPage1[0x4000] = { 0 };
-static uint8_t staticMemPage2[0x4000] = { 0 };
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //

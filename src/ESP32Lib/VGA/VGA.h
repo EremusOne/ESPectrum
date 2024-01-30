@@ -48,6 +48,11 @@ enum vmodeproperties {
 
 // 48K 50hz VGA, SYNC @ 19968 micros, DAPR AUDIO LAG TEST -> CLEAN TONE
 #define VgaMode_320x240_50_48 { 8, 42, 50, 320, 27, 6, 53, 720, 3, 1, 1, 0,44,6,4,8,5 } // 40365 / 50.0801282
+
+// MODOS CVT -> TESTAR SINCRONIZACION REFRESCO PANTALLA
+// CVT: const Mode VGA::MODE320x240(8, 32, 40, 320, 3, 10, 16, 480, 2, 10196314, 1, 0, 59,45,5,7,0,0,5,7);  // 25491 / 50.08
+// #define VgaMode_320x240_50_48 { 8, 32, 40, 320, 3, 10, 16, 480, 2, 1, 0, 59,45,5,7,5,7 } // 25491 / 50.08
+
 #define VgaMode_360x200_50_48 { 18, 36, 54, 360, 31, 3, 33, 600, 3, 1, 1, 51,97,5,4,7,5 } // 33403 / 50.0801282
 
 // 128K

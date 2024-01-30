@@ -412,9 +412,9 @@ void ESPectrum::setup()
     // MEMORY SETUP
     //=======================================================================================
 
-    MemESP::ram5 = staticMemPage0;
-    MemESP::ram0 = staticMemPage1;
-    MemESP::ram2 = staticMemPage2;
+    MemESP::ram5 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+    MemESP::ram0 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
+    MemESP::ram2 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
 
     MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
     MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);

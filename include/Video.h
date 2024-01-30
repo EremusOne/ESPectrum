@@ -58,35 +58,27 @@ visit https://zxespectrum.speccy.org/contacto
 #define TS_SCREEN_360x200_PENTAGON 17074 // START OF VISIBLE ULA DRAW PENTAGON @ 360x200, SCANLINE 76, +48TS + 2TS (NEEDED TO FIT BORDER)
 
 // Colors for 6 bit mode
-//                            //   BB GGRR 
-#define BLACK       0xC0      // 1100 0000
-#define BLUE        0xE0      // 1110 0000
-#define RED         0xC2      // 1100 0010
-#define MAGENTA     0xE2      // 1110 0010
-#define GREEN       0xC8      // 1100 1000
-#define CYAN        0xE8      // 1110 1000
-#define YELLOW      0xCA      // 1100 1010
-#define WHITE       0xEA      // 1110 1010
-#define BRI_BLACK   0xC0      // 1100 0000
-#define BRI_BLUE    0xF0      // 1111 0000
-#define BRI_RED     0xC3      // 1100 0011
-#define BRI_MAGENTA 0xF3      // 1111 0011
-#define BRI_GREEN   0xCC      // 1100 1100
-#define BRI_CYAN    0xFC      // 1111 1100
-#define BRI_YELLOW  0xCF      // 1100 1111
-#define BRI_WHITE   0xFF      // 1111 1111
+//                  //  BBGGRR 
+#define BLACK       0b00000000 
+#define BLUE        0b00100000
+#define RED         0b00000010
+#define MAGENTA     0b00100010
+#define GREEN       0b00001000
+#define CYAN        0b00101000
+#define YELLOW      0b00001010
+#define WHITE       0b00101010
+#define BRI_BLACK   0b00000000
+#define BRI_BLUE    0b00110000
+#define BRI_RED     0b00000011
+#define BRI_MAGENTA 0b00110011
+#define BRI_GREEN   0b00001100
+#define BRI_CYAN    0b00111100
+#define BRI_YELLOW  0b00001111
+#define BRI_WHITE   0b00111111
+#define ORANGE      0b00000111 // used in ESPectrum logo text
 
-// used in ESPectrum logo text
-#define ESP_ORANGE  0xC7      // 1100 0111
+#define NUM_SPECTRUM_COLORS 17
 
-#define NUM_SPECTRUM_COLORS 16
-
-static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS] = {
-    BLACK,     BLUE,     RED,     MAGENTA,     GREEN,     CYAN,     YELLOW,     WHITE,
-    BRI_BLACK, BRI_BLUE, BRI_RED, BRI_MAGENTA, BRI_GREEN, BRI_CYAN, BRI_YELLOW, BRI_WHITE,
-};
-
-#define zxColor(color,bright) spectrum_colors[bright ? color + 8 : color]
 class VIDEO
 {
 public:
@@ -141,6 +133,8 @@ public:
 
   static uint8_t* grmem;
 
+  static uint16_t spectrum_colors[NUM_SPECTRUM_COLORS];
+
   static uint16_t offBmp[SPEC_H];
   static uint16_t offAtt[SPEC_H];
 
@@ -172,5 +166,7 @@ public:
   static uint32_t framecnt; // Frames elapsed
 
 };
+
+#define zxColor(color,bright) VIDEO::spectrum_colors[bright ? color + 8 : color]
 
 #endif // VIDEO_h
