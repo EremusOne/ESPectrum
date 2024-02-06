@@ -38,15 +38,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 uint8_t* MemESP::rom[5];
 
-uint8_t* MemESP::ram0 = NULL;
-uint8_t* MemESP::ram1 = NULL;
-uint8_t* MemESP::ram2 = NULL;
-uint8_t* MemESP::ram3 = NULL;
-uint8_t* MemESP::ram4 = NULL;
-uint8_t* MemESP::ram5 = NULL;
-uint8_t* MemESP::ram6 = NULL;
-uint8_t* MemESP::ram7 = NULL;
-uint8_t* MemESP::ram[8];
+uint8_t* MemESP::ram[8] = { NULL };
 uint8_t* MemESP::ramCurrent[4];
 bool MemESP::ramContended[4];
 

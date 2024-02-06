@@ -289,9 +289,9 @@ bool FileSNA::load(string sna_fn, string force_arch) {
     VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
 
     // read 48K memory
-    readBlockFile(file, MemESP::ram5, 0x4000);
-    readBlockFile(file, MemESP::ram2, 0x4000);
-    readBlockFile(file, MemESP::ram0, 0x4000);
+    readBlockFile(file, MemESP::ram[5], 0x4000);
+    readBlockFile(file, MemESP::ram[2], 0x4000);
+    readBlockFile(file, MemESP::ram[0], 0x4000);
 
     if (Z80Ops::is48) {
 
@@ -336,11 +336,11 @@ bool FileSNA::load(string sna_fn, string force_arch) {
             ESPectrum::trdos = false;
         }
 
-        MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-        MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+        MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+        MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
         MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
-        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
         if (Z80Ops::isPentagon) CPU::tstates = 22; // Pentagon SNA load fix... still dunno why this works but it works
 
@@ -841,8 +841,8 @@ bool FileZ80::load(string z80_fn) {
 
             uint8_t* pages[12] = {
                 MemESP::rom[0], MemESP::rom[2], MemESP::rom[1],
-                MemESP::ram0, MemESP::ram1, MemESP::ram2, MemESP::ram3,
-                MemESP::ram4, MemESP::ram5, MemESP::ram6, MemESP::ram7,
+                MemESP::ram[0], MemESP::ram[1], MemESP::ram[2], MemESP::ram[3],
+                MemESP::ram[4], MemESP::ram[5], MemESP::ram[6], MemESP::ram[7],
                 MemESP::rom[3] };
 
             // const char* pagenames[12] = { "rom0", "IDP", "rom1",
@@ -880,11 +880,11 @@ bool FileZ80::load(string z80_fn) {
 
             }
 
-            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-            MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+            MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
             MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
-            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
         }
     }
@@ -1077,13 +1077,13 @@ void FileZ80::loader48() {
 
     }
 
-    memset(MemESP::ram2,0,0x4000);
+    memset(MemESP::ram[2],0,0x4000);
 
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
     MemESP::ramContended[3] = false;
 
-    VIDEO::grmem = MemESP::ram5;
+    VIDEO::grmem = MemESP::ram[5];
 
 }
 
@@ -1141,8 +1141,8 @@ void FileZ80::loader128() {
 
     uint8_t* pages[12] = {
         MemESP::rom[0], MemESP::rom[2], MemESP::rom[1],
-        MemESP::ram0, MemESP::ram1, MemESP::ram2, MemESP::ram3,
-        MemESP::ram4, MemESP::ram5, MemESP::ram6, MemESP::ram7,
+        MemESP::ram[0], MemESP::ram[1], MemESP::ram[2], MemESP::ram[3],
+        MemESP::ram[4], MemESP::ram[5], MemESP::ram[6], MemESP::ram[7],
         MemESP::rom[3] };
 
     uint32_t dataLen = Z80Ops::is128 ? sizeof(load128) : sizeof(loadpentagon);
@@ -1192,16 +1192,16 @@ void FileZ80::loader128() {
     }
 
     // Empty void ram pages
-    memset(MemESP::ram1,0,0x4000);
-    memset(MemESP::ram2,0,0x4000);
-    memset(MemESP::ram3,0,0x4000);
-    memset(MemESP::ram4,0,0x4000);
-    memset(MemESP::ram6,0,0x4000);
+    memset(MemESP::ram[1],0,0x4000);
+    memset(MemESP::ram[2],0,0x4000);
+    memset(MemESP::ram[3],0,0x4000);
+    memset(MemESP::ram[4],0,0x4000);
+    memset(MemESP::ram[6],0,0x4000);
     
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
     MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
-    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
 }

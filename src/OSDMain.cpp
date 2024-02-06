@@ -1468,7 +1468,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
                 SaveRectpos++;
             }
         }
-        // printf("Saverectpos: %d\n",SaveRectpos);
+        // printf("Saverectpos: %04X\n",SaveRectpos << 2);
 
     }
 

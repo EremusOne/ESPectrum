@@ -624,10 +624,10 @@ void Config::requestMachine(string newArch, string newRomSet)
 
     MemESP::rom[4] = (uint8_t *) gb_rom_4_trdos_503;
 
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
-    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = MemESP::ram[5];
+    MemESP::ramCurrent[2] = MemESP::ram[2];
+    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
     MemESP::ramContended[0] = false;
     MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
@@ -635,19 +635,6 @@ void Config::requestMachine(string newArch, string newRomSet)
     MemESP::ramContended[3] = false;
   
 }
-
-//   fabgl::VK_FULLER_LEFT, // Left
-//     fabgl::VK_FULLER_RIGHT, // Right
-//     fabgl::VK_FULLER_UP, // Up
-//     fabgl::VK_FULLER_DOWN, // Down
-//     fabgl::VK_S, // Start
-//     fabgl::VK_M, // Mode
-//     fabgl::VK_FULLER_FIRE, // A
-//     fabgl::VK_9, // B
-//     fabgl::VK_SPACE, // C
-//     fabgl::VK_X, // X
-//     fabgl::VK_Y, // Y
-//     fabgl::VK_Z, // Z
 
 void Config::setJoyMap(uint8_t joynum, uint8_t joytype) {
 

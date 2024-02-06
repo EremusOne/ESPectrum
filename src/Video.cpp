@@ -377,7 +377,7 @@ void VIDEO::Reset() {
         lin_end3 = 240;
     }
 
-    grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+    grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
     #ifdef NO_VIDEO
         Draw = &NoVideo;

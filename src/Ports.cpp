@@ -201,7 +201,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 if (!MemESP::pagingLock) {
                     MemESP::pagingLock = bitRead(data, 5);
                     MemESP::bankLatch = data & 0x7;
-                    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+                    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
                     MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
                     if (MemESP::videoLatch != bitRead(data, 3)) {
                         MemESP::videoLatch = bitRead(data, 3);
@@ -210,11 +210,11 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                             VIDEO::Draw(2, false);
                             CPU::tstates -= 2;
                         }
-                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
                     }
                     MemESP::romLatch = bitRead(data, 4);
                     bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-                    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];            
+                    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];            
                 }
 
             }
@@ -332,12 +332,12 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             MemESP::pagingLock = bitRead(data, 5);
 
             MemESP::bankLatch = data & 0x7;
-            MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+            MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
             MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
                 MemESP::videoLatch = bitRead(data, 3);
@@ -351,7 +351,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                     }
                 }
 
-                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
             }
 
         }

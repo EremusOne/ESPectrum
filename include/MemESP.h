@@ -46,15 +46,6 @@ public:
 
     static uint8_t* rom[5];
 
-    static uint8_t* ram0;
-    static uint8_t* ram1;
-    static uint8_t* ram2;
-    static uint8_t* ram3;
-    static uint8_t* ram4;
-    static uint8_t* ram5;
-    static uint8_t* ram6;
-    static uint8_t* ram7;
-
     static uint8_t* ram[8];
 
     static uint8_t* ramCurrent[4];    
@@ -75,8 +66,8 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-//
-// inline memory access functions
+// Inline memory access functions
+///////////////////////////////////////////////////////////////////////////////
 
 inline uint8_t MemESP::readbyte(uint16_t addr) {
     uint8_t page = addr >> 14;
@@ -84,9 +75,9 @@ inline uint8_t MemESP::readbyte(uint16_t addr) {
     case 0:
         return rom[romInUse][addr];
     case 1:
-        return ram5[addr - 0x4000];
+        return ram[5][addr - 0x4000];
     case 2:
-        return ram2[addr - 0x8000];
+        return ram[2][addr - 0x8000];
     case 3:
         return ram[bankLatch][addr - 0xC000];
     default:
@@ -105,10 +96,10 @@ inline void MemESP::writebyte(uint16_t addr, uint8_t data)
     case 0:
         return;
     case 1:
-        ram5[addr - 0x4000] = data;
+        ram[5][addr - 0x4000] = data;
         break;
     case 2:
-        ram2[addr - 0x8000] = data;
+        ram[2][addr - 0x8000] = data;
         break;
     case 3:
         ram[bankLatch][addr - 0xC000] = data;

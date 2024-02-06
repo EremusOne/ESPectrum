@@ -920,7 +920,7 @@ IRAM_ATTR void Z80::check_trdos() {
             // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
             if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
                 MemESP::romInUse = 4;
-                MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
                 ESPectrum::trdos = true;
             }
 
@@ -941,7 +941,7 @@ IRAM_ATTR void Z80::check_trdos_unpage() {
             else
                 MemESP::romInUse = MemESP::romLatch;
             
-            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
             ESPectrum::trdos = false;
 
         }
@@ -951,7 +951,7 @@ IRAM_ATTR void Z80::check_trdos_unpage() {
             // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
             if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
                 MemESP::romInUse = 4;
-                MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
                 ESPectrum::trdos = true;                        
             }
 

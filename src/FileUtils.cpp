@@ -426,12 +426,17 @@ void FileUtils::Mergefiles(string fpath, uint8_t ftype, int chunk_cnt) {
 
     char fileName[8];
 
+    // multi_heap_info_t info;    
+    // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+    // string textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
+    // string textout2 = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
+    // printf("%s",textout.c_str());
+    // printf("%s\n",textout2.c_str());                                
+
     // Merge sort
     FILE *file1,*file2,*fout;
-    // char fname1[64];
-    // char fname2[64];
-    char fname1[128];
-    char fname2[128];
+    char fname1[64];
+    char fname2[64];
 
     file1 = fopen((fpath + fileTypes[ftype].indexFilename + "0").c_str(), "r");
     file2 = fopen((fpath + fileTypes[ftype].indexFilename + "1").c_str(), "r");
@@ -470,6 +475,12 @@ void FileUtils::Mergefiles(string fpath, uint8_t ftype, int chunk_cnt) {
             bufcnt++;
 
             if (bufcnt == 64) {
+                // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+                // textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
+                // textout2 = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
+                // printf(" Buffer size: %d\n",bufout.length());
+                // printf("%s",textout.c_str());
+                // printf("%s\n",textout2.c_str());                                
                 fwrite(bufout.c_str(),sizeof(char),bufout.length(),fout);
                 bufout = "";
                 bufcnt = 0;
