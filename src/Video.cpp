@@ -86,7 +86,7 @@ static unsigned int video_rest;
 static unsigned int bmpOffset;  // offset for bitmap in graphic memory
 static unsigned int attOffset;  // offset for attrib in graphic memory
 
-DRAM_ATTR static const uint8_t wait_st[243] = { 
+/* DRAM_ATTR */ static const uint8_t wait_st[243] = { 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
