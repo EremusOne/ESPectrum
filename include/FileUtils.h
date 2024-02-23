@@ -78,13 +78,15 @@ public:
     // static string getSortedFileList(string fileDir);
     static bool hasSNAextension(string filename);
     static bool hasZ80extension(string filename);
+    static bool hasPextension(string filename);
 
     static string MountPoint;
     static bool SDReady;
 
-    static string SNA_Path; // Current SNA path on the SD (for future folder support)
-    static string TAP_Path; // Current TAP path on the SD (for future folder support)    
-    static string DSK_Path; // Current DSK path on the SD (for future folder support)  
+    static string SNA_Path; // Current SNA path on the SD
+    static string TAP_Path; // Current TAP path on the SD
+    static string DSK_Path; // Current DSK path on the SD
+
     static DISK_FTYPE fileTypes[3];
 
 private:

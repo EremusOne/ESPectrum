@@ -42,8 +42,6 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
-// #include "esp_attr.h"
-
 #define JOY_CURSOR 0
 #define JOY_KEMPSTON 1
 #define JOY_SINCLAIR1 2
@@ -63,16 +61,21 @@ class Config
 {
 public:
 
-    // machine type change request
+    static void load();
+    static void save();
+    static void save(string value);
+
     static void requestMachine(string newArch, string newRomSet);
 
     static void setJoyMap(uint8_t joynum, uint8_t joy_type);
 
-    static const string archnames[3];
-
-    // config variables
-    static const string& getArch()   { return arch;   }
-    static const string& getRomSet() { return romSet; }
+    static string   arch;
+    static string   romSet;
+    static string   romSet48;
+    static string   romSet128;
+    static string   pref_arch;
+    static string   pref_romSet_48;
+    static string   pref_romSet_128;
     static string   ram_file;
     static string   last_ram_file;
     static uint8_t  esp32rev;
@@ -94,33 +97,22 @@ public:
     static int8_t CenterV;    
 
     static string   SNA_Path;
-    static string   TAP_Path;
-    static string   DSK_Path;
-
     static uint16_t SNA_begin_row;
     static uint16_t SNA_focus;
     static uint8_t  SNA_fdMode;
     static string   SNA_fileSearch;
 
+    static string   TAP_Path;
     static uint16_t TAP_begin_row;
     static uint16_t TAP_focus;
     static uint8_t  TAP_fdMode;
     static string   TAP_fileSearch;
 
+    static string   DSK_Path;
     static uint16_t DSK_begin_row;
     static uint16_t DSK_focus;
     static uint8_t  DSK_fdMode;
     static string   DSK_fileSearch;
-
-    // config persistence
-    static void load();
-    static void save();
-    static void save(string value);
-
-private:
-
-    static string   arch;
-    static string   romSet;
 
 };
 

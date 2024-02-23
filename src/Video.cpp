@@ -247,7 +247,7 @@ const int bluPins[] = {BLU_PINS_6B};
 
 void VIDEO::vgataskinit(void *unused) {
 
-    uint8_t Mode = (Config::videomode == 1 ? 2 : 8) + (Config::getArch() == "48K" ? 0 : (Config::getArch() == "128K" ? 2 : 4)) + (Config::aspect_16_9 ? 1 : 0);
+    uint8_t Mode = (Config::videomode == 1 ? 2 : 8) + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 2 : 4)) + (Config::aspect_16_9 ? 1 : 0);
 
     OSD::scrW = vidmodes[Mode][vmodeproperties::hRes];
     OSD::scrH = vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv];
@@ -321,8 +321,7 @@ void VIDEO::Reset() {
 
     OSD = false;
 
-    string arch = Config::getArch();
-    if (arch == "48K") {
+    if (Config::arch == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
         if (Config::videomode == 1) {
@@ -336,7 +335,7 @@ void VIDEO::Reset() {
         DrawOSD43 = VIDEO::BottomBorder;
         DrawOSD169 = VIDEO::MainScreen;
 
-    } else if (arch == "128K") {
+    } else if (Config::arch == "128K") {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
         if (Config::videomode == 1) {
@@ -350,7 +349,7 @@ void VIDEO::Reset() {
         DrawOSD43 = VIDEO::BottomBorder;
         DrawOSD169 = VIDEO::MainScreen;
 
-    } else if (arch == "Pentagon") {
+    } else if (Config::arch == "Pentagon") {
         tStatesPerLine = TSTATES_PER_LINE_PENTAGON;
         tStatesScreen = is169 ? TS_SCREEN_360x200_PENTAGON : TS_SCREEN_320x240_PENTAGON;
         // TODO: ADJUST THESE VALUES FOR PENTAGON
@@ -375,6 +374,12 @@ void VIDEO::Reset() {
         lin_end = 24;
         lin_end2 = 216;
         lin_end3 = 240;
+
+        // Fake scanlines test
+        // lin_end = 24 << 1;
+        // lin_end2 = 216 << 1;
+        // lin_end3 = 240 << 1;
+
     }
 
     grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
@@ -456,6 +461,8 @@ IRAM_ATTR void VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
             *lineptr32++ = brd;
         }
 
+        // linedraw_cnt++; // Fake scanlines test
+
         Draw = ++linedraw_cnt == lin_end ? &MainScreen_Blank : &TopBorder_Blank;
 
     } else {
@@ -510,6 +517,9 @@ IRAM_ATTR void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
         lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 5: 0);
         coldraw_cnt = 0;
         unsigned int curline = linedraw_cnt - lin_end;
+
+        // curline >>= 1; // Fake scanlines test
+
         bmpOffset = offBmp[curline];
         attOffset = offAtt[curline];
         Draw = MainScreenLB;
@@ -891,6 +901,9 @@ IRAM_ATTR void VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
         if (++coldraw_cnt == 40) {
 
             tstateDraw += tStatesPerLine;
+
+            // linedraw_cnt++; // Fake scanlines test            
+
             Draw = ++linedraw_cnt == lin_end2 ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
 
@@ -973,6 +986,8 @@ IRAM_ATTR void VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
             *lineptr32++ = brd;
         }
 
+        // linedraw_cnt++; // Fake scanlines test
+
         Draw = ++linedraw_cnt == lin_end3 ? &Blank : &BottomBorder_Blank ;
 
     } else {
@@ -1011,6 +1026,8 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
 
     video_rest = statestoadd & 0x03; // Mod 4
 
+    // if (linedraw_cnt < 440 || linedraw_cnt > 470) { // Fake scanlines test
+
     if (linedraw_cnt < 220 || linedraw_cnt > 235) {
 
         unsigned int i = coldraw_cnt;
@@ -1023,6 +1040,9 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
                 *lineptr32++ = brd;
                 *lineptr32++ = brd;
             }
+
+            // linedraw_cnt++; // Fake scanlines test
+            // Draw = ++linedraw_cnt == 480 ? &Blank : &BottomBorder_Blank ;
 
             Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
 
@@ -1045,6 +1065,10 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
             } else if (coldraw_cnt > 38) {
                 *lineptr32++ = brd;
                 *lineptr32++ = brd;
+
+                // linedraw_cnt++; // Fake scanlines test
+                // Draw = ++linedraw_cnt == 480 ? &Blank : &BottomBorder_Blank ;
+
                 Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
                 return;
             } else lineptr32 += 2;

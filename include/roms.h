@@ -37,7 +37,14 @@ visit https://zxespectrum.speccy.org/contacto
  #define ROMS_H
 
 #include "roms/romSinclair48K.h"
+#include "roms/rom48Kspanish.h"
+#include "roms/rom48Kcustom.h"
 #include "roms/romSinclair128K.h"
+#include "roms/rom128Kspanish.h"
+#include "roms/romPlus2.h"
+#include "roms/RomPlus2spanish.h"
+#include "roms/rom128Kcustom.h"
+#include "roms/S128_ZX81+_ROM.h"
 #include "roms/rompentagon128k.h"
 #include "roms/trdos.h"
 

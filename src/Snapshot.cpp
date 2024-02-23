@@ -54,6 +54,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "AySound.h"
 #include "loaders.h"
 #include "ZXKeyb.h"
+#include "Config.h"
 
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -64,7 +65,7 @@ visit https://zxespectrum.speccy.org/contacto
 using namespace std;
 
 // Change running snapshot
-bool LoadSnapshot(string filename, string force_arch) {
+bool LoadSnapshot(string filename, string force_arch, string force_romset) {
 
     bool res = false;
 
@@ -74,13 +75,17 @@ bool LoadSnapshot(string filename, string force_arch) {
 
         // OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
 
-        res = FileSNA::load(filename, force_arch);
+        res = FileSNA::load(filename, force_arch, force_romset);
 
     } else if (FileUtils::hasZ80extension(filename)) {
 
         // OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
 
         res = FileZ80::load(filename);
+
+    } else if (FileUtils::hasPextension(filename)) {
+
+        res = FileP::load(filename);
 
     }
 
@@ -99,7 +104,7 @@ bool LoadSnapshot(string filename, string force_arch) {
 
 // ///////////////////////////////////////////////////////////////////////////////
 
-bool FileSNA::load(string sna_fn, string force_arch) {
+bool FileSNA::load(string sna_fn, string force_arch, string force_romset) {
 
     FILE *file;
     int sna_size;
@@ -125,7 +130,7 @@ bool FileSNA::load(string sna_fn, string force_arch) {
 
         // If using some 128K arch it keeps unmodified. If not, we choose Pentagon because is SNA format default
         if (!Z80Ops::is48)
-            snapshotArch = Config::getArch();
+            snapshotArch = Config::arch;
         else    
             snapshotArch = "Pentagon";
 
@@ -135,13 +140,11 @@ bool FileSNA::load(string sna_fn, string force_arch) {
     }
 
     // Manage arch change
-    if (Config::getArch() != "48K") {
+    if (Config::arch != "48K") {
 
         if (snapshotArch == "48K") {
 
-            #ifdef SNAPSHOT_LOAD_FORCE_ARCH
-
-                Config::requestMachine("48K", "SINCLAIR");
+                Config::requestMachine("48K", force_romset);
 
                 // Condition this to 50hz mode
                 if(Config::videomode) {
@@ -168,16 +171,14 @@ bool FileSNA::load(string sna_fn, string force_arch) {
                     Config::save();
                     OSD::esp_hard_reset(); 
                 }                           
-
-            #endif
         
         } else {
             
-            if ((force_arch != "") && (Config::getArch() != force_arch)) {
+            if ((force_arch != "") && ((Config::arch != force_arch) || (Config::romSet != force_romset))) {
                 
                 snapshotArch = force_arch;
 
-                Config::requestMachine(force_arch, "SINCLAIR");
+                Config::requestMachine(force_arch, force_romset);
 
                 // Condition this to 50hz mode
                 if(Config::videomode) {
@@ -209,15 +210,15 @@ bool FileSNA::load(string sna_fn, string force_arch) {
 
         }
 
-    } else if (Config::getArch() == "48K") {
+    } else if (Config::arch == "48K") {
 
         if (snapshotArch != "48K") {
 
             if (force_arch == "")
-                Config::requestMachine("Pentagon", "SINCLAIR");
+                Config::requestMachine("Pentagon", "");
             else {
                 snapshotArch = force_arch;
-                Config::requestMachine(force_arch, "SINCLAIR");
+                Config::requestMachine(force_arch, force_romset);
             }
 
             // Condition this to 50hz mode
@@ -479,7 +480,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
     uint16_t SP = Z80::getRegSP();
     
-    if (Config::getArch() == "48K") {
+    if (Config::arch == "48K") {
         // decrement stack pointer it for pushing PC to stack, only on 48K
         SP -= 2;
         MemESP::writeword(SP, Z80::getRegPC());
@@ -493,7 +494,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
     // write RAM pages in 48K address space (0x4000 - 0xFFFF)
     uint8_t pages[3] = {5, 2, 0};
-    if (Config::getArch() != "48K")
+    if (Config::arch != "48K")
         pages[2] = MemESP::bankLatch;
 
     for (uint8_t ipage = 0; ipage < 3; ipage++) {
@@ -505,7 +506,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         }
     }
 
-    if (Config::getArch() != "48K") {
+    if (Config::arch != "48K") {
 
         // write pc
         writeWordFileLE( Z80::getRegPC(), file);
@@ -627,8 +628,32 @@ bool FileZ80::load(string z80_fn) {
     // printf("Config    -> Path: %s, begin_row: %d, focus: %d\n",Config::Path.c_str(),(int)Config::begin_row,(int)Config::focus);                    
 
     // Manage arch change
-    if (Config::getArch() != z80_arch) {
-        Config::requestMachine(z80_arch, "SINCLAIR");
+    if (Config::arch != z80_arch) {
+
+        string z80_romset = "";
+
+        printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+
+        if (z80_arch == "48K") {
+            if (Config::pref_romSet_48 == "48K" || Config::pref_romSet_48 == "48Kes")
+                z80_romset = Config::pref_romSet_48;
+        } else
+        if (z80_arch == "128K") {
+            if (mch == 12) { // +2
+                if (Config::pref_romSet_128 == "+2" || Config::pref_romSet_128 == "+2es")
+                    z80_romset = Config::pref_romSet_128;
+                else
+                    z80_romset = "+2";
+            } else {
+                if (Config::pref_romSet_128 == "128K" || Config::pref_romSet_128 == "128Kes")
+                    z80_romset = Config::pref_romSet_128;
+            }
+        }
+
+        printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+        
+        Config::requestMachine(z80_arch, z80_romset);
+
         // Condition this to 50hz mode
         if(Config::videomode) {
 
@@ -654,6 +679,45 @@ bool FileZ80::load(string z80_fn) {
             Config::save();
             OSD::esp_hard_reset(); 
         }                           
+    } else {
+
+        if (z80_arch == "128K") {
+            
+            string z80_romset = "";
+            
+            printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+
+            if (mch == 12) { // +2
+
+                if (Config::romSet != "+2" && Config::romSet != "+2es" && Config::romSet != "128Kcs") {
+
+                    if (Config::pref_romSet_128 == "+2" || Config::pref_romSet_128 == "+2es")
+                        z80_romset = Config::pref_romSet_128;
+                    else
+                        z80_romset = "+2";
+
+                    Config::requestMachine(z80_arch, z80_romset);        
+
+                }
+
+            } else {
+
+                if (Config::romSet != "128K" && Config::romSet != "128Kes" && Config::romSet != "128Kcs") {
+
+                    if (Config::pref_romSet_128 == "128K" || Config::pref_romSet_128 == "128Kes")
+                        z80_romset = Config::pref_romSet_128;
+                    else
+                        z80_romset = "128K";
+
+                    Config::requestMachine(z80_arch, z80_romset);        
+                }
+
+            }
+
+            printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+
+        }
+
     }
     
     ESPectrum::reset();
@@ -1089,7 +1153,46 @@ void FileZ80::loader48() {
 
 void FileZ80::loader128() {
 
-    unsigned char *z80_array = Z80Ops::is128 ? (unsigned char *) load128 : (unsigned char *) loadpentagon;
+    unsigned char *z80_array;
+    uint32_t dataLen;
+
+    if (Config::arch == "128K") {
+
+        z80_array = (unsigned char *) load128;
+        dataLen = sizeof(load128);
+
+        if (Config::romSet == "128K") {
+            printf("128K\n");
+            z80_array = (unsigned char *) load128;
+            dataLen = sizeof(load128);
+        } else if (Config::romSet == "128Kes") {
+            printf("128Kes\n");
+            z80_array = (unsigned char *) load128spa;
+            dataLen = sizeof(load128spa);
+        } else if (Config::romSet == "+2") {
+            printf("+2\n");
+            z80_array = (unsigned char *) loadplus2;
+            dataLen = sizeof(loadplus2);
+        } else if (Config::romSet == "+2es") {
+            printf("+2es\n");
+            z80_array = (unsigned char *) loadplus2;
+            dataLen = sizeof(loadplus2);
+        } else if (Config::romSet == "ZX81+") {
+            printf("ZX81+\n");
+            z80_array = (unsigned char *) loadzx81;
+            dataLen = sizeof(loadzx81);
+        }
+
+
+    } else if (Config::arch == "Pentagon") {
+
+        z80_array = (unsigned char *) loadpentagon;
+        dataLen = sizeof(loadpentagon);
+
+    }
+
+    // unsigned char *z80_array = Z80Ops::is128 ? (unsigned char *) load128spa : (unsigned char *) loadpentagon;    
+    // uint32_t dataLen = Z80Ops::is128 ? sizeof(load128spa) : sizeof(loadpentagon);
 
     uint32_t dataOffset = 86;
 
@@ -1145,7 +1248,6 @@ void FileZ80::loader128() {
         MemESP::ram[4], MemESP::ram[5], MemESP::ram[6], MemESP::ram[7],
         MemESP::rom[3] };
 
-    uint32_t dataLen = Z80Ops::is128 ? sizeof(load128) : sizeof(loadpentagon);
     while (dataOffset < dataLen) {
         uint8_t hdr0 = z80_array[0]; dataOffset ++;
         uint8_t hdr1 = z80_array[1]; dataOffset ++;
@@ -1193,7 +1295,13 @@ void FileZ80::loader128() {
 
     // Empty void ram pages
     memset(MemESP::ram[1],0,0x4000);
-    memset(MemESP::ram[2],0,0x4000);
+
+    // ZX81+ loader has block 3 void and has info on block5
+    if (Config::romSet128 == "ZX81+")
+        memset(MemESP::ram[0],0,0x4000);
+    else
+        memset(MemESP::ram[2],0,0x4000);
+
     memset(MemESP::ram[3],0,0x4000);
     memset(MemESP::ram[4],0,0x4000);
     memset(MemESP::ram[6],0,0x4000);
@@ -1203,5 +1311,69 @@ void FileZ80::loader128() {
     MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
     VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool FileP::load(string p_fn) {
+
+    FILE *file;
+    int p_size;
+
+    file = fopen(p_fn.c_str(), "rb");
+    if (file==NULL) {
+        printf("FileP: Error opening %s\n",p_fn.c_str());
+        return false;
+    }
+
+    fseek(file,0,SEEK_END);
+    p_size = ftell(file);
+    rewind (file);
+
+    if (p_size > (0x4000 - 9)) {
+        printf("FileP: Invalid .P file %s\n",p_fn.c_str());
+        return false;
+    }
+
+    // Manage arch change
+    if (Config::arch != "128K" || Config::romSet != "ZX81+") {
+        Config::requestMachine("128K", "ZX81+");
+        // Condition this to 50hz mode
+        if(Config::videomode) {
+
+            Config::SNA_Path = FileUtils::SNA_Path;
+            Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
+            Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+            Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
+            Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
+
+            Config::TAP_Path = FileUtils::TAP_Path;
+            Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
+            Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+            Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
+            Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
+
+            Config::DSK_Path = FileUtils::DSK_Path;
+            Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
+            Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+            Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
+            Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
+
+            Config::ram_file = p_fn;
+            Config::save();
+            OSD::esp_hard_reset(); 
+        }                           
+    }
+
+    FileZ80::loader128();
+
+    uint16_t address = 16393;
+    uint8_t page = address >> 14;
+    fread(&MemESP::ramCurrent[page][address & 0x3fff], p_size, 1, file);
+
+    fclose(file);
+
+    return true;
 
 }

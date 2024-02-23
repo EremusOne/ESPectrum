@@ -63,8 +63,7 @@ void CPU::reset() {
     
     CPU::latetiming = Config::AluTiming;
 
-    string arch = Config::getArch();
-    if (arch == "48K") {
+    if (Config::arch == "48K") {
         Ports::getFloatBusData = &Ports::getFloatBusData48;
         Z80Ops::is48 = true;
         Z80Ops::is128 = false;
@@ -74,7 +73,7 @@ void CPU::reset() {
         CPU::IntEnd = INT_END48 + CPU::latetiming;
         // Set emulation loop sync target
         ESPectrum::target = MICROS_PER_FRAME_48;
-    } else if (arch == "128K") {
+    } else if (Config::arch == "128K") {
         Ports::getFloatBusData = &Ports::getFloatBusData128;
         Z80Ops::is48 = false;
         Z80Ops::is128 = true;
@@ -84,7 +83,7 @@ void CPU::reset() {
         CPU::IntEnd = INT_END128 + CPU::latetiming;
         // Set emulation loop sync target
         ESPectrum::target = MICROS_PER_FRAME_128;
-    } else if (arch == "Pentagon") {
+    } else if (Config::arch == "Pentagon") {
         Z80Ops::is48 = false;
         Z80Ops::is128 = false;
         Z80Ops::isPentagon = true;
@@ -103,6 +102,12 @@ void CPU::reset() {
 ///////////////////////////////////////////////////////////////////////////////
 
 IRAM_ATTR void CPU::loop() {
+
+    // Check NMI
+    if (Z80::isNMI()) {
+        Z80::execute();
+        Z80::doNMI();
+    }
 
     while (tstates < IntEnd) Z80::execute();
     

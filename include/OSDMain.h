@@ -135,6 +135,7 @@ public:
     static void esp_hard_reset();
 
     static esp_err_t updateFirmware(FILE *firmware);
+    static esp_err_t updateROM(FILE *rombinary, uint8_t arch);
 
     static char stats_lin1[25]; // "CPU: 00000 / IDL: 00000 ";
     static char stats_lin2[25]; // "FPS:000.00 / FND:000.00 ";

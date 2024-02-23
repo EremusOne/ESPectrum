@@ -189,7 +189,15 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                         if (de->d_type == DT_REG || de->d_type == DT_DIR) {
                             if (fname.compare(0,1,".") != 0) {
                                 // printf("Fname: %s Fname size: %d\n",fname.c_str(),fname.size());
-                                if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+
+                                size_t fpos = fname.find_last_of(".");
+                                // if (fpos != string::npos) {
+                                //     printf("%s %s\n", fname.c_str(), fname.substr(fname.find_last_of(".")).c_str());
+                                // }
+
+                                // if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+                                if ((de->d_type == DT_DIR) || ((fpos != string::npos) && (std::find(filexts.begin(),filexts.end(),fname.substr(fpos)) != filexts.end()))) {                                    
+
                                     // Calculate name checksum
                                     for (int i = 0; i < fname.length(); i++) {
                                         hash = (hash << 4) + fname[i];

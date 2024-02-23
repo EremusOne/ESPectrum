@@ -394,6 +394,9 @@ public:
     // Check INT
     static void checkINT(void);
 
+    // Do NMI
+    static void doNMI(void);
+
     static void incRegR(uint8_t inc);
 
     static void Xor(uint8_t oper8);

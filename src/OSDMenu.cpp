@@ -56,7 +56,7 @@ using namespace std;
 #include "Z80_JLS/z80.h"
 #include "Tape.h"
 
-#define MENU_MAX_ROWS 18
+#define MENU_MAX_ROWS 17
 
 // Scroll
 #define UP true
@@ -117,7 +117,7 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
         VIDEO::vga.setTextColor(zxColor(16,0), zxColor(0, 0));
         VIDEO::vga.print("ESP");        
         VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
-        VIDEO::vga.print(("ectrum " + Config::getArch()).c_str());
+        VIDEO::vga.print(("ectrum " + Config::arch).c_str());
         for (uint8_t i = line.length(); i < (cols - margin); i++)
             VIDEO::vga.print(" ");
     } else {
@@ -643,7 +643,7 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
         VIDEO::vga.setTextColor(zxColor(16,0), zxColor(0, 0));
         VIDEO::vga.print("ESP");        
         VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
-        VIDEO::vga.print(("ectrum " + Config::getArch()).c_str());
+        VIDEO::vga.print(("ectrum " + Config::arch).c_str());
         for (uint8_t i = line.length(); i < (cols - margin); i++)
             VIDEO::vga.print(" ");
     } else {

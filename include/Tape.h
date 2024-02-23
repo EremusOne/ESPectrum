@@ -116,7 +116,8 @@ public:
     static std::vector<TapeBlock> TapeListing;
 
     static void Init();
-    static void Open(string name);
+    // static void TZX_Open(string name);
+    static void TAP_Open(string name);
     static void TAP_Play();
     static void TAP_Stop();    
     static void TAP_Read();

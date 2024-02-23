@@ -58,8 +58,9 @@ using namespace std;
 #define ESP_AUDIO_SAMPLES_PENTAGON  640
 #define ESP_AUDIO_SAMPLES_DIV_PENTAGON  7
 
-#define ESP_DEFAULT_VOLUME -8
-
+#define ESP_VOLUME_DEFAULT -8
+#define ESP_VOLUME_MAX 0
+#define ESP_VOLUME_MIN -16
 class ESPectrum
 {
 public:

@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "      v1.03 "
+#define EMU_VERSION "      v1.07 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -167,6 +167,26 @@ static const char *OSD_NOFIRMW_ERR[2] = { OSD_NOFIRMW_ERR_EN,OSD_NOFIRMW_ERR_ES}
 #define OSD_FIRMW_ERR_ES "Error actualizando firmware."
 static const char *OSD_FIRMW_ERR[2] = { OSD_FIRMW_ERR_EN,OSD_FIRMW_ERR_ES};
 
+#define OSD_ROM_ERR_EN "Problem flashing ROM."
+#define OSD_ROM_ERR_ES "Error flasheando ROM."
+static const char *OSD_ROM_ERR[2] = { OSD_ROM_ERR_EN,OSD_ROM_ERR_ES};
+
+#define OSD_NOROMFILE_ERR_EN "No custom ROM file found."
+#define OSD_NOROMFILE_ERR_ES "Custom ROM no encontrada."
+static const char *OSD_NOROMFILE_ERR[2] = { OSD_NOROMFILE_ERR_EN,OSD_NOROMFILE_ERR_ES};
+
+#define OSD_ROM_EN "Flash Custom ROM"
+#define OSD_ROM_ES "Flashear ROM Custom"
+static const char *OSD_ROM[2] = { OSD_ROM_EN,OSD_ROM_ES};
+
+#define OSD_ROM_BEGIN_EN "   Preparing flash space.   "
+#define OSD_ROM_BEGIN_ES "Preparando espacio en flash."
+static const char *OSD_ROM_BEGIN[2] = { OSD_ROM_BEGIN_EN,OSD_ROM_BEGIN_ES};
+
+#define OSD_ROM_WRITE_EN "    Flashing custom ROM.    "
+#define OSD_ROM_WRITE_ES "    Grabando ROM custom.    "
+static const char *OSD_ROM_WRITE[2] = { OSD_ROM_WRITE_EN,OSD_ROM_WRITE_ES};
+
 #define MENU_SNA_TITLE_EN "Select Snapshot"
 #define MENU_SNA_TITLE_ES "Elija snapshot"
 static const char *MENU_SNA_TITLE[2] = { MENU_SNA_TITLE_EN,MENU_SNA_TITLE_ES };
@@ -181,12 +201,12 @@ static const char *MENU_DSK_TITLE[2] = { MENU_DSK_TITLE_EN,MENU_DSK_TITLE_ES };
 
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
-    "Load (SNA,Z80) \t[F2] >\n"\
+    "Load (SNA,Z80,P) \t[F2] >\n"\
     "Load snapshot \t[F3] >\n"\
     "Save snapshot \t[F4] >\n"
 #define MENU_SNA_ES \
     "Menu snapshots\n"\
-    "Cargar (SNA,Z80) \t[F2] >\n"\
+    "Cargar (SNA,Z80,P) \t[F2] >\n"\
     "Cargar snapshot \t[F3] >\n"\
     "Guardar snapshot \t[F4] >\n"
 static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
@@ -231,6 +251,7 @@ static const char *MENU_BETADRIVE[2] = { MENU_BETADRIVE_EN,MENU_BETADRIVE_ES };
     "Snapshot\t>\n"\
     "Tape\t>\n"\
     "Betadisk\t>\n"\
+	"Machine\t>\n"\
     "Reset\t>\n"\
     "Options\t>\n"\
     "Help\n"\
@@ -239,6 +260,7 @@ static const char *MENU_BETADRIVE[2] = { MENU_BETADRIVE_EN,MENU_BETADRIVE_ES };
     "Snapshots\t>\n"\
     "Casete\t>\n"\
     "Betadisk\t>\n"\
+    "Modelo\t>\n"\
     "Resetear\t>\n"\
     "Opciones\t>\n"\
     "Ayuda\n"\
@@ -248,24 +270,38 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
 #define MENU_OPTIONS_EN \
     "Options menu\n"\
     "Storage\t>\n"\
-    "Machine\t>\n"\
-    "Aspect ratio\t>\n"\
+    "Preferred Machine\t>\n"\
+    "Preferred ROM\t>\n"\	
     "Joystick\t>\n"\
-    "PS/2 Joystick\t>\n"\
-    "Language\t>\n"\
+    "Joystick emulation\t>\n"\
+    "Aspect ratio\t>\n"\
     "Other\t>\n"\
-	"Firmware update\n"
+    "Language\t>\n"\
+	"Update\t>\n"
 #define MENU_OPTIONS_ES \
     "Menu opciones\n"\
     "Almacenamiento\t>\n"\
-    "Modelo\t>\n"\
-    "Rel. aspecto\t>\n"\
+    "Modelo preferido\t>\n"\
+    "ROM preferida\t>\n"\	
     "Joystick\t>\n"\
-    "Joystick PS/2\t>\n"\
-    "Idioma\t>\n"\
+    "Emulaci" "\xA2" "n joystick\t>\n"\
+    "Relaci" "\xA2" "n de aspecto\t>\n"\
     "Otros\t>\n"\
-	"Actualizar firmware\n"
+    "Idioma\t>\n"\
+	"Actualizar\t>\n"
 static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
+
+#define MENU_UPDATE_EN \
+    "Update\n"\
+	"Firmware\n"\
+	"Custom ROM 48K\n"\
+	"Custom ROM 128k\n"		
+#define MENU_UPDATE_ES \
+    "Actualizar\n"\
+	"Firmware\n"\
+	"ROM Custom 48K\n"\
+	"ROM Custom 128k\n"		
+static const char *MENU_UPDATE_FW[2] = { MENU_UPDATE_EN,MENU_UPDATE_ES };
 
 #define MENU_ASPECT_EN \
     "Aspect Ratio\n"\
@@ -289,47 +325,23 @@ static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
     "Resetear ESP32\t[F12]\n"
 static const char *MENU_RESET[2] = { MENU_RESET_EN, MENU_RESET_ES };
 
-#define MENU_PERSIST_EN \
-    "Slot 1\n"\
-    "Slot 2\n"\
-    "Slot 3\n"\
-    "Slot 4\n"\
-    "Slot 5\n"\
-    "Slot 6\n"\
-    "Slot 7\n"\
-    "Slot 8\n"\
-    "Slot 9\n"\
-    "Slot 10\n"
-#define MENU_PERSIST_ES \
-    "Ranura 1\n"\
-    "Ranura 2\n"\
-    "Ranura 3\n"\
-    "Ranura 4\n"\
-    "Ranura 5\n"\
-    "Ranura 6\n"\
-    "Ranura 7\n"\
-    "Ranura 8\n"\
-    "Ranura 9\n"\
-    "Ranura 10\n"    
 #define MENU_PERSIST_SAVE_EN \
-    "Save snapshot\n" MENU_PERSIST_EN
+    "Save snapshot\n"
 #define MENU_PERSIST_SAVE_ES \
-    "Guardar snapshot\n" MENU_PERSIST_ES
+    "Guardar snapshot\n"
 static const char *MENU_PERSIST_SAVE[2] = { MENU_PERSIST_SAVE_EN, MENU_PERSIST_SAVE_ES };
 
 #define MENU_PERSIST_LOAD_EN \
-    "Load snapshot\n" MENU_PERSIST_EN
+    "Load snapshot\n"
 #define MENU_PERSIST_LOAD_ES \
-    "Cargar snapshot\n" MENU_PERSIST_ES
+    "Cargar snapshot\n"
 static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_LOAD_ES };
 
 #define MENU_STORAGE_EN "Storage\n"\
     "Flash tape load\t>\n"
-    // "Refresh directories\n"
 #define MENU_STORAGE_ES "Almacenamiento\n"\
     "Carga rapida cinta\t>\n"
-    // "Refrescar directorios\n"
-// static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
 #define MENU_FLASHLOAD_EN "Flash load\n"\
     "Yes\t[Y]\n"\
@@ -337,7 +349,7 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
 #define MENU_FLASHLOAD_ES "Carga rapida\n"\
     "Si\t[Y]\n"\
     "No\t[N]\n"
-// static const char *MENU_FLASHLOAD[2] = { MENU_FLASHLOAD_EN, MENU_FLASHLOAD_ES };
+static const char *MENU_FLASHLOAD[2] = { MENU_FLASHLOAD_EN, MENU_FLASHLOAD_ES };
 
 #define MENU_OTHER_EN "Other\n"\
     "AY on 48K\t>\n"\
@@ -383,15 +395,89 @@ static const char *MENU_ALUTIMING[2] = { MENU_ALUTIMING_EN, MENU_ALUTIMING_ES };
     "No\t[N]\n"
 static const char *MENU_ISSUE2[2] = { MENU_ISSUE2_EN, MENU_ISSUE2_ES };
 
-#define MENU_ARCH_EN "Select machine\n"\
-    "ZX Spectrum 48K\n"\
-    "ZX Spectrum 128K\n"\
-    "Pentagon 128K\n"
-#define MENU_ARCH_ES "Elija modelo\n"\
-    "ZX Spectrum 48K\n"\
-    "ZX Spectrum 128K\n"\
-    "Pentagon 128K\n"
-static const char *MENU_ARCH[2] = { MENU_ARCH_EN, MENU_ARCH_ES };
+#define MENU_ARCH_EN "Select machine\n"
+
+#define MENU_ARCH_ES "Elija modelo\n"
+
+#define MENU_ARCHS "Spectrum 48K\t>\n"\
+    "Spectrum 128K\t>\n"\
+	"Pentagon 128K\n"
+
+static const char *MENU_ARCH[2] = { MENU_ARCH_EN MENU_ARCHS, MENU_ARCH_ES MENU_ARCHS };
+
+#define MENU_ROMS48_EN "Select ROM\n"\
+	"48K\n"\
+    "48K Spanish\n"\
+    "Custom\n"
+
+#define MENU_ROMS128_EN "Select ROM\n"\
+	"128K\n"\
+    "128K Spanish\n"\
+	"+2\n"\
+    "+2 Spanish\n"\
+    "ZX81+\n"\
+    "Custom\n"\
+
+#define MENU_ROMS48_ES "Elija ROM\n"\
+	"48K\n"\
+    "48K Espa" "\xA4" "ol\n"\
+    "Custom\n"
+
+#define MENU_ROMS128_ES "Elija ROM\n"\
+	"128K\n"\
+    "128K Espa" "\xA4" "ol\n"\
+	"+2\n"\
+    "+2 Espa" "\xA4" "ol\n"\
+    "ZX81+\n"\
+    "Custom\n"\
+
+static const char *MENU_ROMS48[2] = { MENU_ROMS48_EN, MENU_ROMS48_ES };
+static const char *MENU_ROMS128[2] = { MENU_ROMS128_EN, MENU_ROMS128_ES };
+
+#define MENU_ARCHS_PREF "Spectrum 48K\t[4]\n"\
+    "Spectrum 128K\t[1]\n"\
+	"Pentagon 128K\t[P]\n"
+
+static const char *MENU_ARCH_PREF[2] = { "Preferred machine\n" MENU_ARCHS_PREF "Last used\t[L]\n", "Modelo preferido\n" MENU_ARCHS_PREF "Ultimo utilizado\t[L]\n"};
+
+#define MENU_ROMS_PREF "Spectrum 48K\t>\n"\
+    "Spectrum 128K\t>\n"
+
+static const char *MENU_ROM_PREF[2] = { "Preferred ROM\n" MENU_ROMS_PREF, "ROM preferida\n" MENU_ROMS_PREF};
+
+#define MENU_ROMS48_PREF_EN "Select ROM\n"\
+	"48K\t[48K  ]\n"\
+    "48K Spanish\t[48Kes]\n"\
+    "Custom\t[48Kcs]\n"\
+	"Last used\t[Last ]\n"
+
+#define MENU_ROMS128_PREF_EN "Select ROM\n"\
+	"128K\t[128K  ]\n"\
+    "128K Spanish\t[128Kes]\n"\
+	"+2\t[+2    ]\n"\
+    "+2 Spanish\t[+2es  ]\n"\
+    "ZX81+\t[ZX81+ ]\n"\
+    "Custom\t[128Kcs]\n"\
+	"Last used\t[Last  ]\n"	
+
+#define MENU_ROMS48_PREF_ES "Elija ROM\n"\
+	"48K\t[48K  ]\n"\
+    "48K Espa" "\xA4" "ol\t[48Kes]\n"\
+    "Custom\t[48Kcs]\n"\
+	"Ultima usada\t[Last ]\n"
+
+#define MENU_ROMS128_PREF_ES "Elija ROM\n"\
+	"128K\t[128K  ]\n"\
+    "128K Espa" "\xA4" "ol\t[128Kes]\n"\
+	"+2\t[+2    ]\n"\
+    "+2 Espa" "\xA4" "ol\t[+2es  ]\n"\
+    "ZX81+\t[ZX81+ ]\n"\
+    "Custom\t[128Kcs]\n"\
+	"Ultima usada\t[Last  ]\n"
+
+static const char *MENU_ROM_PREF_48[2] = { MENU_ROMS48_PREF_EN, MENU_ROMS48_PREF_ES };
+
+static const char *MENU_ROM_PREF_128[2] = { MENU_ROMS128_PREF_EN, MENU_ROMS128_PREF_ES };
 
 #define MENU_INTERFACE_LANG_EN "Language\n"\
     "English\t[ ]\n"\
@@ -401,48 +487,33 @@ static const char *MENU_ARCH[2] = { MENU_ARCH_EN, MENU_ARCH_ES };
     "Espanol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
 
-#define MENU_JOY_EN "Joystick menu\n"\
-    "Joystick 1\n"\
-    "Joystick 2\n"
-#define MENU_JOY_ES "Menu Joystick\n"\
-    "Joystick 1\n"\
-    "Joystick 2\n"
-static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
+#define MENU_JOY_EN "Joystick menu\n"
 
-#define MENU_DEFJOY_EN "Joystick#\n"\
-    "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"\
-    "Sinclair 1\t[ ]\n"\
-    "Sinclair 2\t[ ]\n"\
-    "Fuller\t[ ]\n"\
-	"Assign keys\n"
-	// "Load map\n"\
-	// "Save map\n"
-#define MENU_DEFJOY_ES "Joystick#\n"\
-    "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"\
-    "Sinclair 1\t[ ]\n"\
-    "Sinclair 2\t[ ]\n"\
-    "Fuller\t[ ]\n"\
-	"Definir\n"
-	// "Cargar mapa\n"\
-	// "Guardar mapa\n"
-static const char *MENU_DEFJOY[2] = { MENU_DEFJOY_EN, MENU_DEFJOY_ES };
+#define MENU_JOY_ES "Menu Joystick\n"
 
-#define MENU_JOYPS2_EN "PS/2 Joystick\n"\
-    "Cursor\t[ ]\n"\
+#define MENU_JOYS "Joystick 1\n"\
+    "Joystick 2\n"
+
+static const char *MENU_JOY[2] = { MENU_JOY_EN MENU_JOYS, MENU_JOY_ES MENU_JOYS};
+
+
+#define MENU_DEFJOY_TITLE "Joystick#\n"\
+
+#define MENU_DEFJOYS "Cursor\t[ ]\n"\
     "Kempston\t[ ]\n"\
     "Sinclair 1\t[ ]\n"\
     "Sinclair 2\t[ ]\n"\
-    "Fuller\t[ ]\n"\	
-	"Cursor Keys as Joy\t>\n"
-#define MENU_JOYPS2_ES "Joystick PS/2\n"\
-    "Cursor\t[ ]\n"\
-    "Kempston\t[ ]\n"\
-    "Sinclair 1\t[ ]\n"\
-    "Sinclair 2\t[ ]\n"\
-    "Fuller\t[ ]\n"\	
-	"Joy en teclas de cursor\t>\n"
+    "Fuller\t[ ]\n"
+
+#define MENU_DEFJOY_EN "Assign keys\n"
+#define MENU_DEFJOY_ES "Definir\n"
+
+static const char *MENU_DEFJOY[2] = { MENU_DEFJOY_TITLE MENU_DEFJOYS MENU_DEFJOY_EN, MENU_DEFJOY_TITLE MENU_DEFJOYS MENU_DEFJOY_ES };
+
+#define MENU_JOYPS2_EN "Joystick emulation\n" MENU_DEFJOYS "Cursor Keys as Joy\t>\n"
+
+#define MENU_JOYPS2_ES "Emulaci" "\xA2" "n Joystick\n" MENU_DEFJOYS "Joy en teclas de cursor\t>\n"
+
 static const char *MENU_JOYPS2[2] = { MENU_JOYPS2_EN, MENU_JOYPS2_ES };
 
 #define MENU_CURSORJOY_EN "Cursor as Joy\n"\

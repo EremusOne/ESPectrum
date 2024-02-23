@@ -78,7 +78,10 @@ bool ESPectrum::ps2kbd2 = false;
 //=======================================================================================
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_PENTAGON] = { 0 };
 uint32_t* ESPectrum::overSamplebuf;
-signed char ESPectrum::aud_volume = ESP_DEFAULT_VOLUME;
+
+signed char ESPectrum::aud_volume = ESP_VOLUME_DEFAULT;
+// signed char ESPectrum::aud_volume = ESP_VOLUME_MAX; // For .tap player test
+
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::audbufcntover = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
@@ -342,6 +345,54 @@ void ESPectrum::setup()
     
     Config::load();
 
+    // printf("---------------------------------\n");
+    // printf("Ram file: %s\n",Config::ram_file.c_str());
+    // printf("Arch: %s\n",Config::arch.c_str());
+    // printf("pref Arch: %s\n",Config::pref_arch.c_str());
+    // printf("romSet: %s\n",Config::romSet.c_str());
+    // printf("romSet48: %s\n",Config::romSet48.c_str());
+    // printf("romSet128: %s\n",Config::romSet128.c_str());        
+    // printf("pref_romSet_48: %s\n",Config::pref_romSet_48.c_str());
+    // printf("pref_romSet_128: %s\n",Config::pref_romSet_128.c_str());        
+    
+    // Set arch if there's no snapshot to load
+    if (Config::ram_file == NO_RAM_FILE) {
+
+        if (Config::pref_arch.substr(Config::pref_arch.length()-1) == "R") {
+
+            Config::pref_arch.pop_back();
+            Config::save("pref_arch");
+
+        } else {
+
+            if (Config::pref_arch != "Last") Config::arch = Config::pref_arch;
+
+            if (Config::arch == "48K") {
+                if (Config::pref_romSet_48 != "Last") 
+                    Config::romSet = Config::pref_romSet_48;
+                else
+                    Config::romSet = Config::romSet48;            
+            } else if (Config::arch == "128K") {
+                if (Config::pref_romSet_128 != "Last")
+                    Config::romSet = Config::pref_romSet_128;
+                else
+                    Config::romSet = Config::romSet128;
+            } else Config::romSet = "Pentagon";
+
+        }
+
+    }
+
+    // printf("---------------------------------\n");
+    // printf("Ram file: %s\n",Config::ram_file.c_str());
+    // printf("Arch: %s\n",Config::arch.c_str());
+    // printf("pref Arch: %s\n",Config::pref_arch.c_str());
+    // printf("romSet: %s\n",Config::romSet.c_str());
+    // printf("romSet48: %s\n",Config::romSet48.c_str());
+    // printf("romSet128: %s\n",Config::romSet128.c_str());        
+    // printf("pref_romSet_48: %s\n",Config::pref_romSet_48.c_str());
+    // printf("pref_romSet_128: %s\n",Config::pref_romSet_128.c_str());        
+
     //=======================================================================================
     // INIT PS/2 KEYBOARD
     //=======================================================================================
@@ -407,29 +458,23 @@ void ESPectrum::setup()
     //=======================================================================================
 
     for (int i=0; i < 8; i++) {
-        MemESP::ram[i] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-        if (!MemESP::ram[i] == NULL)
-            memset(MemESP::ram[i],0,0x4000);
-        else
+        MemESP::ram[i] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+        if (MemESP::ram[i] == NULL)
             if (Config::slog_on) printf("ERROR! Unable to allocate ram%d\n",i);
     }
 
-    // MemESP::ram[5] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    // MemESP::ram[0] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    // MemESP::ram[2] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    // MemESP::ram[7] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    // MemESP::ram[1] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram[3] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram[4] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram[6] = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[5] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[7] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
 
-    // if (Config::slog_on) {
-    //     if (MemESP::ram[1] == NULL) printf("ERROR! Unable to allocate ram1\n");        
-    //     if (MemESP::ram[3] == NULL) printf("ERROR! Unable to allocate ram3\n");        
-    //     if (MemESP::ram[4] == NULL) printf("ERROR! Unable to allocate ram4\n");        
-    //     if (MemESP::ram[6] == NULL) printf("ERROR! Unable to allocate ram6\n");
-    //     if (MemESP::ram[7] == NULL) printf("ERROR! Unable to allocate ram7\n");
-    // }
+    // MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[3] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[4] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[6] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+
+    // Load romset
+    Config::requestMachine(Config::arch, Config::romSet);
 
     MemESP::romInUse = 0;
     MemESP::bankLatch = 0;
@@ -442,11 +487,12 @@ void ESPectrum::setup()
     MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
     MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = Config::getArch() == "Pentagon" ? false : true;
+    MemESP::ramContended[1] = Config::arch == "Pentagon" ? false : true;
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
 
-    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+    // if (Config::arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+    MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
 
     if (Config::slog_on) showMemInfo("RAM Initialized");
 
@@ -473,17 +519,17 @@ void ESPectrum::setup()
     if (overSamplebuf == NULL) printf("Can't allocate oversamplebuffer\n");
 
     // Set samples per frame and AY_emu flag depending on arch
-    if (Config::getArch() == "48K") {
+    if (Config::arch == "48K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
-    } else if (Config::getArch() == "128K") {
+    } else if (Config::arch == "128K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
-    } else if (Config::getArch() == "Pentagon") {
+    } else if (Config::arch == "Pentagon") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_PENTAGON;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_PENTAGON;
         AY_emu = true;        
@@ -525,9 +571,6 @@ void ESPectrum::setup()
     // Init disk controller
     Betadisk.Init();
 
-    // Load romset
-    Config::requestMachine(Config::getArch(), Config::getRomSet());
-
     // Reset cpu
     CPU::reset();
 
@@ -552,13 +595,11 @@ void ESPectrum::setup()
         FileUtils::fileTypes[DISK_DSKFILE].fdMode = Config::DSK_fdMode;
         FileUtils::fileTypes[DISK_DSKFILE].fileSearch = Config::DSK_fileSearch;
 
-        LoadSnapshot(Config::ram_file,"");
+        LoadSnapshot(Config::ram_file,"","");
 
         Config::last_ram_file = Config::ram_file;
-        #ifndef SNAPSHOT_LOAD_LAST
         Config::ram_file = NO_RAM_FILE;
         Config::save("ram");
-        #endif
 
     }
 
@@ -585,15 +626,10 @@ void ESPectrum::reset()
         ESPectrum::JoyVKTranslation[n] = (fabgl::VirtualKey) Config::joydef[n];
 
     // Memory
+    MemESP::romInUse = 0;
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
     MemESP::romLatch = 0;
-
-    string arch = Config::getArch();
-
-    if (arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
-
-    MemESP::romInUse = 0;
 
     MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
     MemESP::ramCurrent[1] = MemESP::ram[5];
@@ -601,9 +637,12 @@ void ESPectrum::reset()
     MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
     MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
+    MemESP::ramContended[1] = Config::arch == "Pentagon" ? false : true;
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
+
+    // if (Config::arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+    MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
 
     VIDEO::Reset();
 
@@ -631,17 +670,17 @@ void ESPectrum::reset()
 
     // Set samples per frame and AY_emu flag depending on arch
     int prevAudio_freq = Audio_freq;
-    if (arch == "48K") {
+    if (Config::arch == "48K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
-    } else if (arch == "128K") {
+    } else if (Config::arch == "128K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
-    } else if (arch == "Pentagon") {
+    } else if (Config::arch == "Pentagon") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_PENTAGON;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_PENTAGON;
         AY_emu = true;        
@@ -780,6 +819,8 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             if ((Kdown) && ((KeytoESP >= fabgl::VK_F1 && KeytoESP <= fabgl::VK_F12) || KeytoESP == fabgl::VK_PAUSE)) {
 
                 OSD::do_OSD(KeytoESP, Kbd->isVKDown(fabgl::VK_LCTRL) || Kbd->isVKDown(fabgl::VK_RCTRL));
+
+                // VIDEO::vga.clear(zxColor(0,0)); // Fake scanlines test
 
                 Kbd->emptyVirtualKeyQueue();
                 
@@ -1199,6 +1240,9 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             if (!bitRead(ZXKeyb::ZXcols[5],1)) { // O -> Poke
                 OSD::pokeDialog();
             } else
+            if (!bitRead(ZXKeyb::ZXcols[7],3)) { // N -> NMI
+                Z80::triggerNMI();
+            } else
             if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
                 if (Config::CenterH > -16) Config::CenterH--;
                 Config::save("CenterH");
@@ -1293,6 +1337,7 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
         }
 
         if (AY_emu) {
+        // if (false) { // Disable AY for .tap player test
 
             if (faudbufcntAY < samplesPerFrame)
                 AySound::gen_sound(samplesPerFrame - faudbufcntAY , faudbufcntAY);
