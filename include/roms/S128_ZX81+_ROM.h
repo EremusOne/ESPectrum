@@ -1,3 +1,8 @@
+// ZX81+ ROM (C) 2007 PAUL FARROW, v3.11, www.fruitcake.plus.com
+//
+// Included courtesy of and with permission from Paul Farrow.
+//
+
 #ifndef ROM_S128_ZX81_H
  #define ROM_S128_ZX81_H
 
