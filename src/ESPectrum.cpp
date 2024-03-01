@@ -144,13 +144,18 @@ IRAM_ATTR void delayMicroseconds(int64_t us)
 }
 
 //=======================================================================================
-// TIMING
+// TIMING / SYNC
 //=======================================================================================
 
-static double totalseconds = 0;
-static double totalsecondsnodelay = 0;
-
+double ESPectrum::totalseconds = 0;
+double ESPectrum::totalsecondsnodelay = 0;
 int64_t ESPectrum::target;
+int ESPectrum::sync_cnt = 0;
+volatile bool ESPectrum::vsync = false;
+int64_t ESPectrum::ts_start;
+int64_t ESPectrum::elapsed;
+int64_t ESPectrum::idle;
+bool ESPectrum::ESP_delay = true;
 
 //=======================================================================================
 // LOGGING / TESTING
@@ -556,6 +561,8 @@ void ESPectrum::setup()
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 
+    if (Config::tape_player) AY_emu = false; // Disable AY emulation if tape player mode is set
+
     // Init CPU
     Z80::create();
 
@@ -686,6 +693,8 @@ void ESPectrum::reset()
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_PENTAGON;
     }
+
+    if (Config::tape_player) AY_emu = false; // Disable AY emulation if tape player mode is set
 
     ESPoffset = 0;
 
@@ -818,6 +827,8 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
             if ((Kdown) && ((KeytoESP >= fabgl::VK_F1 && KeytoESP <= fabgl::VK_F12) || KeytoESP == fabgl::VK_PAUSE)) {
 
+                int64_t osd_start = esp_timer_get_time();
+
                 OSD::do_OSD(KeytoESP, Kbd->isVKDown(fabgl::VK_LCTRL) || Kbd->isVKDown(fabgl::VK_RCTRL));
 
                 // VIDEO::vga.clear(zxColor(0,0)); // Fake scanlines test
@@ -828,9 +839,11 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0xbf;
                 zxDelay = 15;
                 
-                totalseconds = 0;
-                totalsecondsnodelay = 0;
-                VIDEO::framecnt = 0;
+                // totalseconds = 0;
+                // totalsecondsnodelay = 0;
+                // VIDEO::framecnt = 0;
+
+                ESPectrum::ts_start += esp_timer_get_time() - osd_start;
 
                 return;
 
@@ -1192,6 +1205,8 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
             zxDelay = 15;
 
+            int64_t osd_start = esp_timer_get_time();
+
             if (!bitRead(ZXKeyb::ZXcols[3],0)) {
                 OSD::do_OSD(fabgl::VK_F1,0);
             } else
@@ -1234,6 +1249,9 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
                 OSD::do_OSD(fabgl::VK_F1,true);
             } else
+            if (!bitRead(ZXKeyb::ZXcols[2],4)) { // T -> Turbo
+                OSD::do_OSD(fabgl::VK_F2,true);
+            } else
             if (!bitRead(ZXKeyb::ZXcols[1],1)) { // S -> Screen capture
                 CaptureToBmp();
             } else
@@ -1266,8 +1284,12 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 zxDelay = 0;
 
             if (zxDelay) {
+
                 // Set all keys as not pressed
                 for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0xbf;
+
+                ESPectrum::ts_start += esp_timer_get_time() - osd_start;
+
                 return;
             }
         
@@ -1337,7 +1359,6 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
         }
 
         if (AY_emu) {
-        // if (false) { // Disable AY for .tap player test
 
             if (faudbufcntAY < samplesPerFrame)
                 AySound::gen_sound(samplesPerFrame - faudbufcntAY , faudbufcntAY);
@@ -1383,15 +1404,7 @@ IRAM_ATTR void ESPectrum::AYGetSample() {
 // MAIN LOOP
 //=======================================================================================
 
-int ESPectrum::sync_cnt = 0;
-volatile bool ESPectrum::vsync = false;
-
 IRAM_ATTR void ESPectrum::loop() {    
-
-int64_t ts_start, elapsed;
-int64_t idle;
-
-// int ESPmedian = 0;
 
 // // Video adjustment
 // VIDEO::vga.clear(zxColor(3,0)); // For overscan testing. Remove once adjusted
@@ -1417,7 +1430,8 @@ for(;;) {
     ts_start = esp_timer_get_time();
 
     // Send audioBuffer to pwmaudio
-    xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
+    if (ESP_delay) xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
+
     audbufcnt = 0;
     audbufcntover = 0;
     audbufcntAY = 0;    
@@ -1428,130 +1442,87 @@ for(;;) {
     faudbufcnt = audbufcnt;
     faudioBit = lastaudioBit;
     faudbufcntAY = audbufcntAY;
-    xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
+    
+    if (ESP_delay) xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
     processKeyboard();
 
     // Update stats every 50 frames
-    if (VIDEO::framecnt == 1 && VIDEO::OSD) OSD::drawStats();
+    if (VIDEO::OSD && VIDEO::framecnt >= 50) {
 
-    // Flashing flag change
-    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
+        if (VIDEO::OSD == 1 && Tape::tapeStatus==TAPE_LOADING) {
 
-    // OSD calcs
-    if (VIDEO::framecnt) {
-        
-        totalsecondsnodelay += esp_timer_get_time() - ts_start;
-        
-        if (totalseconds >= 1000000) {
+            snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(0 + ESPectrum::TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
 
-            if (elapsed < 100000) {
-        
-                // printf("Tstates: %u, RegPC: %u\n",CPU::tstates,Z80::getRegPC());
+            float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
+            snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
 
-                #ifdef LOG_DEBUG_TIMING
-                printf("===========================================================================\n");
-                printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
-                printf("[Audio] Volume: %d\n", aud_volume);
-                printf("[Framecnt] %u; [Seconds] %f; [FPS] %f; [FPS (no delay)] %f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-                // printf("[ESPoffset] %d\n", ESPoffset);
-                showMemInfo();
-                #endif
-
-                #ifdef TESTING_CODE
-
-                // printf("[Framecnt] %u; [Seconds] %f; [FPS] %f; [FPS (no delay)] %f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-
-                // showMemInfo();
-                
-                snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-                // snprintf(linea1, sizeof(linea1), "CPU: %05d / TGT: %05d ", (int)elapsed, (int)target);
-                // snprintf(linea1, sizeof(linea1), "CPU: %05d / BMX: %05d ", (int)(elapsed), bmax);
-                // snprintf(linea1, sizeof(linea1), "CPU: %05d / OFF: %05d ", (int)(elapsed), (int)(ESPmedian/50));
-
-                snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-
-                #else
-
-                if (Tape::tapeStatus==TAPE_LOADING) {
-
-                    snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(0 + TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
-
-                    float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
-                    snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
-
-                    if ((++TapeNameScroller + 12) > Tape::tapeFileName.length()) TapeNameScroller = 0;
-
-                } else {
-
-                    snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-                    
-                    // Audio tests
-                    // snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / SND: %05d ", (int)(elapsed), (int)pwm_audio_rbstats());
-                    // snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / SND: %05d ", (int)(elapsed), (int)pwm_audio_pwmcount());                    
-                    
-                    snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (totalseconds / 1000000), VIDEO::framecnt / (totalsecondsnodelay / 1000000));
-
-                }
-
-                #endif
-            }
-
-            totalseconds = 0;
-            totalsecondsnodelay = 0;
-            VIDEO::framecnt = 0;
-
-            // ESPmedian = 0;
-
-        }
-        
-        elapsed = esp_timer_get_time() - ts_start;
-        idle = target - elapsed - ESPoffset;
-
-        #ifdef VIDEO_FRAME_TIMING    
-
-        if(Config::videomode) {
-
-            if (sync_cnt++ == 0) {
-                if (idle > 0) { 
-                    delayMicroseconds(idle);
-                }
-            } else {
-
-                // Audio sync (once every 250 frames ~ 2,5 seconds)
-                if (sync_cnt++ == 250) {
-                    ESPoffset = 128 - pwm_audio_rbstats();
-                    sync_cnt = 0;
-                }
-
-                // Wait for vertical sync
-                for (;;) {
-                    if (vsync) break;
-                }
-
-            }
+            if ((++ESPectrum::TapeNameScroller + 12) > Tape::tapeFileName.length()) ESPectrum::TapeNameScroller = 0;
 
         } else {
 
-            if (idle > 0) { 
-                delayMicroseconds(idle);
-            }
-
-            // Audio sync
-            if (sync_cnt++ & 0x0f) {
-                ESPoffset = 128 - pwm_audio_rbstats();
-                sync_cnt = 0;
-            }
-
-            // ESPmedian += ESPoffset;
+            snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / IDL: %05d ", (int)(ESPectrum::elapsed), (int)(ESPectrum::idle));
+            snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (ESPectrum::totalseconds / 1000000), VIDEO::framecnt / (ESPectrum::totalsecondsnodelay / 1000000));
 
         }
-        
-        #endif
 
-        totalseconds += esp_timer_get_time() - ts_start;
+        OSD::drawStats();
+
+        totalseconds = 0;
+        totalsecondsnodelay = 0;
+        VIDEO::framecnt = 0;
 
     }
+
+    // Flashing flag change
+    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
+        
+    elapsed = esp_timer_get_time() - ts_start;
+    idle = target - elapsed - ESPoffset;
+
+    totalsecondsnodelay += elapsed;
+
+    if (ESP_delay == false) {
+        totalseconds += elapsed;
+        continue;
+    }
+
+    if(Config::videomode && !Config::tape_player) {
+
+        if (sync_cnt++ == 0) {
+
+            if (idle > 0)
+                delayMicroseconds(idle);
+
+        } else {
+
+            // Audio sync (once every 128 frames ~ 2,5 seconds)
+            if (sync_cnt & 0x80) {
+                ESPoffset = 128 - pwm_audio_rbstats();
+                sync_cnt = 0;
+            } 
+
+            // Wait for vertical sync
+            for (;;) {
+                if (vsync) break;
+            }
+
+        }
+
+    } else {
+
+        if (idle > 0)
+            delayMicroseconds(idle);
+
+        // Audio sync
+        if (++sync_cnt & 0x10) {
+            ESPoffset = 128 - pwm_audio_rbstats();
+            sync_cnt = 0;
+        } 
+
+    }
+
+    totalseconds += esp_timer_get_time() - ts_start;
 
 }
 

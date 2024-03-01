@@ -155,7 +155,7 @@ public:
   // static uint8_t contendOffset;
   // static uint8_t contendMod;    
 
-  static bool OSD;
+  static uint8_t OSD;
 
   static uint32_t* SaveRect;
 

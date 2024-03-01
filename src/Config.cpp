@@ -71,6 +71,8 @@ uint8_t  Config::lang = 0;
 bool     Config::AY48 = true;
 bool     Config::Issue2 = true;
 bool     Config::flashload = true;
+bool     Config::tape_player = false; // Tape player mode
+bool     Config::tape_timing_rg = false; // Rodolfo Guerra ROMs tape timings
 
 uint8_t  Config::joystick1 = JOY_SINCLAIR1;
 uint8_t  Config::joystick2 = JOY_SINCLAIR2;
@@ -333,6 +335,24 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_str(handle, "tape_player", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "tape_player", str_data, &required_size);
+            // printf("Tape player:%s\n",str_data);
+            tape_player = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "tape_timing_rg", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "tape_timing_rg", str_data, &required_size);
+            // printf("Tape timing RG:%s\n",str_data);
+            tape_timing_rg = strcmp(str_data, "false");
+            free(str_data);
+        }
+
         err = nvs_get_u8(handle, "joystick1", &Config::joystick1);
         if (err == ESP_OK) {
             // printf("joystick1:%u\n",Config::joystick1);
@@ -568,6 +588,12 @@ void Config::save(string value) {
 
         if((value=="flashload") || (value=="all"))
             nvs_set_str(handle,"flashload",flashload ? "true" : "false");
+
+        if((value=="tape_player") || (value=="all"))
+            nvs_set_str(handle,"tape_player",tape_player ? "true" : "false");
+
+        if((value=="tape_timing_rg") || (value=="all"))
+            nvs_set_str(handle,"tape_timing_rg",tape_timing_rg ? "true" : "false");
 
         if((value=="joystick1") || (value=="all"))
             nvs_set_u8(handle,"joystick1",Config::joystick1);

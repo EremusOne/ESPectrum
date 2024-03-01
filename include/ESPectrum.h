@@ -95,11 +95,17 @@ public:
     static bool AY_emu;
     static int Audio_freq;
 
+    static bool ESP_delay;
     static int sync_cnt;    
 
     static int TapeNameScroller;
 
+    static int64_t ts_start;
     static int64_t target;
+    static double totalseconds;
+    static double totalsecondsnodelay;
+    static int64_t elapsed;
+    static int64_t idle;
 
     static int ESPoffset; // Testing
 

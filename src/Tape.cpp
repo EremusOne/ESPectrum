@@ -40,12 +40,14 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
+#include "Tape.h"
 #include "hardpins.h"
 #include "FileUtils.h"
 #include "CPU.h"
-#include "Tape.h"
 #include "Ports.h"
+#include "Video.h"
 #include "OSDMain.h"
+#include "Config.h"
 #include "messages.h"
 #include "Z80_JLS/z80.h"
 
@@ -64,6 +66,17 @@ uint16_t Tape::tapeNumBlocks;
 uint32_t Tape::tapebufByteCount;
 uint32_t Tape::tapePlayOffset;
 size_t Tape::tapeFileSize;
+
+// Tape timing values
+uint16_t Tape::tapeSyncLen;
+uint16_t Tape::tapeSync1Len;
+uint16_t Tape::tapeSync2Len;
+uint16_t Tape::tapeBit0PulseLen; // lenght of pulse for bit 0
+uint16_t Tape::tapeBit1PulseLen; // lenght of pulse for bit 1
+uint16_t Tape::tapeHdrLong;  // Header sync lenght in pulses
+uint16_t Tape::tapeHdrShort; // Data sync lenght in pulses
+uint16_t Tape::tapeBlkPauseLen; 
+uint8_t Tape::tapeLastBitUsedBytes;
 
 static uint8_t tapeCurByte;
 static uint8_t tapePhase;
@@ -248,29 +261,54 @@ void Tape::TAP_Open(string name) {
 
     rewind(tape);
 
+    // Set tape timing values
+    if (Config::tape_timing_rg) {
+
+        tapeSyncLen = TAPE_SYNC_LEN_RG;
+        tapeSync1Len = TAPE_SYNC1_LEN_RG;
+        tapeSync2Len = TAPE_SYNC2_LEN_RG;
+        tapeBit0PulseLen = TAPE_BIT0_PULSELEN_RG;
+        tapeBit1PulseLen = TAPE_BIT1_PULSELEN_RG;
+        tapeHdrLong = TAPE_HDR_LONG_RG;
+        tapeHdrShort = TAPE_HDR_SHORT_RG;
+        tapeBlkPauseLen = TAPE_BLK_PAUSELEN_RG; 
+
+    } else {
+
+        tapeSyncLen = TAPE_SYNC_LEN;
+        tapeSync1Len = TAPE_SYNC1_LEN;
+        tapeSync2Len = TAPE_SYNC2_LEN;
+        tapeBit0PulseLen = TAPE_BIT0_PULSELEN;
+        tapeBit1PulseLen = TAPE_BIT1_PULSELEN;
+        tapeHdrLong = TAPE_HDR_LONG;
+        tapeHdrShort = TAPE_HDR_SHORT;
+        tapeBlkPauseLen = TAPE_BLK_PAUSELEN; 
+
+    }
+
 }
 
-// void Tape::TZX_Open(string name) {
+void Tape::TZX_Open(string name) {
 
-//     if (tape != NULL) {
-//         fclose(tape);
-//         tape = NULL;
-//     }
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+    }
 
-//     string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+    string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
 
-//     tape = fopen(fname.c_str(), "rb");
-//     if (tape == NULL) {
-//         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
-//         return;
-//     }
+    tape = fopen(fname.c_str(), "rb");
+    if (tape == NULL) {
+        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+        return;
+    }
 
-//     fseek(tape,0,SEEK_END);
-//     tapeFileSize = ftell(tape);
-//     rewind(tape);
-//     if (tapeFileSize == 0) return;
+    fseek(tape,0,SEEK_END);
+    tapeFileSize = ftell(tape);
+    rewind(tape);
+    if (tapeFileSize == 0) return;
     
-//     tapeFileName = name;
+    tapeFileName = name;
 
 //     Tape::TapeListing.clear(); // Clear TapeListing vector
 //     std::vector<TapeBlock>().swap(TapeListing); // free memory
@@ -380,7 +418,7 @@ void Tape::TAP_Open(string name) {
 
 //     rewind(tape);
 
-// }
+}
 
 uint32_t Tape::CalcTapBlockPos(int block) {
 
@@ -399,6 +437,87 @@ uint32_t Tape::CalcTapBlockPos(int block) {
     }
 
     return CurrentPos;
+
+}
+
+string Tape::tapeBlockReadData(int Blocknum) {
+
+    int tapeContentIndex=0;
+    int tapeBlkLen=0;
+    string blktype;
+    char buf[48];
+    char fname[10];
+
+    tapeContentIndex = Tape::CalcTapBlockPos(Blocknum);
+
+    // Analyze .tap file
+    tapeBlkLen=(readByteFile(Tape::tape) | (readByteFile(Tape::tape) << 8));
+
+    // Read the flag byte from the block.
+    // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
+    // to indicate a data block.
+    uint8_t flagByte;
+    if (tapeContentIndex + 2 < Tape::tapeFileSize) {
+        flagByte = readByteFile(Tape::tape);
+    } else {
+        flagByte = 255;
+    }
+
+    // Process the block depending on if it is a header or a data block.
+    // Block type 0 should be a header block, but it happens that headerless blocks also
+    // have block type 0, so we need to check the block length as well.
+    if (flagByte == 0 && tapeBlkLen == 19) { // This is a header.
+
+        // Get the block type.
+        uint8_t blocktype = readByteFile(Tape::tape);
+
+        switch (blocktype) {
+        case 0: 
+            blktype = "Program      ";
+            break;
+        case 1: 
+            blktype = "Number array ";
+            break;
+        case 2: 
+            blktype = "Char array   ";
+            break;
+        case 3: 
+            blktype = "Code         ";
+            break;
+        case 4: 
+            blktype = "Data block   ";
+            break;
+        case 5: 
+            blktype = "Info         ";
+            break;
+        case 6: 
+            blktype = "Unassigned   ";
+            break;
+        default:
+            blktype = "Unassigned   ";
+            break;
+        }
+
+        // Get the filename.
+        if (blocktype > 5) {
+            fname[0] = '\0';
+        } else {
+            for (int i = 0; i < 10; i++) {
+                fname[i] = readByteFile(Tape::tape);
+            }
+            fname[10]='\0';
+        }
+
+    } else {
+
+        blktype = "Data block   ";
+        fname[0]='\0';
+
+    }
+
+    snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);
+
+    return buf;
 
 }
 
@@ -541,16 +660,17 @@ void Tape::TAP_Play() {
 
         tapePhase=TAPE_PHASE_SYNC;
         tapePulseCount=0;
-        tapeEarBit=0;
+        tapeEarBit=1; // 0 or 1 ? TO DO: Option to define starting polarity
         tapeBitMask=0b10000000;
         tapeBitPulseCount=0;
-        tapeBitPulseLen=TAPE_BIT0_PULSELEN;
+        tapeBitPulseLen=tapeBit0PulseLen;
         tapeBlockLen=(readByteFile(tape) | (readByteFile(tape) <<8)) + 2;
         tapeCurByte = readByteFile(tape);
-        if (tapeCurByte) tapeHdrPulses=TAPE_HDR_SHORT; else tapeHdrPulses=TAPE_HDR_LONG;
+        if (tapeCurByte) tapeHdrPulses=tapeHdrShort; else tapeHdrPulses=tapeHdrLong;
         tapebufByteCount=2;
         tapeStart=CPU::global_tstates + CPU::tstates;
         Tape::tapeStatus=TAPE_LOADING;
+        if (VIDEO::OSD) VIDEO::OSD = 1;
         break;
 
     case TAPE_LOADING:
@@ -563,6 +683,7 @@ void Tape::TAP_Play() {
 void Tape::TAP_Stop() {
 
     tapeStatus=TAPE_STOPPED;
+    if (VIDEO::OSD) VIDEO::OSD = 2;
 
 }
 
@@ -572,7 +693,7 @@ IRAM_ATTR void Tape::TAP_Read() {
     
     switch (tapePhase) {
     case TAPE_PHASE_SYNC:
-        if (tapeCurrent > TAPE_SYNC_LEN) {
+        if (tapeCurrent > tapeSyncLen) {
             tapeStart=CPU::global_tstates + CPU::tstates;
             tapeEarBit ^= 1;
             tapePulseCount++;
@@ -583,17 +704,17 @@ IRAM_ATTR void Tape::TAP_Read() {
         }
         break;
     case TAPE_PHASE_SYNC1:
-        if (tapeCurrent > TAPE_SYNC1_LEN) {
+        if (tapeCurrent > tapeSync1Len) {
             tapeStart=CPU::global_tstates + CPU::tstates;
             tapeEarBit ^= 1;
             tapePhase=TAPE_PHASE_SYNC2;
         }
         break;
     case TAPE_PHASE_SYNC2:
-        if (tapeCurrent > TAPE_SYNC2_LEN) {
+        if (tapeCurrent > tapeSync2Len) {
             tapeStart=CPU::global_tstates + CPU::tstates;
             tapeEarBit ^= 1;
-            if (tapeCurByte & tapeBitMask) tapeBitPulseLen=TAPE_BIT1_PULSELEN; else tapeBitPulseLen=TAPE_BIT0_PULSELEN;            
+            if (tapeCurByte & tapeBitMask) tapeBitPulseLen=tapeBit1PulseLen; else tapeBitPulseLen=tapeBit0PulseLen;            
             tapePhase=TAPE_PHASE_DATA;
         }
         break;
@@ -615,20 +736,20 @@ IRAM_ATTR void Tape::TAP_Read() {
                         break;
                     }
                 }
-                if (tapeCurByte & tapeBitMask) tapeBitPulseLen=TAPE_BIT1_PULSELEN; else tapeBitPulseLen=TAPE_BIT0_PULSELEN;
+                if (tapeCurByte & tapeBitMask) tapeBitPulseLen=tapeBit1PulseLen; else tapeBitPulseLen=tapeBit0PulseLen;
             }
         }
         break;
     case TAPE_PHASE_PAUSE:
         if ((tapebufByteCount + tapePlayOffset) < tapeFileSize) {
-            if (tapeCurrent > TAPE_BLK_PAUSELEN) {
+            if (tapeCurrent > tapeBlkPauseLen) {
                 tapeStart=CPU::global_tstates + CPU::tstates;
                 tapePulseCount=0;
                 tapePhase=TAPE_PHASE_SYNC;
                 tapeBlockLen+=(tapeCurByte | readByteFile(tape) <<8)+ 2;
                 tapebufByteCount+=2;
                 tapeCurByte=readByteFile(tape);
-                if (tapeCurByte) tapeHdrPulses=TAPE_HDR_SHORT; else tapeHdrPulses=TAPE_HDR_LONG;
+                if (tapeCurByte) tapeHdrPulses=tapeHdrShort; else tapeHdrPulses=tapeHdrLong;
                 // tapeEarBit=0;
             }
         } else {

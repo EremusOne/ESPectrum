@@ -59,7 +59,7 @@ uint32_t VIDEO::brd;
 uint32_t VIDEO::border32[8];
 uint8_t VIDEO::flashing = 0;
 uint8_t VIDEO::flash_ctr= 0;
-bool VIDEO::OSD = false;
+uint8_t VIDEO::OSD = 0;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
@@ -107,16 +107,21 @@ static unsigned int attOffset;  // offset for attrib in graphic memory
 
 IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
 
+    // // VGA6Bit * staticthis = (VGA6Bit *)arg;
+
+    // // if (++staticthis->currentLine == staticthis->totalLines << 1 ) {
+	// //     staticthis->currentLine = 0;
+    // //     ESPectrum::vsync = true;
+    // // } else ESPectrum::vsync = false;
+
     static int64_t prevmicros = 0;
     static int64_t elapsedmicros = 0;
     static int cntvsync = 0;
 
-    // VGA6Bit * staticthis = (VGA6Bit *)arg;
-
-    // if (++staticthis->currentLine == staticthis->totalLines << 1 ) {
-	//     staticthis->currentLine = 0;
-    //     ESPectrum::vsync = true;
-    // } else ESPectrum::vsync = false;
+    if (Config::tape_player) {
+        ESPectrum::vsync = true;
+        return;
+    }
 
     int64_t currentmicros = esp_timer_get_time();
 
@@ -128,7 +133,7 @@ IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
 
             ESPectrum::vsync = true;
 
-            // // This code is needed to "finetune" the sync. Without it, vsync and emu video gets slowly desynced.
+            // This code is needed to "finetune" the sync. Without it, vsync and emu video gets slowly desynced.
             if (VIDEO::VsyncFinetune[0]) {
                 if (cntvsync++ == VIDEO::VsyncFinetune[1]) {
                     elapsedmicros += VIDEO::VsyncFinetune[0];
@@ -272,7 +277,10 @@ TaskHandle_t VIDEO::videoTaskHandle;
 void VIDEO::Init() {
 
     if (Config::videomode) {
-        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1024, NULL, configMAX_PRIORITIES - 2, &videoTaskHandle, 1);        
+
+        // xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1024, NULL, configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
+        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1024, NULL, 5, &videoTaskHandle, 1);
+
         // Wait for vertical sync to ensure vga.init is done
         for (;;) {
             if (ESPectrum::vsync) break;
@@ -319,7 +327,7 @@ void VIDEO::Reset() {
 
     is169 = Config::aspect_16_9 ? 1 : 0;
 
-    OSD = false;
+    OSD = 0;
 
     if (Config::arch == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;

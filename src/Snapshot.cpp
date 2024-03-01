@@ -69,7 +69,7 @@ bool LoadSnapshot(string filename, string force_arch, string force_romset) {
 
     bool res = false;
 
-    bool OSDprev = VIDEO::OSD;
+    uint8_t OSDprev = VIDEO::OSD;
     
     if (FileUtils::hasSNAextension(filename)) {
 
@@ -90,7 +90,7 @@ bool LoadSnapshot(string filename, string force_arch, string force_romset) {
     }
 
     if (res && OSDprev) {
-        VIDEO::OSD = true;
+        VIDEO::OSD = OSDprev;
         if (Config::aspect_16_9)
             VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
         else

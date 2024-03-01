@@ -85,6 +85,8 @@ public:
     static bool     AY48;
     static bool     Issue2;    
     static bool     flashload;    
+    static bool     tape_player;    
+    static bool     tape_timing_rg;    
     static uint8_t  joystick1;
     static uint8_t  joystick2;
     static uint16_t joydef[24];

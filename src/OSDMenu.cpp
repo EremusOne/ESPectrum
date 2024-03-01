@@ -660,88 +660,6 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 
 }
 
-
-string tapeBlockReadData(int Blocknum) {
-
-    int tapeContentIndex=0;
-    int tapeBlkLen=0;
-    string blktype;
-    char buf[48];
-    char fname[10];
-
-    tapeContentIndex = Tape::CalcTapBlockPos(Blocknum);
-
-    // Analyze .tap file
-    tapeBlkLen=(readByteFile(Tape::tape) | (readByteFile(Tape::tape) << 8));
-
-    // Read the flag byte from the block.
-    // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
-    // to indicate a data block.
-    uint8_t flagByte;
-    if (tapeContentIndex + 2 < Tape::tapeFileSize) {
-        flagByte = readByteFile(Tape::tape);
-    } else {
-        flagByte = 255;
-    }
-
-    // Process the block depending on if it is a header or a data block.
-    // Block type 0 should be a header block, but it happens that headerless blocks also
-    // have block type 0, so we need to check the block length as well.
-    if (flagByte == 0 && tapeBlkLen == 19) { // This is a header.
-
-        // Get the block type.
-        uint8_t blocktype = readByteFile(Tape::tape);
-
-        switch (blocktype) {
-        case 0: 
-            blktype = "Program      ";
-            break;
-        case 1: 
-            blktype = "Number array ";
-            break;
-        case 2: 
-            blktype = "Char array   ";
-            break;
-        case 3: 
-            blktype = "Code         ";
-            break;
-        case 4: 
-            blktype = "Data block   ";
-            break;
-        case 5: 
-            blktype = "Info         ";
-            break;
-        case 6: 
-            blktype = "Unassigned   ";
-            break;
-        default:
-            blktype = "Unassigned   ";
-            break;
-        }
-
-        // Get the filename.
-        if (blocktype > 5) {
-            fname[0] = '\0';
-        } else {
-            for (int i = 0; i < 10; i++) {
-                fname[i] = readByteFile(Tape::tape);
-            }
-            fname[10]='\0';
-        }
-
-    } else {
-
-        blktype = "Data block   ";
-        fname[0]='\0';
-
-    }
-
-    snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);
-
-    return buf;
-
-}
-
 // Redraw inside rows
 void OSD::tapemenuRedraw(string title) {
 
@@ -751,7 +669,7 @@ void OSD::tapemenuRedraw(string title) {
         menu = title + "\n";
         for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
             if (i > Tape::tapeNumBlocks) break;
-            menu += tapeBlockReadData(i);
+            menu += Tape::tapeBlockReadData(i);
         }
 
         for (uint8_t row = 1; row < virtual_rows; row++) {
