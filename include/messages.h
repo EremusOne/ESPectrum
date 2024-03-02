@@ -530,31 +530,44 @@ static const char *MENU_CURSORJOY[2] = { "Cursor as Joy\n" , "Joy en Cursor\n" }
 
 #define PATREONS "\r"\
 	"\nA1The Mega Trees:\r"\
-	"\r"\	
+	"\r"\
 	"\nB1Victor Llamazares \nC1Antonio Villena\r"\
 	"\r"\
 	"\nA1The Jet Set Willys:\r"\
 	"\r"\
-	"\nD1DopierRex \nE1Eduard Ruiz \nC1Igor Peruchi\r"\
-	"\nB1Inacio Santos\r"\
-	"\r"\
+	"\nD1DopierRex \nE1Juan Carlos Galea\r"\
+	"\nB1Raul Jimenez \nC1Serafin Moraton\r"\
+	"\nD1Eduard Ruiz \nE1Igor Peruchi \nB1Inacio Santos\r"\
 	"\r"\
 	"\r"
 
 #define PATREONS2 "\r"\
 	"\nA1The Manic Miners:\r"\
 	"\r"\
-	"\nE1Lencio Asimov \nB1Fernando Bonilla\r"\
-	"\nC1Elena Collantes \nD1Fidel Fernandez\r"\
-	"\nE1Jorge Garcia \nC1Jose Luis Garcia\r"\
-	"\nB1kounch \nD1Ignacio Monge \nE1Serafin Moraton\r"\
+	"\nB1Lencio Asimov \nC1Fernando Bonilla\r"\
+	"\nD1Juan Conde Luque \nE1Fidel Fernandez\r"\
+	"\nB1Alberto Garcia \nC1Francisco Garcia\r"\
+	"\nD1Jorge Garcia \nE1Jose Luis Garcia\r"\
+	"\nB1Nacho Izquierdo \nC1kounch \nD1Victor Lorenzo\r"\
+	"\nE1Luis Maldonado \nB1Mananuk \nC1Ignacio Monge\r"\
+	"\nD1Vicente Morales \nE1Pablo Mu" "\xA4" "oz\r"\
 	"\nB1Javi Ortiz \nC1Miguel Angel Perez\r"\
-	"\nD1Jordi Ramos \nE1Jose Maria Rodriguez\r"\
-	"\nB1Marco A. Rodriguez \nC1Santiago Romero\r"\
-	"\nD1Julia Salvador \nE1Marta Sicilia\r"\
-	"\nB1Radek Wojciechowski\r"
+	"\nD1Pascual Perez \nE1Juan Jose Piernas\r"\
 
-static const char *AboutMsg[2][7] = {
+#define PATREONS3 "\r"\
+	"\nA1The Manic Miners:\r"\
+	"\r"\
+	"\nB1Radastan \nC1Jordi Ramos \nD1Gustavo Reynaga\r"\
+	"\nE1Jose M. Rodriguez \nB1Marco A. Rodriguez\r"\
+	"\nC1Santiago Romero \nD1Julia Salvador\r"\
+	"\nE1Juan Diego Sanchez \nB1Marta Sicilia\r"\
+	"\nC1Fco. Jose Soldado \nD1Vida Extra Retro\r"\
+	"\nE1Radek Wojciechowski\r"\
+	"\r"\
+	"\r"\
+	"\r"
+
+static const char *AboutMsg[2][8] = {
 	{
 	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
 	"        David Crespo  \"dcrespo3d\"\r"\
@@ -590,6 +603,9 @@ static const char *AboutMsg[2][7] = {
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS2
 	,
+	"\nF1Big thanks to our Patreons:\r"\
+	PATREONS3
+	,
 	"\nF1Thanks for help and donations to:\r"\
 	"\r"\
 	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
@@ -597,9 +613,9 @@ static const char *AboutMsg[2][7] = {
 	"\nC1Jordi Ramos Montes\r"
 	"\nD1Tsvetan Usunov \nF1Olimex Ltd.\r"\
 	"\r"\
+	"\nF1ZX81+ ROM included courtesy of:\r"\
 	"\r"\
-	"\r"\
-	"\r"\
+	"\nA1Paul Farrow\r"\
 	"\r"\
 	"\r"\
 	"\r"
@@ -610,9 +626,9 @@ static const char *AboutMsg[2][7] = {
 	"\nB1Ron \nF1for his cool RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
 	"\nE1J.C. Gonzalez Amestoy \nF1for RVM\r"\
-	"\nB1All creators in ZX Spectrum server at\r"\
-	"Discord\r"\
-	"\r"\
+	"\nA1VidaExtraRetro, \nB1Cesar Nicolas-Gonzalez\r"\
+	"\nC1Rodolfo Guerra, \nD1All creators in\r"\
+	"ZX Spectrum server at Discord\r"\
 	"\r"\
 	"\nF1and, of course, to:\r"\
 	"\r"\
@@ -655,6 +671,9 @@ static const char *AboutMsg[2][7] = {
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS2
 	,
+	"\nF1Muchas gracias a nuestros Patreons:\r"\
+	PATREONS3
+	,
 	"\nF1Gracias por su ayuda y donaciones a:\r"\
 	"\r"\
 	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
@@ -662,9 +681,9 @@ static const char *AboutMsg[2][7] = {
 	"\nC1Jordi Ramos Montes\r"
 	"\nD1Tsvetan Usunov \nF1Olimex Ltd.\r"\
 	"\r"\
+	"\nF1ZX81+ ROM incluida por cortesia de:\r"\
 	"\r"\
-	"\r"\
-	"\r"\
+	"\nA1Paul Farrow\r"\
 	"\r"\
 	"\r"\
 	"\r"
@@ -675,9 +694,9 @@ static const char *AboutMsg[2][7] = {
 	"\nB1Ron \nF1por su genial RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
 	"\nE1J.C. Gonzalez Amestoy \nF1por RVM\r"\
-	"\nB1Todos los creadores en el servidor\r"\
-	"ZX Spectrum en Discord\r"\
-	"\r"\
+	"\nA1VidaExtraRetro, \nB1Cesar Nicolas-Gonzalez\r"\
+	"\nC1Rodolfo Guerra, \nD1Todos los creadores en\r"\
+	"el servidor ZXSpectrum en Discord\r"\
 	"\r"\	
 	"\nF1y, por supuesto, a:\r"\
 	"\r"\

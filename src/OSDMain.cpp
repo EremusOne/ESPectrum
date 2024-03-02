@@ -1858,7 +1858,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             osdRow  = 0;
                             msgChar = 0;
                             msgIndex++;
-                            if (msgIndex==7) msgIndex = 0;
+                            if (msgIndex==8) msgIndex = 0;
                         }
                     }
 

@@ -246,15 +246,19 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
-        if (Config::tape_player)
-            Audiobit = Tape::tapeEarBit ? 255 : 0; // For tape player mode
-        else
-            // Beeper Audio
-            Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+        if (ESPectrum::ESP_delay) {
 
-        if (Audiobit != ESPectrum::lastaudioBit) {
-            ESPectrum::BeeperGetSample();
-            ESPectrum::lastaudioBit = Audiobit;
+            if (Config::tape_player)
+                Audiobit = Tape::tapeEarBit ? 255 : 0; // For tape player mode
+            else
+                // Beeper Audio
+                Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+
+            if (Audiobit != ESPectrum::lastaudioBit) {
+                ESPectrum::BeeperGetSample();
+                ESPectrum::lastaudioBit = Audiobit;
+            }
+
         }
 
         // AY ========================================================================
