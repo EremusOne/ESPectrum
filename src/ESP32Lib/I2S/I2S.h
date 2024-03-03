@@ -21,11 +21,11 @@
 #include "driver/periph_ctrl.h"
 #include "rom/lldesc.h"
 #include "DMABufferDescriptor.h"
-#include "../VGA/Mode.h"
 
-class I2S
-{
+class I2S {
+
   public:
+
 	int i2sIndex;
 	intr_handle_t interruptHandle;
 	int dmaBufferDescriptorCount;
@@ -41,27 +41,20 @@ class I2S
 
 	void i2sStop();
 	void startTX();
-	void startRX();
 
 	void resetDMA();
 	void resetFIFO();
-	bool initParallelOutputMode(const int *pinMap, long APLLFreq = 1000000, const int bitCount = 8, int wordSelect = -1, int baseClock = -1);
-	bool initPrecalcParallelOutputMode(const int *pinMap, const Mode& mode, const int bitCount = 8, int wordSelect = -1, int baseClock = -1);
-	bool initSerialOutputMode(int dataPin, const int bitCount = 8, int wordSelect = -1, int baseClock = -1);
-	bool initParallelInputMode(const int *pinMap, long sampleRate = 1000000, const int bitCount = 8, int wordSelect = -1, int baseClock = -1);
+	bool initParallelOutputMode(const int *pinMap, int mode, const int bitCount = 8, int wordSelect = -1, int baseClock = -1);
 	virtual DMABufferDescriptor *firstDescriptorAddress() const;
-
-	void allocateDMABuffers(int count, int bytes);
-	void deleteDMABuffers();
-	virtual void getClockSetting(long *sampleRate, int *n, int *a, int *b, int *div);
 
 	void (*interruptStaticChild)(void *arg) = 0;
 
   protected:
+
 	virtual bool useInterrupt();
-	void setAPLLClock(long sampleRate, int bitCount);
-	void setClock(long sampleRate, int bitCount, bool useAPLL = true);
 	
   private:
+
 	static void interruptStatic(void *arg);
+
 };

@@ -100,7 +100,7 @@ public:
     static void menuRedraw();
     static void WindowDraw();
     static unsigned short menuRun(string new_menu);
-    static unsigned short simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy);
+    static unsigned short simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy, uint8_t max_rows, uint8_t max_cols);
     static string fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows);
     static int menuTape(string title);    
     static void menuScroll(bool up);
@@ -126,6 +126,7 @@ public:
     static void progressDialog(string title, string msg, int percent, int action);
     string inputBox(int x, int y, string text);
     static void joyDialog(uint8_t joynum);
+    static void pokeDialog();
 
     // Rows
     static unsigned short rowCount(string menu);
@@ -134,6 +135,7 @@ public:
     static void esp_hard_reset();
 
     static esp_err_t updateFirmware(FILE *firmware);
+    static esp_err_t updateROM(FILE *rombinary, uint8_t arch);
 
     static char stats_lin1[25]; // "CPU: 00000 / IDL: 00000 ";
     static char stats_lin2[25]; // "FPS:000.00 / FND:000.00 ";

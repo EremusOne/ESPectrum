@@ -7,6 +7,9 @@
 // Heretic optimizations and minor adaptations
 // Copyright (c) 2021 dcrespo3d - https://github.com/dcrespo3d
 //
+// ESPectrum specific optimizations and code
+// Copyright (c) 2023-24 Eremus - https://github.com/EremusOne
+//
 
 // Converted to C++ from Java at
 //... https://github.com/jsanchezv/Z80Core
@@ -920,7 +923,7 @@ IRAM_ATTR void Z80::check_trdos() {
             // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
             if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
                 MemESP::romInUse = 4;
-                MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
                 ESPectrum::trdos = true;
             }
 
@@ -941,7 +944,7 @@ IRAM_ATTR void Z80::check_trdos_unpage() {
             else
                 MemESP::romInUse = MemESP::romLatch;
             
-            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
             ESPectrum::trdos = false;
 
         }
@@ -951,7 +954,7 @@ IRAM_ATTR void Z80::check_trdos_unpage() {
             // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
             if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
                 MemESP::romInUse = 4;
-                MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
                 ESPectrum::trdos = true;                        
             }
 
@@ -1014,30 +1017,32 @@ void Z80::interrupt(void) {
  * M3: 3 T-Estados -> escribe byte bajo de PC y PC=0x0066
  */
 void Z80::nmi(void) {
-
-    // lastFlagQ = false;
-
+    
     halted = false;
 
     // Esta lectura consigue dos cosas:
     //      1.- La lectura del opcode del M1 que se descarta
     //      2.- Si estaba en un HALT esperando una INT, lo saca de la espera
     // Z80Ops::fetchOpcode(REG_PC);
-    // Z80Ops::interruptHandlingTime(1);
     uint8_t pg = REG_PC >> 14;
     VIDEO::Draw(4,MemESP::ramContended[pg]);
-    // FETCH_OPCODE(uint8_t discardOpCode, REG_PC);
+    // Z80Ops::interruptHandlingTime(1);
     VIDEO::Draw(1, false);    
-
-    // if (halted) {
-    //     halted = false;
-    //     REG_PC++;
-    // }
 
     regR++;
     ffIFF1 = false;
     push(REG_PC); // 3+3 t-estados + contended si procede
     REG_PC = REG_WZ = 0x0066;
+
+}
+
+void Z80::doNMI(void) {
+
+    activeNMI = false;
+    lastFlagQ = false;
+    nmi();
+    // printf("NMI!\n");
+
 }
 
 IRAM_ATTR void Z80::checkINT(void) {

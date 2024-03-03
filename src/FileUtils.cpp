@@ -65,7 +65,7 @@ string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (fo
 string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
 DISK_FTYPE FileUtils::fileTypes[3] = {
-    {".sna,.SNA,.z80,.Z80",".s",2,2,0,""},
+    {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
     {".tap,.TAP",".t",2,2,0,""},
     {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
 };
@@ -318,7 +318,13 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype) {
             if (fname.compare(0,1,".") != 0) {
                 // if (fname[0] == 'A') printf("Fname2: %s\n",fname.c_str());
                 // if ((de->d_type == DT_DIR) || (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end())) {
-                if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+
+
+                // if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+                
+                size_t fpos = fname.find_last_of(".");
+                if ((de->d_type == DT_DIR) || ((fpos != string::npos) && (std::find(filexts.begin(),filexts.end(),fname.substr(fpos)) != filexts.end()))) {                                    
+
                     // if (fname[0] == 'A') printf("Fname3: %s\n",fname.c_str());
 
                     if (de->d_type == DT_DIR) {
@@ -426,12 +432,17 @@ void FileUtils::Mergefiles(string fpath, uint8_t ftype, int chunk_cnt) {
 
     char fileName[8];
 
+    // multi_heap_info_t info;    
+    // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+    // string textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
+    // string textout2 = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
+    // printf("%s",textout.c_str());
+    // printf("%s\n",textout2.c_str());                                
+
     // Merge sort
     FILE *file1,*file2,*fout;
-    // char fname1[64];
-    // char fname2[64];
-    char fname1[128];
-    char fname2[128];
+    char fname1[64];
+    char fname2[64];
 
     file1 = fopen((fpath + fileTypes[ftype].indexFilename + "0").c_str(), "r");
     file2 = fopen((fpath + fileTypes[ftype].indexFilename + "1").c_str(), "r");
@@ -470,6 +481,12 @@ void FileUtils::Mergefiles(string fpath, uint8_t ftype, int chunk_cnt) {
             bufcnt++;
 
             if (bufcnt == 64) {
+                // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+                // textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
+                // textout2 = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
+                // printf(" Buffer size: %d\n",bufout.length());
+                // printf("%s",textout.c_str());
+                // printf("%s\n",textout2.c_str());                                
                 fwrite(bufout.c_str(),sizeof(char),bufout.length(),fout);
                 bufout = "";
                 bufcnt = 0;
@@ -544,6 +561,16 @@ bool FileUtils::hasZ80extension(string filename)
 
     if (filename.substr(filename.size()-4,4) == ".z80") return true;
     if (filename.substr(filename.size()-4,4) == ".Z80") return true;
+
+    return false;
+
+}
+
+bool FileUtils::hasPextension(string filename)
+{
+
+    if (filename.substr(filename.size()-2,2) == ".p") return true;
+    if (filename.substr(filename.size()-2,2) == ".P") return true;
 
     return false;
 

@@ -49,20 +49,20 @@ class GraphicsR2G2B2S2Swapped: public Graphics<unsigned char>
 
 	virtual void dotFast(int x, int y, Color color)
 	{
-		backBuffer[y][x^2] = (color & RGBAXMask) | SBits;
+		frameBuffer[y][x^2] = (color & RGBAXMask) | SBits;
 	}
 
 	virtual void dot(int x, int y, Color color)
 	{
 		if ((unsigned int)x < xres && (unsigned int)y < yres)
-			backBuffer[y][x^2] = (color & RGBAXMask) | SBits;
+			frameBuffer[y][x^2] = (color & RGBAXMask) | SBits;
 	}
 
 	virtual void dotAdd(int x, int y, Color color)
 	{
 		if ((unsigned int)x < xres && (unsigned int)y < yres)
 		{
-			int c0 = backBuffer[y][x^2];
+			int c0 = frameBuffer[y][x^2];
 			int c1 = color;
 			int r = (c0 & 0b11) + (c1 & 0b11);
 			if(r > 0b11) r = 0b11;
@@ -70,7 +70,7 @@ class GraphicsR2G2B2S2Swapped: public Graphics<unsigned char>
 			if(g > 0b1100) g = 0b1100;
 			int b = (c0 & 0b110000) + (c1 & 0b110000);
 			if(b > 0b110000) b = 0b110000;
-			backBuffer[y][x^2] = r | (g & 0b1100) | (b & 0b110000) | SBits;
+			frameBuffer[y][x^2] = r | (g & 0b1100) | (b & 0b110000) | SBits;
 		}
 	}
 	
@@ -80,21 +80,21 @@ class GraphicsR2G2B2S2Swapped: public Graphics<unsigned char>
 		{
 			unsigned int ai = (3 - ((int)color >> 6)) * (65536 / 3);
 			unsigned int a = 65536 - ai;
-			unsigned int co = backBuffer[y][x^2];
+			unsigned int co = frameBuffer[y][x^2];
 			unsigned int ro = (co & 0b11) * ai;
 			unsigned int go = (co & 0b1100) * ai;
 			unsigned int bo = (co & 0b110000) * ai;
 			unsigned int r = (color & 0b11) * a + ro;
 			unsigned int g = ((color & 0b1100) * a + go) & 0b11000000000000000000;
 			unsigned int b = ((color & 0b110000) * a + bo) & 0b1100000000000000000000;
-			backBuffer[y][x^2] = ((r | g | b) >> 16) | SBits;
+			frameBuffer[y][x^2] = ((r | g | b) >> 16) | SBits;
 		}	
 	}
 	
 	virtual Color get(int x, int y)
 	{
 		if ((unsigned int)x < xres && (unsigned int)y < yres)
-			return backBuffer[y][x^2] & RGBAXMask;
+			return frameBuffer[y][x^2] & RGBAXMask;
 		return 0;
 	}
 
@@ -102,41 +102,11 @@ class GraphicsR2G2B2S2Swapped: public Graphics<unsigned char>
 	{
 		for (int y = 0; y < this->yres; y++)
 			for (int x = 0; x < this->xres; x++)
-				backBuffer[y][x^2] = (color & RGBAXMask) | SBits;
+				frameBuffer[y][x^2] = (color & RGBAXMask) | SBits;
 	}
 
-	virtual void imageR2G2B2A2(Image &image, int x, int y, int srcX, int srcY, int srcXres, int srcYres)
-	{
-		for (int py = 0; py < srcYres; py++)
-		{
-			int i = srcX + (py + srcY) * image.xres;
-			for (int px = 0; px < srcXres; px++)
-				dot(px + x, py + y, ((unsigned char*)image.pixels)[i++]);
-		}		
-	}
-
-	virtual void imageAddR2G2B2A2(Image &image, int x, int y, int srcX, int srcY, int srcXres, int srcYres)
-	{
-		for (int py = 0; py < srcYres; py++)
-		{
-			int i = srcX + (py + srcY) * image.xres;
-			for (int px = 0; px < srcXres; px++)
-				dotAdd(px + x, py + y, ((unsigned char*)image.pixels)[i++]);
-		}
-	}
-
-	virtual void imageMixR2G2B2A2(Image &image, int x, int y, int srcX, int srcY, int srcXres, int srcYres)
-	{
-		for (int py = 0; py < srcYres; py++)
-		{
-			int i = srcX + (py + srcY) * image.xres;
-			for (int px = 0; px < srcXres; px++)
-				dotMix(px + x, py + y, ((unsigned char*)image.pixels)[i++]);
-		}
-	}	
-	
-	virtual Color** allocateFrameBuffer()
-	{
-		return Graphics<Color>::allocateFrameBuffer(xres, yres, (Color)SBits);
-	}
+	// virtual Color** allocateFrameBuffer()
+	// {
+	// 	return Graphics<Color>::allocateFrameBuffer(xres, yres, (Color)SBits);
+	// }
 };

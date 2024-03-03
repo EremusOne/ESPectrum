@@ -53,11 +53,16 @@ visit https://zxespectrum.speccy.org/contacto
 #include "roms.h"
 #include "OSDMain.h"
 
-const string Config::archnames[3] = { "48K", "128K", "Pentagon"};
 string   Config::arch = "48K";
+string   Config::romSet = "48K";
+string   Config::romSet48 = "48K";
+string   Config::romSet128 = "128K";
+string   Config::pref_arch = "48K";
+string   Config::pref_romSet_48 = "48K";
+string   Config::pref_romSet_128 = "128K";
 string   Config::ram_file = NO_RAM_FILE;
 string   Config::last_ram_file = NO_RAM_FILE;
-string   Config::romSet = "SINCLAIR";
+
 bool     Config::slog_on = false;
 bool     Config::aspect_16_9 = false;
 uint8_t  Config::videomode = 0; // 0 -> SAFE VGA, 1 -> 50HZ VGA, 2 -> 50HZ CRT
@@ -66,6 +71,8 @@ uint8_t  Config::lang = 0;
 bool     Config::AY48 = true;
 bool     Config::Issue2 = true;
 bool     Config::flashload = true;
+bool     Config::tape_player = false; // Tape player mode
+bool     Config::tape_timing_rg = false; // Rodolfo Guerra ROMs tape timings
 
 uint8_t  Config::joystick1 = JOY_SINCLAIR1;
 uint8_t  Config::joystick2 = JOY_SINCLAIR2;
@@ -203,6 +210,51 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_str(handle, "romSet48", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "romSet48", str_data, &required_size);
+            // printf("romSet48:%s\n",str_data);
+            romSet48 = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "romSet128", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "romSet128", str_data, &required_size);
+            // printf("romSet128:%s\n",str_data);
+            romSet128 = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "pref_arch", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "pref_arch", str_data, &required_size);
+            // printf("pref_arch:%s\n",str_data);
+            pref_arch = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "pref_romSet_48", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "pref_romSet_48", str_data, &required_size);
+            // printf("pref_romSet_48:%s\n",str_data);
+            pref_romSet_48 = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "pref_romSet_128", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "pref_romSet_128", str_data, &required_size);
+            // printf("pref_romSet_128:%s\n",str_data);
+            pref_romSet_128 = str_data;
+            free(str_data);
+        }
+
         err = nvs_get_str(handle, "ram", NULL, &required_size);
         if (err == ESP_OK) {
             str_data = (char *)malloc(required_size);
@@ -280,6 +332,24 @@ void Config::load() {
             nvs_get_str(handle, "flashload", str_data, &required_size);
             // printf("Flashload:%s\n",str_data);
             flashload = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "tape_player", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "tape_player", str_data, &required_size);
+            // printf("Tape player:%s\n",str_data);
+            tape_player = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "tape_timing_rg", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "tape_timing_rg", str_data, &required_size);
+            // printf("Tape timing RG:%s\n",str_data);
+            tape_timing_rg = strcmp(str_data, "false");
             free(str_data);
         }
 
@@ -477,6 +547,21 @@ void Config::save(string value) {
         if((value=="romSet") || (value=="all"))
             nvs_set_str(handle,"romSet",romSet.c_str());
 
+        if((value=="romSet48") || (value=="all"))
+            nvs_set_str(handle,"romSet48",romSet48.c_str());
+
+        if((value=="romSet128") || (value=="all"))
+            nvs_set_str(handle,"romSet128",romSet128.c_str());
+
+        if((value=="pref_arch") || (value=="all"))
+            nvs_set_str(handle,"pref_arch",pref_arch.c_str());
+
+        if((value=="pref_romSet_48") || (value=="all"))
+            nvs_set_str(handle,"pref_romSet_48",pref_romSet_48.c_str());
+
+        if((value=="pref_romSet_128") || (value=="all"))
+            nvs_set_str(handle,"pref_romSet_128",pref_romSet_128.c_str());
+
         if((value=="ram") || (value=="all"))
             nvs_set_str(handle,"ram",ram_file.c_str());   
 
@@ -503,6 +588,12 @@ void Config::save(string value) {
 
         if((value=="flashload") || (value=="all"))
             nvs_set_str(handle,"flashload",flashload ? "true" : "false");
+
+        if((value=="tape_player") || (value=="all"))
+            nvs_set_str(handle,"tape_player",tape_player ? "true" : "false");
+
+        if((value=="tape_timing_rg") || (value=="all"))
+            nvs_set_str(handle,"tape_timing_rg",tape_timing_rg ? "true" : "false");
 
         if((value=="joystick1") || (value=="all"))
             nvs_set_u8(handle,"joystick1",Config::joystick1);
@@ -604,18 +695,56 @@ void Config::requestMachine(string newArch, string newRomSet)
 {
 
     arch = newArch;
-    romSet = newRomSet;
 
     if (arch == "48K") {
 
-        MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_48k;
+        if (newRomSet=="") romSet = "48K"; else romSet = newRomSet;
+        
+        if (newRomSet=="") romSet48 = "48K"; else romSet48 = newRomSet;        
+
+        if (romSet48 == "48K")
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_48k;
+        else if (romSet48 == "48Kes")
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_48k_es;
+        else if (romSet48 == "48Kcs") {
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_48k_custom;
+            MemESP::rom[0] += 8;
+        }
 
     } else if (arch == "128K") {
 
-        MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_128k;
-        MemESP::rom[1] = (uint8_t *) gb_rom_1_sinclair_128k;
+        if (newRomSet=="") romSet = "128K"; else romSet = newRomSet;
+
+        if (newRomSet=="") romSet128 = "128K"; else romSet128 = newRomSet;                
+
+        if (romSet128 == "128K") {
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_128k;
+            MemESP::rom[1] = (uint8_t *) gb_rom_1_sinclair_128k;
+        } else if (romSet128 == "128Kes") {
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_128k_es;
+            MemESP::rom[1] = (uint8_t *) gb_rom_1_128k_es;
+        } else if (romSet128 == "128Kcs") {
+
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_128k_custom;
+            MemESP::rom[0] += 8;
+
+            MemESP::rom[1] = (uint8_t *) gb_rom_0_128k_custom;
+            MemESP::rom[1] += 16392;
+
+        } else if (romSet128 == "+2") {
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_plus2;
+            MemESP::rom[1] = (uint8_t *) gb_rom_1_plus2;
+        } else if (romSet128 == "+2es") {
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_plus2_es;
+            MemESP::rom[1] = (uint8_t *) gb_rom_1_plus2_es;
+        } else if (romSet128 == "ZX81+") {
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_s128_zx81;
+            MemESP::rom[1] = (uint8_t *) gb_rom_1_sinclair_128k;
+        }
 
     } else if (arch == "Pentagon") {
+
+        if (newRomSet=="") romSet = "Pentagon"; else romSet = newRomSet;
 
         MemESP::rom[0] = (uint8_t *) gb_rom_0_pentagon_128k;
         MemESP::rom[1] = (uint8_t *) gb_rom_1_pentagon_128k;
@@ -624,30 +753,17 @@ void Config::requestMachine(string newArch, string newRomSet)
 
     MemESP::rom[4] = (uint8_t *) gb_rom_4_trdos_503;
 
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
-    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+    // MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    // MemESP::ramCurrent[1] = MemESP::ram[5];
+    // MemESP::ramCurrent[2] = MemESP::ram[2];
+    // MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
-    MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
-    MemESP::ramContended[2] = false;
-    MemESP::ramContended[3] = false;
+    // MemESP::ramContended[0] = false;
+    // MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
+    // MemESP::ramContended[2] = false;
+    // MemESP::ramContended[3] = false;
   
 }
-
-//   fabgl::VK_FULLER_LEFT, // Left
-//     fabgl::VK_FULLER_RIGHT, // Right
-//     fabgl::VK_FULLER_UP, // Up
-//     fabgl::VK_FULLER_DOWN, // Down
-//     fabgl::VK_S, // Start
-//     fabgl::VK_M, // Mode
-//     fabgl::VK_FULLER_FIRE, // A
-//     fabgl::VK_9, // B
-//     fabgl::VK_SPACE, // C
-//     fabgl::VK_X, // X
-//     fabgl::VK_Y, // Y
-//     fabgl::VK_Z, // Z
 
 void Config::setJoyMap(uint8_t joynum, uint8_t joytype) {
 

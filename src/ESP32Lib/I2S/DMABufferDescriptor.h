@@ -66,25 +66,12 @@ class DMABufferDescriptor : protected lldesc_t
 		qe.stqe_next = 0;
 	}
 
-	static DMABufferDescriptor *allocateDescriptors(int count)
-	{
+	static DMABufferDescriptor *allocateDescriptors(int count) {
 		DMABufferDescriptor *b = (DMABufferDescriptor *)heap_caps_malloc(sizeof(DMABufferDescriptor) * count, MALLOC_CAP_DMA);
 		if (!b)
 			DEBUG_PRINTLN("Failed to alloc DMABufferDescriptors");
 		for (int i = 0; i < count; i++)
 			b[i].init();
-		return b;
-	}
-
-	static DMABufferDescriptor *allocateDescriptor(int bytes, bool allocBuffer = true, bool clear = true, unsigned long clearValue = 0)
-	{
-		bytes = (bytes + 3) & 0xfffffffc;
-		DMABufferDescriptor *b = (DMABufferDescriptor *)heap_caps_malloc(sizeof(DMABufferDescriptor), MALLOC_CAP_DMA);
-		if (!b)
-			DEBUG_PRINTLN("Failed to alloc DMABufferDescriptor");
-		b->init();
-		if (allocateBuffer)
-			b->setBuffer(allocateBuffer(bytes, clear, clearValue), bytes);
 		return b;
 	}
 

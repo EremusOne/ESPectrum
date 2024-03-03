@@ -71,6 +71,15 @@ void CaptureToBmp()
     string filelist;
     string scrdir = (string) MOUNT_POINT_SD + DISK_SCR_DIR;
 
+    // Create dir if it doesn't exist
+    struct stat stat_buf;
+    if (stat(scrdir.c_str(), &stat_buf) != 0) {
+        if (mkdir(scrdir.c_str(),0775) != 0) {
+            printf("Capture BMP: problem creating capture dir\n");
+            return;
+        }
+    }
+    
     DIR* dir = opendir(scrdir.c_str());
     if (dir == NULL) {
         printf("Capture BMP: problem accessing capture dir\n");
@@ -129,7 +138,7 @@ void CaptureToBmp()
 
     // process every scanline in reverse order (BMP is topdown)
     for (int y = h - 1; y >= 0; y--) {
-        uint32_t* src = (uint32_t*)VIDEO::vga.backBuffer[y];
+        uint32_t* src = (uint32_t*)VIDEO::vga.frameBuffer[y];
         uint32_t* dst = linebuf;
         // process every uint32 in scanline
         for (int i = 0; i < count; i++) {

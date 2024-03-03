@@ -97,79 +97,79 @@ struct KeyboardLayout {
 /** @brief Predefined US layout. Often used as inherited layout for other layouts. */
 extern const KeyboardLayout USLayout;
 
-/** @brief UK keyboard layout */
-extern const KeyboardLayout UKLayout;
+// /** @brief UK keyboard layout */
+// extern const KeyboardLayout UKLayout;
 
-/** @brief German keyboard layout */
-extern const KeyboardLayout GermanLayout;
+// /** @brief German keyboard layout */
+// extern const KeyboardLayout GermanLayout;
 
-/** @brief Italian keyboard layout */
-extern const KeyboardLayout ItalianLayout;
+// /** @brief Italian keyboard layout */
+// extern const KeyboardLayout ItalianLayout;
 
-/** @brief Spanish keyboard layout */
-extern const KeyboardLayout SpanishLayout;
+// /** @brief Spanish keyboard layout */
+// extern const KeyboardLayout SpanishLayout;
 
-/** @brief French keyboard layout */
-extern const KeyboardLayout FrenchLayout;
+// /** @brief French keyboard layout */
+// extern const KeyboardLayout FrenchLayout;
 
-/** @brief Belgian keyboard layout */
-extern const KeyboardLayout BelgianLayout;
+// /** @brief Belgian keyboard layout */
+// extern const KeyboardLayout BelgianLayout;
 
-/** @brief Norwegian keyboard layout */
-extern const KeyboardLayout NorwegianLayout;
+// /** @brief Norwegian keyboard layout */
+// extern const KeyboardLayout NorwegianLayout;
 
-/** @brief Japanese keyboard layout */
-extern const KeyboardLayout JapaneseLayout;
+// /** @brief Japanese keyboard layout */
+// extern const KeyboardLayout JapaneseLayout;
 
 
 
 struct SupportedLayouts {
 
-  static constexpr int LAYOUTSCOUNT = 9;
+  static constexpr int LAYOUTSCOUNT = 1;
 
   static int count()               { return LAYOUTSCOUNT; }
 
   static char const * * names() {
     static char const * NAMES[LAYOUTSCOUNT] =  {
-        GermanLayout.desc,
-        ItalianLayout.desc,
-        UKLayout.desc,
+        // GermanLayout.desc,
+        // ItalianLayout.desc,
+        // UKLayout.desc,
         USLayout.desc,
-        SpanishLayout.desc,
-        FrenchLayout.desc,
-        BelgianLayout.desc,
-        NorwegianLayout.desc,
-        JapaneseLayout.desc,
+        // SpanishLayout.desc,
+        // FrenchLayout.desc,
+        // BelgianLayout.desc,
+        // NorwegianLayout.desc,
+        // JapaneseLayout.desc,
     };
     return NAMES;
   }
 
   static char const * * shortNames() {
     static char const * SNAMES[LAYOUTSCOUNT] = {
-        GermanLayout.name,
-        ItalianLayout.name,
-        UKLayout.name,
+        // GermanLayout.name,
+        // ItalianLayout.name,
+        // UKLayout.name,
         USLayout.name,
-        SpanishLayout.name,
-        FrenchLayout.name,
-        BelgianLayout.name,
-        NorwegianLayout.name,
-        JapaneseLayout.name,
+        // SpanishLayout.name,
+        // FrenchLayout.name,
+        // BelgianLayout.name,
+        // NorwegianLayout.name,
+        // JapaneseLayout.name,
     };
     return SNAMES;
   }
 
   static const KeyboardLayout * * layouts() {
     static KeyboardLayout const * LAYOUTS[LAYOUTSCOUNT] = {
-        &GermanLayout,
-        &ItalianLayout,
-        &UKLayout,
+        // &GermanLayout,
+        // &ItalianLayout,
+        // &UKLayout,
         &USLayout,
-        &SpanishLayout,
-        &FrenchLayout,
-        &BelgianLayout,
-        &NorwegianLayout,
-        &JapaneseLayout,
+        // &SpanishLayout,
+        // &FrenchLayout,
+        // &BelgianLayout,
+        // &NorwegianLayout,
+        // &JapaneseLayout,
     };
     return LAYOUTS;
   }

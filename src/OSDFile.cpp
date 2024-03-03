@@ -189,7 +189,15 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                         if (de->d_type == DT_REG || de->d_type == DT_DIR) {
                             if (fname.compare(0,1,".") != 0) {
                                 // printf("Fname: %s Fname size: %d\n",fname.c_str(),fname.size());
-                                if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+
+                                size_t fpos = fname.find_last_of(".");
+                                // if (fpos != string::npos) {
+                                //     printf("%s %s\n", fname.c_str(), fname.substr(fname.find_last_of(".")).c_str());
+                                // }
+
+                                // if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
+                                if ((de->d_type == DT_DIR) || ((fpos != string::npos) && (std::find(filexts.begin(),filexts.end(),fname.substr(fpos)) != filexts.end()))) {                                    
+
                                     // Calculate name checksum
                                     for (int i = 0; i < fname.length(); i++) {
                                         hash = (hash << 4) + fname[i];
@@ -568,7 +576,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                                 int j = SaveRectpos - (((w >> 2) + 1) * h);
                                 SaveRectpos = j - 4;
                                 for (int  m = y; m < y + h; m++) {
-                                    uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                                    uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
                                     for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                         backbuffer32[n] = VIDEO::SaveRect[j];
                                         j++;
@@ -589,7 +597,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             int j = SaveRectpos - (((w >> 2) + 1) * h);
                             SaveRectpos = j - 4;
                             for (int  m = y; m < y + h; m++) {
-                                uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.backBuffer[m]);
+                                uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
                                 for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
                                     backbuffer32[n] = VIDEO::SaveRect[j];
                                     j++;
@@ -623,7 +631,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             if (FileUtils::fileTypes[ftype].fdMode) {
 
-                if ((++fdCursorFlash & 0x15) == 0) {
+                if ((++fdCursorFlash & 0xf) == 0) {
 
                     menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));

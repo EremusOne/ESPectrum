@@ -67,8 +67,6 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
-// #pragma GCC optimize("O3")
-
 //=======================================================================================
 // KEYBOARD
 //=======================================================================================
@@ -79,24 +77,33 @@ bool ESPectrum::ps2kbd2 = false;
 // AUDIO
 //=======================================================================================
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_PENTAGON] = { 0 };
-uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES_PENTAGON] = { 0 };
-signed char ESPectrum::aud_volume = ESP_DEFAULT_VOLUME;
+uint32_t* ESPectrum::overSamplebuf;
+
+signed char ESPectrum::aud_volume = ESP_VOLUME_DEFAULT;
+// signed char ESPectrum::aud_volume = ESP_VOLUME_MAX; // For .tap player test
+
 uint32_t ESPectrum::audbufcnt = 0;
+uint32_t ESPectrum::audbufcntover = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
 uint32_t ESPectrum::audbufcntAY = 0;
 uint32_t ESPectrum::faudbufcntAY = 0;
 int ESPectrum::lastaudioBit = 0;
 int ESPectrum::faudioBit = 0;
 int ESPectrum::samplesPerFrame;
-int ESPectrum::overSamplesPerFrame;
 bool ESPectrum::AY_emu = false;
 int ESPectrum::Audio_freq;
-int ESPectrum::TapeNameScroller = 0;
-// bool ESPectrum::Audio_restart = false;
-
+unsigned char ESPectrum::audioSampleDivider;
+static int audioBitBuf = 0;
+static unsigned char audioBitbufCount = 0;
 QueueHandle_t audioTaskQueue;
 TaskHandle_t ESPectrum::audioTaskHandle;
 uint8_t *param;
+
+//=======================================================================================
+// TAPE OSD
+//=======================================================================================
+
+int ESPectrum::TapeNameScroller = 0;
 
 //=======================================================================================
 // BETADISK
@@ -115,20 +122,10 @@ WD1793 ESPectrum::Betadisk;
 #define NOP() {for(int i=0;i<1000;i++){}}
 #endif
 
-// IRAM_ATTR int64_t micros()
-// {
-//     return esp_timer_get_time();    
-// }
-
 IRAM_ATTR unsigned long millis()
 {
     return (unsigned long) (esp_timer_get_time() / 1000ULL);
 }
-
-// inline void delay(uint32_t ms)
-// {
-//     vTaskDelay(ms / portTICK_PERIOD_MS);
-// }
 
 IRAM_ATTR void delayMicroseconds(int64_t us)
 {
@@ -147,13 +144,18 @@ IRAM_ATTR void delayMicroseconds(int64_t us)
 }
 
 //=======================================================================================
-// TIMING
+// TIMING / SYNC
 //=======================================================================================
 
-static double totalseconds = 0;
-static double totalsecondsnodelay = 0;
-
+double ESPectrum::totalseconds = 0;
+double ESPectrum::totalsecondsnodelay = 0;
 int64_t ESPectrum::target;
+int ESPectrum::sync_cnt = 0;
+volatile bool ESPectrum::vsync = false;
+int64_t ESPectrum::ts_start;
+int64_t ESPectrum::elapsed;
+int64_t ESPectrum::idle;
+bool ESPectrum::ESP_delay = true;
 
 //=======================================================================================
 // LOGGING / TESTING
@@ -348,6 +350,54 @@ void ESPectrum::setup()
     
     Config::load();
 
+    // printf("---------------------------------\n");
+    // printf("Ram file: %s\n",Config::ram_file.c_str());
+    // printf("Arch: %s\n",Config::arch.c_str());
+    // printf("pref Arch: %s\n",Config::pref_arch.c_str());
+    // printf("romSet: %s\n",Config::romSet.c_str());
+    // printf("romSet48: %s\n",Config::romSet48.c_str());
+    // printf("romSet128: %s\n",Config::romSet128.c_str());        
+    // printf("pref_romSet_48: %s\n",Config::pref_romSet_48.c_str());
+    // printf("pref_romSet_128: %s\n",Config::pref_romSet_128.c_str());        
+    
+    // Set arch if there's no snapshot to load
+    if (Config::ram_file == NO_RAM_FILE) {
+
+        if (Config::pref_arch.substr(Config::pref_arch.length()-1) == "R") {
+
+            Config::pref_arch.pop_back();
+            Config::save("pref_arch");
+
+        } else {
+
+            if (Config::pref_arch != "Last") Config::arch = Config::pref_arch;
+
+            if (Config::arch == "48K") {
+                if (Config::pref_romSet_48 != "Last") 
+                    Config::romSet = Config::pref_romSet_48;
+                else
+                    Config::romSet = Config::romSet48;            
+            } else if (Config::arch == "128K") {
+                if (Config::pref_romSet_128 != "Last")
+                    Config::romSet = Config::pref_romSet_128;
+                else
+                    Config::romSet = Config::romSet128;
+            } else Config::romSet = "Pentagon";
+
+        }
+
+    }
+
+    // printf("---------------------------------\n");
+    // printf("Ram file: %s\n",Config::ram_file.c_str());
+    // printf("Arch: %s\n",Config::arch.c_str());
+    // printf("pref Arch: %s\n",Config::pref_arch.c_str());
+    // printf("romSet: %s\n",Config::romSet.c_str());
+    // printf("romSet48: %s\n",Config::romSet48.c_str());
+    // printf("romSet128: %s\n",Config::romSet128.c_str());        
+    // printf("pref_romSet_48: %s\n",Config::pref_romSet_48.c_str());
+    // printf("pref_romSet_128: %s\n",Config::pref_romSet_128.c_str());        
+
     //=======================================================================================
     // INIT PS/2 KEYBOARD
     //=======================================================================================
@@ -412,51 +462,42 @@ void ESPectrum::setup()
     // MEMORY SETUP
     //=======================================================================================
 
-    MemESP::ram5 = staticMemPage0;
-    MemESP::ram0 = staticMemPage1;
-    MemESP::ram2 = staticMemPage2;
-
-    MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-    MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-
-    // MemESP::ram1 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram3 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram4 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram6 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram7 = (unsigned char *) heap_caps_malloc(0x4000, MALLOC_CAP_8BIT);
-
-    if (Config::slog_on) {
-        if (MemESP::ram1 == NULL) printf("ERROR! Unable to allocate ram1\n");        
-        if (MemESP::ram3 == NULL) printf("ERROR! Unable to allocate ram3\n");        
-        if (MemESP::ram4 == NULL) printf("ERROR! Unable to allocate ram4\n");        
-        if (MemESP::ram6 == NULL) printf("ERROR! Unable to allocate ram6\n");
-        if (MemESP::ram7 == NULL) printf("ERROR! Unable to allocate ram7\n");
+    for (int i=0; i < 8; i++) {
+        MemESP::ram[i] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+        if (MemESP::ram[i] == NULL)
+            if (Config::slog_on) printf("ERROR! Unable to allocate ram%d\n",i);
     }
 
-    MemESP::ram[0] = MemESP::ram0; MemESP::ram[1] = MemESP::ram1;
-    MemESP::ram[2] = MemESP::ram2; MemESP::ram[3] = MemESP::ram3;
-    MemESP::ram[4] = MemESP::ram4; MemESP::ram[5] = MemESP::ram5;
-    MemESP::ram[6] = MemESP::ram6; MemESP::ram[7] = MemESP::ram7;
+    // MemESP::ram[5] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[7] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+
+    // MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[3] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[4] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[6] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+
+    // Load romset
+    Config::requestMachine(Config::arch, Config::romSet);
 
     MemESP::romInUse = 0;
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
     MemESP::romLatch = 0;
 
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
-    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = MemESP::ram[5];
+    MemESP::ramCurrent[2] = MemESP::ram[2];
+    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
     MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = Config::getArch() == "Pentagon" ? false : true;
+    MemESP::ramContended[1] = Config::arch == "Pentagon" ? false : true;
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
 
-    if (Config::getArch() == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+    // if (Config::arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+    MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
 
     if (Config::slog_on) showMemInfo("RAM Initialized");
 
@@ -479,20 +520,23 @@ void ESPectrum::setup()
     // AUDIO
     //=======================================================================================
 
+    overSamplebuf = (uint32_t *) heap_caps_malloc(ESP_AUDIO_SAMPLES_PENTAGON << 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);  
+    if (overSamplebuf == NULL) printf("Can't allocate oversamplebuffer\n");
+
     // Set samples per frame and AY_emu flag depending on arch
-    if (Config::getArch() == "48K") {
-        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
+    if (Config::arch == "48K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
+        audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
-    } else if (Config::getArch() == "128K") {
-        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
+    } else if (Config::arch == "128K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
+        audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
-    } else if (Config::getArch() == "Pentagon") {
-        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_PENTAGON;
+    } else if (Config::arch == "Pentagon") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_PENTAGON;
+        audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_PENTAGON;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_PENTAGON;
     }
@@ -502,7 +546,7 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", /* 1024 */ 1536, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
     AySound::init();
@@ -516,6 +560,8 @@ void ESPectrum::setup()
     Tape::tapeStatus = TAPE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
+
+    if (Config::tape_player) AY_emu = false; // Disable AY emulation if tape player mode is set
 
     // Init CPU
     Z80::create();
@@ -531,9 +577,6 @@ void ESPectrum::setup()
 
     // Init disk controller
     Betadisk.Init();
-
-    // Load romset
-    Config::requestMachine(Config::getArch(), Config::getRomSet());
 
     // Reset cpu
     CPU::reset();
@@ -559,13 +602,11 @@ void ESPectrum::setup()
         FileUtils::fileTypes[DISK_DSKFILE].fdMode = Config::DSK_fdMode;
         FileUtils::fileTypes[DISK_DSKFILE].fileSearch = Config::DSK_fileSearch;
 
-        LoadSnapshot(Config::ram_file,"");
+        LoadSnapshot(Config::ram_file,"","");
 
         Config::last_ram_file = Config::ram_file;
-        #ifndef SNAPSHOT_LOAD_LAST
         Config::ram_file = NO_RAM_FILE;
         Config::save("ram");
-        #endif
 
     }
 
@@ -592,25 +633,23 @@ void ESPectrum::reset()
         ESPectrum::JoyVKTranslation[n] = (fabgl::VirtualKey) Config::joydef[n];
 
     // Memory
+    MemESP::romInUse = 0;
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
     MemESP::romLatch = 0;
 
-    string arch = Config::getArch();
-
-    if (arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
-
-    MemESP::romInUse = 0;
-
-    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
-    MemESP::ramCurrent[2] = (unsigned char *)MemESP::ram[2];
-    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[1] = MemESP::ram[5];
+    MemESP::ramCurrent[2] = MemESP::ram[2];
+    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
     MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
+    MemESP::ramContended[1] = Config::arch == "Pentagon" ? false : true;
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
+
+    // if (Config::arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
+    MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
 
     VIDEO::Reset();
 
@@ -629,8 +668,8 @@ void ESPectrum::reset()
     Tape::romLoading = false;
 
     // Empty audio buffers
-    for (int i=0;i<ESP_AUDIO_OVERSAMPLES_PENTAGON;i++) overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_PENTAGON;i++) {
+        overSamplebuf[i]=0;
         audioBuffer[i]=0;
         AySound::SamplebufAY[i]=0;
     }
@@ -638,22 +677,24 @@ void ESPectrum::reset()
 
     // Set samples per frame and AY_emu flag depending on arch
     int prevAudio_freq = Audio_freq;
-    if (arch == "48K") {
-        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_48;
+    if (Config::arch == "48K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
+        audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
         AY_emu = Config::AY48;
         Audio_freq = ESP_AUDIO_FREQ_48;
-    } else if (arch == "128K") {
-        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_128;
+    } else if (Config::arch == "128K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_128;
+        audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_128;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_128;
-    } else if (arch == "Pentagon") {
-        overSamplesPerFrame=ESP_AUDIO_OVERSAMPLES_PENTAGON;
+    } else if (Config::arch == "Pentagon") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_PENTAGON;
+        audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_PENTAGON;
         AY_emu = true;        
         Audio_freq = ESP_AUDIO_FREQ_PENTAGON;
     }
+
+    if (Config::tape_player) AY_emu = false; // Disable AY emulation if tape player mode is set
 
     ESPoffset = 0;
 
@@ -786,7 +827,11 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
             if ((Kdown) && ((KeytoESP >= fabgl::VK_F1 && KeytoESP <= fabgl::VK_F12) || KeytoESP == fabgl::VK_PAUSE)) {
 
+                int64_t osd_start = esp_timer_get_time();
+
                 OSD::do_OSD(KeytoESP, Kbd->isVKDown(fabgl::VK_LCTRL) || Kbd->isVKDown(fabgl::VK_RCTRL));
+
+                // VIDEO::vga.clear(zxColor(0,0)); // Fake scanlines test
 
                 Kbd->emptyVirtualKeyQueue();
                 
@@ -794,9 +839,11 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0xbf;
                 zxDelay = 15;
                 
-                totalseconds = 0;
-                totalsecondsnodelay = 0;
-                VIDEO::framecnt = 0;
+                // totalseconds = 0;
+                // totalsecondsnodelay = 0;
+                // VIDEO::framecnt = 0;
+
+                ESPectrum::ts_start += esp_timer_get_time() - osd_start;
 
                 return;
 
@@ -1158,6 +1205,8 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
             zxDelay = 15;
 
+            int64_t osd_start = esp_timer_get_time();
+
             if (!bitRead(ZXKeyb::ZXcols[3],0)) {
                 OSD::do_OSD(fabgl::VK_F1,0);
             } else
@@ -1200,8 +1249,17 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
                 OSD::do_OSD(fabgl::VK_F1,true);
             } else
+            if (!bitRead(ZXKeyb::ZXcols[2],4)) { // T -> Turbo
+                OSD::do_OSD(fabgl::VK_F2,true);
+            } else
             if (!bitRead(ZXKeyb::ZXcols[1],1)) { // S -> Screen capture
                 CaptureToBmp();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[5],1)) { // O -> Poke
+                OSD::pokeDialog();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[7],3)) { // N -> NMI
+                Z80::triggerNMI();
             } else
             if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
                 if (Config::CenterH > -16) Config::CenterH--;
@@ -1226,8 +1284,12 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 zxDelay = 0;
 
             if (zxDelay) {
+
                 // Set all keys as not pressed
                 for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0xbf;
+
+                ESPectrum::ts_start += esp_timer_get_time() - osd_start;
+
                 return;
             }
         
@@ -1261,8 +1323,6 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
 
     size_t written;
 
-    // esp_err_t err;
-
     // PWM Audio Init
     pwm_audio_config_t pac;
     pac.duty_resolution    = LEDC_TIMER_8_BIT;
@@ -1273,7 +1333,7 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
     pac.ledc_timer_sel     = LEDC_TIMER_0;
     pac.tg_num             = TIMER_GROUP_0;
     pac.timer_num          = TIMER_0;
-    pac.ringbuf_len        = /* 1024 * 8;*/ /*2560;*/ /* 2880; */ 1024 * 4;
+    pac.ringbuf_len        = 3072; /* 4096; */
 
     pwm_audio_init(&pac);
     pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
@@ -1284,89 +1344,51 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        /* err = */ pwm_audio_write(ESPectrum::audioBuffer, samplesPerFrame, &written, 5 / portTICK_PERIOD_MS);
-
-        // if (err == ESP_FAIL) printf("Audio fail!\n");
-
-        // sndalive++;
+        pwm_audio_write(audioBuffer, samplesPerFrame, &written, 5 / portTICK_PERIOD_MS);
 
         xQueueReceive(audioTaskQueue, &param, portMAX_DELAY);
 
-        // Finish fill of oversampled audio buffers
-        if (faudbufcnt) {
-            if (faudbufcnt < overSamplesPerFrame)
-                for (int i=faudbufcnt; i < overSamplesPerFrame;i++) overSamplebuf[i] = faudioBit;
+        // Finish fill of beeper oversampled audio buffers
+        for (;faudbufcnt < (samplesPerFrame * audioSampleDivider); faudbufcnt++) {
+            audioBitBuf += faudioBit;
+            if(++audioBitbufCount == audioSampleDivider) {
+                overSamplebuf[audbufcntover++] = audioBitBuf / audioSampleDivider;
+                audioBitBuf = 0;
+                audioBitbufCount = 0; 
+            }
         }
-        
-        // Downsample beeper (median) and mix AY channels to output buffer
-        int beeper;
-        
-        if (Z80Ops::is128) {
 
-            if (faudbufcntAY < ESP_AUDIO_SAMPLES_128)
-                AySound::gen_sound(ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
+        if (AY_emu) {
 
-            if (faudbufcnt) {
-                int n = 0;
-                for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128; i += 6) {
-                    // Downsample (median)
-                    beeper  =  overSamplebuf[i];
-                    beeper +=  overSamplebuf[i+1];
-                    beeper +=  overSamplebuf[i+2];
-                    beeper +=  overSamplebuf[i+3];
-                    beeper +=  overSamplebuf[i+4];
-                    beeper +=  overSamplebuf[i+5];
+            if (faudbufcntAY < samplesPerFrame)
+                AySound::gen_sound(samplesPerFrame - faudbufcntAY , faudbufcntAY);
 
-                    beeper =  (beeper / 6) + AySound::SamplebufAY[n];
-                    // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
-                    audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
-                }
-            } else {
-                for (int i = 0; i < ESP_AUDIO_SAMPLES_128; i++) {
-                    beeper = faudioBit + AySound::SamplebufAY[i];
-                    audioBuffer[i] = beeper > 255 ? 255 : beeper; // Clamp
-                }
+            for (int i = 0; i < samplesPerFrame; i++) {
+                int beeper = overSamplebuf[i] + AySound::SamplebufAY[i];
+                audioBuffer[i] = beeper > 255 ? 255 : beeper; // Clamp
             }
 
-        } else {
+        } else
 
-            if (AY_emu) {
-                if (faudbufcntAY < samplesPerFrame)
-                    AySound::gen_sound(samplesPerFrame - faudbufcntAY , faudbufcntAY);
-            }
+            for (int i = 0; i < samplesPerFrame; i++)
+                audioBuffer[i] = overSamplebuf[i];
 
-            if (faudbufcnt) {
-                int n = 0;
-                for (int i=0;i < overSamplesPerFrame; i += 7) {
-                    // Downsample (median)
-                    beeper  =  overSamplebuf[i];
-                    beeper +=  overSamplebuf[i+1];
-                    beeper +=  overSamplebuf[i+2];
-                    beeper +=  overSamplebuf[i+3];
-                    beeper +=  overSamplebuf[i+4];
-                    beeper +=  overSamplebuf[i+5];
-                    beeper +=  overSamplebuf[i+6];
-
-                    beeper = AY_emu ? (beeper / 7) + AySound::SamplebufAY[n] : beeper / 7;
-                    // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
-                    audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
-
-                }
-            } else {
-                for (int i = 0; i < samplesPerFrame; i++) {
-                    beeper = AY_emu ? faudioBit + AySound::SamplebufAY[i] : faudioBit;
-                    audioBuffer[i] = beeper > 255 ? 255 : beeper; // Clamp
-                }
-            }
-
-        }
     }
 }
 
 IRAM_ATTR void ESPectrum::BeeperGetSample() {
+
     // Beeper audiobuffer generation (oversample)
     uint32_t audbufpos = Z80Ops::is128 ? CPU::tstates / 19 : CPU::tstates >> 4;
-    for (;audbufcnt < audbufpos; audbufcnt++) overSamplebuf[audbufcnt] = lastaudioBit;
+    for (;audbufcnt < audbufpos; audbufcnt++) {
+        audioBitBuf += lastaudioBit;
+        if(++audioBitbufCount == audioSampleDivider) {
+            overSamplebuf[audbufcntover++] = audioBitBuf / audioSampleDivider;
+            audioBitBuf = 0;
+            audioBitbufCount = 0;
+        }
+    }
+
 }
 
 IRAM_ATTR void ESPectrum::AYGetSample() {
@@ -1382,23 +1404,36 @@ IRAM_ATTR void ESPectrum::AYGetSample() {
 // MAIN LOOP
 //=======================================================================================
 
-int ESPectrum::sync_cnt = 0;
-volatile bool ESPectrum::vsync = false;
-
 IRAM_ATTR void ESPectrum::loop() {    
 
-int64_t ts_start, elapsed;
-int64_t idle;
+// // Video adjustment
+// VIDEO::vga.clear(zxColor(3,0)); // For overscan testing. Remove once adjusted
+// for(;;) {
 
-// int ESPmedian = 0;
+//     processKeyboard();
+
+//     VIDEO::vga.fillRect(165,126,20,20,zxColor(4,1));
+//     VIDEO::vga.fillRect(0,0,20,20,zxColor(4,1));
+//     VIDEO::vga.fillRect(331,0,20,20,zxColor(4,1));
+//     VIDEO::vga.fillRect(0,251,20,20,zxColor(4,1));
+//     VIDEO::vga.fillRect(331,251,20,20,zxColor(4,1));
+
+//     VIDEO::vga.line(331,271,340,271,zxColor(0,0));
+//     VIDEO::vga.line(10,271,19,271,zxColor(0,0));
+//     VIDEO::vga.line(10,0,19,0,zxColor(0,0));
+//     VIDEO::vga.line(331,0,340,0,zxColor(0,0));
+
+// }
 
 for(;;) {
 
     ts_start = esp_timer_get_time();
 
     // Send audioBuffer to pwmaudio
-    xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
+    if (ESP_delay) xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
+
     audbufcnt = 0;
+    audbufcntover = 0;
     audbufcntAY = 0;    
 
     CPU::loop();
@@ -1407,130 +1442,87 @@ for(;;) {
     faudbufcnt = audbufcnt;
     faudioBit = lastaudioBit;
     faudbufcntAY = audbufcntAY;
-    xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
+    
+    if (ESP_delay) xQueueSend(audioTaskQueue, &param, portMAX_DELAY);
 
     processKeyboard();
 
     // Update stats every 50 frames
-    if (VIDEO::framecnt == 1 && VIDEO::OSD) OSD::drawStats();
+    if (VIDEO::OSD && VIDEO::framecnt >= 50) {
 
-    // Flashing flag change
-    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
+        if (VIDEO::OSD == 1 && Tape::tapeStatus==TAPE_LOADING) {
 
-    // OSD calcs
-    if (VIDEO::framecnt) {
-        
-        totalsecondsnodelay += esp_timer_get_time() - ts_start;
-        
-        if (totalseconds >= 1000000) {
+            snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(0 + ESPectrum::TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
 
-            if (elapsed < 100000) {
-        
-                // printf("Tstates: %u, RegPC: %u\n",CPU::tstates,Z80::getRegPC());
+            float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
+            snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
 
-                #ifdef LOG_DEBUG_TIMING
-                printf("===========================================================================\n");
-                printf("[CPU] elapsed: %u; idle: %d\n", elapsed, idle);
-                printf("[Audio] Volume: %d\n", aud_volume);
-                printf("[Framecnt] %u; [Seconds] %f; [FPS] %f; [FPS (no delay)] %f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-                // printf("[ESPoffset] %d\n", ESPoffset);
-                showMemInfo();
-                #endif
-
-                #ifdef TESTING_CODE
-
-                // printf("[Framecnt] %u; [Seconds] %f; [FPS] %f; [FPS (no delay)] %f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-
-                // showMemInfo();
-                
-                snprintf(linea1, sizeof(linea1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-                // snprintf(linea1, sizeof(linea1), "CPU: %05d / TGT: %05d ", (int)elapsed, (int)target);
-                // snprintf(linea1, sizeof(linea1), "CPU: %05d / BMX: %05d ", (int)(elapsed), bmax);
-                // snprintf(linea1, sizeof(linea1), "CPU: %05d / OFF: %05d ", (int)(elapsed), (int)(ESPmedian/50));
-
-                snprintf(linea2, sizeof(linea2), "FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
-
-                #else
-
-                if (Tape::tapeStatus==TAPE_LOADING) {
-
-                    snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(0 + TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
-
-                    float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
-                    snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
-
-                    if ((++TapeNameScroller + 12) > Tape::tapeFileName.length()) TapeNameScroller = 0;
-
-                } else {
-
-                    snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
-                    
-                    // Audio tests
-                    // snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / SND: %05d ", (int)(elapsed), (int)pwm_audio_rbstats());
-                    // snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / SND: %05d ", (int)(elapsed), (int)pwm_audio_pwmcount());                    
-                    
-                    snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (totalseconds / 1000000), VIDEO::framecnt / (totalsecondsnodelay / 1000000));
-
-                }
-
-                #endif
-            }
-
-            totalseconds = 0;
-            totalsecondsnodelay = 0;
-            VIDEO::framecnt = 0;
-
-            // ESPmedian = 0;
-
-        }
-        
-        elapsed = esp_timer_get_time() - ts_start;
-        idle = target - elapsed - ESPoffset;
-
-        #ifdef VIDEO_FRAME_TIMING    
-
-        if(Config::videomode) {
-
-            if (sync_cnt++ == 0) {
-                if (idle > 0) { 
-                    delayMicroseconds(idle);
-                }
-            } else {
-
-                // Audio sync (once every 250 frames ~ 2,5 seconds)
-                if (sync_cnt++ == 250) {
-                    ESPoffset = 128 - pwm_audio_rbstats();
-                    sync_cnt = 0;
-                }
-
-                // Wait for vertical sync
-                for (;;) {
-                    if (vsync) break;
-                }
-
-            }
+            if ((++ESPectrum::TapeNameScroller + 12) > Tape::tapeFileName.length()) ESPectrum::TapeNameScroller = 0;
 
         } else {
 
-            if (idle > 0) { 
-                delayMicroseconds(idle);
-            }
-
-            // Audio sync
-            if (sync_cnt++ & 0x0f) {
-                ESPoffset = 128 - pwm_audio_rbstats();
-                sync_cnt = 0;
-            }
-
-            // ESPmedian += ESPoffset;
+            snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / IDL: %05d ", (int)(ESPectrum::elapsed), (int)(ESPectrum::idle));
+            snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (ESPectrum::totalseconds / 1000000), VIDEO::framecnt / (ESPectrum::totalsecondsnodelay / 1000000));
 
         }
-        
-        #endif
 
-        totalseconds += esp_timer_get_time() - ts_start;
+        OSD::drawStats();
+
+        totalseconds = 0;
+        totalsecondsnodelay = 0;
+        VIDEO::framecnt = 0;
 
     }
+
+    // Flashing flag change
+    if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
+        
+    elapsed = esp_timer_get_time() - ts_start;
+    idle = target - elapsed - ESPoffset;
+
+    totalsecondsnodelay += elapsed;
+
+    if (ESP_delay == false) {
+        totalseconds += elapsed;
+        continue;
+    }
+
+    if(Config::videomode && !Config::tape_player) {
+
+        if (sync_cnt++ == 0) {
+
+            if (idle > 0)
+                delayMicroseconds(idle);
+
+        } else {
+
+            // Audio sync (once every 128 frames ~ 2,5 seconds)
+            if (sync_cnt & 0x80) {
+                ESPoffset = 128 - pwm_audio_rbstats();
+                sync_cnt = 0;
+            } 
+
+            // Wait for vertical sync
+            for (;;) {
+                if (vsync) break;
+            }
+
+        }
+
+    } else {
+
+        if (idle > 0)
+            delayMicroseconds(idle);
+
+        // Audio sync
+        if (++sync_cnt & 0x10) {
+            ESPoffset = 128 - pwm_audio_rbstats();
+            sync_cnt = 0;
+        } 
+
+    }
+
+    totalseconds += esp_timer_get_time() - ts_start;
 
 }
 

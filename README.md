@@ -12,6 +12,9 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 - ZX Spectrum 48K, 128K and Pentagon 128K 100% cycle accurate emulation (no PSRAM needed).
 - Perfect Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
+- Selectable Sinclair 48K, Sinclair 128K and Amstrad +2 english and spanish ROMs.
+- Possibility of using one 48K and one 128K custom ROM with easy flashing procedure from SD card.
+- ZX81+ IF2 ROM by courtesy Paul Farrow with .P file loading from SD card.
 - 6 bpp VGA output in three modes: Standard VGA (60 and 70hz), VGA 50hz and CRT 15khz 50hz.
 - Support for two aspect ratios: 16:9 or 4:3 monitors (using 360x200 or 320x240 modes)
 - Multicolor attribute effects emulated (Bifrost*2, Nirvana and Nirvana+ engines).
@@ -24,7 +27,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - PS/2 Joystick emulation (Cursor, Sinclair, Kempston and Fuller).
 - Two real joysticks support (Up to 8 button joysticks) using [ESPjoy adapter](https://antoniovillena.es/store/product/espjoy-for-espectrum/) or DIY DB9 to PS/2 converter.
 - Emulation of Betadisk interface with four drives and TRD (read and write) and SCL (read only) support.
-- Realtime and fast TAP file loading.
+- Realtime (with OSD) and fast TAP file loading.
 - TAP file saving to SD card.
 - SNA and Z80 snapshot loading.
 - Snapshot saving and loading.
@@ -34,8 +37,10 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 ## Work in progress
 
-- On screen keyboard.
+- +2A/+3 models.
 - TZX support.
+- DSK support.
+- On screen keyboard.
 
 ## Installing
 
@@ -65,55 +70,75 @@ Run these tasks (`Upload` also does a `Build`) whenever you make any change in t
 
 #### Prepare micro SD Card
 
-The SD card should be formatted in FAT16 / FAT32 and you must create the following folders in root directory:
+The SD card should be formatted in FAT16 / FAT32.
 
-- ".p" folder     -> Will be used for persist snapshots.
-- ".c" folder     -> For BMP screen captures.
+Just that: then put your .sna, .z80, .p, .tap, .trd and .scl whenever you like and create and use folders as you need.
+
+There's also no need to sort files using external utilities: the emulator creates and updates indexes to sort files in folders by itself.
 
 ## PS/2 Keyboard functions
 
-- F1 Menu
-- F2 Load (SNA,Z80)
+- F1 Main menu
+- F2 Load (SNA,Z80,P)
 - F3 Load custom snapshot
 - F4 Save customn snapshot
 - F5 Select TAP file
 - F6 Play/Stop tape
 - F7 Tape Browser
-- F8 OSD Stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
+- F8 CPU / Tape load stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
 - F9 Volume down
 - F10 Volume up
 - F11 Hard reset
 - F12 Reset ESP32
-- Pause Pause
-- PrntScr BMP screen capture (Folder /c at SDCard)
 - CTRL + F1 Hardware info
+- CTRL + F2 Turbo mode
 - CTRL + F5..F8 Screen centering in CRT 15K/50hz mode
+- CTRL + F9 Input poke
+- CTRL + F10 NMI
+- Pause Pause
+- PrntScr BMP screen capture (Folder /.c at SDCard)
 
 ## ZX Keyboard functions
 
 Press CAPS SHIFT + SYMBOL SHIFT and:
 
-- 1 Menu
-- 2 Load (SNA,Z80)
+- 1 Main menu
+- 2 Load (SNA,Z80,P)
 - 3 Load custom snapshot
 - 4 Save custom snapshot
 - 5 Select TAP file
 - 6 Play/Stop tape
 - 7 Tape browser
-- 8 OSD Stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
+- 8 CPU / Tape load stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
 - 9 Volume down
 - 0 Volume up
 - Q Hard reset
 - W Reset ESP32
-- P Pause
-- S BMP screen capture (Folder /c at SDCard)
 - I Hardware info
-- Z, X, C and V Screen centering in CRT 15K/50hz mode
-
+- T Turbo mode
+- Z,X,C,V Screen centering in CRT 15K/50hz mode
+- O Input poke
+- N NMI
+- P Pause
+- S BMP screen capture (Folder /.c at SDCard)
 
 ## Hardware configuration and pinout
 
 Pin assignment in `hardpins.h` is set to match the boards we've tested emulator in, use it as-is, or change it to your own preference.
+
+## Project links
+
+- [Website](https://zxespectrum.speccy.org)
+- [Patreon](https://www.patreon.com/ESPectrum)
+- [Youtube Channel](https://www.youtube.com/@ZXESPectrum)
+- [Twitter](https://twitter.com/ZX_ESPectrum)
+- [Telegram](https://t.me/ZXESPectrum)
+
+## Supported hardware
+
+- [Lilygo FabGL VGA32](https://www.lilygo.cc/products/fabgl-vga32?_pos=1&_sid=b28e8cac0&_ss=r)
+- [Antonio Villena's ESPectrum board](https://antoniovillena.es/store/product/espectrum/) and [ESPjoy add-on](https://antoniovillena.es/store/product/espjoy-for-espectrum/)
+- [ESP32-SBC-FabGL board from Olimex](https://www.olimex.com/Products/Retro-Computers/ESP32-SBC-FabGL/open-source-hardware)
 
 ## Thanks to
 
@@ -124,15 +149,31 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - VGA Driver from [ESP32Lib by BitLuni](https://github.com/bitluni/ESP32Lib).
 - AY-3-8912 emulation from [libayemu by Alexander Sashnov](https://asashnov.github.io/libayemu.html).
 - PS2 Driver from Fabrizio di Vittorio for his [FabGL library](https://github.com/fdivitto/FabGL).
-- [Ackerman](https://github.com/rpsubc8/ESP32TinyZXSpectrum) for his code and ideas.
+- [Paul Farrow](http://www.fruitcake.plus.com/index.html) for his kind permission to include his amazing ZX81+ IF2 ROM.
 - Azesmbog for testing and providing very valuable info to make the emu more precise.
 - David Carrión for hardware and ZX keyboard code.
-- ZjoyKiLer for his testing and ideas.
+- ZjoyKiLer for his testing, code and ideas.
+- [Ackerman](https://github.com/rpsubc8/ESP32TinyZXSpectrum) for his code and ideas.
 - [Mark Woodmass](https://specemu.zxe.io) and [Juan Carlos González Amestoy](https://www.retrovirtualmachine.org) for his excellent emulators and his help with wd1793 emulation.
+- [Rodolfo Guerra](https://sites.google.com/view/rodolfoguerra) for his wonderful enhanced ROMs and his help for adding tape load turbo mode support to the emulator.
 - [Antonio Villena](https://antoniovillena.es/store) for creating the ESPectrum board.
 - Tsvetan Usunov from [Olimex Ltd](https://www.olimex.com).
 - [Amstrad PLC](http://www.amstrad.com) for the ZX-Spectrum ROM binaries [liberated for emulation purposes](http://www.worldofspectrum.org/permits/amstrad-roms.txt).
 - [Jean Thomas](https://github.com/jeanthom/ESP32-APLL-cal) for his ESP32 APLL calculator.
+
+## Thanks also to all this writters, hobbist and documenters
+
+- [Retrowiki](http://retrowiki.es/) especially the people at [ESP32 TTGO VGA32](http://retrowiki.es/viewforum.php?f=114) subforum.
+- [RetroReal](https://www.youtube.com/@retroreal) for his kindness and hospitality and his great work.
+- Rodrigo Méndez [Ron](https://www.twitch.tv/retrocrypta)
+- Armand López [El Viejoven FX](https://www.youtube.com/@ElViejovenFX)
+- Javi Ortiz [El Spectrumero](https://www.youtube.com/@ElSpectrumeroJaviOrtiz) 
+- José Luis Rodríguez [VidaExtraRetro](https://www.twitch.tv/vidaextraretro)
+- [El Mundo del Spectrum](http://www.elmundodelspectrum.com/)
+- [Microhobby magazine](https://es.wikipedia.org/wiki/MicroHobby).
+- [The World of Spectrum](http://www.worldofspectrum.org/)
+- Dr. Ian Logan & Dr. Frank O'Hara for [The Complete Spectrum ROM Disassembly book](http://freestuff.grok.co.uk/rom-dis/).
+- Chris Smith for the The [ZX-Spectrum ULA book](http://www.zxdesign.info/book/).
 
 ## And all the involved people from the golden age
 
@@ -142,15 +183,3 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - [Lord Alan Michael Sugar](https://en.wikipedia.org/wiki/Alan_Sugar).
 - [Investrónica team](https://es.wikipedia.org/wiki/Investr%C3%B3nica).
 - [Matthew Smith](https://en.wikipedia.org/wiki/Matthew_Smith_(games_programmer)) for [Manic Miner](https://en.wikipedia.org/wiki/Manic_Miner).
-
-## And all the writters, hobbist and documenters
-
-- [Retrowiki](http://retrowiki.es/) especially the people at [ESP32 TTGO VGA32](http://retrowiki.es/viewforum.php?f=114) subforum.
-- [RetroReal](https://www.youtube.com/@retroreal) for his kindness and hospitality and his great work.
-- Armand López [El Viejoven FX](https://www.youtube.com/@ElViejovenFX)
-- Javi Ortiz [El Spectrumero](https://www.youtube.com/@ElSpectrumeroJaviOrtiz) 
-- [El Mundo del Spectrum](http://www.elmundodelspectrum.com/)
-- [Microhobby magazine](https://es.wikipedia.org/wiki/MicroHobby).
-- [The World of Spectrum](http://www.worldofspectrum.org/)
-- Dr. Ian Logan & Dr. Frank O'Hara for [The Complete Spectrum ROM Disassembly book](http://freestuff.grok.co.uk/rom-dis/).
-- Chris Smith for the The [ZX-Spectrum ULA book](http://www.zxdesign.info/book/).

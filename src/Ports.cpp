@@ -58,8 +58,46 @@ visit https://zxespectrum.speccy.org/contacto
 //   7: ula <= 8'hFF;
 // and adjusted for BEEPER_MAX_VOLUME = 97
 uint8_t Ports::speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
-DRAM_ATTR uint8_t Ports::port[128];
+uint8_t Ports::port[128];
 uint8_t Ports::port254 = 0;
+
+uint8_t (*Ports::getFloatBusData)() = &Ports::getFloatBusData48;
+
+uint8_t Ports::getFloatBusData48() {
+
+    unsigned int currentTstates = CPU::tstates;
+
+	unsigned int line = (currentTstates / 224) - 64;
+	if (line >= 192) return 0xFF;
+
+	unsigned char halfpix = (currentTstates % 224) - 3;
+	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
+
+    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
+    
+    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
+
+    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+
+}
+
+uint8_t Ports::getFloatBusData128() {
+
+    unsigned int currentTstates = CPU::tstates - 1;
+
+	unsigned int line = (currentTstates / 228) - 63;
+	if (line >= 192) return 0xFF;
+
+	unsigned char halfpix = currentTstates % 228;
+	if ((halfpix >= 128) || (halfpix & 0x04)) return 0xFF;
+
+    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
+    
+    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
+
+    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+
+}
 
 IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
@@ -153,7 +191,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
         if (!Z80Ops::isPentagon) {
 
-            data = VIDEO::getFloatBusData();
+            data = getFloatBusData();
             
             if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
@@ -163,7 +201,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 if (!MemESP::pagingLock) {
                     MemESP::pagingLock = bitRead(data, 5);
                     MemESP::bankLatch = data & 0x7;
-                    MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+                    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
                     MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
                     if (MemESP::videoLatch != bitRead(data, 3)) {
                         MemESP::videoLatch = bitRead(data, 3);
@@ -172,11 +210,11 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                             VIDEO::Draw(2, false);
                             CPU::tstates -= 2;
                         }
-                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
                     }
                     MemESP::romLatch = bitRead(data, 4);
                     bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-                    MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];            
+                    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];            
                 }
 
             }
@@ -208,11 +246,19 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
-        // Beeper Audio
-        Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
-        if (Audiobit != ESPectrum::lastaudioBit) {
-            ESPectrum::BeeperGetSample();
-            ESPectrum::lastaudioBit = Audiobit;
+        if (ESPectrum::ESP_delay) {
+
+            if (Config::tape_player)
+                Audiobit = Tape::tapeEarBit ? 255 : 0; // For tape player mode
+            else
+                // Beeper Audio
+                Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+
+            if (Audiobit != ESPectrum::lastaudioBit) {
+                ESPectrum::BeeperGetSample();
+                ESPectrum::lastaudioBit = Audiobit;
+            }
+
         }
 
         // AY ========================================================================
@@ -294,12 +340,12 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             MemESP::pagingLock = bitRead(data, 5);
 
             MemESP::bankLatch = data & 0x7;
-            MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
+            MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
             MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-            MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
+            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
                 MemESP::videoLatch = bitRead(data, 3);
@@ -313,7 +359,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                     }
                 }
 
-                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram7 : MemESP::ram5;
+                VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
             }
 
         }

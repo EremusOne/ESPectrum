@@ -37,15 +37,6 @@ visit https://zxespectrum.speccy.org/contacto
 #define ESPectrum_hardconfig_h
 
 ///////////////////////////////////////////////////////////////////////////////
-// Frame timing switch
-//
-// #define VIDEO_FRAME_TIMING to let the emu add a delay at the end of
-// every frame in order to get the right duration in microsecs/frame
-///////////////////////////////////////////////////////////////////////////////
-
-#define VIDEO_FRAME_TIMING
-
-///////////////////////////////////////////////////////////////////////////////
 // Video output switch
 //
 // #define NOVIDEO for disabling video output.
@@ -61,47 +52,11 @@ visit https://zxespectrum.speccy.org/contacto
 // #define LOG_DEBUG_TIMING
 
 ///////////////////////////////////////////////////////////////////////////////
-// Snapshot loading behaviour
-//
-// define SNAPSHOT_LOAD_FORCE_ARCH if you want the architecture present
-// in the snapshot file to be forcibly set as the current emulated machine.
-// 
-// if current machine is 48K and a 128K snapshot is loaded,
-// arch will be switched to 128K always (with SINCLAIR romset as the default).
-//
-// but if machine is in 128K mode and a 48K snapshot is loaded,
-// arch will be switched to 48K only if SNAPSHOT_LOAD_FORCE_ARCH is defined.
-///////////////////////////////////////////////////////////////////////////////
-
-#define SNAPSHOT_LOAD_FORCE_ARCH
-
-///////////////////////////////////////////////////////////////////////////////
-// Snapshot remember behaviour
-//
-// define SNAPSHOT_LOAD_LAST if you want the last snapshot name to be saved
-// to persistent config, thus remembering snapshot when powering off,
-// so that snapshot is loaded on next power on.
-//
-// This affects only to snapshots on "Load Snapshot to RAM",
-// not to persistent snapshots.
-///////////////////////////////////////////////////////////////////////////////
-
-// #define SNAPSHOT_LOAD_LAST
-
-///////////////////////////////////////////////////////////////////////////////
 // Testing code
 //
 // Activate sections of code for testing / profiling
 ///////////////////////////////////////////////////////////////////////////////
 
 // #define TESTING_CODE
-
-///////////////////////////////////////////////////////////////////////////////
-// RAM info key
-//
-// Activate VK_GRAVEACCENT for logging ram info to console
-///////////////////////////////////////////////////////////////////////////////
-
-// #define RAM_INFO_KEY
 
 #endif // ESPectrum_config_h
