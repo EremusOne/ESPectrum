@@ -92,11 +92,7 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Video draw functions
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Common
-  #ifdef NO_VIDEO
-  static void NoVideo(unsigned int statestoadd, bool contended);
-  #endif
-  // static void NoDraw(unsigned int statestoadd, bool contended);
+    // static void NoDraw(unsigned int statestoadd, bool contended);
   static void EndFrame();
   static void Blank(unsigned int statestoadd, bool contended);
   

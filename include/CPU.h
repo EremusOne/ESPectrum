@@ -83,6 +83,9 @@ public:
     static uint8_t IntStart;
     static uint8_t IntEnd;
 
+    // CPU Tstates in frame - IntEnd
+    static uint32_t stFrame;
+
 };
 
 #endif // CPU_h

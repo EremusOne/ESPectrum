@@ -8,7 +8,7 @@
 // Copyright (c) 2021 dcrespo3d - https://github.com/dcrespo3d
 //
 // ESPectrum specific optimizations and code
-// Copyright (c) 2023-24 Eremus - https://github.com/EremusOne
+// Copyright (c) 2023-24 Víctor Iborra [Eremus] - https://github.com/EremusOne
 //
 
 // Converted to C++ from Java at

@@ -50,6 +50,7 @@ uint32_t CPU::statesInFrame = 0;
 uint8_t CPU::latetiming = 0;
 uint8_t CPU::IntStart = 0;
 uint8_t CPU::IntEnd = 0;
+uint32_t CPU::stFrame = 0;
 
 bool Z80Ops::is48;
 bool Z80Ops::is128;
@@ -69,8 +70,8 @@ void CPU::reset() {
         Z80Ops::is128 = false;
         Z80Ops::isPentagon = false;
         statesInFrame = TSTATES_PER_FRAME_48;
-        CPU::IntStart = INT_START48;
-        CPU::IntEnd = INT_END48 + CPU::latetiming;
+        IntStart = INT_START48;
+        IntEnd = INT_END48 + CPU::latetiming;
         // Set emulation loop sync target
         ESPectrum::target = MICROS_PER_FRAME_48;
     } else if (Config::arch == "128K") {
@@ -79,8 +80,8 @@ void CPU::reset() {
         Z80Ops::is128 = true;
         Z80Ops::isPentagon = false;
         statesInFrame = TSTATES_PER_FRAME_128;
-        CPU::IntStart = INT_START128;
-        CPU::IntEnd = INT_END128 + CPU::latetiming;
+        IntStart = INT_START128;
+        IntEnd = INT_END128 + CPU::latetiming;
         // Set emulation loop sync target
         ESPectrum::target = MICROS_PER_FRAME_128;
     } else if (Config::arch == "Pentagon") {
@@ -88,11 +89,13 @@ void CPU::reset() {
         Z80Ops::is128 = false;
         Z80Ops::isPentagon = true;
         statesInFrame = TSTATES_PER_FRAME_PENTAGON;
-        CPU::IntStart = INT_START_PENTAGON;
-        CPU::IntEnd = INT_END_PENTAGON + CPU::latetiming;
+        IntStart = INT_START_PENTAGON;
+        IntEnd = INT_END_PENTAGON + CPU::latetiming;
         // Set emulation loop sync target
         ESPectrum::target = MICROS_PER_FRAME_PENTAGON;
     }
+
+    stFrame = statesInFrame - IntEnd;
 
     tstates = 0;
     global_tstates = 0;
@@ -110,8 +113,7 @@ IRAM_ATTR void CPU::loop() {
     }
 
     while (tstates < IntEnd) Z80::execute();
-    
-    uint32_t stFrame = statesInFrame - IntEnd;
+
     while (tstates < stFrame) Z80::exec_nocheck();
 
     while (tstates < statesInFrame) Z80::execute();
@@ -121,9 +123,7 @@ IRAM_ATTR void CPU::loop() {
     global_tstates += statesInFrame; // increase global Tstates
     tstates -= statesInFrame;
 
-    #ifndef NO_VIDEO
     VIDEO::EndFrame();
-    #endif
 
 }
 

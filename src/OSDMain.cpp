@@ -335,18 +335,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F10) { // NMI
             Z80::triggerNMI();
         } else 
-        // if (KeytoESP == fabgl::VK_F3) { 
-        
-        //     // Test variable decrease
-        //     // ESPectrum::ESPoffset -= 5;
-        
-        // } else 
-        // if (KeytoESP == fabgl::VK_F4) {
-
+        if (KeytoESP == fabgl::VK_F3) { 
+            // Test variable decrease
+            ESPectrum::ESPtestvar -= 1;
+        } else 
+        if (KeytoESP == fabgl::VK_F4) {
             // Test variable increase
-            // ESPectrum::ESPoffset += 5;
-        
-        // } else 
+            ESPectrum::ESPtestvar += 1;
+        } else 
         if (KeytoESP == fabgl::VK_F5) {
             if (Config::CenterH > -16) Config::CenterH--;
             Config::save("CenterH");
@@ -507,47 +503,117 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         }
         else if (KeytoESP == fabgl::VK_F8) {
             // Show / hide OnScreen Stats
-            if (VIDEO::OSD == 0)
-                VIDEO::OSD = Tape::tapeStatus == TAPE_LOADING ? 1 : 2;
+            if ((VIDEO::OSD & 0x03) == 0)
+                VIDEO::OSD |= Tape::tapeStatus == TAPE_LOADING ? 1 : 2;
             else
                 VIDEO::OSD++;
 
-            if (VIDEO::OSD > 2) {
-                if (Config::aspect_16_9) 
-                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
-                else
-                    VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
-                VIDEO::OSD = 0;
+            if ((VIDEO::OSD & 0x03) > 2) {
+                if ((VIDEO::OSD & 0x04) == 0) {
+                    if (Config::aspect_16_9) 
+                        VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
+                    else
+                        VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
+                }
+                VIDEO::OSD &= 0xfc;
             } else {
-                if (Config::aspect_16_9) 
-                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
-                else
-                    VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                if ((VIDEO::OSD & 0x04) == 0) {
+                    if (Config::aspect_16_9) 
+                        VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+                    else
+                        VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                    OSD::drawStats();
+                }
 
                 ESPectrum::TapeNameScroller = 0;
-                OSD::drawStats();
+
             }
 
             click();
 
         }
         else if (KeytoESP == fabgl::VK_F9) { 
+
+            if (VIDEO::OSD == 0) {
+
+                if (Config::aspect_16_9) 
+                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+                else
+                    VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                VIDEO::OSD = 0x04;
+
+            } else VIDEO::OSD |= 0x04;
+
+            ESPectrum::totalseconds = 0;
+            ESPectrum::totalsecondsnodelay = 0;
+            VIDEO::framecnt = 0;
+
             if (ESPectrum::aud_volume>ESP_VOLUME_MIN) {
                 ESPectrum::aud_volume--;
-                if (Config::tape_player) 
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
-                else
-                    OSD::click();
+                pwm_audio_set_volume(ESPectrum::aud_volume);
             }
+
+            unsigned short x,y;
+
+            if (Config::aspect_16_9) {
+                x = 156;
+                y = 180;
+            } else {
+                x = 168;
+                y = 224;
+            }
+
+            VIDEO::vga.fillRect(x ,y - 4, 24 * 6, 16, zxColor(1, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
+            VIDEO::vga.setFont(Font6x8);
+            VIDEO::vga.setCursor(x + 4,y + 1);
+            VIDEO::vga.print(Config::tape_player ? "TAP" : "VOL");
+            for (int i = 0; i < ESPectrum::aud_volume + 16; i++)
+                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));                
+
         }
         else if (KeytoESP == fabgl::VK_F10) { 
+
+            if (VIDEO::OSD == 0) {
+
+                if (Config::aspect_16_9) 
+                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+                else
+                    VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                VIDEO::OSD = 0x04;
+
+            } else VIDEO::OSD |= 0x04;
+
+            ESPectrum::totalseconds = 0;
+            ESPectrum::totalsecondsnodelay = 0;
+            VIDEO::framecnt = 0;
+
             if (ESPectrum::aud_volume<ESP_VOLUME_MAX) {
                 ESPectrum::aud_volume++;
-                if (Config::tape_player) 
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
-                else
-                    OSD::click();
+                pwm_audio_set_volume(ESPectrum::aud_volume);
             }
+
+            unsigned short x,y;
+            if (Config::aspect_16_9) {
+                x = 156;
+                y = 180;
+            } else {
+                x = 168;
+                y = 224;
+            }
+
+            VIDEO::vga.fillRect(x ,y - 4, 24 * 6, 16, zxColor(1, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
+            VIDEO::vga.setFont(Font6x8);
+            VIDEO::vga.setCursor(x + 4,y + 1);
+            VIDEO::vga.print(Config::tape_player ? "TAP" : "VOL");
+            for (int i = 0; i < ESPectrum::aud_volume + 16; i++)
+                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));                                
+
         }
         else if (KeytoESP == fabgl::VK_F11) { // Hard reset
             if (Config::ram_file != NO_RAM_FILE) {
@@ -1640,7 +1706,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     if (res == DLG_YES) {
 
                                         // Open firmware file
-                                        FILE *firmware = fopen("/sd/firmware.bin", "rb");
+                                        FILE *firmware = fopen("/sd/firmware.upg", "rb");
                                         if (firmware == NULL) {
                                             osdCenteredMsg(OSD_NOFIRMW_ERR[Config::lang], LEVEL_WARN, 2000);
                                         } else {
@@ -1718,36 +1784,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 break;
                             }
                         }
-
-                        // menu_level = 2;
-
-                        // string title = OSD_FIRMW_UPDATE[Config::lang];
-                        // string msg = OSD_DLG_SURE[Config::lang];
-                        // uint8_t res = msgDialog(title,msg);
-
-                        // if (res == DLG_YES) {
-
-                        //     // Open firmware file
-                        //     FILE *firmware = fopen("/sd/firmware.bin", "rb");
-                        //     if (firmware == NULL) {
-                        //         osdCenteredMsg(OSD_NOFIRMW_ERR[Config::lang], LEVEL_WARN, 2000);
-                        //         return;
-                        //     } else {
-                        //         esp_err_t res = updateFirmware(firmware);
-                        //         fclose(firmware);
-                        //         string errMsg = OSD_FIRMW_ERR[Config::lang];
-                        //         errMsg += " Code = " + to_string(res);
-                        //         osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
-                        //     }
-
-                        //     return;
-
-                        // } else {
-
-                        //     menu_curopt = 9;
-                        //     menu_saverect = false;
-
-                        // }
 
                     } else {
                         menu_curopt = 6;

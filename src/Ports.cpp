@@ -242,11 +242,15 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         // Border color
         if (VIDEO::borderColor != data & 0x07) {
             VIDEO::borderColor = data & 0x07;
+
+            // TO DO: separate border drawing from paper drawing in drawBorder function
+            // VIDEO::drawBorder(); // Will draw border from VIDEO::lastBrdTstate -> CPU::tstates and set VIDEO::lastBrdTstate to CPU::tstates
+
             if (!Z80Ops::isPentagon) VIDEO::Draw(0,true); // Seems not needed in Pentagon
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
         }
     
-        if (ESPectrum::ESP_delay) {
+        if (ESPectrum::ESP_delay) { // Disable beeper on turbo mode
 
             if (Config::tape_player)
                 Audiobit = Tape::tapeEarBit ? 255 : 0; // For tape player mode

@@ -156,12 +156,7 @@ IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
 
 }
 
-#ifdef NO_VIDEO
-void (*VIDEO::Draw)(unsigned int, bool) = &VIDEO::NoVideo;
-#else
 void (*VIDEO::Draw)(unsigned int, bool) = &VIDEO::Blank;
-#endif
-
 void (*VIDEO::DrawOSD43)(unsigned int, bool) = &VIDEO::BottomBorder;
 void (*VIDEO::DrawOSD169)(unsigned int, bool) = &VIDEO::MainScreen;
 
@@ -392,11 +387,7 @@ void VIDEO::Reset() {
 
     grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
-    #ifdef NO_VIDEO
-        Draw = &NoVideo;
-    #else
-        Draw = &Blank;
-    #endif
+    Draw = &Blank;
 
 }
 
@@ -404,15 +395,7 @@ void VIDEO::Reset() {
 //  VIDEO DRAW FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef NO_VIDEO
-void VIDEO::NoVideo(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
-#endif
-
-// IRAM_ATTR void VIDEO::NoDraw(unsigned int statestoadd, bool contended) {
-//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-//     CPU::tstates += statestoadd;
-//     video_rest += statestoadd;
-// }
+// #define NO_DRAW
 
 IRAM_ATTR void VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) {
 
@@ -464,10 +447,12 @@ IRAM_ATTR void VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
     
     if (coldraw_cnt >= 40) {
 
+        #ifndef NO_DRAW
         for (;i < 40;i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
         }
+        #endif
 
         // linedraw_cnt++; // Fake scanlines test
 
@@ -475,10 +460,12 @@ IRAM_ATTR void VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
 
     } else {
 
+        #ifndef NO_DRAW
         for (;i < coldraw_cnt; i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
         }
+        #endif
 
     }
 
@@ -571,43 +558,22 @@ IRAM_ATTR void VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
     video_rest = statestoadd & 0x03; // Mod 4
 
     for (int i=0; i < (statestoadd >> 2); i++) {    
+
+        #ifndef NO_DRAW
         *lineptr32++ = brd;
         *lineptr32++ = brd;
+        #endif
+
         if (++coldraw_cnt > 3) {      
             Draw = DrawOSD169;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
             Draw(0,false);
             return;
         }
+
     }
     
 }
-
-// // ---------------------------
-// // ptime-128 compliant version
-// // ---------------------------    
-// IRAM_ATTR void VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {    
-  
-//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-
-//     CPU::tstates += statestoadd;
-//     statestoadd += video_rest;
-//     video_rest = statestoadd & 0x03; // Mod 4
-
-//     for (int i=0; i < (statestoadd >> 2); i++) {    
-//         *lineptr32++ = brd;
-//         *lineptr32++ = brd;
-//         if (++coldraw_cnt > 3) {      
-//             Draw = DrawOSD169;
-//             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-//             dispUpdCycle = 6 + CPU::latetiming;
-//             Draw(0,false);
-//             video_rest = 0;
-//             return;
-//         }
-//     }
-    
-// }
 
 IRAM_ATTR void VIDEO::MainScreenLB_Pentagon(unsigned int statestoadd, bool contended) {    
   
@@ -650,11 +616,13 @@ IRAM_ATTR void VIDEO::MainScreenLB_Pentagon(unsigned int statestoadd, bool conte
 
             for (;;) {
 
+                #ifndef NO_DRAW
                 att = grmem[attOffset++];
                 bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
                 *lineptr32++ = AluByte[bmp >> 4][att];
                 *lineptr32++ = AluByte[bmp & 0xF][att];
+                #endif
 
                 loopCount--;
 
@@ -672,12 +640,14 @@ IRAM_ATTR void VIDEO::MainScreenLB_Pentagon(unsigned int statestoadd, bool conte
             coldraw_cnt += loopCount;
 
             for (;loopCount > 0 ; loopCount--) {
-
+                
+                #ifndef NO_DRAW
                 att = grmem[attOffset++];       // get attribute byte
                 bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
                 *lineptr32++ = AluByte[bmp >> 4][att];
                 *lineptr32++ = AluByte[bmp & 0xF][att];
+                #endif
 
             }
 
@@ -764,54 +734,6 @@ IRAM_ATTR void VIDEO::MainScreen_Pentagon_delay(unsigned int statestoadd, bool c
     }
 
 }
-
-// // ---------------------------
-// // ptime-128 compliant version
-// // ---------------------------    
-// void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
-
-//     static uint8_t att1,bmp1;
-
-//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-
-//     CPU::tstates += statestoadd;
-
-//     statestoadd += video_rest;
-    
-//     for (int i=0; i < statestoadd; i++) {    
-
-//         switch(dispUpdCycle) {
-//             case 0:
-//             case 2:
-//                 bmp1 = grmem[bmpOffset++];
-//                 break;
-//             case 1:
-//                 att1 = grmem[attOffset++];  // get attribute byte
-//             case 5:
-
-//                 if (att1 & flashing) bmp1 = ~bmp1;
-//                 *lineptr32++ = AluByte[bmp1 >> 4][att1];
-//                 *lineptr32++ = AluByte[bmp1 & 0xF][att1];
-
-//                 if (++coldraw_cnt > 35) {
-//                     Draw = MainScreenRB;
-//                     video_rest += statestoadd - (i + 1);
-//                     MainScreenRB(0,false);
-//                     return;
-//                 }
-
-//                 break;
-//             case 3:
-//                 att1 = grmem[attOffset++];  // get attribute byte
-//                 break;
-//         }
-
-//         // Update the cycle counter.
-//         ++dispUpdCycle &= 0x07;
-
-//     }
-
-// }
 
 IRAM_ATTR void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {    
 
@@ -902,9 +824,11 @@ IRAM_ATTR void VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
     video_rest = statestoadd & 0x03;
 
     for (int i = 0; i < statestoadd >> 2; i++) {
-
+        
+        #ifndef NO_DRAW
         *lineptr32++ = brd;
         *lineptr32++ = brd;
+        #endif
 
         if (++coldraw_cnt == 40) {
 
@@ -989,10 +913,12 @@ IRAM_ATTR void VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
     
     if (coldraw_cnt > 39) {
 
+        #ifndef NO_DRAW
         for (;i < 40;i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
         }
+        #endif
 
         // linedraw_cnt++; // Fake scanlines test
 
@@ -1000,10 +926,12 @@ IRAM_ATTR void VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
 
     } else {
 
+        #ifndef NO_DRAW        
         for (;i < coldraw_cnt; i++) {
             *lineptr32++ = brd;
             *lineptr32++ = brd;
         }
+        #endif
 
     }
 
@@ -1044,10 +972,12 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
     
         if (coldraw_cnt > 39) {
 
+            #ifndef NO_DRAW
             for (;i < 40;i++) {
                 *lineptr32++ = brd;
                 *lineptr32++ = brd;
             }
+            #endif
 
             // linedraw_cnt++; // Fake scanlines test
             // Draw = ++linedraw_cnt == 480 ? &Blank : &BottomBorder_Blank ;
@@ -1056,10 +986,12 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
 
         } else {
 
+            #ifndef NO_DRAW
             for (;i < coldraw_cnt; i++) {
                 *lineptr32++ = brd;
                 *lineptr32++ = brd;
             }
+            #endif
 
         }
 
@@ -1068,11 +1000,18 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
         for (unsigned int i=0; i < statestoadd >> 2; i++) {    
             
             if (coldraw_cnt < 21) {
+
+                #ifndef NO_DRAW
                 *lineptr32++ = brd;
                 *lineptr32++ = brd;
+                #endif
+
             } else if (coldraw_cnt > 38) {
+
+                #ifndef NO_DRAW
                 *lineptr32++ = brd;
                 *lineptr32++ = brd;
+                #endif
 
                 // linedraw_cnt++; // Fake scanlines test
                 // Draw = ++linedraw_cnt == 480 ? &Blank : &BottomBorder_Blank ;

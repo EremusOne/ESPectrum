@@ -106,8 +106,9 @@ public:
     static double totalsecondsnodelay;
     static int64_t elapsed;
     static int64_t idle;
+    static int ESPoffset;
 
-    static int ESPoffset; // Testing
+    static int ESPtestvar;
 
     static volatile bool vsync;
 

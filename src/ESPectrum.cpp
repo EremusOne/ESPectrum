@@ -156,12 +156,13 @@ int64_t ESPectrum::ts_start;
 int64_t ESPectrum::elapsed;
 int64_t ESPectrum::idle;
 bool ESPectrum::ESP_delay = true;
+int ESPectrum::ESPoffset = 0;
 
 //=======================================================================================
 // LOGGING / TESTING
 //=======================================================================================
 
-int ESPectrum::ESPoffset = 0;
+int ESPectrum::ESPtestvar = 0;
 
 void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 
@@ -541,6 +542,12 @@ void ESPectrum::setup()
         Audio_freq = ESP_AUDIO_FREQ_PENTAGON;
     }
 
+    if (Config::tape_player) {
+        AY_emu = false; // Disable AY emulation if tape player mode is set
+        ESPectrum::aud_volume = ESP_VOLUME_MAX;
+    } else
+        ESPectrum::aud_volume = ESP_VOLUME_DEFAULT;
+
     ESPoffset = 0;
 
     // Create Audio task
@@ -560,8 +567,6 @@ void ESPectrum::setup()
     Tape::tapeStatus = TAPE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
-
-    if (Config::tape_player) AY_emu = false; // Disable AY emulation if tape player mode is set
 
     // Init CPU
     Z80::create();
@@ -1352,7 +1357,7 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
         for (;faudbufcnt < (samplesPerFrame * audioSampleDivider); faudbufcnt++) {
             audioBitBuf += faudioBit;
             if(++audioBitbufCount == audioSampleDivider) {
-                overSamplebuf[audbufcntover++] = audioBitBuf / audioSampleDivider;
+                overSamplebuf[audbufcntover++] = audioBitBuf;
                 audioBitBuf = 0;
                 audioBitbufCount = 0; 
             }
@@ -1364,14 +1369,14 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
                 AySound::gen_sound(samplesPerFrame - faudbufcntAY , faudbufcntAY);
 
             for (int i = 0; i < samplesPerFrame; i++) {
-                int beeper = overSamplebuf[i] + AySound::SamplebufAY[i];
+                int beeper = (overSamplebuf[i] / audioSampleDivider) + AySound::SamplebufAY[i];
                 audioBuffer[i] = beeper > 255 ? 255 : beeper; // Clamp
             }
 
         } else
 
             for (int i = 0; i < samplesPerFrame; i++)
-                audioBuffer[i] = overSamplebuf[i];
+                audioBuffer[i] = overSamplebuf[i] / audioSampleDivider;
 
     }
 }
@@ -1383,7 +1388,7 @@ IRAM_ATTR void ESPectrum::BeeperGetSample() {
     for (;audbufcnt < audbufpos; audbufcnt++) {
         audioBitBuf += lastaudioBit;
         if(++audioBitbufCount == audioSampleDivider) {
-            overSamplebuf[audbufcntover++] = audioBitBuf / audioSampleDivider;
+            overSamplebuf[audbufcntover++] = audioBitBuf;
             audioBitBuf = 0;
             audioBitbufCount = 0;
         }
@@ -1450,27 +1455,54 @@ for(;;) {
     // Update stats every 50 frames
     if (VIDEO::OSD && VIDEO::framecnt >= 50) {
 
-        if (VIDEO::OSD == 1 && Tape::tapeStatus==TAPE_LOADING) {
+        if (VIDEO::OSD & 0x04) {
 
-            snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(0 + ESPectrum::TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
+            // printf("Vol. OSD out -> Framecnt: %d\n", VIDEO::framecnt);
 
-            float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
-            snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
+            if (VIDEO::framecnt >= 100) {
 
-            if ((++ESPectrum::TapeNameScroller + 12) > Tape::tapeFileName.length()) ESPectrum::TapeNameScroller = 0;
+                VIDEO::OSD &= 0xfb;
 
-        } else {
+                if (VIDEO::OSD == 0) {
 
-            snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / IDL: %05d ", (int)(ESPectrum::elapsed), (int)(ESPectrum::idle));
-            snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (ESPectrum::totalseconds / 1000000), VIDEO::framecnt / (ESPectrum::totalsecondsnodelay / 1000000));
+                    if (Config::aspect_16_9) 
+                        VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
+                    else
+                        VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
+
+                }
+
+            }
 
         }
+        
+        if ((VIDEO::OSD & 0x04) == 0) {
 
-        OSD::drawStats();
+            if (VIDEO::OSD == 1 && Tape::tapeStatus==TAPE_LOADING) {
 
-        totalseconds = 0;
-        totalsecondsnodelay = 0;
-        VIDEO::framecnt = 0;
+                snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), " %-12s %04d/%04d ", Tape::tapeFileName.substr(0 + ESPectrum::TapeNameScroller, 12).c_str(), Tape::tapeCurBlock + 1, Tape::tapeNumBlocks);
+
+                float percent = (float)((Tape::tapebufByteCount + Tape::tapePlayOffset) * 100) / (float)Tape::tapeFileSize;
+                snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), " %05.2f%% %07d%s%07d ", percent, Tape::tapebufByteCount + Tape::tapePlayOffset, "/" , Tape::tapeFileSize);
+
+                if ((++ESPectrum::TapeNameScroller + 12) > Tape::tapeFileName.length()) ESPectrum::TapeNameScroller = 0;
+
+                OSD::drawStats();
+
+            } else if (VIDEO::OSD == 2) {
+
+                snprintf(OSD::stats_lin1, sizeof(OSD::stats_lin1), "CPU: %05d / IDL: %05d ", (int)(ESPectrum::elapsed), (int)(ESPectrum::idle));
+                snprintf(OSD::stats_lin2, sizeof(OSD::stats_lin2), "FPS:%6.2f / FND:%6.2f ", VIDEO::framecnt / (ESPectrum::totalseconds / 1000000), VIDEO::framecnt / (ESPectrum::totalsecondsnodelay / 1000000));
+
+                OSD::drawStats();
+
+            }
+
+            totalseconds = 0;
+            totalsecondsnodelay = 0;
+            VIDEO::framecnt = 0;
+
+        }
 
     }
 
