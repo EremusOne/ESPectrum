@@ -163,6 +163,8 @@ int ESPectrum::ESPoffset = 0;
 //=======================================================================================
 
 int ESPectrum::ESPtestvar = 0;
+int ESPectrum::ESPtestvar1 = 0;
+int ESPectrum::ESPtestvar2 = 0;
 
 void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 
@@ -517,6 +519,8 @@ void ESPectrum::setup()
     
     FileUtils::initFileSystem();
 
+    if (Config::slog_on) showMemInfo("File system started");
+
     //=======================================================================================
     // AUDIO
     //=======================================================================================
@@ -653,7 +657,6 @@ void ESPectrum::reset()
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
 
-    // if (Config::arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
     MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
 
     VIDEO::Reset();
@@ -830,13 +833,11 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 continue;
             }
 
-            if ((Kdown) && ((KeytoESP >= fabgl::VK_F1 && KeytoESP <= fabgl::VK_F12) || KeytoESP == fabgl::VK_PAUSE)) {
+            if ((Kdown) && ((KeytoESP >= fabgl::VK_F1 && KeytoESP <= fabgl::VK_F12) || KeytoESP == fabgl::VK_PAUSE || KeytoESP == fabgl::VK_VOLUME_UP || KeytoESP == fabgl::VK_VOLUME_DOWN)) {
 
                 int64_t osd_start = esp_timer_get_time();
 
                 OSD::do_OSD(KeytoESP, Kbd->isVKDown(fabgl::VK_LCTRL) || Kbd->isVKDown(fabgl::VK_RCTRL));
-
-                // VIDEO::vga.clear(zxColor(0,0)); // Fake scanlines test
 
                 Kbd->emptyVirtualKeyQueue();
                 
@@ -847,6 +848,13 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 // totalseconds = 0;
                 // totalsecondsnodelay = 0;
                 // VIDEO::framecnt = 0;
+
+                #ifdef DIRTY_LINES
+                for (int i=0; i < SPEC_H; i++) VIDEO::dirty_lines[i] |= 0x01;
+                #endif // DIRTY_LINES
+
+                // Refresh border
+                VIDEO::brdnextframe = true;
 
                 ESPectrum::ts_start += esp_timer_get_time() - osd_start;
 
@@ -1466,9 +1474,11 @@ for(;;) {
                 if (VIDEO::OSD == 0) {
 
                     if (Config::aspect_16_9) 
-                        VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
+                        VIDEO::Draw_OSD169 = VIDEO::MainScreen;
                     else
-                        VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
+                        VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
+
+                    VIDEO::brdnextframe = true;
 
                 }
 
@@ -1538,6 +1548,8 @@ for(;;) {
             for (;;) {
                 if (vsync) break;
             }
+            
+            // printf("Vsync!\n");
 
         }
 
@@ -1545,6 +1557,8 @@ for(;;) {
 
         if (idle > 0)
             delayMicroseconds(idle);
+        // else
+        //     printf("Elapsed: %d\n",(int)elapsed);
 
         // Audio sync
         if (++sync_cnt & 0x10) {

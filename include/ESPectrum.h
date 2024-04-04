@@ -109,6 +109,8 @@ public:
     static int ESPoffset;
 
     static int ESPtestvar;
+    static int ESPtestvar1;
+    static int ESPtestvar2;        
 
     static volatile bool vsync;
 

@@ -112,18 +112,26 @@ IRAM_ATTR void CPU::loop() {
         Z80::doNMI();
     }
 
-    while (tstates < IntEnd) Z80::execute();
+    if (Z80::isHalted()) {
 
-    while (tstates < stFrame) Z80::exec_nocheck();
+        while (tstates < statesInFrame) Z80::execute();
 
-    while (tstates < statesInFrame) Z80::execute();
+    } else {
 
+        while (tstates < IntEnd) Z80::execute();
+
+        Z80::exec_nocheck();
+        
+        while (tstates < statesInFrame) Z80::execute();
+
+    }
+    
     if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
+
+    VIDEO::EndFrame();
 
     global_tstates += statesInFrame; // increase global Tstates
     tstates -= statesInFrame;
-
-    VIDEO::EndFrame();
 
 }
 
@@ -138,25 +146,37 @@ IRAM_ATTR void CPU::FlushOnHalt() {
 
         uint32_t stFrame = statesInFrame - latetiming;
         while (tstates < stFrame ) {
-            VIDEO::Draw(4,true);
+            VIDEO::Draw_Opcode(true);
             Z80::incRegR(1);
         }
 
     } else {
 
-        uint32_t pre_tstates = tstates;
+        if (VIDEO::snow_toggle) {
 
-        // Flush the rest of frame
-        while (VIDEO::Draw != &VIDEO::Blank)
-            VIDEO::Draw(VIDEO::tStatesPerLine, false);
+            // ULA perfect cycle & snow effect use this code
+            uint32_t stFrame = statesInFrame - latetiming;
+            while (tstates < stFrame ) {
+                VIDEO::Draw_Opcode(false);
+                Z80::incRegR(1);
+            }
 
-        tstates = pre_tstates;
-        
-        pre_tstates += latetiming;
-        uint32_t incr = (statesInFrame - pre_tstates) >> 2;
-        if (pre_tstates & 0x03) incr++;
-        tstates += (incr << 2);
-        Z80::incRegR(incr & 0x000000FF);
+        } else {
+
+            // Flush the rest of frame
+            uint32_t pre_tstates = tstates;
+
+            while (VIDEO::Draw != &VIDEO::Blank)
+                VIDEO::Draw(VIDEO::tStatesPerLine, false);
+            tstates = pre_tstates;
+            
+            pre_tstates += latetiming;
+            uint32_t incr = (statesInFrame - pre_tstates) >> 2;
+            if (pre_tstates & 0x03) incr++;
+            tstates += (incr << 2);
+            Z80::incRegR(incr & 0x000000FF);
+
+        }
 
     }
 
@@ -175,11 +195,129 @@ IRAM_ATTR uint8_t Z80Ops::peek8(uint16_t address) {
     return MemESP::ramCurrent[page][address & 0x3fff];
 }
 
+// // Write byte to RAM
+// IRAM_ATTR void Z80Ops::poke8(uint16_t address, uint8_t value) {
+
+//     uint8_t page = address >> 14;
+
+//     if (page == 0) {
+//         VIDEO::Draw(3, false);
+//         return;
+//     }
+
+//     #ifndef DIRTY_LINES
+
+//     VIDEO::Draw(3, MemESP::ramContended[page]);
+//     MemESP::ramCurrent[page][address & 0x3fff] = value;
+
+//     #else
+
+//     if (page == 2) {
+//         VIDEO::Draw(3, false);
+//         MemESP::ramCurrent[2][address & 0x3fff] = value;
+//         return;
+//     }
+
+//     VIDEO::Draw(3, MemESP::ramContended[page]);
+
+//     if (page == 3) {
+//         if (MemESP::videoLatch) {
+//             if (MemESP::bankLatch != 7) {
+//                 MemESP::ramCurrent[3][address & 0x3fff] = value;
+//                 return;
+//             }
+//         } else if (MemESP::bankLatch != 5) {
+//             MemESP::ramCurrent[3][address & 0x3fff] = value;
+//             return;
+//         }
+//     } else if (MemESP::videoLatch) {
+//         // Page == 1 == videoLatch
+//         MemESP::ramCurrent[1][address & 0x3fff] = value;
+//         return;
+//     }
+
+//     uint16_t vid_line = address & 0x3fff;
+
+//     if (vid_line < 6144) {
+    
+//         uint8_t result =  (vid_line >> 5) & 0b11000000;
+//         result |=  (vid_line >> 2) & 0b00111000;
+//         result |=  (vid_line >> 8) & 0b00000111;
+
+//         VIDEO::dirty_lines[result] |= 0x01;
+
+//     } else if (vid_line < 6912) {
+
+//         uint8_t result = ((vid_line - 6144) >> 5) << 3;
+//         // for (int i=result; i < result + 8; i++)
+//         //     VIDEO::dirty_lines[i] = (value & 0x80) | 0x01;
+//         memset((uint8_t *)VIDEO::dirty_lines + result, (value & 0x80) | 0x01, 8);
+
+//     }
+
+//     MemESP::ramCurrent[page][vid_line] = value;
+
+//     #endif
+
+// }
+
 // Write byte to RAM
 IRAM_ATTR void Z80Ops::poke8(uint16_t address, uint8_t value) {
+
     uint8_t page = address >> 14;
+
+    if (page == 0) {
+        VIDEO::Draw(3, false);
+        return;
+    }
+
+    #ifndef DIRTY_LINES
+
     VIDEO::Draw(3, MemESP::ramContended[page]);
-    if (page != 0) MemESP::ramCurrent[page][address & 0x3fff] = value;
+    MemESP::ramCurrent[page][address & 0x3fff] = value;
+   
+    #else
+
+    uint16_t page_addr = address & 0x3fff;
+
+    if (page == 2) {
+        VIDEO::Draw(3, false);
+        MemESP::ramCurrent[2][page_addr] = value;
+        return;
+    }
+
+    if (page == 3) {
+        VIDEO::Draw(3, MemESP::ramContended[3]);
+        MemESP::ramCurrent[3][page_addr] = value;
+        if (MemESP::videoLatch) {
+            if (MemESP::bankLatch != 7) return;
+        } else {
+            if (MemESP::bankLatch != 5) return;
+        }
+    } else {
+        // page = 1
+        VIDEO::Draw(3, MemESP::ramContended[1]);
+        MemESP::ramCurrent[1][page_addr] = value;
+        if (MemESP::videoLatch) return;
+    }
+
+    if (page_addr < 6144) {
+    
+        uint8_t result =  (page_addr >> 5) & 0b11000000;
+        result |=  (page_addr >> 2) & 0b00111000;
+        result |=  (page_addr >> 8) & 0b00000111;
+
+        VIDEO::dirty_lines[result] |= 0x01;
+
+    } else if (page_addr < 6912) {
+
+        uint8_t result = ((page_addr - 6144) >> 5) << 3;
+        memset((uint8_t *)VIDEO::dirty_lines + result, (value & 0x80) | 0x01, 8);
+
+    }
+
+    #endif
+
 }
 
 // Read word from RAM
@@ -212,8 +350,16 @@ IRAM_ATTR uint16_t Z80Ops::peek16(uint16_t address) {
 IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
     uint8_t page = address >> 14;
+    uint16_t page_addr = address & 0x3fff;
 
-    if (page == ((address + 1) >> 14)) {    // Check if address is between two different pages
+    if (page_addr < 0x3fff) {    // Check if address is between two different pages    
+
+        if (page == 0) {
+            VIDEO::Draw(6, false);
+            return;
+        }
+
+        #ifndef DIRTY_LINES
 
         if (MemESP::ramContended[page]) {
             VIDEO::Draw(3, true);
@@ -221,10 +367,72 @@ IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
         } else
             VIDEO::Draw(6, false);
 
-        if (page != 0) {
-            MemESP::ramCurrent[page][address & 0x3fff] = word.byte8.lo;
-            MemESP::ramCurrent[page][(address & 0x3fff) + 1] = word.byte8.hi;
+        MemESP::ramCurrent[page][page_addr] = word.byte8.lo;
+        MemESP::ramCurrent[page][page_addr + 1] = word.byte8.hi;
+
+        #else
+
+        if (page == 2) {
+            VIDEO::Draw(6, false);
+            MemESP::ramCurrent[2][page_addr] = word.byte8.lo;
+            MemESP::ramCurrent[2][page_addr + 1] = word.byte8.hi;
+            return;
         }
+
+        if (MemESP::ramContended[page]) {
+            VIDEO::Draw(3, true);
+            VIDEO::Draw(3, true);            
+        } else
+            VIDEO::Draw(6, false);
+
+        if (page == 3) {
+            MemESP::ramCurrent[3][page_addr] = word.byte8.lo;
+            MemESP::ramCurrent[3][page_addr + 1] = word.byte8.hi;
+            if (MemESP::videoLatch) {
+                if (MemESP::bankLatch != 7) return;
+            } else {
+                if (MemESP::bankLatch != 5) return;
+            }
+        } else {
+            // page == 1
+            MemESP::ramCurrent[1][page_addr] = word.byte8.lo;
+            MemESP::ramCurrent[1][page_addr + 1] = word.byte8.hi;
+            if (MemESP::videoLatch) return;
+        }
+
+        if (page_addr < 6144) {
+        
+            uint8_t result =  (page_addr >> 5) & 0b11000000;
+            result |=  (page_addr >> 2) & 0b00111000;
+            result |=  (page_addr >> 8) & 0b00000111;
+
+            VIDEO::dirty_lines[result] |= 0x01;
+
+        } else if (page_addr < 6912) {
+
+            uint8_t result = ((page_addr - 6144) >> 5) << 3;
+            memset((uint8_t *)VIDEO::dirty_lines + result, (word.byte8.lo & 0x80) | 0x01, 8);
+
+        } else return;
+
+        page_addr++;
+
+        if (page_addr < 6144) {
+        
+            uint8_t result =  (page_addr >> 5) & 0b11000000;
+            result |=  (page_addr >> 2) & 0b00111000;
+            result |=  (page_addr >> 8) & 0b00000111;
+
+            VIDEO::dirty_lines[result] |= 0x01;
+
+        } else if (page_addr < 6912) {
+
+            uint8_t result = ((page_addr - 6144) >> 5) << 3;
+            memset((uint8_t *)VIDEO::dirty_lines + result, (word.byte8.hi & 0x80) | 0x01, 8);
+
+        }
+
+        #endif
 
     } else {
 
@@ -235,6 +443,116 @@ IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
     }
 
 }
+
+// // Write word to RAM
+// IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
+
+//     uint8_t page = address >> 14;
+//     uint16_t vid_line = address & 0x3fff;
+
+//     if (vid_line < 0x3fff) {    // Check if address is between two different pages    
+
+//         if (page == 0) {
+//             VIDEO::Draw(6, false);
+//             return;
+//         }
+
+//         #ifndef DIRTY_LINES
+
+//         if (MemESP::ramContended[page]) {
+//             VIDEO::Draw(3, true);
+//             VIDEO::Draw(3, true);            
+//         } else
+//             VIDEO::Draw(6, false);
+
+//         MemESP::ramCurrent[page][vid_line] = word.byte8.lo;
+//         MemESP::ramCurrent[page][vid_line + 1] = word.byte8.hi;
+
+//         #else
+
+//         if (page == 2) {
+//             VIDEO::Draw(6, false);
+//             MemESP::ramCurrent[2][vid_line] = word.byte8.lo;
+//             MemESP::ramCurrent[2][vid_line + 1] = word.byte8.hi;
+//             return;
+//         }
+
+//         if (MemESP::ramContended[page]) {
+//             VIDEO::Draw(3, true);
+//             VIDEO::Draw(3, true);            
+//         } else
+//             VIDEO::Draw(6, false);
+
+//         if (page == 3) {
+//             if (MemESP::videoLatch) {
+//                 if (MemESP::bankLatch != 7) {
+//                     MemESP::ramCurrent[3][vid_line] = word.byte8.lo;
+//                     MemESP::ramCurrent[3][vid_line + 1] = word.byte8.hi;
+//                     return;
+//                 }
+//             } else if (MemESP::bankLatch != 5) {
+//                 MemESP::ramCurrent[3][vid_line] = word.byte8.lo;
+//                 MemESP::ramCurrent[3][vid_line + 1] = word.byte8.hi;
+//                 return;
+//             }
+//         } else if (MemESP::videoLatch) {
+//             // Page == 1 == videoLatch            
+//             MemESP::ramCurrent[1][vid_line] = word.byte8.lo;
+//             MemESP::ramCurrent[1][vid_line + 1] = word.byte8.hi;
+//             return;
+//         }
+
+//         MemESP::ramCurrent[page][vid_line] = word.byte8.lo;
+//         MemESP::ramCurrent[page][vid_line + 1] = word.byte8.hi;
+
+//         if (vid_line < 6144) {
+        
+//             uint8_t result =  (vid_line >> 5) & 0b11000000;
+//             result |=  (vid_line >> 2) & 0b00111000;
+//             result |=  (vid_line >> 8) & 0b00000111;
+
+//             VIDEO::dirty_lines[result] |= 0x01;
+
+//         } else if (vid_line < 6912) {
+
+//             uint8_t result = ((vid_line - 6144) >> 5) << 3;
+//             // for (int i=result; i < result + 8; i++)
+//             //     VIDEO::dirty_lines[i] = (word.byte8.lo & 0x80) | 0x01;
+//             memset((uint8_t *)VIDEO::dirty_lines + result, (word.byte8.lo & 0x80) | 0x01, 8);
+
+//         } else return;
+
+//         vid_line++;
+
+//         if (vid_line < 6144) {
+        
+//             uint8_t result =  (vid_line >> 5) & 0b11000000;
+//             result |=  (vid_line >> 2) & 0b00111000;
+//             result |=  (vid_line >> 8) & 0b00000111;
+
+//             VIDEO::dirty_lines[result] |= 0x01;
+
+//         } else if (vid_line < 6912) {
+
+//             uint8_t result = ((vid_line - 6144) >> 5) << 3;
+//             // for (int i=result; i < result + 8; i++)
+//             //     VIDEO::dirty_lines[i] = (word.byte8.hi & 0x80) | 0x01;
+//             memset((uint8_t *)VIDEO::dirty_lines + result, (word.byte8.hi & 0x80) | 0x01, 8);
+
+//         }
+
+//         #endif
+
+//     } else {
+
+//         // Order matters, first write lsb, then write msb, don't "optimize"
+//         Z80Ops::poke8(address, word.byte8.lo);
+//         Z80Ops::poke8(address + 1, word.byte8.hi);
+
+//     }
+
+// }
+
 
 /* Put an address on bus lasting 'tstates' cycles */
 IRAM_ATTR void Z80Ops::addressOnBus(uint16_t address, int32_t wstates) {

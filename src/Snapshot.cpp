@@ -92,9 +92,9 @@ bool LoadSnapshot(string filename, string force_arch, string force_romset) {
     if (res && OSDprev) {
         VIDEO::OSD = OSDprev;
         if (Config::aspect_16_9)
-            VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+            VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
         else
-            VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+            VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
         ESPectrum::TapeNameScroller = 0;
     }    
 

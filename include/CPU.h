@@ -50,7 +50,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define INT_START48 0
 #define INT_END48 32
 #define INT_START128 0
-#define INT_END128 36
+#define INT_END128 36 // 35 in real +2 and Weiv's Spectramine. I'll have to check those numbers
 #define INT_START_PENTAGON 0
 #define INT_END_PENTAGON 36
 

@@ -326,6 +326,23 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
     if (CTRL) {
 
+        // if (KeytoESP == fabgl::VK_F11) { // Toggle snow effect
+
+        //     VIDEO::snow_toggle ^= 0X01;  
+
+        //     if (VIDEO::snow_toggle) {
+        //         VIDEO::Draw = &VIDEO::MainScreen_Blank_Snow;
+        //         VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Snow_Opcode;
+        //     } else {
+        //         VIDEO::Draw = &VIDEO::MainScreen_Blank;
+        //         VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Opcode;
+        //     }
+
+        // } else
+        if (KeytoESP == fabgl::VK_F1) { // Show mem info
+            OSD::HWInfo();
+            if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
+        } else
         if (KeytoESP == fabgl::VK_F2) { // Turbo mode
             ESPectrum::ESP_delay = !ESPectrum::ESP_delay;
         } else 
@@ -335,14 +352,36 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F10) { // NMI
             Z80::triggerNMI();
         } else 
-        if (KeytoESP == fabgl::VK_F3) { 
-            // Test variable decrease
-            ESPectrum::ESPtestvar -= 1;
-        } else 
-        if (KeytoESP == fabgl::VK_F4) {
-            // Test variable increase
-            ESPectrum::ESPtestvar += 1;
-        } else 
+        // if (KeytoESP == fabgl::VK_F3) { 
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar -= 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F4) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar += 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F5) {
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar1 -= 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F6) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar1 += 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F7) {
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar2 -= 1;
+        //     printf("ESPtestvar2: %d\n",ESPectrum::ESPtestvar2);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F8) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar2 += 1;
+        //     printf("ESPtestvar2: %d\n",ESPectrum::ESPtestvar2);
+        // }
         if (KeytoESP == fabgl::VK_F5) {
             if (Config::CenterH > -16) Config::CenterH--;
             Config::save("CenterH");
@@ -361,11 +400,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F8) {
             if (Config::CenterV < 16) Config::CenterV++;
             Config::save("CenterV");
-            
             osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
-        } else
-        if (KeytoESP == fabgl::VK_F1) { // Show mem info
-            OSD::HWInfo();
         }
 
     } else {
@@ -409,6 +444,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 Config::ram_file = fname;
                 Config::last_ram_file = fname;
             }
+            if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
         else if (KeytoESP == fabgl::VK_F3) {
             menu_level = 0;
@@ -452,6 +488,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                         OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
 
+                        uint8_t OSDprev = VIDEO::OSD;
+
                         if (Z80Ops::is48)
                             FileZ80::loader48();
                         else
@@ -467,6 +505,15 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         }
                         Config::last_ram_file = NO_RAM_FILE;
 
+                        if (OSDprev) {
+                            VIDEO::OSD = OSDprev;
+                            if (Config::aspect_16_9)
+                                VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                            else
+                                VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+                            ESPectrum::TapeNameScroller = 0;
+                        }    
+
                 }
 
                 Tape::TAP_Stop();
@@ -477,6 +524,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 ESPectrum::TapeNameScroller = 0;
 
             }
+            
+            if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
 
         }
         else if (KeytoESP == fabgl::VK_F6) {
@@ -511,18 +560,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             if ((VIDEO::OSD & 0x03) > 2) {
                 if ((VIDEO::OSD & 0x04) == 0) {
                     if (Config::aspect_16_9) 
-                        VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
+                        VIDEO::Draw_OSD169 = VIDEO::MainScreen;
                     else
-                        VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
+                        VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
                 }
                 VIDEO::OSD &= 0xfc;
             } else {
 
                 if ((VIDEO::OSD & 0x04) == 0) {
                     if (Config::aspect_16_9) 
-                        VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+                        VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                     else
-                        VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+                        VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
                     OSD::drawStats();
                 }
@@ -534,14 +583,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             click();
 
         }
-        else if (KeytoESP == fabgl::VK_F9) { 
+        else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUME_DOWN) { 
 
             if (VIDEO::OSD == 0) {
 
                 if (Config::aspect_16_9) 
-                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+                    VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
-                    VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+                    VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
                 VIDEO::OSD = 0x04;
 
@@ -575,14 +624,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));                
 
         }
-        else if (KeytoESP == fabgl::VK_F10) { 
+        else if (KeytoESP == fabgl::VK_F10 || KeytoESP == fabgl::VK_VOLUME_UP) { 
 
             if (VIDEO::OSD == 0) {
 
                 if (Config::aspect_16_9) 
-                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
+                    VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
-                    VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+                    VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
                 VIDEO::OSD = 0x04;
 
@@ -1347,37 +1396,135 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         }
                     }                          
                     else if (options_num == 6) {
+
                         menu_level = 2;
                         menu_curopt = 1;                    
                         menu_saverect = true;
                         while (1) {
-                            // aspect ratio
-                            string asp_menu = MENU_ASPECT[Config::lang];
-                            bool prev_asp = Config::aspect_16_9;
-                            if (prev_asp) {
-                                asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
-                                asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
-                            } else {
-                                asp_menu.replace(asp_menu.find("[4",0),2,"[*");
-                                asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
-                            }
-                            uint8_t opt2 = menuRun(asp_menu);
-                            if (opt2) {
-                                if (opt2 == 1)
-                                    Config::aspect_16_9 = false;
-                                else
-                                    Config::aspect_16_9 = true;
+                            // Video
+                            uint8_t options_num = menuRun(MENU_VIDEO[Config::lang]);
+                            if (options_num > 0) {
+                                if (options_num == 1) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;                    
+                                    menu_saverect = true;
+                                    while (1) {
+                                        string opt_menu = MENU_RENDER[Config::lang];
+                                        uint8_t prev_opt = Config::render;
+                                        if (prev_opt) {
+                                            opt_menu.replace(opt_menu.find("[S",0),2,"[ ");
+                                            opt_menu.replace(opt_menu.find("[A",0),2,"[*");
+                                        } else {
+                                            opt_menu.replace(opt_menu.find("[S",0),2,"[*");
+                                            opt_menu.replace(opt_menu.find("[A",0),2,"[ ");
+                                        }
+                                        uint8_t opt2 = menuRun(opt_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::render = 0;
+                                            else
+                                                Config::render = 1;
 
-                                if (Config::aspect_16_9 != prev_asp) {
-                                    Config::ram_file = "none";
-                                    Config::save("asp169");
-                                    Config::save("ram");
-                                    esp_hard_reset();
+                                            if (Config::render != prev_opt) {
+                                                Config::save("render");
+
+                                                VIDEO::snow_toggle = Config::arch != "Pentagon" ? Config::render : false;                                                
+
+                                                if (VIDEO::snow_toggle) {
+                                                    VIDEO::Draw = &VIDEO::MainScreen_Blank_Snow;
+                                                    VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Snow_Opcode;
+                                                } else {
+                                                    VIDEO::Draw = &VIDEO::MainScreen_Blank;
+                                                    VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Opcode;
+                                                }
+
+                                            }
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+                                        } else {
+                                            menu_curopt = 1;
+                                            menu_level = 2;                                       
+                                            break;
+                                        }
+                                    }
                                 }
+                                else if (options_num == 2) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;                    
+                                    menu_saverect = true;
+                                    while (1) {
 
-                                menu_curopt = opt2;
-                                menu_saverect = false;
+                                        // aspect ratio
+                                        string asp_menu = MENU_ASPECT[Config::lang];
+                                        bool prev_asp = Config::aspect_16_9;
+                                        if (prev_asp) {
+                                            asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
+                                            asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
+                                        } else {
+                                            asp_menu.replace(asp_menu.find("[4",0),2,"[*");
+                                            asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
+                                        }
+                                        uint8_t opt2 = menuRun(asp_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::aspect_16_9 = false;
+                                            else
+                                                Config::aspect_16_9 = true;
 
+                                            if (Config::aspect_16_9 != prev_asp) {
+                                                Config::ram_file = "none";
+                                                Config::save("asp169");
+                                                Config::save("ram");
+                                                esp_hard_reset();
+                                            }
+
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+
+                                        } else {
+                                            menu_curopt = 2;
+                                            menu_level = 2;
+                                            break;
+                                        }
+                                    }
+                                }
+                                else if (options_num == 3) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;                    
+                                    menu_saverect = true;
+                                    while (1) {
+                                        string opt_menu = MENU_SCANLINES[Config::lang];
+                                        opt_menu += MENU_YESNO[Config::lang];
+                                        uint8_t prev_opt = Config::scanlines;
+                                        if (prev_opt) {
+                                            opt_menu.replace(opt_menu.find("[Y",0),2,"[*");
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[ ");                        
+                                        } else {
+                                            opt_menu.replace(opt_menu.find("[Y",0),2,"[ ");
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[*");                        
+                                        }
+                                        uint8_t opt2 = menuRun(opt_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::scanlines = 1;
+                                            else
+                                                Config::scanlines = 0;
+
+                                            if (Config::scanlines != prev_opt) {
+                                                Config::ram_file = "none";
+                                                Config::save("scanlines");
+                                                Config::save("ram");
+                                                esp_hard_reset();
+                                            }
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+                                        } else {
+                                            menu_curopt = 3;
+                                            menu_level = 2;                                       
+                                            break;
+                                        }
+                                    }
+                                }
                             } else {
                                 menu_curopt = 6;
                                 break;
@@ -1424,6 +1571,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         menu_saverect = false;
                                     } else if (optjoy == 6) {
                                         joyDialog(opt2);
+                                        if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                                                        
                                         return;
                                     } else {
                                         menu_curopt = opt2;
@@ -1820,6 +1968,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                 click();
 
+                if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+
                 return;
 
             }        
@@ -1923,6 +2073,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 }
 
                 click();
+
+                if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
 
                 return;            
 

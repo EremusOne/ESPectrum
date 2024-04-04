@@ -129,6 +129,9 @@ uint16_t Config::DSK_focus = 1;
 uint8_t  Config::DSK_fdMode = 0;
 string   Config::DSK_fileSearch = "";
 
+uint8_t Config::scanlines = 0;
+uint8_t Config::render = 0;
+
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
     s.erase(std::remove_if(s.begin(), s.end(), 
@@ -507,6 +510,16 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_u8(handle, "scanlines", &Config::scanlines);
+        if (err == ESP_OK) {
+            // printf("scanlines:%u\n",Config::scanlines);
+        }
+
+        err = nvs_get_u8(handle, "render", &Config::render);
+        if (err == ESP_OK) {
+            // printf("render:%u\n",Config::render);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -673,6 +686,12 @@ void Config::save(string value) {
 
         if((value=="DSK_fileSearch") || (value=="all"))
             nvs_set_str(handle,"DSK_fileSearch",Config::DSK_fileSearch.c_str());
+
+        if((value=="scanlines") || (value=="all"))
+            nvs_set_u8(handle,"scanlines",Config::scanlines);
+
+        if((value=="render") || (value=="all"))
+            nvs_set_u8(handle,"render",Config::render);
 
         // printf("Committing updates in NVS ... ");
 

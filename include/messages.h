@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "      v1.11 "
+#define EMU_VERSION "      v1.12 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -278,7 +278,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Preferred ROM\t>\n"\	
     "Joystick\t>\n"\
     "Joystick emulation\t>\n"\
-    "Aspect ratio\t>\n"\
+    "Video\t>\n"\
     "Other\t>\n"\
     "Language\t>\n"\
 	"Update\t>\n"
@@ -289,7 +289,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "ROM preferida\t>\n"\	
     "Joystick\t>\n"\
     "Emulaci" "\xA2" "n joystick\t>\n"\
-    "Relaci" "\xA2" "n de aspecto\t>\n"\
+    "Video\t>\n"\
     "Otros\t>\n"\
     "Idioma\t>\n"\
 	"Actualizar\t>\n"
@@ -307,6 +307,28 @@ static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
 	"ROM Custom 128k\n"		
 static const char *MENU_UPDATE_FW[2] = { MENU_UPDATE_EN,MENU_UPDATE_ES };
 
+#define MENU_VIDEO_EN \
+    "Video\n"\
+    "Render type\t>\n"\
+    "Aspect Ratio\t>\n"\
+    "Scanlines\t>\n"
+#define MENU_VIDEO_ES \
+    "Video\n"\
+    "Tipo render\t>\n"\
+	"Relaci" "\xA2" "n de aspecto\t>\n"\
+    "Scanlines\t>\n"
+static const char *MENU_VIDEO[2] = { MENU_VIDEO_EN, MENU_VIDEO_ES };
+
+#define MENU_RENDER_EN \
+    "Render type\n"\
+    "Standard\t[S]\n"\
+    "Snow effect\t[A]\n"
+#define MENU_RENDER_ES \
+    "Tipo render\n"\
+    "Estandar\t[S]\n"\
+    "Efecto nieve\t[A]\n"
+static const char *MENU_RENDER[2] = { MENU_RENDER_EN, MENU_RENDER_ES };
+
 #define MENU_ASPECT_EN \
     "Aspect Ratio\n"\
     "4:3\t[4]\n"\
@@ -316,6 +338,8 @@ static const char *MENU_UPDATE_FW[2] = { MENU_UPDATE_EN,MENU_UPDATE_ES };
     "4:3\t[4]\n"\
     "16:9\t[1]\n"
 static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
+
+static const char *MENU_SCANLINES[2] = { "Scanlines\n", "Scanlines\n" };
 
 #define MENU_RESET_EN \
     "Reset Menu\n"\

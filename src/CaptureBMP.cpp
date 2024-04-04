@@ -39,6 +39,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "FileUtils.h"
 #include "messages.h"
 #include "Config.h"
+#include "OSDMain.h"
 #include "esp_vfs.h"
 
 void CaptureToBmp()
@@ -55,7 +56,7 @@ void CaptureToBmp()
 
     // framebuffer size
     int w = VIDEO::vga.xres;
-    int h = VIDEO::vga.yres;
+    int h = OSD::scrH;
 
     // number of uint32_t words
     int count = w >> 2;
