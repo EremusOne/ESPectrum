@@ -122,6 +122,22 @@ Press CAPS SHIFT + SYMBOL SHIFT and:
 - P Pause
 - S BMP screen capture (Folder /.c at SDCard)
 
+## How to flash custom ROMs
+
+Two custom ROMs can be installed: one for the 48K architecture and another for the 128K architecture.
+
+The "Update firmware" option is now changed to the "Update" menu with three options: firmware, custom ROM 48K, and custom ROM 128K.
+
+Just like updating the firmware requires a file named "firmware.bin" in the root directory of the SD card, for the emulator to install the custom ROMs, the files must be placed in the mentioned root directory and named as "48custom.rom" and "128custom.rom" respectively.
+
+For the 48K architecture, the ROM file size must be 16384 bytes.
+
+For the 128K architecture, it can be either 16kb or 32kb. If it's 16kb, the second bank of the custom ROM will be flashed with the second bank of the standard Sinclair 128K ROM.
+
+It is important to note that for custom ROMs, fast loading of taps can be used, but the loading should be started manually, considering the possibility that the "traps" of the ROM loading routine might not work depending on the flashed ROM. For example, with Rodolfo Guerra's ROMs, both loading and recording traps using the SAVE command work perfectly.
+
+Finally, keep in mind that when updating the firmware, you will need to re-flash the custom ROMs afterward, so I recommend leaving the files "48custom.rom" and "128custom.rom" on the card for the custom ROMs you wish to use.
+
 ## Hardware configuration and pinout
 
 Pin assignment in `hardpins.h` is set to match the boards we've tested emulator in, use it as-is, or change it to your own preference.
