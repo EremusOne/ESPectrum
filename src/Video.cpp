@@ -557,7 +557,7 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Snow_Opcode(bool contended) {
 // ----------------------------------------------------------------------------------
 // Fast video emulation with no ULA cycle emulation and no snow effect support
 // ----------------------------------------------------------------------------------
-IRAM_ATTR void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
+/* IRAM_ATTR */ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
 
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -588,7 +588,7 @@ IRAM_ATTR void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
 }
 
-IRAM_ATTR void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {    
+/* IRAM_ATTR */ void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {    
 
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -627,7 +627,7 @@ IRAM_ATTR void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
 
 }
 
-IRAM_ATTR void VIDEO::MainScreen_Opcode(bool contended) { Draw(4,contended); }
+/* IRAM_ATTR */ void VIDEO::MainScreen_Opcode(bool contended) { Draw(4,contended); }
 
 // ----------------------------------------------------------------------------------
 // ULA cycle perfect emulation with snow effect support
@@ -1126,12 +1126,17 @@ IRAM_ATTR void VIDEO::Border_Blank() {
 
 }    
 
+static int brdcol_end = 0;
+static int brdcol_end1 = 0;
+
 IRAM_ATTR void VIDEO::TopBorder_Blank_Pentagon() {
 
     if (CPU::tstates >= tStatesBorder + ESPectrum::ESPtestvar) {
-        brdcol_cnt = 0;
+        brdcol_cnt = is169 ? 10 : 0;
+        brdcol_end = is169 ? 170 : 160;        
+        brdcol_end1 = is169 ? 26 : 16;
         brdlin_cnt = 0;
-        brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
+        brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
         DrawBorder = &TopBorder_Pentagon;
         DrawBorder();
     }
@@ -1148,10 +1153,10 @@ IRAM_ATTR void VIDEO::TopBorder_Pentagon() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == 160) {
+        if (brdcol_cnt == brdcol_end) {
             brdlin_cnt++;
-            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);            
-            brdcol_cnt = 0;
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);            
+            brdcol_cnt = is169 ? 10 : 0;
             lastBrdTstate += 64;
             if (brdlin_cnt == (is169 ? 4 : 24)) {
                 DrawBorder = &MiddleBorder_Pentagon;
@@ -1174,13 +1179,13 @@ IRAM_ATTR void VIDEO::MiddleBorder_Pentagon() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == 16) {
+        if (brdcol_cnt == brdcol_end1) {
             lastBrdTstate += 128;
-            brdcol_cnt = 144;
-        } else if (brdcol_cnt == 160) {
+            brdcol_cnt = 144 + (is169 ? 10 : 0);
+        } else if (brdcol_cnt == brdcol_end) {
             brdlin_cnt++;
-            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);                        
-            brdcol_cnt = 0;          
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);                        
+            brdcol_cnt = is169 ? 10 : 0;
             lastBrdTstate += 64;
             if (brdlin_cnt == (is169 ? 196 : 216)) {
                 DrawBorder = Draw_OSD43;
@@ -1203,13 +1208,13 @@ IRAM_ATTR void VIDEO::BottomBorder_Pentagon() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == 160) {
+        if (brdcol_cnt == brdcol_end) {
             brdlin_cnt++;
-            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);                                    
-            brdcol_cnt = 0;
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
+            brdcol_cnt = is169 ? 10 : 0;
             lastBrdTstate += 64;
             if (brdlin_cnt == (is169 ? 200 : 240)) {
-                DrawBorder = &Border_Blank_Pentagon;
+                DrawBorder = &Border_Blank;
                 return;
             }
         }
@@ -1231,13 +1236,14 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD_Pentagon() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == 160) {
+        if (brdcol_cnt == brdcol_end) {
             brdlin_cnt++;
-            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);                                                
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
+            brdcol_cnt = is169 ? 10 : 0;
             brdcol_cnt = 0;
             lastBrdTstate += 64;
             if (brdlin_cnt == 240) {
-                DrawBorder = &Border_Blank_Pentagon;
+                DrawBorder = &Border_Blank;
                 return;
             }
         }
@@ -1246,6 +1252,3 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD_Pentagon() {
 
 }    
 
-IRAM_ATTR void VIDEO::Border_Blank_Pentagon() {
-
-}    

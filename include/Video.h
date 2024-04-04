@@ -125,8 +125,7 @@ public:
   static void MiddleBorder_Pentagon();
   static void BottomBorder_Pentagon();
   static void BottomBorder_OSD_Pentagon();  
-  static void Border_Blank_Pentagon();
-
+  
   static void (*Draw)(unsigned int, bool);
   static void (*Draw_Opcode)(bool);
   static void (*Draw_OSD169)(unsigned int, bool);
