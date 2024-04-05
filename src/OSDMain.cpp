@@ -583,6 +583,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             click();
 
         }
+        // else if (KeytoESP == fabgl::VK_F9) { 
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar -= 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // }
+        // else if (KeytoESP == fabgl::VK_F10) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar += 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // }
         else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUMEDOWN) { 
 
             if (VIDEO::OSD == 0) {
@@ -1514,7 +1524,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                                 Config::ram_file = "none";
                                                 Config::save("scanlines");
                                                 Config::save("ram");
-                                                esp_hard_reset();
+                                                // Reset to apply if mode != CRT
+                                                if (Config::videomode!=2) esp_hard_reset();
                                             }
                                             menu_curopt = opt2;
                                             menu_saverect = false;

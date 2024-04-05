@@ -440,6 +440,11 @@ void VIDEO::Reset() {
         Draw_Opcode = &Blank_Opcode;
     }
 
+    // Restart border drawing
+    lastBrdTstate = tStatesBorder;
+    brdChange = false;
+    brdnextframe = true;
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -995,7 +1000,7 @@ static int brdlin_cnt = 0;
 
 IRAM_ATTR void VIDEO::TopBorder_Blank() {
 
-    if (CPU::tstates > tStatesBorder << 2) {
+    if (CPU::tstates >= tStatesBorder) {
         brdcol_cnt = 0;
         brdlin_cnt = 0;
         brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
@@ -1007,12 +1012,12 @@ IRAM_ATTR void VIDEO::TopBorder_Blank() {
 
 IRAM_ATTR void VIDEO::TopBorder() {
 
-    while (lastBrdTstate < CPU::tstates >> 2) {
+    while (lastBrdTstate <= CPU::tstates) {
 
         *brdptr32++ = brd;
         *brdptr32++ = brd;
 
-        lastBrdTstate++;
+        lastBrdTstate+=4;
 
         brdcol_cnt++;
 
@@ -1020,7 +1025,7 @@ IRAM_ATTR void VIDEO::TopBorder() {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
             brdcol_cnt = 0;
-            lastBrdTstate += Z80Ops::is128 ? 17 : 16;
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;
             if (brdlin_cnt == (is169 ? 4 : 24)) {                                
                 DrawBorder = &MiddleBorder;
                 MiddleBorder();
@@ -1034,24 +1039,24 @@ IRAM_ATTR void VIDEO::TopBorder() {
 
 IRAM_ATTR void VIDEO::MiddleBorder() {
 
-    while (lastBrdTstate < CPU::tstates >> 2) {
+    while (lastBrdTstate <= CPU::tstates) {
 
         *brdptr32++ = brd;
         *brdptr32++ = brd;        
 
-        lastBrdTstate++;
+        lastBrdTstate+=4;
 
         brdcol_cnt++;
 
         if (brdcol_cnt == 4) {
-            lastBrdTstate += 32;
+            lastBrdTstate += 128;
             brdptr32 += 64;
             brdcol_cnt = 36;
         } else if (brdcol_cnt == 40) {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);  
             brdcol_cnt = 0;          
-            lastBrdTstate += Z80Ops::is128 ? 17 : 16;            
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;            
             if (brdlin_cnt == (is169 ? 196 : 216)) {                                
                 DrawBorder = Draw_OSD43;
                 DrawBorder();
@@ -1065,12 +1070,12 @@ IRAM_ATTR void VIDEO::MiddleBorder() {
 
 IRAM_ATTR void VIDEO::BottomBorder() {
 
-    while (lastBrdTstate < CPU::tstates >> 2) {
+    while (lastBrdTstate <= CPU::tstates) {
 
         *brdptr32++ = brd;
         *brdptr32++ = brd;        
 
-        lastBrdTstate++;
+        lastBrdTstate+=4;
 
         brdcol_cnt++;
 
@@ -1078,7 +1083,7 @@ IRAM_ATTR void VIDEO::BottomBorder() {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
             brdcol_cnt = 0;
-            lastBrdTstate += Z80Ops::is128 ? 17 : 16;                        
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;                        
             if (brdlin_cnt == (is169 ? 200 : 240)) {                
                 DrawBorder = &Border_Blank;
                 return;
@@ -1091,7 +1096,7 @@ IRAM_ATTR void VIDEO::BottomBorder() {
 
 IRAM_ATTR void VIDEO::BottomBorder_OSD() {
 
-    while (lastBrdTstate < CPU::tstates >> 2) {
+    while (lastBrdTstate <= CPU::tstates) {
 
         if (brdlin_cnt < 220 || brdlin_cnt > 235) {
             *brdptr32++ = brd;
@@ -1103,7 +1108,7 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD() {
             brdptr32 += 2;
         }
 
-        lastBrdTstate++;
+        lastBrdTstate+=4;
 
         brdcol_cnt++;
 
@@ -1111,7 +1116,7 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD() {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
             brdcol_cnt = 0;
-            lastBrdTstate += Z80Ops::is128 ? 17 : 16;                                    
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;                                    
             if (brdlin_cnt == 240) {
                 DrawBorder = &Border_Blank;
                 return;
@@ -1131,7 +1136,7 @@ static int brdcol_end1 = 0;
 
 IRAM_ATTR void VIDEO::TopBorder_Blank_Pentagon() {
 
-    if (CPU::tstates >= tStatesBorder + ESPectrum::ESPtestvar) {
+    if (CPU::tstates >= tStatesBorder) {
         brdcol_cnt = is169 ? 10 : 0;
         brdcol_end = is169 ? 170 : 160;        
         brdcol_end1 = is169 ? 26 : 16;
