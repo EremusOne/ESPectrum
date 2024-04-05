@@ -457,6 +457,8 @@ IRAM_ATTR void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
 
     if (CPU::tstates >= tstateDraw) {
 
+        if (brdChange) DrawBorder(); // Needed to avoid tearing in demos like Gabba (Pentagon)
+        
         lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 13: 8);
 
         coldraw_cnt = 0;
@@ -487,6 +489,8 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Snow(unsigned int statestoadd, bool conte
     CPU::tstates += statestoadd;
 
     if (CPU::tstates >= tstateDraw) {
+
+        if (brdChange) DrawBorder();
 
         lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 13: 8);
 
@@ -524,6 +528,8 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Snow_Opcode(bool contended) {
     CPU::tstates += 4;
 
     if (CPU::tstates >= tstateDraw) {
+
+        if (brdChange) DrawBorder();
 
         lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 13: 8);
 
