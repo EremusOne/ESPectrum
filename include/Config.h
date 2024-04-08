@@ -119,6 +119,8 @@ public:
     static uint8_t scanlines;
     static uint8_t render;    
 
+    static bool TABasfire1; 
+
 };
 
 #endif // Config.h

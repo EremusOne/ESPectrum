@@ -76,6 +76,10 @@ public:
     static void readKbdJoy();
     static fabgl::PS2Controller PS2Controller;
     static fabgl::VirtualKey JoyVKTranslation[24];
+    static fabgl::VirtualKey VK_ESPECTRUM_FIRE1;
+    static fabgl::VirtualKey VK_ESPECTRUM_FIRE2;
+    static fabgl::VirtualKey VK_ESPECTRUM_TAB;
+    static fabgl::VirtualKey VK_ESPECTRUM_GRAVEACCENT;
 
     // Audio
     static void BeeperGetSample();

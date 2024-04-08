@@ -760,23 +760,6 @@ IRAM_ATTR void VIDEO::MainScreen_Snow_Opcode(bool contended) {
 
         statestoadd -= coldraw_cnt - 128;
 
-        // if (dispUpdCycle < 5) bmp2 = grmem[bmpOffset++];
-
-        // if (dispUpdCycle <= 5) {
-        //     if (dbl_att) {
-        //         att2 = lastatt;
-        //         attOffset++;
-        //         dbl_att = false;
-        //     } else
-        //         att2 = grmem[attOffset++];  // get attribute byte
-
-        //     if (att2 & flashing) bmp2 = ~bmp2;
-        //     *lineptr32++ = AluByte[bmp2 >> 4][att2];
-        //     *lineptr32++ = AluByte[bmp2 & 0xF][att2];
-        // }
-
-        // return;
-
     }
 
     if (dispUpdCycle == 6) {
@@ -785,22 +768,6 @@ IRAM_ATTR void VIDEO::MainScreen_Snow_Opcode(bool contended) {
     }
 
     // Determine if snow effect can be applied
-
-    // uint8_t page = Z80::getRegI() >> 6;
-    // // if (Z80::getRegI() >= 0x40 && Z80::getRegI() <= 0x7f) {    // Snow 48K, 128K
-    // if (page == 1) {    // Snow 48K, 128K    
-    //     snow_effect = 1;
-    //     snowpage = MemESP::videoLatch ? 7 : 5;
-    // // } else if (Z80Ops::is128 && (MemESP::bankLatch & 0x01) && (Z80::getRegI() >= 0xc0 && Z80::getRegI() <= 0xff)) { // Snow 128K
-    // } else if (Z80Ops::is128 && (MemESP::bankLatch & 0x01) && page == 3) { // Snow 128K    
-    //     snow_effect = 1;
-    //     // Get snowpage
-    //     if (MemESP::bankLatch == 1 || MemESP::bankLatch == 3) {
-    //         snowpage = MemESP::videoLatch ? 3 : 1;
-    //     } else
-    //         snowpage = MemESP::videoLatch ? 7 : 5;
-    // }
-
     uint8_t page = Z80::getRegI() & 0xc0;
     if (page == 0x40) { // Snow 48K, 128K
         snow_effect = 1;

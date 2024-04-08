@@ -420,6 +420,19 @@ void ESPectrum::setup()
     if(ps2kbd2)
         PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
 
+    // Set TAB and GRAVEACCENT behaviour
+    if (Config::TABasfire1) {
+        ESPectrum::VK_ESPECTRUM_FIRE1 = fabgl::VK_TAB;
+        ESPectrum::VK_ESPECTRUM_FIRE2 = fabgl::VK_GRAVEACCENT;
+        ESPectrum::VK_ESPECTRUM_TAB = fabgl::VK_NONE;
+        ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_NONE;
+    } else {
+        ESPectrum::VK_ESPECTRUM_FIRE1 = fabgl::VK_NONE;
+        ESPectrum::VK_ESPECTRUM_FIRE2 = fabgl::VK_NONE;
+        ESPectrum::VK_ESPECTRUM_TAB = fabgl::VK_TAB;
+        ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_GRAVEACCENT;
+    }
+
     #ifndef ESP32_SDL2_WRAPPER
 
     if (Config::slog_on) {
@@ -793,6 +806,11 @@ fabgl::VirtualKey ESPectrum::JoyVKTranslation[24];
 //     fabgl::VK_Y, // Y
 //     fabgl::VK_Z, // Z
 
+fabgl::VirtualKey ESPectrum::VK_ESPECTRUM_FIRE1 = fabgl::VK_NONE;
+fabgl::VirtualKey ESPectrum::VK_ESPECTRUM_FIRE2 = fabgl::VK_NONE;
+fabgl::VirtualKey ESPectrum::VK_ESPECTRUM_TAB = fabgl::VK_TAB;
+fabgl::VirtualKey ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_GRAVEACCENT;
+
 IRAM_ATTR void ESPectrum::processKeyboard() {
 // void ESPectrum::processKeyboard() {    
 
@@ -1029,11 +1047,11 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                     bitWrite(Ports::port[0x1f], 3, 1);
                 }
 
-                if (Kbd->isVKDown(fabgl::VK_RALT)) {
+                if (Kbd->isVKDown(fabgl::VK_RALT) || Kbd->isVKDown(VK_ESPECTRUM_FIRE1)) {
                     bitWrite(Ports::port[0x1f], 4, 1);
                 }
 
-                if (Kbd->isVKDown(fabgl::VK_SLASH) || Kbd->isVKDown(fabgl::VK_QUESTION) || Kbd->isVKDown(fabgl::VK_RGUI) || Kbd->isVKDown(fabgl::VK_APPLICATION) ) {
+                if (Kbd->isVKDown(fabgl::VK_SLASH) || /*Kbd->isVKDown(fabgl::VK_QUESTION) ||*/Kbd->isVKDown(fabgl::VK_RGUI) || Kbd->isVKDown(fabgl::VK_APPLICATION) || Kbd->isVKDown(VK_ESPECTRUM_FIRE2)) {
                     bitWrite(Ports::port[0x1f], 5, 1);
                 }
 
@@ -1055,7 +1073,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                     bitWrite(Ports::port[0x7f], 0, 0);
                 }
 
-                if (Kbd->isVKDown(fabgl::VK_RALT)) {
+                if (Kbd->isVKDown(fabgl::VK_RALT) || Kbd->isVKDown(VK_ESPECTRUM_FIRE1)) {
                     bitWrite(Ports::port[0x7f], 7, 0);
                 }
 
@@ -1081,7 +1099,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                     j[6] = false;
                 };
 
-                if (Kbd->isVKDown(fabgl::VK_RALT)) {
+                if (Kbd->isVKDown(fabgl::VK_RALT) || Kbd->isVKDown(VK_ESPECTRUM_FIRE1)) {
                     jShift = true;
                     j[0] = false;
                 };
@@ -1108,7 +1126,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                     j[8] = false;
                 };
 
-                if (Kbd->isVKDown(fabgl::VK_RALT)) {
+                if (Kbd->isVKDown(fabgl::VK_RALT) || Kbd->isVKDown(VK_ESPECTRUM_FIRE1)) {
                     jShift = true;
                     j[0] = false;
                 };
@@ -1135,7 +1153,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                     j[3] = false;
                 };
 
-                if (Kbd->isVKDown(fabgl::VK_RALT)) {
+                if (Kbd->isVKDown(fabgl::VK_RALT) || Kbd->isVKDown(VK_ESPECTRUM_FIRE1)) {
                     jShift = true;
                     j[5] = false;
                 };
@@ -1144,7 +1162,13 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
             // Check keyboard status and map it to Spectrum Ports
             
-            bitWrite(PS2cols[0], 0, (jShift) & (!Kbd->isVKDown(fabgl::VK_BACKSPACE))); // CAPS SHIFT
+            bitWrite(PS2cols[0], 0, (jShift) 
+                & (!Kbd->isVKDown(fabgl::VK_BACKSPACE))
+                & (!Kbd->isVKDown(fabgl::VK_CAPSLOCK)) // Caps lock   
+                &   (!Kbd->isVKDown(VK_ESPECTRUM_GRAVEACCENT)) // Edit
+                &   (!Kbd->isVKDown(VK_ESPECTRUM_TAB)) // Extended mode                                      
+                &   (!Kbd->isVKDown(fabgl::VK_ESCAPE)) // Break                             
+                ); // CAPS SHIFT
             bitWrite(PS2cols[0], 1, (!Kbd->isVKDown(fabgl::VK_Z)) & (!Kbd->isVKDown(fabgl::VK_z)));
             bitWrite(PS2cols[0], 2, (!Kbd->isVKDown(fabgl::VK_X)) & (!Kbd->isVKDown(fabgl::VK_x)));
             bitWrite(PS2cols[0], 3, (!Kbd->isVKDown(fabgl::VK_C)) & (!Kbd->isVKDown(fabgl::VK_c)));
@@ -1162,8 +1186,13 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             bitWrite(PS2cols[2], 3, (!Kbd->isVKDown(fabgl::VK_R)) & (!Kbd->isVKDown(fabgl::VK_r)));
             bitWrite(PS2cols[2], 4, (!Kbd->isVKDown(fabgl::VK_T)) & (!Kbd->isVKDown(fabgl::VK_t)));
 
-            bitWrite(PS2cols[3], 0, (!Kbd->isVKDown(fabgl::VK_1)) & (!Kbd->isVKDown(fabgl::VK_EXCLAIM)) & (j[1]));
-            bitWrite(PS2cols[3], 1, (!Kbd->isVKDown(fabgl::VK_2)) & (!Kbd->isVKDown(fabgl::VK_AT)) & (j[2]));
+            bitWrite(PS2cols[3], 0, (!Kbd->isVKDown(fabgl::VK_1)) & (!Kbd->isVKDown(fabgl::VK_EXCLAIM)) 
+                                &   (!Kbd->isVKDown(VK_ESPECTRUM_GRAVEACCENT)) // Edit
+                                & (j[1]));
+            bitWrite(PS2cols[3], 1, (!Kbd->isVKDown(fabgl::VK_2)) & (!Kbd->isVKDown(fabgl::VK_AT)) 
+                                &   (!Kbd->isVKDown(fabgl::VK_CAPSLOCK)) // Caps lock            
+                                & (j[2])                                
+                                );
             bitWrite(PS2cols[3], 2, (!Kbd->isVKDown(fabgl::VK_3)) & (!Kbd->isVKDown(fabgl::VK_HASH)) & (j[3]));
             bitWrite(PS2cols[3], 3, (!Kbd->isVKDown(fabgl::VK_4)) & (!Kbd->isVKDown(fabgl::VK_DOLLAR)) & (j[4]));
             bitWrite(PS2cols[3], 4, (!Kbd->isVKDown(fabgl::VK_5)) & (!Kbd->isVKDown(fabgl::VK_PERCENT)) & (j[5]));
@@ -1174,8 +1203,12 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             bitWrite(PS2cols[4], 3, (!Kbd->isVKDown(fabgl::VK_7)) & (!Kbd->isVKDown(fabgl::VK_AMPERSAND)) & (j[7]));
             bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_6)) & (!Kbd->isVKDown(fabgl::VK_CARET)) & (j[6]));
 
-            bitWrite(PS2cols[5], 0, (!Kbd->isVKDown(fabgl::VK_P)) & (!Kbd->isVKDown(fabgl::VK_p)));
-            bitWrite(PS2cols[5], 1, (!Kbd->isVKDown(fabgl::VK_O)) & (!Kbd->isVKDown(fabgl::VK_o)));
+            bitWrite(PS2cols[5], 0, (!Kbd->isVKDown(fabgl::VK_P)) & (!Kbd->isVKDown(fabgl::VK_p))
+                                &   (!Kbd->isVKDown(fabgl::VK_BACKSLASH)) // Double quote            
+                                );
+            bitWrite(PS2cols[5], 1, (!Kbd->isVKDown(fabgl::VK_O)) & (!Kbd->isVKDown(fabgl::VK_o))
+                                &   (!Kbd->isVKDown(fabgl::VK_QUOTE)) // Semicolon
+                                );
             bitWrite(PS2cols[5], 2, (!Kbd->isVKDown(fabgl::VK_I)) & (!Kbd->isVKDown(fabgl::VK_i)));
             bitWrite(PS2cols[5], 3, (!Kbd->isVKDown(fabgl::VK_U)) & (!Kbd->isVKDown(fabgl::VK_u)));
             bitWrite(PS2cols[5], 4, (!Kbd->isVKDown(fabgl::VK_Y)) & (!Kbd->isVKDown(fabgl::VK_y)));
@@ -1186,11 +1219,16 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             bitWrite(PS2cols[6], 3, (!Kbd->isVKDown(fabgl::VK_J)) & (!Kbd->isVKDown(fabgl::VK_j)));
             bitWrite(PS2cols[6], 4, (!Kbd->isVKDown(fabgl::VK_H)) & (!Kbd->isVKDown(fabgl::VK_h)));
 
-            bitWrite(PS2cols[7], 0, !Kbd->isVKDown(fabgl::VK_SPACE));
+            bitWrite(PS2cols[7], 0, !Kbd->isVKDown(fabgl::VK_SPACE)
+                            &   (!Kbd->isVKDown(fabgl::VK_ESCAPE)) // Break                             
+            );
             bitWrite(PS2cols[7], 1, (!Kbd->isVKDown(fabgl::VK_LCTRL)) // SYMBOL SHIFT
                                 &   (!Kbd->isVKDown(fabgl::VK_RCTRL))
                                 &   (!Kbd->isVKDown(fabgl::VK_COMMA)) // Comma
                                 &   (!Kbd->isVKDown(fabgl::VK_PERIOD)) // Period
+                                &   (!Kbd->isVKDown(fabgl::VK_QUOTE)) // Semicolon
+                                &   (!Kbd->isVKDown(fabgl::VK_BACKSLASH)) // Double quote
+                                &   (!Kbd->isVKDown(VK_ESPECTRUM_TAB)) // Extended mode                                                                      
                                 ); // SYMBOL SHIFT
             bitWrite(PS2cols[7], 2, (!Kbd->isVKDown(fabgl::VK_M)) & (!Kbd->isVKDown(fabgl::VK_m))
                                 &   (!Kbd->isVKDown(fabgl::VK_PERIOD)) // Period

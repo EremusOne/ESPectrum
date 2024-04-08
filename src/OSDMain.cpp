@@ -1603,65 +1603,124 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         while (1) {
                             // joystick
                             string Mnustr = MENU_JOYPS2[Config::lang];
-                            std::size_t pos = Mnustr.find("[",0);
-                            int nfind = 0;
-                            while (pos != string::npos) {
-                                if (nfind == Config::joyPS2) {
-                                    Mnustr.replace(pos,2,"[*");
-                                    break;
-                                }
-                                pos = Mnustr.find("[",pos + 1);
-                                nfind++;
-                            }
                             uint8_t opt2 = menuRun(Mnustr);
-                            if (opt2 > 0 &&  opt2 < 6) {
-                                if (Config::joyPS2 != (opt2 - 1)) {
-                                    Config::joyPS2 = opt2 - 1;
-                                    Config::save("joyPS2");
-                                }
-                                menu_curopt = opt2;
-                                menu_saverect = false;
-                            } else {
-                                if (opt2) {
-                                    // Menu cursor keys as joy
-                                    menu_level = 3;
-                                    menu_curopt = 1;
-                                    menu_saverect = true;
-                                    while (1) {
-                                        string csasjoy_menu = MENU_CURSORJOY[Config::lang];
-                                        csasjoy_menu += MENU_YESNO[Config::lang];
-                                        if (Config::CursorAsJoy) {
-                                            csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
-                                            csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
-                                        } else {
-                                            csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
-                                            csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
-                                        }
-                                        uint8_t opt2 = menuRun(csasjoy_menu);
-                                        if (opt2) {
-                                            if (opt2 == 1)
-                                                Config::CursorAsJoy = true;
-                                            else
-                                                Config::CursorAsJoy = false;
-
-                                            ESPectrum::PS2Controller.keyboard()->setLEDs(false,false,Config::CursorAsJoy);
-                                            if(ESPectrum::ps2kbd2)
-                                                ESPectrum::PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
-                                            Config::save("CursorAsJoy");
-
-                                            menu_curopt = opt2;
-                                            menu_saverect = false;
-                                        } else {
-                                            menu_curopt = 6;
-                                            menu_level = 2;                                       
+                            if (opt2 == 1) {
+                                // Joystick type
+                                menu_level = 3;
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string joy_menu = MENU_PS2JOYTYPE[Config::lang];
+                                    std::size_t pos = joy_menu.find("[",0);
+                                    int nfind = 0;
+                                    while (pos != string::npos) {
+                                        if (nfind == Config::joyPS2) {
+                                            joy_menu.replace(pos,2,"[*");
                                             break;
                                         }
+                                        pos = joy_menu.find("[",pos + 1);
+                                        nfind++;
                                     }
-
-                                } else {
-                                    menu_curopt = 5;
-                                    break;
+                                    uint8_t optjoy = menuRun(joy_menu);
+                                    if (optjoy > 0 && optjoy < 6) {
+                                        if (Config::joyPS2 != (optjoy - 1)) {
+                                            Config::joyPS2 = optjoy - 1;
+                                            Config::save("joyPS2");
+                                        }
+                                        menu_curopt = optjoy;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 1;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
                                 }
+                            } else if (opt2 == 2) {
+                                // Menu cursor keys as joy
+                                menu_level = 3;
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string csasjoy_menu = MENU_CURSORJOY[Config::lang];
+                                    csasjoy_menu += MENU_YESNO[Config::lang];
+                                    if (Config::CursorAsJoy) {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
+                                    } else {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(csasjoy_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::CursorAsJoy = true;
+                                        else
+                                            Config::CursorAsJoy = false;
+
+                                        ESPectrum::PS2Controller.keyboard()->setLEDs(false,false,Config::CursorAsJoy);
+                                        if(ESPectrum::ps2kbd2)
+                                            ESPectrum::PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
+                                        Config::save("CursorAsJoy");
+
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 2;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+                            } else if (opt2 == 3) {
+                                // Menu TAB as fire 1
+                                menu_level = 3;
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string csasjoy_menu = MENU_TABASFIRE[Config::lang];
+                                    csasjoy_menu += MENU_YESNO[Config::lang];
+                                    bool prev_opt = Config::TABasfire1;
+                                    if (prev_opt) {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
+                                    } else {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(csasjoy_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::TABasfire1 = true;
+                                        else
+                                            Config::TABasfire1 = false;
+
+                                        if (Config::TABasfire1 != prev_opt) {
+
+                                            if (Config::TABasfire1) {
+                                                ESPectrum::VK_ESPECTRUM_FIRE1 = fabgl::VK_TAB;
+                                                ESPectrum::VK_ESPECTRUM_FIRE2 = fabgl::VK_GRAVEACCENT;
+                                                ESPectrum::VK_ESPECTRUM_TAB = fabgl::VK_NONE;
+                                                ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_NONE;
+                                            } else {
+                                                ESPectrum::VK_ESPECTRUM_FIRE1 = fabgl::VK_NONE;
+                                                ESPectrum::VK_ESPECTRUM_FIRE2 = fabgl::VK_NONE;
+                                                ESPectrum::VK_ESPECTRUM_TAB = fabgl::VK_TAB;
+                                                ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_GRAVEACCENT;
+                                            }
+
+                                            Config::save("TABasfire1");
+                                        }
+
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 3;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+                            } else {
+                                menu_curopt = 5;
+                                break;
                             }
                         }
                     }
