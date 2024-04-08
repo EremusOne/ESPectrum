@@ -880,6 +880,36 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
             }
 
+            // Reset keys
+            if (Kdown && NextKey.LALT) {
+                if (NextKey.CTRL) {
+                    if (KeytoESP == fabgl::VK_DELETE) {
+                        // printf("Ctrl + Alt + Supr!\n");
+                        // ESP host reset
+                        Config::ram_file = NO_RAM_FILE;
+                        Config::save("ram");
+                        OSD::esp_hard_reset();
+                    } else if (KeytoESP == fabgl::VK_BACKSPACE) {
+                        // printf("Ctrl + Alt + backSpace!\n");
+                        // Hard
+                        if (Config::ram_file != NO_RAM_FILE) {
+                            Config::ram_file = NO_RAM_FILE;
+                        }
+                        Config::last_ram_file = NO_RAM_FILE;
+                        ESPectrum::reset();
+                        return;
+                    }
+                } else if (KeytoESP == fabgl::VK_BACKSPACE) {
+                    // printf("Alt + backSpace!\n");
+                    // Soft reset
+                    if (Config::last_ram_file != NO_RAM_FILE) {
+                        LoadSnapshot(Config::last_ram_file,"","");
+                        Config::ram_file = Config::last_ram_file;
+                    } else ESPectrum::reset();
+                    return;
+                }
+            }
+
             if (Config::joystick1 == JOY_KEMPSTON || Config::joystick2 == JOY_KEMPSTON || Config::joyPS2 == JOYPS2_KEMPSTON) Ports::port[0x1f] = 0;
             if (Config::joystick1 == JOY_FULLER || Config::joystick2 == JOY_FULLER || Config::joyPS2 == JOYPS2_FULLER) Ports::port[0x7f] = 0xff;
 
