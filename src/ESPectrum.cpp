@@ -1369,6 +1369,9 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 // Set all keys as not pressed
                 for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0xbf;
 
+                // Refresh border
+                VIDEO::brdnextframe = true;                
+
                 ESPectrum::ts_start += esp_timer_get_time() - osd_start;
 
                 return;
