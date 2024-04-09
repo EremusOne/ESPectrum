@@ -112,22 +112,18 @@ IRAM_ATTR void CPU::loop() {
         Z80::doNMI();
     }
 
-    if (Z80::isHalted()) {
+    while (tstates < IntEnd) Z80::execute();
 
-        while (tstates < statesInFrame) Z80::execute();
-
-    } else {
-
-        while (tstates < IntEnd) Z80::execute();
-
+    if (!Z80::isHalted()) {
+        stFrame = statesInFrame - IntEnd;
         Z80::exec_nocheck();
-        
-        while (tstates < statesInFrame) Z80::execute();
-
+        if (stFrame == 0) FlushOnHalt();
+    } else {
+        FlushOnHalt();
     }
-    
-    if (tstates & 0xFF000000) FlushOnHalt(); // If we're halted flush screen and update registers as needed
 
+    while (tstates < statesInFrame) Z80::execute();
+    
     VIDEO::EndFrame();
 
     global_tstates += statesInFrame; // increase global Tstates
@@ -139,13 +135,12 @@ IRAM_ATTR void CPU::loop() {
 
 IRAM_ATTR void CPU::FlushOnHalt() {
         
-    tstates &= 0x00FFFFFF;
+    uint32_t stEnd = statesInFrame - IntEnd;    
 
     uint8_t page = Z80::getRegPC() >> 14;
     if (MemESP::ramContended[page]) {
 
-        uint32_t stFrame = statesInFrame - latetiming;
-        while (tstates < stFrame ) {
+        while (tstates < stEnd ) {
             VIDEO::Draw_Opcode(true);
             Z80::incRegR(1);
         }
@@ -155,8 +150,7 @@ IRAM_ATTR void CPU::FlushOnHalt() {
         if (VIDEO::snow_toggle) {
 
             // ULA perfect cycle & snow effect use this code
-            uint32_t stFrame = statesInFrame - latetiming;
-            while (tstates < stFrame ) {
+            while (tstates < stEnd ) {
                 VIDEO::Draw_Opcode(false);
                 Z80::incRegR(1);
             }
@@ -165,13 +159,11 @@ IRAM_ATTR void CPU::FlushOnHalt() {
 
             // Flush the rest of frame
             uint32_t pre_tstates = tstates;
-
             while (VIDEO::Draw != &VIDEO::Blank)
                 VIDEO::Draw(VIDEO::tStatesPerLine, false);
             tstates = pre_tstates;
-            
-            pre_tstates += latetiming;
-            uint32_t incr = (statesInFrame - pre_tstates) >> 2;
+
+            uint32_t incr = (stEnd - pre_tstates) >> 2;
             if (pre_tstates & 0x03) incr++;
             tstates += (incr << 2);
             Z80::incRegR(incr & 0x000000FF);
@@ -179,8 +171,6 @@ IRAM_ATTR void CPU::FlushOnHalt() {
         }
 
     }
-
-    Z80::checkINT();        
 
 }
 

@@ -568,7 +568,7 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Snow_Opcode(bool contended) {
 // ----------------------------------------------------------------------------------
 // Fast video emulation with no ULA cycle emulation and no snow effect support
 // ----------------------------------------------------------------------------------
-/* IRAM_ATTR */ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
+IRAM_ATTR void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
 
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -599,7 +599,7 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Snow_Opcode(bool contended) {
 
 }
 
-/* IRAM_ATTR */ void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {    
+IRAM_ATTR void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {    
 
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -638,7 +638,7 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Snow_Opcode(bool contended) {
 
 }
 
-/* IRAM_ATTR */ void VIDEO::MainScreen_Opcode(bool contended) { Draw(4,contended); }
+IRAM_ATTR void VIDEO::MainScreen_Opcode(bool contended) { Draw(4,contended); }
 
 // ----------------------------------------------------------------------------------
 // ULA cycle perfect emulation with snow effect support

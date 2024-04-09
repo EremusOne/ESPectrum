@@ -632,7 +632,7 @@ bool FileZ80::load(string z80_fn) {
 
         string z80_romset = "";
 
-        printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+        // printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
 
         if (z80_arch == "48K") {
             if (Config::pref_romSet_48 == "48K" || Config::pref_romSet_48 == "48Kes")
@@ -650,7 +650,7 @@ bool FileZ80::load(string z80_fn) {
             }
         }
 
-        printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+        // printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
         
         Config::requestMachine(z80_arch, z80_romset);
 
@@ -685,7 +685,7 @@ bool FileZ80::load(string z80_fn) {
             
             string z80_romset = "";
             
-            printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+            // printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
 
             if (mch == 12) { // +2
 
@@ -714,7 +714,7 @@ bool FileZ80::load(string z80_fn) {
 
             }
 
-            printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
+            // printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
 
         }
 
@@ -1162,23 +1162,23 @@ void FileZ80::loader128() {
         dataLen = sizeof(load128);
 
         if (Config::romSet == "128K") {
-            printf("128K\n");
+            // printf("128K\n");
             z80_array = (unsigned char *) load128;
             dataLen = sizeof(load128);
         } else if (Config::romSet == "128Kes") {
-            printf("128Kes\n");
+            // printf("128Kes\n");
             z80_array = (unsigned char *) load128spa;
             dataLen = sizeof(load128spa);
         } else if (Config::romSet == "+2") {
-            printf("+2\n");
+            // printf("+2\n");
             z80_array = (unsigned char *) loadplus2;
             dataLen = sizeof(loadplus2);
         } else if (Config::romSet == "+2es") {
-            printf("+2es\n");
+            // printf("+2es\n");
             z80_array = (unsigned char *) loadplus2;
             dataLen = sizeof(loadplus2);
         } else if (Config::romSet == "ZX81+") {
-            printf("ZX81+\n");
+            // printf("ZX81+\n");
             z80_array = (unsigned char *) loadzx81;
             dataLen = sizeof(loadzx81);
         }

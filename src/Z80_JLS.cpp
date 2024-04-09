@@ -1061,149 +1061,6 @@ IRAM_ATTR void Z80::incRegR(uint8_t inc) {
 
 }
 
-// IRAM_ATTR void Z80::execute() {
-
-//     uint8_t pg = REG_PC >> 14;
-//     VIDEO::Draw(4,MemESP::ramContended[pg]);
-//     opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
-
-//     regR++;
-
-//     if (!halted) {
-
-//         REG_PC++;
-
-//         // // El prefijo 0xCB no cuenta para esta guerra.
-//         // // En CBxx todas las xx producen un código válido
-//         // // de instrucción, incluyendo CBCB.
-//         // switch (prefixOpcode) {
-//         //     case 0x00:
-//         //         flagQ = pendingEI = false;
-//         //         dcOpcode[opCode]();
-//         //         break;
-//         //     case 0xDD:
-//         //         prefixOpcode = 0;
-//         //         decodeDDFD(regIX);
-//         //         break;
-//         //     case 0xED:
-//         //         prefixOpcode = 0;
-//         //         decodeED();
-//         //         break;
-//         //     case 0xFD:
-//         //         prefixOpcode = 0;
-//         //         decodeDDFD(regIY);
-//         //         break;
-//         //     default:
-//         //         return;
-//         // }
-
-//         // if (prefixOpcode != 0) return;
-
-//         // lastFlagQ = flagQ;
-
-//         if (prefixOpcode == 0) {
-//             flagQ = pendingEI = false;
-//             dcOpcode[opCode]();
-//         } else if (prefixOpcode == 0xDD) {
-//             prefixOpcode = 0;
-//             decodeDDFD(regIX);
-//         } else if (prefixOpcode == 0xED) {
-//             prefixOpcode = 0;
-//             decodeED();
-//         } else if (prefixOpcode == 0xFD) {
-//             prefixOpcode = 0;
-//             decodeDDFD(regIY);
-//         } else return;
-
-//         if (prefixOpcode != 0) return;
-        
-//         lastFlagQ = flagQ;
-
-//     }
-
-//     // Primero se comprueba NMI
-//     // Si se activa NMI no se comprueba INT porque la siguiente
-//     // instrucción debe ser la de 0x0066.
-//     // if (activeNMI) {
-//     //     activeNMI = false;
-//     //     lastFlagQ = false;
-//     //     nmi();
-//     //     return;
-//     // }
-
-//     // Ahora se comprueba si está activada la señal INT
-//     checkINT();
-
-// }
-
-// IRAM_ATTR void Z80::exec_nocheck() {
-
-//     while (CPU::tstates < CPU::stFrame) {
-
-//         uint8_t pg = REG_PC >> 14;
-//         VIDEO::Draw(4,MemESP::ramContended[pg]);
-//         opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
-
-//         regR++;
-
-//         // if (!halted) {
-
-//             REG_PC++;
-
-//             // // El prefijo 0xCB no cuenta para esta guerra.
-//             // // En CBxx todas las xx producen un código válido
-//             // // de instrucción, incluyendo CBCB.
-//             // switch (prefixOpcode) {
-//             //     case 0x00:
-//             //         flagQ = pendingEI = false;
-//             //         dcOpcode[opCode]();
-//             //         break;
-//             //     case 0xDD:
-//             //         prefixOpcode = 0;
-//             //         decodeDDFD(regIX);
-//             //         break;
-//             //     case 0xED:
-//             //         prefixOpcode = 0;
-//             //         decodeED();
-//             //         break;
-//             //     case 0xFD:
-//             //         prefixOpcode = 0;
-//             //         decodeDDFD(regIY);
-//             //         break;
-//             //     default:
-//             //         return;
-//             // }
-
-//             // if (prefixOpcode != 0) return;
-
-//             // lastFlagQ = flagQ;
-
-//             if (prefixOpcode == 0) {
-//                 flagQ = pendingEI = false;
-//                 dcOpcode[opCode]();
-//                 lastFlagQ = flagQ;
-//                 continue;
-//             } 
-
-//             if (prefixOpcode == 0xDD) {
-//                 prefixOpcode = 0;
-//                 decodeDDFD(regIX);
-//             } else if (prefixOpcode == 0xED) {
-//                 prefixOpcode = 0;
-//                 decodeED();
-//             } else if (prefixOpcode == 0xFD) {
-//                 prefixOpcode = 0;
-//                 decodeDDFD(regIY);
-//             } else continue;
-
-//             if (prefixOpcode == 0) lastFlagQ = flagQ;
-
-//         // }
-
-//     }
-   
-// }
-
 IRAM_ATTR void Z80::execute() {
 
     uint8_t pg = REG_PC >> 14;
@@ -1242,7 +1099,7 @@ IRAM_ATTR void Z80::execute() {
 }
 
 IRAM_ATTR void Z80::exec_nocheck() {
-    
+
     while (CPU::tstates < CPU::stFrame) {
         uint8_t pg = REG_PC >> 14;
         VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
@@ -2036,12 +1893,10 @@ void Z80::decodeOpcode75()
 void Z80::decodeOpcode76()
 { /* HALT */
 
-    // REG_PC--;
-    
-    // Signal HALT to CPU Loop
-    CPU::tstates |= 0xFF000000;    
-
     halted = true;
+
+    // Signal HALT to CPU Loop
+    CPU::stFrame = 0;
 
 }
 
