@@ -1061,6 +1061,73 @@ IRAM_ATTR void Z80::incRegR(uint8_t inc) {
 
 }
 
+
+// IRAM_ATTR void Z80::execute() {
+
+//     if (!prefixOpcode) {
+
+//         uint8_t pg = REG_PC >> 14;
+//         VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
+//         opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+
+//         regR++;
+
+//         if (halted) {
+//             checkINT();
+//             return;
+//         }
+
+//         REG_PC++;
+//         flagQ = pendingEI = false;
+
+//         dcOpcode[opCode]();
+
+//     } else {
+
+//         dcOpcode[prefixOpcode]();        
+
+//     }
+
+//     if (prefixOpcode) return;
+
+//     lastFlagQ = flagQ;
+
+//     // Ahora se comprueba si está activada la señal INT
+//     checkINT();
+
+// }
+
+// IRAM_ATTR void Z80::exec_nocheck() {
+
+//     while (CPU::tstates < CPU::stFrame) {
+
+//         if (prefixOpcode == 0) {
+
+//             uint8_t pg = REG_PC >> 14;
+//             VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
+//             opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+
+//             regR++;
+
+//             REG_PC++;
+//             flagQ = pendingEI = false;
+
+//             dcOpcode[opCode]();
+
+//             lastFlagQ = flagQ;            
+
+//             continue;
+
+//         }
+        
+//         dcOpcode[prefixOpcode]();        
+
+//         if (prefixOpcode == 0) lastFlagQ = flagQ;
+
+//     }
+   
+// }
+
 IRAM_ATTR void Z80::execute() {
 
     uint8_t pg = REG_PC >> 14;

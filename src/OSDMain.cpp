@@ -352,16 +352,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F10) { // NMI
             Z80::triggerNMI();
         } else 
-        // if (KeytoESP == fabgl::VK_F3) { 
-        //     // Test variable decrease
-        //     ESPectrum::ESPtestvar -= 1;
-        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        // } else 
-        // if (KeytoESP == fabgl::VK_F4) {
-        //     // Test variable increase
-        //     ESPectrum::ESPtestvar += 1;
-        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        // } else 
+        if (KeytoESP == fabgl::VK_F3) { 
+            // Test variable decrease
+            ESPectrum::ESPtestvar -= 1;
+            printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        } else 
+        if (KeytoESP == fabgl::VK_F4) {
+            // Test variable increase
+            ESPectrum::ESPtestvar += 1;
+            printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        } else 
         // if (KeytoESP == fabgl::VK_F5) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar1 -= 1;
@@ -480,57 +480,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             menu_saverect = false;  
             string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
             if (mFile != "") {
-
-                string keySel = mFile.substr(0,1);
-                mFile.erase(0, 1);
-
-                if ((keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs")) {
-
-                        OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
-
-                        uint8_t OSDprev = VIDEO::OSD;
-
-                        if (Z80Ops::is48)
-                            FileZ80::loader48();
-                        else
-                            FileZ80::loader128();
-
-                        // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                        // https://skoolkid.github.io/rom/asm/5C78.html
-                        MemESP::writebyte(0x5C78,rand() % 256);
-                        MemESP::writebyte(0x5C79,rand() % 256);            
-
-                        if (Config::ram_file != NO_RAM_FILE) {
-                            Config::ram_file = NO_RAM_FILE;
-                        }
-                        Config::last_ram_file = NO_RAM_FILE;
-
-                        if (OSDprev) {
-                            VIDEO::OSD = OSDprev;
-                            if (Config::aspect_16_9)
-                                VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
-                            else
-                                VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
-                            ESPectrum::TapeNameScroller = 0;
-                        }    
-
-                }
-
-                Tape::TAP_Stop();
-
-                // Read and analyze tape file
-                Tape::TAP_Open(mFile);
-
-                ESPectrum::TapeNameScroller = 0;
-
+                Tape::LoadTape(mFile);
             }
-            
             if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
-
         }
         else if (KeytoESP == fabgl::VK_F6) {
             // Start / Stop .tap reproduction
-            Tape::TAP_Play();
+            if (Tape::tapeFileType == 1)
+                Tape::TAP_Play();
+            else
+                Tape::TZX_Play();
             click();
         }
         else if (KeytoESP == fabgl::VK_F7) {
@@ -781,41 +740,42 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             // Select TAP File
                             string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,28,16);
                             if (mFile != "") {
+                                Tape::LoadTape(mFile);
 
-                                string keySel = mFile.substr(0,1);
-                                mFile.erase(0, 1);
+                                // string keySel = mFile.substr(0,1);
+                                // mFile.erase(0, 1);
 
-                                if ((keySel ==  "R") && (Config::flashload)) {
+                                // if ((keySel ==  "R") && (Config::flashload)) {
 
-                                        OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
+                                //         OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
                                         
-                                        if (Z80Ops::is48) {
-                                            FileZ80::loader48();
-                                            // changeSnapshot(FileUtils::MountPoint + "/load48.z80");
-                                        } else {
-                                            FileZ80::loader128();
-                                            // changeSnapshot(FileUtils::MountPoint + "/load128.z80");
-                                        }
+                                //         if (Z80Ops::is48) {
+                                //             FileZ80::loader48();
+                                //             // changeSnapshot(FileUtils::MountPoint + "/load48.z80");
+                                //         } else {
+                                //             FileZ80::loader128();
+                                //             // changeSnapshot(FileUtils::MountPoint + "/load128.z80");
+                                //         }
 
-                                        // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                                        // https://skoolkid.github.io/rom/asm/5C78.html
-                                        MemESP::writebyte(0x5C78,rand() % 256);
-                                        MemESP::writebyte(0x5C79,rand() % 256);            
+                                //         // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
+                                //         // https://skoolkid.github.io/rom/asm/5C78.html
+                                //         MemESP::writebyte(0x5C78,rand() % 256);
+                                //         MemESP::writebyte(0x5C79,rand() % 256);            
 
-                                        if (Config::ram_file != NO_RAM_FILE) {
-                                            Config::ram_file = NO_RAM_FILE;
-                                        }
-                                        Config::last_ram_file = NO_RAM_FILE;
+                                //         if (Config::ram_file != NO_RAM_FILE) {
+                                //             Config::ram_file = NO_RAM_FILE;
+                                //         }
+                                //         Config::last_ram_file = NO_RAM_FILE;
 
-                                }
+                                // }
 
-                                Tape::TAP_Stop();
+                                // Tape::TAP_Stop();
 
-                                // Read and analyze tape file
-                                // Tape::Open(FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile);
-                                Tape::TAP_Open(mFile);
+                                // // Read and analyze tape file
+                                // // Tape::Open(FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile);
+                                // Tape::TAP_Open(mFile);
                                 
-                                ESPectrum::TapeNameScroller = 0;
+                                // ESPectrum::TapeNameScroller = 0;
 
                                 return;
 
@@ -823,7 +783,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         }
                         else if (tap_num == 2) {
                             // Start / Stop .tap reproduction
-                            Tape::TAP_Play();
+                            if (Tape::tapeFileType == 1)
+                                Tape::TAP_Play();
+                            else
+                                Tape::TZX_Play();
                             return;                        
                         }
                         else if (tap_num == 3) {

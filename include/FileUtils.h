@@ -79,6 +79,8 @@ public:
     static bool hasSNAextension(string filename);
     static bool hasZ80extension(string filename);
     static bool hasPextension(string filename);
+    static bool hasTAPextension(string filename);
+    static bool hasTZXextension(string filename);        
 
     static string MountPoint;
     static bool SDReady;

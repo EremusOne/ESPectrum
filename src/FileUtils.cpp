@@ -66,7 +66,7 @@ string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (fo
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
 DISK_FTYPE FileUtils::fileTypes[3] = {
     {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
-    {".tap,.TAP",".t",2,2,0,""},
+    {".tap,.TAP,.tzx,.TZX",".t",2,2,0,""},
     {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
 };
 
@@ -571,6 +571,26 @@ bool FileUtils::hasPextension(string filename)
 
     if (filename.substr(filename.size()-2,2) == ".p") return true;
     if (filename.substr(filename.size()-2,2) == ".P") return true;
+
+    return false;
+
+}
+
+bool FileUtils::hasTAPextension(string filename)
+{
+    
+    if (filename.substr(filename.size()-4,4) == ".tap") return true;
+    if (filename.substr(filename.size()-4,4) == ".TAP") return true;
+
+    return false;
+
+}
+
+bool FileUtils::hasTZXextension(string filename)
+{
+    
+    if (filename.substr(filename.size()-4,4) == ".tzx") return true;
+    if (filename.substr(filename.size()-4,4) == ".TZX") return true;
 
     return false;
 

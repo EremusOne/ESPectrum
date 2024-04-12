@@ -122,7 +122,10 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
         }
 
         if (Tape::tapeStatus==TAPE_LOADING) {
-            Tape::TAP_Read();
+            if (Tape::tapeFileType == 1)
+                Tape::TAP_Read();
+            else 
+                Tape::TZX_Read();
             bitWrite(data,6,Tape::tapeEarBit);            
         } else {
             // Issue 2 behaviour only on Spectrum 48K
