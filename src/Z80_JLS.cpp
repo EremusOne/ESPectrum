@@ -1168,6 +1168,19 @@ IRAM_ATTR void Z80::execute() {
 IRAM_ATTR void Z80::exec_nocheck() {
 
     while (CPU::tstates < CPU::stFrame) {
+
+        // // if ((CPU::tstates & 0xff) == 0) {
+        // // if ((CPU::tstates & 0xf) == 0) {            
+        //     if (Tape::tapeStatus==TAPE_LOADING) {
+        //     // if (/* Tape::tapePhase == TAPE_PHASE_SYNC || /*Tape::tapePhase == TAPE_PHASE_SYNC1 || Tape::tapePhase == TAPE_PHASE_SYNC2 ||*/ Tape::tapePhase == TAPE_PHASE_DATA) {
+        //     // if (Tape::tapePhase == TAPE_PHASE_DATA) {
+        //         if (Tape::tapeFileType == 1)
+        //             Tape::TAP_Read();
+        //         else 
+        //             Tape::TZX_Read();
+        //     }
+        // // }
+
         uint8_t pg = REG_PC >> 14;
         VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
         opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];

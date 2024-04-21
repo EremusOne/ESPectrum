@@ -685,6 +685,7 @@ void ESPectrum::reset()
         Tape::tape = NULL;
     }
     Tape::tapeStatus = TAPE_STOPPED;
+    Tape::tapePhase = TAPE_PHASE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 

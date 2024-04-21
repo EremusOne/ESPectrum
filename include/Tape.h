@@ -57,6 +57,7 @@ using namespace std;
 #define TAPE_SAVING 1
 
 // Tape phases
+#define TAPE_PHASE_STOPPED 0
 #define TAPE_PHASE_SYNC 1
 #define TAPE_PHASE_SYNC1 2
 #define TAPE_PHASE_SYNC2 3
@@ -75,8 +76,6 @@ using namespace std;
 #define TAPE_BIT1_PULSELEN 1710 // tstates = 488 ms, lenght of pulse for bit 1
 
 #define TAPE_BLK_PAUSELEN 3500000UL // 1000 ms. of pause between blocks
-//#define TAPE_BLK_PAUSELEN 1750000UL // 500 ms. of pause between blocks
-//#define TAPE_BLK_PAUSELEN 875000UL // 250 ms. of pause between blocks
 
 // Tape sync phases lenght in microseconds for Rodolfo Guerra ROMs
 #define TAPE_SYNC_LEN_RG 1408 // 620 microseconds for 2168 tStates (48K)
@@ -145,6 +144,8 @@ public:
     static size_t tapeFileSize;
  
     // Tape timing values
+    
+    static uint8_t tapePhase;    
     static uint16_t tapeSyncLen;
     static uint16_t tapeSync1Len;
     static uint16_t tapeSync2Len;
@@ -153,7 +154,8 @@ public:
     static uint16_t tapeHdrLong;  // Header sync lenght in pulses
     static uint16_t tapeHdrShort; // Data sync lenght in pulses
     static uint32_t tapeBlkPauseLen; 
-    static uint8_t tapeLastBitUsedBytes;
+    static uint8_t tapeLastByteUsedBits;
+    static uint8_t tapeEndBitMask;
 
     static std::vector<TapeBlock> TapeListing;
 
@@ -167,8 +169,9 @@ public:
     static void TAP_Read();
     static void (*TZX_Read)();
     static void TZX_Read_0x10();
-    static void TZX_Read_0x11();
-    static void TZXGetNextBlock();    
+    static void TZX_Read_0x12();
+    static void TZX_Read_0x13();        
+    static void TZXGetBlock();    
     static bool FlashLoad();
     static void Save();
     static uint32_t CalcTapBlockPos(int block);
