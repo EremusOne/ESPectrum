@@ -981,13 +981,7 @@ IRAM_ATTR void Z80::check_trdos_unpage() {
  */
 void Z80::interrupt(void) {
     
-    // lastFlagQ = false;
-    
-    // Si estaba en un HALT esperando una INT, lo saca de la espera
-    // if (halted) {
-        halted = false;
-    //     REG_PC++;
-    // }
+    halted = false;
 
     // Z80Ops::interruptHandlingTime(7);
     VIDEO::Draw(7, false);
@@ -1062,73 +1056,25 @@ IRAM_ATTR void Z80::incRegR(uint8_t inc) {
 }
 
 
-// IRAM_ATTR void Z80::execute() {
-
-//     if (!prefixOpcode) {
-
-//         uint8_t pg = REG_PC >> 14;
-//         VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
-//         opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
-
-//         regR++;
-
-//         if (halted) {
-//             checkINT();
-//             return;
-//         }
-
-//         REG_PC++;
-//         flagQ = pendingEI = false;
-
-//         dcOpcode[opCode]();
-
-//     } else {
-
-//         dcOpcode[prefixOpcode]();        
-
-//     }
-
-//     if (prefixOpcode) return;
-
-//     lastFlagQ = flagQ;
-
-//     // Ahora se comprueba si está activada la señal INT
-//     checkINT();
-
-// }
-
-// IRAM_ATTR void Z80::exec_nocheck() {
-
-//     while (CPU::tstates < CPU::stFrame) {
-
-//         if (prefixOpcode == 0) {
-
-//             uint8_t pg = REG_PC >> 14;
-//             VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
-//             opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
-
-//             regR++;
-
-//             REG_PC++;
-//             flagQ = pendingEI = false;
-
-//             dcOpcode[opCode]();
-
-//             lastFlagQ = flagQ;            
-
-//             continue;
-
-//         }
-        
-//         dcOpcode[prefixOpcode]();        
-
-//         if (prefixOpcode == 0) lastFlagQ = flagQ;
-
-//     }
-   
-// }
-
 IRAM_ATTR void Z80::execute() {
+
+    // if (!(CPU::tstates & 0xf)) {
+    //     if (Tape::tapeStatus == TAPE_LOADING) {
+    //     // if (Tape::tapePhase == TAPE_PHASE_DATA) {
+    //         if (Tape::tapeFileType == 1)
+    //             Tape::TAP_Read();
+    //         else 
+    //             Tape::TZX_Read();
+    //     }
+    // }
+
+    // if (REG_PC == 0x6060) {
+    //     // Tape::TAP_Stop();
+    //     printf("AF: %04" PRIx16 "\n",Z80::getRegAF());
+    //     printf("I: %02x\n",(unsigned int)Z80::getRegI());        
+    //     printf("R: %02x\n",(unsigned int)Z80::getRegR());                
+    //     printf("HL: %04" PRIx16 "\n",Z80::getRegHL());
+    // }
 
     uint8_t pg = REG_PC >> 14;
     VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
@@ -1169,17 +1115,15 @@ IRAM_ATTR void Z80::exec_nocheck() {
 
     while (CPU::tstates < CPU::stFrame) {
 
-        // // if ((CPU::tstates & 0xff) == 0) {
-        // // if ((CPU::tstates & 0xf) == 0) {            
-        //     if (Tape::tapeStatus==TAPE_LOADING) {
-        //     // if (/* Tape::tapePhase == TAPE_PHASE_SYNC || /*Tape::tapePhase == TAPE_PHASE_SYNC1 || Tape::tapePhase == TAPE_PHASE_SYNC2 ||*/ Tape::tapePhase == TAPE_PHASE_DATA) {
+        // if (!(CPU::tstates & 0xf)) {
+        //     if (Tape::tapeStatus == TAPE_LOADING) {
         //     // if (Tape::tapePhase == TAPE_PHASE_DATA) {
         //         if (Tape::tapeFileType == 1)
         //             Tape::TAP_Read();
         //         else 
         //             Tape::TZX_Read();
         //     }
-        // // }
+        // }
 
         uint8_t pg = REG_PC >> 14;
         VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
@@ -6266,17 +6210,17 @@ void Z80::decodeED(void) {
             }
             break;
         }
-        case 0xDD:
-            prefixOpcode = 0xDD;
-            break;
-        case 0xED:
-            prefixOpcode = 0xED;
-            break;
-        case 0xFD:
-            prefixOpcode = 0xFD;
-            break;
-        default:
-            break;
+        // case 0xDD:
+            // prefixOpcode = 0xDD;
+            // break;
+        // case 0xED:
+            // prefixOpcode = 0xED;
+            // break;
+        // case 0xFD:
+            // prefixOpcode = 0xFD;
+            // break;
+        // default:
+        //     break;
     }
 }
 

@@ -111,14 +111,12 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
         VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
 
-        // The default port value is 0xBF.
-        data = 0xbf;
+        data = 0xbf; // default port value is 0xBF.
 
         uint8_t portHigh = ~(address >> 8) & 0xff;
         for (int row = 0, mask = 0x01; row < 8; row++, mask <<= 1) {
-            if ((portHigh & mask) != 0) {
+            if ((portHigh & mask) != 0)
                 data &= port[row];
-            }
         }
 
         if (Tape::tapeStatus==TAPE_LOADING) {
@@ -126,15 +124,16 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 Tape::TAP_Read();
             else 
                 Tape::TZX_Read();
-            bitWrite(data,6,Tape::tapeEarBit);            
-        } else {
-            // Issue 2 behaviour only on Spectrum 48K
-    		if ((Z80Ops::is48) && (Config::Issue2)) {
+            // bitWrite(data,6,Tape::tapeEarBit);            
+        } /* else { */
+    		if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
 				if (port254 & 0x18) data |= 0x40;
-			} else {
+			else
 				if (port254 & 0x10) data |= 0x40;
-			}
-		}
+
+		// }
+
+        if (Tape::tapeEarBit) data ^= 0x40;
 
     } else {
 
