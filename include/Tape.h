@@ -63,6 +63,7 @@ using namespace std;
 #define TAPE_PHASE_SYNC2 3
 #define TAPE_PHASE_DATA 4
 #define TAPE_PHASE_PAUSE 5
+// #define TAPE_PHASE_TAIL 6
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -171,6 +172,7 @@ public:
     static void TZX_Read_0x10();
     static void TZX_Read_0x12();
     static void TZX_Read_0x13();        
+    static void TZX_Read_0x15();            
     static void TZXGetBlock();    
     static bool FlashLoad();
     static void Save();

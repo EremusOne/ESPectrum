@@ -125,7 +125,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
             else 
                 Tape::TZX_Read();
             // bitWrite(data,6,Tape::tapeEarBit);            
-        } /* else { */
+        } // else {
     		if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
 				if (port254 & 0x18) data |= 0x40;
 			else

@@ -1058,15 +1058,15 @@ IRAM_ATTR void Z80::incRegR(uint8_t inc) {
 
 IRAM_ATTR void Z80::execute() {
 
-    // if (!(CPU::tstates & 0xf)) {
-    //     if (Tape::tapeStatus == TAPE_LOADING) {
-    //     // if (Tape::tapePhase == TAPE_PHASE_DATA) {
-    //         if (Tape::tapeFileType == 1)
-    //             Tape::TAP_Read();
-    //         else 
-    //             Tape::TZX_Read();
-    //     }
-    // }
+    if (!(CPU::tstates & 0xf)) {
+        if (Tape::tapeStatus == TAPE_LOADING) {
+        // if (Tape::tapePhase == TAPE_PHASE_DATA) {
+            if (Tape::tapeFileType == 1)
+                Tape::TAP_Read();
+            else 
+                Tape::TZX_Read();
+        }
+    }
 
     // if (REG_PC == 0x6060) {
     //     // Tape::TAP_Stop();
@@ -1115,15 +1115,15 @@ IRAM_ATTR void Z80::exec_nocheck() {
 
     while (CPU::tstates < CPU::stFrame) {
 
-        // if (!(CPU::tstates & 0xf)) {
-        //     if (Tape::tapeStatus == TAPE_LOADING) {
-        //     // if (Tape::tapePhase == TAPE_PHASE_DATA) {
-        //         if (Tape::tapeFileType == 1)
-        //             Tape::TAP_Read();
-        //         else 
-        //             Tape::TZX_Read();
-        //     }
-        // }
+        if (!(CPU::tstates & 0xf)) {
+            if (Tape::tapeStatus == TAPE_LOADING) {
+            // if (Tape::tapePhase == TAPE_PHASE_DATA) {
+                if (Tape::tapeFileType == 1)
+                    Tape::TAP_Read();
+                else 
+                    Tape::TZX_Read();
+            }
+        }
 
         uint8_t pg = REG_PC >> 14;
         VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
