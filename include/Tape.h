@@ -63,7 +63,7 @@ using namespace std;
 #define TAPE_PHASE_SYNC2 3
 #define TAPE_PHASE_DATA 4
 #define TAPE_PHASE_PAUSE 5
-// #define TAPE_PHASE_TAIL 6
+#define TAPE_PHASE_TAIL 6
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -138,8 +138,8 @@ public:
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
     static uint8_t romLoading;
-    static uint16_t tapeCurBlock;  
-    static uint16_t tapeNumBlocks;  
+    static int tapeCurBlock;  
+    static int tapeNumBlocks;  
     static uint32_t tapebufByteCount;
     static uint32_t tapePlayOffset;    
     static size_t tapeFileSize;

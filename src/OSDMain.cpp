@@ -486,7 +486,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         }
         else if (KeytoESP == fabgl::VK_F6) {
             // Start / Stop .tap reproduction
-            if (Tape::tapeFileType == 1)
+            if (Tape::tapeFileType == TAPE_FTYPE_TAP)
                 Tape::TAP_Play();
             else
                 Tape::TZX_Play();
@@ -783,7 +783,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         }
                         else if (tap_num == 2) {
                             // Start / Stop .tap reproduction
-                            if (Tape::tapeFileType == 1)
+                            if (Tape::tapeFileType == TAPE_FTYPE_TAP)
                                 Tape::TAP_Play();
                             else
                                 Tape::TZX_Play();
