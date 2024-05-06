@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "  v1.2 beta "
+#define EMU_VERSION " v1.2 beta2 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
