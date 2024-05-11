@@ -110,7 +110,8 @@ using namespace std;
 
 #define TAPE_BLK_PAUSELEN_TEST 7000000UL
 
-class TapeBlock {
+class TapeBlock
+{
 public:
     enum BlockType {
         Program_header,
@@ -130,7 +131,8 @@ public:
     uint32_t StartPosition; // Start point of this block?
     // uint16_t BlockLength;
 };
-class Tape {
+class Tape
+{
 public:
 
     // Tape
@@ -167,19 +169,25 @@ public:
 
     static void Init();
     static void LoadTape(string mFile);
-    static void (*GetBlock)();
     static void TAP_Open(string name);
+    static void TZX_Open(string name);
     static void TAP_Play();
     static void TAP_GetBlock();    
-    static void TZX_Open(string name);
     static void TZX_Play();
-    static void TZX_GetBlock();    
-    static void Read();
     static void Stop();
+    static void Read();
+    static void (*GetBlock)();
+    static void (*TZX_Read)();
+    static void TZX_Read_0x10();
+    // static void TZX_Read_0x12();
+    // static void TZX_Read_0x13();        
+    // static void TZX_Read_0x15();            
+    static void TZX_GetBlock();    
     static bool FlashLoad();
     static void Save();
     static uint32_t CalcTapBlockPos(int block);
     static string tapeBlockReadData(int Blocknum);
+
 };
 
 #endif
