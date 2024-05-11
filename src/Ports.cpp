@@ -120,20 +120,28 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
         }
 
         if (Tape::tapeStatus==TAPE_LOADING) {
-            if (Tape::tapeFileType == 1)
-                Tape::TAP_Read();
-            else 
-                Tape::TZX_Read();
-            // bitWrite(data,6,Tape::tapeEarBit);            
-        } // else {
+            Tape::Read();
+            bitWrite(data,6,Tape::tapeEarBit);
+        } else {
     		if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
 				if (port254 & 0x18) data |= 0x40;
 			else
 				if (port254 & 0x10) data |= 0x40;
+		}
 
-		// }
+        // if (Tape::tapeStatus==TAPE_LOADING) {
+        //     // if (Tape::tapeFileType == 1)
+        //         Tape::Read();
+        //     // else 
+        //     //     Tape::TZX_Read();
+        // }
 
-        if (Tape::tapeEarBit) data ^= 0x40;
+        // if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
+        //     if (port254 & 0x18) data |= 0x40;
+        // else
+        //     if (port254 & 0x10) data |= 0x40;
+
+        // if (Tape::tapeEarBit) data ^= 0x40;
 
     } else {
 

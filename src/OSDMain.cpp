@@ -504,7 +504,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
                 if (tBlock >= 0) {
                     Tape::tapeCurBlock = tBlock;
-                    Tape::TAP_Stop();
+                    Tape::Stop();
                 }
             }
 
@@ -741,44 +741,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,28,16);
                             if (mFile != "") {
                                 Tape::LoadTape(mFile);
-
-                                // string keySel = mFile.substr(0,1);
-                                // mFile.erase(0, 1);
-
-                                // if ((keySel ==  "R") && (Config::flashload)) {
-
-                                //         OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
-                                        
-                                //         if (Z80Ops::is48) {
-                                //             FileZ80::loader48();
-                                //             // changeSnapshot(FileUtils::MountPoint + "/load48.z80");
-                                //         } else {
-                                //             FileZ80::loader128();
-                                //             // changeSnapshot(FileUtils::MountPoint + "/load128.z80");
-                                //         }
-
-                                //         // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                                //         // https://skoolkid.github.io/rom/asm/5C78.html
-                                //         MemESP::writebyte(0x5C78,rand() % 256);
-                                //         MemESP::writebyte(0x5C79,rand() % 256);            
-
-                                //         if (Config::ram_file != NO_RAM_FILE) {
-                                //             Config::ram_file = NO_RAM_FILE;
-                                //         }
-                                //         Config::last_ram_file = NO_RAM_FILE;
-
-                                // }
-
-                                // Tape::TAP_Stop();
-
-                                // // Read and analyze tape file
-                                // // Tape::Open(FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile);
-                                // Tape::TAP_Open(mFile);
-                                
-                                // ESPectrum::TapeNameScroller = 0;
-
                                 return;
-
                             }
                         }
                         else if (tap_num == 2) {
@@ -804,7 +767,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
                                 if (tBlock >= 0) {
                                     Tape::tapeCurBlock = tBlock;
-                                    Tape::TAP_Stop();
+                                    Tape::Stop();
                                 }
                                 return;
                             }

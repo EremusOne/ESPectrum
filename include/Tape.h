@@ -61,9 +61,15 @@ using namespace std;
 #define TAPE_PHASE_SYNC 1
 #define TAPE_PHASE_SYNC1 2
 #define TAPE_PHASE_SYNC2 3
-#define TAPE_PHASE_DATA 4
+#define TAPE_PHASE_DRB 4
 #define TAPE_PHASE_PAUSE 5
 #define TAPE_PHASE_TAIL 6
+#define TAPE_PHASE_DATA1 7
+#define TAPE_PHASE_DATA2 8
+#define TAPE_PHASE_PURETONE 9
+#define TAPE_PHASE_PULSESEQ 10
+
+#define TAPE_PHASE_TAIL_LEN 3500 // 472 // 945
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -104,8 +110,7 @@ using namespace std;
 
 #define TAPE_BLK_PAUSELEN_TEST 7000000UL
 
-class TapeBlock
-{
+class TapeBlock {
 public:
     enum BlockType {
         Program_header,
@@ -125,8 +130,7 @@ public:
     uint32_t StartPosition; // Start point of this block?
     // uint16_t BlockLength;
 };
-class Tape
-{
+class Tape {
 public:
 
     // Tape
@@ -157,28 +161,25 @@ public:
     static uint32_t tapeBlkPauseLen; 
     static uint8_t tapeLastByteUsedBits;
     static uint8_t tapeEndBitMask;
+    static uint32_t tapeNext;
 
     static std::vector<TapeBlock> TapeListing;
 
     static void Init();
     static void LoadTape(string mFile);
+    static void (*GetBlock)();
     static void TAP_Open(string name);
-    static void TZX_Open(string name);
     static void TAP_Play();
+    static void TAP_GetBlock();    
+    static void TZX_Open(string name);
     static void TZX_Play();
-    static void TAP_Stop();    
-    static void TAP_Read();
-    static void (*TZX_Read)();
-    static void TZX_Read_0x10();
-    static void TZX_Read_0x12();
-    static void TZX_Read_0x13();        
-    static void TZX_Read_0x15();            
-    static void TZXGetBlock();    
+    static void TZX_GetBlock();    
+    static void Read();
+    static void Stop();
     static bool FlashLoad();
     static void Save();
     static uint32_t CalcTapBlockPos(int block);
     static string tapeBlockReadData(int Blocknum);
-
 };
 
 #endif
