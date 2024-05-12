@@ -129,12 +129,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 		// 		if (port254 & 0x10) data |= 0x40;
 		// }
 
-        if (Tape::tapeStatus==TAPE_LOADING) {
-            if (Tape::tapeFileType == 1)
-                Tape::Read();
-            else 
-                Tape::TZX_Read();
-        }
+        if (Tape::tapeStatus==TAPE_LOADING) Tape::Read();
 
         if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
             if (port254 & 0x18) data |= 0x40;

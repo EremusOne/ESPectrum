@@ -50,7 +50,6 @@ using namespace std;
 // Tape status definitions
 #define TAPE_STOPPED 0
 #define TAPE_LOADING 1
-#define TAPE_PAUSED 2
 
 // Saving status
 #define SAVE_STOPPED 0
@@ -69,8 +68,6 @@ using namespace std;
 #define TAPE_PHASE_PURETONE 9
 #define TAPE_PHASE_PULSESEQ 10
 
-#define TAPE_PHASE_TAIL_LEN 3500 // 472 // 945
-
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
 #define TAPE_SYNC1_LEN 667 // 190 microseconds for 667 tStates (48K)
@@ -81,6 +78,8 @@ using namespace std;
 
 #define TAPE_BIT0_PULSELEN 855 // tstates = 244 ms, lenght of pulse for bit 0
 #define TAPE_BIT1_PULSELEN 1710 // tstates = 488 ms, lenght of pulse for bit 1
+
+#define TAPE_PHASE_TAIL_LEN 3500
 
 #define TAPE_BLK_PAUSELEN 3500000UL // 1000 ms. of pause between blocks
 
@@ -97,18 +96,18 @@ using namespace std;
 
 #define TAPE_BLK_PAUSELEN_RG 1113000UL // 318 ms.
 
-// Tape sync phases lenght TEST
-#define TAPE_SYNC_LEN_TEST 952 // 620 microseconds for 2168 tStates (48K)
-#define TAPE_SYNC1_LEN_TEST 0 // 190 microseconds for 667 tStates (48K)
-#define TAPE_SYNC2_LEN_TEST 0 // 210 microseconds for 735 tStates (48K)
+// // Tape sync phases lenght TEST
+// #define TAPE_SYNC_LEN_TEST 952 // 620 microseconds for 2168 tStates (48K)
+// #define TAPE_SYNC1_LEN_TEST 0 // 190 microseconds for 667 tStates (48K)
+// #define TAPE_SYNC2_LEN_TEST 0 // 210 microseconds for 735 tStates (48K)
 
-#define TAPE_HDR_LONG_TEST  369   // Header sync lenght in pulses
-#define TAPE_HDR_SHORT_TEST 369   // Data sync lenght in pulses
+// #define TAPE_HDR_LONG_TEST  369   // Header sync lenght in pulses
+// #define TAPE_HDR_SHORT_TEST 369   // Data sync lenght in pulses
 
-#define TAPE_BIT0_PULSELEN_TEST 79 // tstates = 244 ms, lenght of pulse for bit 0
-#define TAPE_BIT1_PULSELEN_TEST 79 // tstates = 488 ms, lenght of pulse for bit 1
+// #define TAPE_BIT0_PULSELEN_TEST 79 // tstates = 244 ms, lenght of pulse for bit 0
+// #define TAPE_BIT1_PULSELEN_TEST 79 // tstates = 488 ms, lenght of pulse for bit 1
 
-#define TAPE_BLK_PAUSELEN_TEST 7000000UL
+// #define TAPE_BLK_PAUSELEN_TEST 7000000UL
 
 class TapeBlock
 {
@@ -151,7 +150,6 @@ public:
     static size_t tapeFileSize;
  
     // Tape timing values
-    
     static uint8_t tapePhase;    
     static uint16_t tapeSyncLen;
     static uint16_t tapeSync1Len;
@@ -169,20 +167,14 @@ public:
 
     static void Init();
     static void LoadTape(string mFile);
+    static void (*GetBlock)();
     static void TAP_Open(string name);
-    static void TZX_Open(string name);
-    static void TAP_Play();
     static void TAP_GetBlock();    
-    static void TZX_Play();
+    static void TZX_Open(string name);
+    static void TZX_GetBlock();    
+    static void Play();
     static void Stop();
     static void Read();
-    static void (*GetBlock)();
-    static void (*TZX_Read)();
-    static void TZX_Read_0x10();
-    // static void TZX_Read_0x12();
-    // static void TZX_Read_0x13();        
-    // static void TZX_Read_0x15();            
-    static void TZX_GetBlock();    
     static bool FlashLoad();
     static void Save();
     static uint32_t CalcTapBlockPos(int block);
