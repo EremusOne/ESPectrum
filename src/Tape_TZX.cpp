@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -47,7 +47,7 @@ using namespace std;
 #include "messages.h"
 #include "Z80_JLS/z80.h"
 
-uint32_t Tape::TZX_BlockLen() {
+void Tape::TZX_BlockLen(TZXBlock &blockdata) {
 
     uint32_t tapeBlkLen;
 
@@ -108,9 +108,9 @@ uint32_t Tape::TZX_BlockLen() {
 
             break;
 
-        case 0x20:
+        case 0x20: // Pause or Stop the tape
 
-            fseek(tape,0x2,SEEK_CUR);
+            blockdata.PauseLenght = readByteFile(tape) | (readByteFile(tape) << 8);
             tapeBlkLen = 0x2;
 
             break;
@@ -243,7 +243,144 @@ uint32_t Tape::TZX_BlockLen() {
 
     }
 
-    return tapeBlkLen + 1; // Add 1 for block type byte
+    blockdata.BlockType = tzx_blk_type;
+    blockdata.BlockLenght = tapeBlkLen + 1;
+
+}
+
+string Tape::tzxBlockReadData(int Blocknum) {
+
+    int tapeContentIndex = 0;
+    int tapeBlkLen = 0;
+    string blktype;
+    char buf[48];
+    char fname[10];
+
+    TZXBlock TZXblock;
+
+    tapeContentIndex = Tape::CalcTZXBlockPos(Blocknum);
+    TZX_BlockLen(TZXblock);
+    tapeBlkLen = TZXblock.BlockLenght;
+
+    switch(TZXblock.BlockType) {
+        case 0x10:
+            blktype = "Standard     ";
+            tapeBlkLen -= 0x4 + 1;
+            break;
+        case 0x11:
+            blktype = "Turbo        ";
+            tapeBlkLen -= 0x12 + 1;
+            break;
+        case 0x12:
+            blktype = "Pure Tone       ";
+            tapeBlkLen = -1;
+            break;
+        case 0x13:
+            blktype = "Pulse sequence  ";
+            tapeBlkLen = -1;
+            break;
+        case 0x14:
+            blktype = "Pure Data    ";
+            tapeBlkLen -= 0x0a + 1;
+            break;
+        case 0x15:
+            blktype = "DRB          ";
+            tapeBlkLen -= 0x08 + 1;
+            break;
+        case 0x18:
+            blktype = "CSW          ";
+            tapeBlkLen = -1;
+            break;
+        case 0x19:
+            blktype = "GDB          ";
+            tapeBlkLen = -1;
+            break;
+        case 0x20:
+            if (TZXblock.PauseLenght == 0) {
+                blktype = "Stop the tape";
+                tapeBlkLen = -1;
+            } else {
+                blktype = "Pause (ms.)  ";
+                tapeBlkLen = TZXblock.PauseLenght;
+            }
+            break;
+        case 0x21:
+            blktype = "Group start";
+            tapeBlkLen = -1;
+            break;
+        case 0x22:
+            blktype = "Group end";
+            tapeBlkLen = -1;
+            break;
+        case 0x23:
+            blktype = "Jump to block";
+            tapeBlkLen = -1;
+            break;
+        case 0x24:
+            blktype = "Loop start";
+            tapeBlkLen = -1;
+            break;
+        case 0x25:
+            blktype = "Loop end";
+            tapeBlkLen = -1;
+            break;
+        case 0x26:
+            blktype = "Call sequence";
+            tapeBlkLen = -1;
+            break;
+        case 0x27:
+            blktype = "Return from sequence";
+            tapeBlkLen = -1;
+            break;
+        case 0x28:
+            blktype = "Select block";
+            tapeBlkLen = -1;
+            break;
+        case 0x2a:
+            blktype = "Stop if in 48K mode";
+            tapeBlkLen = -1;
+            break;
+        case 0x2b:
+            blktype = "Set signal level";
+            tapeBlkLen = -1;
+            break;
+        case 0x30:
+            blktype = "Text";
+            tapeBlkLen = -1;
+            break;
+        case 0x31:
+            blktype = "Message block";
+            tapeBlkLen = -1;
+            break;
+        case 0x32:
+            blktype = "Archive info";
+            tapeBlkLen = -1;
+            break;
+        case 0x33:
+            blktype = "Hardware type";
+            tapeBlkLen = -1;
+            break;
+        case 0x35:
+            blktype = "Custom info";
+            tapeBlkLen = -1;
+            break;
+        case 0x5a:
+            blktype = "Glue block";
+            tapeBlkLen = -1;
+            break;
+        default:
+            blktype = "Unknown";
+            tapeBlkLen = -1;            
+    }
+
+    fname[0] = '\0';
+
+    if (tapeBlkLen >= 0)
+        snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);    
+    else
+        snprintf(buf, sizeof(buf), "%04d %s\n", Blocknum + 1, blktype.c_str());    
+
+    return buf;
 
 }
 
@@ -299,10 +436,14 @@ void Tape::TZX_Open(string name) {
     uint32_t tapeBlkLen=0;
 
     TapeBlock block;
+    TZXBlock TZXblock;
 
     do {
 
-        tapeBlkLen = TZX_BlockLen();
+        TZX_BlockLen(TZXblock);
+        tapeBlkLen = TZXblock.BlockLenght;
+        
+        // tapeBlkLen = TZX_BlockLen();
         
         if (tapeBlkLen == 0) {
 
@@ -339,14 +480,18 @@ void Tape::TZX_Open(string name) {
 
 uint32_t Tape::CalcTZXBlockPos(int block) {
 
+    TZXBlock TZXblock;
+
     int TapeBlockRest = block & (TAPE_LISTING_DIV -1);
     int CurrentPos = TapeListing[block / TAPE_LISTING_DIV].StartPosition;
 
     fseek(tape,CurrentPos,SEEK_SET);
 
     while (TapeBlockRest-- != 0) {
-        uint32_t tapeBlkLen = TZX_BlockLen();
-        CurrentPos += tapeBlkLen;
+        TZX_BlockLen(TZXblock);
+        CurrentPos += TZXblock.BlockLenght;
+        // uint32_t tapeBlkLen = TZX_BlockLen();
+        // CurrentPos += tapeBlkLen;
     }
 
     return CurrentPos;

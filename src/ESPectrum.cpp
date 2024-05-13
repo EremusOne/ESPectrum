@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -1235,10 +1235,10 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             bitWrite(PS2cols[4], 4, (!Kbd->isVKDown(fabgl::VK_6)) & (!Kbd->isVKDown(fabgl::VK_CARET)) & (j[6]));
 
             bitWrite(PS2cols[5], 0, (!Kbd->isVKDown(fabgl::VK_P)) & (!Kbd->isVKDown(fabgl::VK_p))
-                                &   (!Kbd->isVKDown(fabgl::VK_BACKSLASH)) // Double quote            
+                                &   (!Kbd->isVKDown(fabgl::VK_QUOTE)) // Double quote            
                                 );
             bitWrite(PS2cols[5], 1, (!Kbd->isVKDown(fabgl::VK_O)) & (!Kbd->isVKDown(fabgl::VK_o))
-                                &   (!Kbd->isVKDown(fabgl::VK_QUOTE)) // Semicolon
+                                &   (!Kbd->isVKDown(fabgl::VK_SEMICOLON)) // Semicolon
                                 );
             bitWrite(PS2cols[5], 2, (!Kbd->isVKDown(fabgl::VK_I)) & (!Kbd->isVKDown(fabgl::VK_i)));
             bitWrite(PS2cols[5], 3, (!Kbd->isVKDown(fabgl::VK_U)) & (!Kbd->isVKDown(fabgl::VK_u)));
@@ -1257,8 +1257,8 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                                 &   (!Kbd->isVKDown(fabgl::VK_RCTRL))
                                 &   (!Kbd->isVKDown(fabgl::VK_COMMA)) // Comma
                                 &   (!Kbd->isVKDown(fabgl::VK_PERIOD)) // Period
-                                &   (!Kbd->isVKDown(fabgl::VK_QUOTE)) // Semicolon
-                                &   (!Kbd->isVKDown(fabgl::VK_BACKSLASH)) // Double quote
+                                &   (!Kbd->isVKDown(fabgl::VK_SEMICOLON)) // Semicolon
+                                &   (!Kbd->isVKDown(fabgl::VK_QUOTE)) // Double quote
                                 &   (!Kbd->isVKDown(VK_ESPECTRUM_TAB)) // Extended mode                                                                      
                                 ); // SYMBOL SHIFT
             bitWrite(PS2cols[7], 2, (!Kbd->isVKDown(fabgl::VK_M)) & (!Kbd->isVKDown(fabgl::VK_m))

@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -352,16 +352,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F10) { // NMI
             Z80::triggerNMI();
         } else 
-        if (KeytoESP == fabgl::VK_F3) { 
-            // Test variable decrease
-            ESPectrum::ESPtestvar -= 1;
-            printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        } else 
-        if (KeytoESP == fabgl::VK_F4) {
-            // Test variable increase
-            ESPectrum::ESPtestvar += 1;
-            printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        } else 
+        // if (KeytoESP == fabgl::VK_F3) { 
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar -= 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F4) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar += 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // } else 
         // if (KeytoESP == fabgl::VK_F5) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar1 -= 1;

@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -98,6 +98,14 @@ using namespace std;
 
 #define TAPE_LISTING_DIV 16
 
+struct TZXBlock
+{
+    uint8_t BlockType;   
+    char FileName[11];
+    uint16_t PauseLenght;
+    uint32_t BlockLenght;
+};
+
 class TapeBlock {
 public:
     enum BlockType {
@@ -150,18 +158,19 @@ public:
     static void Save();
 
     static uint32_t CalcTapBlockPos(int block);
+    static uint32_t CalcTZXBlockPos(int block);    
     static string tapeBlockReadData(int Blocknum);
+    static string tzxBlockReadData(int Blocknum);    
 
 private:
 
     static void (*GetBlock)();
-    
+
     static void TAP_Open(string name);
     static void TAP_GetBlock();    
     static void TZX_Open(string name);
     static void TZX_GetBlock();    
-    static uint32_t CalcTZXBlockPos(int block);    
-    static uint32_t TZX_BlockLen();
+    static void TZX_BlockLen(TZXBlock &blockdata);
 
     // Tape timing values
     static uint16_t tapeSyncLen;
