@@ -820,7 +820,7 @@ void Tape::TZX_GetBlock() {
             return;
         }
 
-        printf("TZX block: %d, ID: %02X, Tape position: %d\n",tapeCurBlock, tapeCurByte, tapebufByteCount);
+        // printf("TZX block: %d, ID: %02X, Tape position: %d\n",tapeCurBlock, tapeCurByte, tapebufByteCount);
 
         switch (tapeCurByte) {
 
