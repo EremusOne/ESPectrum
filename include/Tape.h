@@ -96,21 +96,9 @@ using namespace std;
 
 #define TAPE_BLK_PAUSELEN_RG 1113000UL // 318 ms.
 
-// // Tape sync phases lenght TEST
-// #define TAPE_SYNC_LEN_TEST 952 // 620 microseconds for 2168 tStates (48K)
-// #define TAPE_SYNC1_LEN_TEST 0 // 190 microseconds for 667 tStates (48K)
-// #define TAPE_SYNC2_LEN_TEST 0 // 210 microseconds for 735 tStates (48K)
+#define TAPE_LISTING_DIV 16
 
-// #define TAPE_HDR_LONG_TEST  369   // Header sync lenght in pulses
-// #define TAPE_HDR_SHORT_TEST 369   // Data sync lenght in pulses
-
-// #define TAPE_BIT0_PULSELEN_TEST 79 // tstates = 244 ms, lenght of pulse for bit 0
-// #define TAPE_BIT1_PULSELEN_TEST 79 // tstates = 488 ms, lenght of pulse for bit 1
-
-// #define TAPE_BLK_PAUSELEN_TEST 7000000UL
-
-class TapeBlock
-{
+class TapeBlock {
 public:
     enum BlockType {
         Program_header,
@@ -130,8 +118,8 @@ public:
     uint32_t StartPosition; // Start point of this block?
     // uint16_t BlockLength;
 };
-class Tape
-{
+
+class Tape {
 public:
 
     // Tape
@@ -149,8 +137,33 @@ public:
     static uint32_t tapePlayOffset;    
     static size_t tapeFileSize;
  
-    // Tape timing values
     static uint8_t tapePhase;    
+
+    static std::vector<TapeBlock> TapeListing;
+
+    static void Init();
+    static void LoadTape(string mFile);
+    static void Play();
+    static void Stop();
+    static void Read();
+    static bool FlashLoad();
+    static void Save();
+
+    static uint32_t CalcTapBlockPos(int block);
+    static string tapeBlockReadData(int Blocknum);
+
+private:
+
+    static void (*GetBlock)();
+    
+    static void TAP_Open(string name);
+    static void TAP_GetBlock();    
+    static void TZX_Open(string name);
+    static void TZX_GetBlock();    
+    static uint32_t CalcTZXBlockPos(int block);    
+    static uint32_t TZX_BlockLen();
+
+    // Tape timing values
     static uint16_t tapeSyncLen;
     static uint16_t tapeSync1Len;
     static uint16_t tapeSync2Len;
@@ -163,24 +176,24 @@ public:
     static uint8_t tapeEndBitMask;
     static uint32_t tapeNext;
 
-    static std::vector<TapeBlock> TapeListing;
+    static uint8_t tapeCurByte;
+    static uint64_t tapeStart;
+    // static uint32_t tapePulseCount;
+    // static uint16_t tapeBitPulseLen;   
+    // static uint8_t tapeBitPulseCount;     
+    static uint16_t tapeHdrPulses;
+    static uint32_t tapeBlockLen;
+    static uint8_t tapeBitMask;
 
-    static void Init();
-    static void LoadTape(string mFile);
-    static void (*GetBlock)();
-    static void TAP_Open(string name);
-    static void TAP_GetBlock();    
-    static void TZX_Open(string name);
-    static void TZX_GetBlock();    
-    static uint32_t TZX_BlockLen();
-    static void Play();
-    static void Stop();
-    static void Read();
-    static bool FlashLoad();
-    static void Save();
-    static uint32_t CalcTapBlockPos(int block);
-    static uint32_t CalcTZXBlockPos(int block);    
-    static string tapeBlockReadData(int Blocknum);
+    static uint16_t nLoops;
+    static uint16_t loopStart;
+    static uint32_t loop_tapeBlockLen;
+    static uint32_t loop_tapebufByteCount;
+    static bool loop_first;
+
+    static uint16_t callSeq;
+    static int callBlock;
+    // short jumpDistance;
 
 };
 
