@@ -172,12 +172,14 @@ public:
     static void TAP_GetBlock();    
     static void TZX_Open(string name);
     static void TZX_GetBlock();    
+    static uint32_t TZX_BlockLen();
     static void Play();
     static void Stop();
     static void Read();
     static bool FlashLoad();
     static void Save();
     static uint32_t CalcTapBlockPos(int block);
+    static uint32_t CalcTZXBlockPos(int block);    
     static string tapeBlockReadData(int Blocknum);
 
 };
