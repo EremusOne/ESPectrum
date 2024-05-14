@@ -95,6 +95,11 @@ bool Tape::loop_first = false;
 uint16_t Tape::callSeq = 0;
 int Tape::callBlock;
 
+int Tape::CSW_SampleRate;
+int Tape::CSW_PulseLenght;
+uint8_t Tape::CSW_CompressionType;
+uint32_t Tape::CSW_StoredPulses;
+
 void (*Tape::GetBlock)() = &Tape::TAP_GetBlock;
 
 // Load tape file (.tap, .tzx)
@@ -506,6 +511,27 @@ IRAM_ATTR void Tape::Read() {
         do {
             tapeCurrent -= tapeNext;
             switch (tapePhase) {
+            case TAPE_PHASE_CSW:
+                tapeEarBit ^= 1;
+                CSW_PulseLenght = readByteFile(tape);
+                tapebufByteCount++;                
+                if (tapebufByteCount == tapeBlockLen) {
+                    tapeCurByte = CSW_PulseLenght;
+                    if (tapeBlkPauseLen == 0) {
+                        tapeCurBlock++;
+                        GetBlock();
+                    } else {
+                        tapePhase=TAPE_PHASE_TAIL;
+                        tapeNext = TAPE_PHASE_TAIL_LEN;
+                    }
+                    return;
+                }
+                if (CSW_PulseLenght == 0) {
+                    CSW_PulseLenght = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
+                    tapebufByteCount += 4;
+                }                
+                tapeNext = CSW_SampleRate * CSW_PulseLenght;
+                break;
             case TAPE_PHASE_DRB:
                 tapeBitMask = (tapeBitMask >> 1) | (tapeBitMask << 7);
                 if (tapeBitMask == tapeEndBitMask) {

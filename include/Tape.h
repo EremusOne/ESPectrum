@@ -67,6 +67,7 @@ using namespace std;
 #define TAPE_PHASE_DATA2 8
 #define TAPE_PHASE_PURETONE 9
 #define TAPE_PHASE_PULSESEQ 10
+#define TAPE_PHASE_CSW 11
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -203,6 +204,11 @@ private:
     static uint16_t callSeq;
     static int callBlock;
     // short jumpDistance;
+
+    static int CSW_SampleRate;
+    static int CSW_PulseLenght;    
+    static uint8_t CSW_CompressionType;
+    static uint32_t CSW_StoredPulses;
 
 };
 
