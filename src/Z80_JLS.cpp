@@ -1058,6 +1058,13 @@ IRAM_ATTR void Z80::incRegR(uint8_t inc) {
 
 IRAM_ATTR void Z80::execute() {
 
+    // // if (!(CPU::tstates & 0xf)) {
+    //     if (Tape::tapeStatus == TAPE_LOADING) {
+    //     // if (Tape::tapePhase == TAPE_PHASE_DATA) {
+    //         Tape::Read();
+    //     }
+    // // }
+
     uint8_t pg = REG_PC >> 14;
     VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
     opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];

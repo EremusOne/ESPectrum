@@ -478,16 +478,31 @@ void ESPectrum::setup()
     // MEMORY SETUP
     //=======================================================================================
 
-    for (int i=0; i < 8; i++) {
-        MemESP::ram[i] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-        if (MemESP::ram[i] == NULL)
-            if (Config::slog_on) printf("ERROR! Unable to allocate ram%d\n",i);
-    }
+    // for (int i=0; i < 8; i++) {
+    //     MemESP::ram[i] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    //     if (MemESP::ram[i] == NULL)
+    //         if (Config::slog_on) printf("ERROR! Unable to allocate ram%d\n",i);
+    // }
 
-    // MemESP::ram[5] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    // MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    // MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    // MemESP::ram[7] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    MemESP::ram[5] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+
+    // MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x8000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[2] = ((unsigned char *) MemESP::ram[0]) + 0x4000;
+    // MemESP::ram[0] = (unsigned char *) staticMemPage0;
+    // MemESP::ram[2] = ((unsigned char *) staticMemPage0) + 0x4000;
+
+    MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    MemESP::ram[7] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+
+    // MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    // MemESP::ram[3] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+
+    MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x8000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    MemESP::ram[3] = ((unsigned char *) MemESP::ram[1]) + 0x4000;
+
+    MemESP::ram[4] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    MemESP::ram[6] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
 
     // MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     // MemESP::ram[3] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);

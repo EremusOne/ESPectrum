@@ -34,6 +34,8 @@ visit https://zxespectrum.speccy.org/contacto
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -593,6 +595,35 @@ bool FileUtils::hasTZXextension(string filename)
     if (filename.substr(filename.size()-4,4) == ".TZX") return true;
 
     return false;
+
+}
+
+void FileUtils::deleteFilesWithExtension(const char *folder_path, const char *extension) {
+
+    DIR *dir;
+    struct dirent *entry;
+    dir = opendir(folder_path);
+
+    if (dir == NULL) {
+        // perror("Unable to open directory");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            if (strstr(entry->d_name, extension) != NULL) {
+                char file_path[512];
+                snprintf(file_path, sizeof(file_path), "%s/%s", folder_path, entry->d_name);
+                if (remove(file_path) == 0) {
+                    printf("Deleted file: %s\n", entry->d_name);
+                } else {
+                    printf("Failed to delete file: %s\n", entry->d_name);
+                }
+            }
+        }
+    }
+
+    closedir(dir);
 
 }
 

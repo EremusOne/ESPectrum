@@ -68,6 +68,12 @@ using namespace std;
 #define TAPE_PHASE_PURETONE 9
 #define TAPE_PHASE_PULSESEQ 10
 #define TAPE_PHASE_CSW 11
+#define TAPE_PHASE_GDB_PILOTSYNC 12
+#define TAPE_PHASE_GDB_DATA 13
+
+#define TAPE_PHASE_TAIL_GDB 14
+#define TAPE_PHASE_PAUSE_GDB 15
+#define TAPE_PHASE_TAIL_LEN_GDB 945
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -99,12 +105,22 @@ using namespace std;
 
 #define TAPE_LISTING_DIV 16
 
-struct TZXBlock
-{
+#define CHUNK_SIZE 1024
+struct TZXBlock {
     uint8_t BlockType;   
     char FileName[11];
     uint16_t PauseLenght;
     uint32_t BlockLenght;
+};
+
+struct Symdef {
+    uint8_t SymbolFlags;
+    uint16_t* PulseLenghts;
+};
+
+struct Prle {
+    uint8_t Symbol;
+    uint16_t Repetitions;
 };
 
 class TapeBlock {
@@ -118,14 +134,7 @@ public:
         Info,
         Unassigned
     };
-    // uint8_t Index;          // Index (position) of the tape block in the tape file.
-    // BlockType Type;         // Type of tape block (enum).
-    // char FileName[11];      // File name in header block.
-    // bool IsHeaderless;      // Set to true for data blocks without a header.
-    // uint8_t Checksum;       // Header checksum byte.
-    // uint8_t BlockTypeNum;   // Block type, 0x00 = header; 0xFF = data block.
     uint32_t StartPosition; // Start point of this block?
-    // uint16_t BlockLength;
 };
 
 class Tape {
@@ -133,6 +142,7 @@ public:
 
     // Tape
     static FILE *tape;
+    static FILE *cswBlock;    
     static string tapeFileName;
     static string tapeSaveName;
     static int tapeFileType;
@@ -173,6 +183,8 @@ private:
     static void TZX_GetBlock();    
     static void TZX_BlockLen(TZXBlock &blockdata);
 
+    static int inflateCSW(int blocknumber, long startPos, long data_length);
+
     // Tape timing values
     static uint16_t tapeSyncLen;
     static uint16_t tapeSync1Len;
@@ -188,9 +200,6 @@ private:
 
     static uint8_t tapeCurByte;
     static uint64_t tapeStart;
-    // static uint32_t tapePulseCount;
-    // static uint16_t tapeBitPulseLen;   
-    // static uint8_t tapeBitPulseCount;     
     static uint16_t tapeHdrPulses;
     static uint32_t tapeBlockLen;
     static uint8_t tapeBitMask;
@@ -203,13 +212,27 @@ private:
 
     static uint16_t callSeq;
     static int callBlock;
-    // short jumpDistance;
 
     static int CSW_SampleRate;
     static int CSW_PulseLenght;    
     static uint8_t CSW_CompressionType;
     static uint32_t CSW_StoredPulses;
 
+    // GDB vars
+    static uint32_t totp;
+    static uint8_t npp;
+    static uint16_t asp;
+    static uint32_t totd;
+    static uint8_t npd;
+    static uint16_t asd;
+    static uint32_t curGDBSymbol;
+    static uint8_t curGDBPulse;
+    static uint8_t GDBsymbol;    
+    static uint8_t nb; 
+    static uint8_t curBit;       
+    static Symdef* SymDefTable;
+
 };
+
 
 #endif
