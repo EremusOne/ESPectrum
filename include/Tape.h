@@ -75,6 +75,8 @@ using namespace std;
 #define TAPE_PHASE_PAUSE_GDB 15
 #define TAPE_PHASE_TAIL_LEN_GDB 945
 
+#define TAPE_PHASE_END 16
+
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
 #define TAPE_SYNC1_LEN 667 // 190 microseconds for 667 tStates (48K)
@@ -86,7 +88,7 @@ using namespace std;
 #define TAPE_BIT0_PULSELEN 855 // tstates = 244 ms, lenght of pulse for bit 0
 #define TAPE_BIT1_PULSELEN 1710 // tstates = 488 ms, lenght of pulse for bit 1
 
-#define TAPE_PHASE_TAIL_LEN 3500
+#define TAPE_PHASE_TAIL_LEN 7000 // 7000 -> 2 ms. (It seems more solid with some loader than 1 ms.)
 
 #define TAPE_BLK_PAUSELEN 3500000UL // 1000 ms. of pause between blocks
 

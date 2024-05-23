@@ -535,12 +535,32 @@ void Tape::TZX_GetBlock() {
     for (;;) {
 
         if (tapeCurBlock >= tapeNumBlocks) {
-            tapeCurBlock = 0;
-            Stop();
-            rewind(tape);
-            // printf("Fin de cinta! Parando!\n");
-            tapeNext = 0xFFFFFFFF;
+            tapeEarBit ^= 1;
+            tapePhase = TAPE_PHASE_END;
+            tapeNext = 7000;
+            // tapeCurBlock = 0;
+            // Stop();
+            // rewind(tape);
+            // tapeNext = 0xFFFFFFFF;
             return;
+
+            // //HACK: Sometimes a tape might have it's last tail pulse missing.
+            // //In case it's the last block in the tape, it's best to flip the tape bit
+            // //a last time to ensure that the process is terminated properly.
+            // if (blockCounter == PZXFile.blocks.Count - 1) {
+            //     currentBit = -1;
+            //     edgeDuration = (3500 * 2);
+            //     return true;
+            // }
+
+            // sorry, I do have a special end-of-pzx block heh, wrote this code ages ago, but still no go for you lol
+            // [17:10]
+            // I added a special block extending the current pulse level (whatever it is for the current file) by 1710 tstates, before going low, but not doing that doesn't affect Hollywood which still works (editado)
+            // [17:10]
+            // but glad you fixed it!
+
+            // ; extend the final pulse before ending tape playback - allows for DATA blocks with TAIL pulses of 0...            
+
         }
 
         switch (tapeCurByte) {
@@ -758,7 +778,7 @@ void Tape::TZX_GetBlock() {
                 asd = readByteFile(tape);
                 if (asd == 0) asd = 256;
 
-                tapebufByteCount += 18;
+                // tapebufByteCount += 18;
 
                 // Calc number of bits -> nb = ceil(log2(asd))
                 nb = 0;
@@ -775,11 +795,11 @@ void Tape::TZX_GetBlock() {
                     for (int i = 0; i < asp; i++) {
                         // Initialize each element in the row
                         SymDefTable[i].SymbolFlags = readByteFile(tape);
-                        tapebufByteCount += 1;
+                        // tapebufByteCount += 1;
                         SymDefTable[i].PulseLenghts = new uint16_t[npp];
                         for(int j = 0; j < npp; j++) {
                             SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
-                            tapebufByteCount += 2;
+                            // tapebufByteCount += 2;
                         }
 
                     }
@@ -802,15 +822,17 @@ void Tape::TZX_GetBlock() {
                     GDBsymbol = readByteFile(tape); // Read Symbol to be represented from PRLE[0]
                     
                     // Get symbol flags
-                    switch (SymDefTable[GDBsymbol].SymbolFlags & 0x3) {
+                    switch (SymDefTable[GDBsymbol].SymbolFlags) {
                         case 0:
                             tapeEarBit ^= 1;
                             break;
+                        case 1:
+                            break;
                         case 2:
-                            tapeEarBit = 1;
+                            tapeEarBit = 0;
                             break;
                         case 3:
-                            tapeEarBit = 0;
+                            tapeEarBit = 1;
                             break;
                     }
 
@@ -820,12 +842,12 @@ void Tape::TZX_GetBlock() {
                     // Get number of repetitions from PRLE[0]
                     tapeHdrPulses = readByteFile(tape) | (readByteFile(tape) << 8); // Number of repetitions of symbol
 
-                    printf("PULSE%d %d %d\n",tapeEarBit,tapeNext,tapeHdrPulses);
+                    printf("PULSE%d %d %d Flags: %d\n",tapeEarBit,tapeNext,tapeHdrPulses,(int)SymDefTable[GDBsymbol].SymbolFlags);
 
                     curGDBSymbol = 0;
                     curGDBPulse = 0;
 
-                    tapebufByteCount += 3;
+                    // tapebufByteCount += 3;
 
                     tapePhase=TAPE_PHASE_GDB_PILOTSYNC;
 
@@ -866,7 +888,8 @@ void Tape::TZX_GetBlock() {
 
                 // Provisional GDB in development
                 tapeBlockLen += tapeData + 4 + 1;
-                tapebufByteCount += 1;
+                // tapebufByteCount += 1;
+                tapebufByteCount = tapeBlockLen;
 
                 return;
 
@@ -905,7 +928,7 @@ void Tape::TZX_GetBlock() {
 
             case 0x21:
 
-                // printf("TZX block: %d, ID 0x21 - Group Start, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
+                printf("TZX block: %d, ID 0x21 - Group Start, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
                 tapeData = readByteFile(tape);
                 fseek(tape,tapeData,SEEK_CUR);
@@ -918,7 +941,7 @@ void Tape::TZX_GetBlock() {
 
             case 0x22:
 
-                printf("TZX block: %d, ID 0x22 - Group End, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
+                // printf("TZX block: %d, ID 0x22 - Group End, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
                 tapeBlockLen++;
                 tapebufByteCount++;
@@ -1173,10 +1196,7 @@ void Tape::TZX_GetBlock() {
         }
 
         tapeCurBlock++;
-        // if (tapeCurBlock < tapeNumBlocks) {
-        //     printf("Lee tapecurbyte!\n");
-            tapeCurByte = readByteFile(tape);
-        // }
+        tapeCurByte = readByteFile(tape);
 
     }
 

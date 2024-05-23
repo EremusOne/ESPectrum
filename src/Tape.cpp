@@ -584,7 +584,6 @@ void Tape::Play() {
 
     // Init tape vars
     tapeEarBit = 1;
-    // tapeEarBit = 0;
     tapeBitMask=0x80;
     tapeLastByteUsedBits = 8;
     tapeEndBitMask=0x80;
@@ -639,8 +638,7 @@ IRAM_ATTR void Tape::Read() {
             switch (tapePhase) {
             case TAPE_PHASE_CSW:
                 tapeEarBit ^= 1;
-
-                if (CSW_CompressionType == 1) {
+                if (CSW_CompressionType == 1) { // RLE
                     CSW_PulseLenght = readByteFile(tape);
                     tapebufByteCount++;                
                     if (tapebufByteCount == tapeBlockLen) {
@@ -652,9 +650,14 @@ IRAM_ATTR void Tape::Read() {
                             tapePhase=TAPE_PHASE_TAIL;
                             tapeNext = TAPE_PHASE_TAIL_LEN;
                         }
-                        return;
+                        break;
                     }
-                } else {
+                    if (CSW_PulseLenght == 0) {
+                        CSW_PulseLenght = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
+                        tapebufByteCount += 4;
+                    }                
+                    tapeNext = CSW_SampleRate * CSW_PulseLenght;
+                } else { // Z-RLE
                     CSW_PulseLenght = readByteFile(cswBlock);
                     if (feof(cswBlock)) {
                         fclose(cswBlock);
@@ -667,22 +670,14 @@ IRAM_ATTR void Tape::Read() {
                             tapePhase=TAPE_PHASE_TAIL;
                             tapeNext = TAPE_PHASE_TAIL_LEN;
                         }
-                        return;
+                        break;
                     }
-                }
-
-                if (CSW_PulseLenght == 0) {
-
-                    if (CSW_CompressionType == 1) {
-                        CSW_PulseLenght = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
-                        tapebufByteCount += 4;
-                    } else {
+                    if (CSW_PulseLenght == 0) {
                         CSW_PulseLenght = readByteFile(cswBlock) | (readByteFile(cswBlock) << 8) | (readByteFile(cswBlock) << 16) | (readByteFile(cswBlock) << 24);                        
-                    }
-                }                
-                tapeNext = CSW_SampleRate * CSW_PulseLenght;
+                    }                
+                    tapeNext = CSW_SampleRate * CSW_PulseLenght;
+                }
                 break;
-            
             case TAPE_PHASE_GDB_PILOTSYNC:
 
                 // Get next pulse lenght from current symbol
@@ -705,10 +700,12 @@ IRAM_ATTR void Tape::Read() {
                             GDBsymbol = readByteFile(tape); // Read Symbol to be represented from PRLE
 
                             // Get symbol flags
-                            switch (SymDefTable[GDBsymbol].SymbolFlags & 0x3) {
+                            switch (SymDefTable[GDBsymbol].SymbolFlags) {
                                 case 0:
                                     tapeEarBit ^= 1;
                                     break;
+                                case 1:
+                                    break;                                    
                                 case 2:
                                     tapeEarBit = 0;
                                     break;
@@ -729,7 +726,7 @@ IRAM_ATTR void Tape::Read() {
                             
                             curGDBPulse = 0;
 
-                            tapebufByteCount += 3;
+                            // tapebufByteCount += 3;
 
                         } else {
                             
@@ -740,8 +737,8 @@ IRAM_ATTR void Tape::Read() {
                                 delete[] SymDefTable[i].PulseLenghts;
                             delete[] SymDefTable;
 
-                            // End of pilotsync. Is there data stream ?
-                            if (totd > 0) {
+                            // // End of pilotsync. Is there data stream ?
+                            // if (totd > 0) {
 
                                 printf("\nPULSES (DATA)\n");
 
@@ -752,11 +749,11 @@ IRAM_ATTR void Tape::Read() {
                                 for (int i = 0; i < asd; i++) {
                                     // Initialize each element in the row
                                     SymDefTable[i].SymbolFlags = readByteFile(tape);
-                                    tapebufByteCount += 1;
+                                    // tapebufByteCount += 1;
                                     SymDefTable[i].PulseLenghts = new uint16_t[npd];
                                     for(int j = 0; j < npd; j++) {
                                         SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
-                                        tapebufByteCount += 2;
+                                        // tapebufByteCount += 2;
                                     }
 
                                 }
@@ -784,7 +781,7 @@ IRAM_ATTR void Tape::Read() {
                                 GDBsymbol = 0;
 
                                 tapeCurByte = readByteFile(tape);
-                                tapebufByteCount += 1;
+                                // tapebufByteCount += 1;
 
                                 // printf("tapeCurByte: %d\n", tapeCurByte,nb);
 
@@ -800,13 +797,15 @@ IRAM_ATTR void Tape::Read() {
                                 GDBsymbol = bitRead(tapeCurByte,curBit);
                                 curBit--;
 
-                                // tapeEarBit = 0; // dan dare 2 carga pantalla bien forzando aqui
+                                // tapeEarBit = 0; // This makes Dan Dare 2 load screen work ok. But load fails at the end :-/
                                 
                                 // Get symbol flags
-                                switch (SymDefTable[GDBsymbol].SymbolFlags & 0x3) {
+                                switch (SymDefTable[GDBsymbol].SymbolFlags) {
                                 case 0:
                                     tapeEarBit ^= 1;
                                     break;
+                                case 1:
+                                    break;                                    
                                 case 2:
                                     tapeEarBit = 0;
                                     break;
@@ -817,29 +816,32 @@ IRAM_ATTR void Tape::Read() {
 
                                 // Get first pulse lenght from array of pulse lenghts
                                 tapeNext = SymDefTable[GDBsymbol].PulseLenghts[0];
+
                                 tapePhase = TAPE_PHASE_GDB_DATA;
 
-                                printf("PULSE%d %d\n",tapeEarBit,tapeNext);
+                                printf("PULSE%d %d Flags: %d\n",tapeEarBit,tapeNext,(int)SymDefTable[GDBsymbol].SymbolFlags);
 
                                 // printf("Curbit: %d, GDBSymbol: %d, Flags: %d, tapeNext: %d\n",(int)curBit,(int)GDBsymbol,(int)(SymDefTable[GDBsymbol].SymbolFlags & 0x3),(int)tapeNext);
 
-                            } else {
+                            // } else {
 
-                                tapeCurByte = readByteFile(tape);
-                                tapePhase=TAPE_PHASE_TAIL;
-                                tapeNext = TAPE_PHASE_TAIL_LEN;
+                            //     tapeCurByte = readByteFile(tape);
+                            //     tapePhase=TAPE_PHASE_TAIL_GDB;
+                            //     tapeNext = TAPE_PHASE_TAIL_LEN_GDB;
 
-                            }
+                            // }
 
                         }
 
                     } else {
 
                         // Modify tapeearbit according to symbol flags
-                        switch (SymDefTable[GDBsymbol].SymbolFlags & 0x3) {
+                        switch (SymDefTable[GDBsymbol].SymbolFlags) {
                             case 0:
                                 tapeEarBit ^= 1;
                                 break;
+                            case 1:
+                                break;                                    
                             case 2:
                                 tapeEarBit = 0;
                                 break;
@@ -873,7 +875,7 @@ IRAM_ATTR void Tape::Read() {
                     // Get next symbol in data stream
                     curGDBSymbol++;
 
-                    if (curGDBSymbol <= totd) { // If not end of data stream
+                    if (curGDBSymbol < totd) { // If not end of data stream
 
                         // Read data stream next symbol
                         GDBsymbol = 0;
@@ -891,37 +893,45 @@ IRAM_ATTR void Tape::Read() {
 
                         GDBsymbol = bitRead(tapeCurByte,curBit);
 
-                        if (curBit == 0) {
+                        if ((curGDBSymbol + 1) == totd) {
+                            printf("LAST DATA SYMBOL Curbit: %d, GDBSymbol: %d\n",curBit,GDBsymbol);
                             tapeCurByte = readByteFile(tape);
-                            tapebufByteCount++;
                             curBit = 7;
-                            if (tapebufByteCount > tapeBlockLen) {
-                                // printf("END DATA GDB TBBC -> tapeCurByte: %d, Tape pos: %d, Tapebbc: %d\n", tapeCurByte,(int)(ftell(tape)),tapebufByteCount);
-                                // // Free SymDefTable
-                                // for (int i = 0; i < asd; i++)
-                                //     delete[] SymDefTable[i].PulseLenghts;
-                                // delete[] SymDefTable;
+                        } else {
+                            if (curBit == 0) {
+                                tapeCurByte = readByteFile(tape);
+                                // tapebufByteCount++;
+                                curBit = 7;
+                                // if (tapebufByteCount > tapeBlockLen) {
+                                    // printf("END DATA GDB TBBC -> tapeCurByte: %d, Tape pos: %d, Tapebbc: %d\n", tapeCurByte,(int)(ftell(tape)),tapebufByteCount);
+                                    // // Free SymDefTable
+                                    // for (int i = 0; i < asd; i++)
+                                    //     delete[] SymDefTable[i].PulseLenghts;
+                                    // delete[] SymDefTable;
 
-                                // if (tapeBlkPauseLen == 0) {
-                                //     tapeCurBlock++;
-                                //     GetBlock();
-                                // } else {
-                                //     tapePhase=TAPE_PHASE_TAIL;
-                                //     tapeNext = TAPE_PHASE_TAIL_LEN;
+                                    // if (tapeBlkPauseLen == 0) {
+                                    //     tapeCurBlock++;
+                                    //     GetBlock();
+                                    // } else {
+                                    //     tapePhase=TAPE_PHASE_TAIL;
+                                    //     tapeNext = TAPE_PHASE_TAIL_LEN;
+                                    // }
+
+                                    // break;
                                 // }
-
-                                // break;
-                            }
-                        } else
-                            curBit--;
+                            } else
+                                curBit--;
+                        }
 
                         // printf("Curbit: %d, GDBSymbol: %d\n",curBit,GDBsymbol);
 
                         // Get symbol flags
-                        switch (SymDefTable[GDBsymbol].SymbolFlags & 0x3) {
+                        switch (SymDefTable[GDBsymbol].SymbolFlags) {
                             case 0:
                                 tapeEarBit ^= 1;
                                 break;
+                            case 1:
+                                break;                                    
                             case 2:
                                 tapeEarBit = 0;
                                 break;
@@ -939,47 +949,32 @@ IRAM_ATTR void Tape::Read() {
 
                     } else {
 
-                        // printf("END DATA GDB -> tapeCurByte: %d, Tape pos: %d, Tapebbc: %d\n", tapeCurByte,(int)(ftell(tape)),tapebufByteCount);                        
+                        printf("END DATA GDB -> tapeCurByte: %d, Tape pos: %d, Tapebbc: %d\n", tapeCurByte,(int)(ftell(tape)),tapebufByteCount);                        
                         
                         // Free SymDefTable
                         for (int i = 0; i < asd; i++)
                             delete[] SymDefTable[i].PulseLenghts;
                         delete[] SymDefTable;
 
-                        // tapeCurByte = readByteFile(tape);
-
                         if (tapeBlkPauseLen == 0) {
-                            
-                            // printf("GDB Pause 0!\n");
-                            
-                            // tapeEarBit = 0;
+
+                            if (tapeCurByte == 0x13) tapeEarBit ^= 1; // This solves Basil
 
                             tapeCurBlock++;
                             GetBlock();
 
-                            // tapePhase=TAPE_PHASE_TAIL_GDB;
-                            // tapeNext = TAPE_PHASE_TAIL_LEN_GDB;
-
-                            // tapePhase=TAPE_PHASE_TAIL;
-                            // tapeNext = TAPE_PHASE_TAIL_LEN >> 1;
                         } else {
+
+                            tapeEarBit ^= 1;
                             tapePhase=TAPE_PHASE_TAIL_GDB;
                             tapeNext = TAPE_PHASE_TAIL_LEN_GDB;
-                            // tapePhase=TAPE_PHASE_TAIL;
-                            // tapeNext = TAPE_PHASE_TAIL_LEN;
+
                         }
-                        
-                        // tapePhase=TAPE_PHASE_TAIL;
-                        // tapeNext = TAPE_PHASE_TAIL_LEN;
 
                     }
-
                 } else {
-
                     tapeEarBit ^= 1;
-
                 }
-
                 break;
 
             case TAPE_PHASE_TAIL_GDB:
@@ -1007,7 +1002,7 @@ IRAM_ATTR void Tape::Read() {
                             tapePhase=TAPE_PHASE_TAIL;
                             tapeNext = TAPE_PHASE_TAIL_LEN;
                         }
-                        return;
+                        break;
                     } else if ((tapebufByteCount + 1) == tapeBlockLen) {
                         if (tapeLastByteUsedBits < 8 )
                             tapeEndBitMask >>= tapeLastByteUsedBits;
@@ -1016,8 +1011,10 @@ IRAM_ATTR void Tape::Read() {
                     } else {
                         tapeEndBitMask = 0x80;
                     }
+                    tapeEarBit = tapeCurByte & tapeBitMask ? 1 : 0;
+                } else {
+                    tapeEarBit = tapeCurByte & tapeBitMask ? 1 : 0;
                 }
-                tapeEarBit = tapeCurByte & tapeBitMask ? 1 : 0;
                 break;
             case TAPE_PHASE_SYNC:
                 tapeEarBit ^= 1;
@@ -1058,11 +1055,6 @@ IRAM_ATTR void Tape::Read() {
                     tapebufByteCount++;
                     if (tapebufByteCount == tapeBlockLen) {
                         if (tapeBlkPauseLen == 0) {
-                            // tapeEarBit ^= 1;
-
-                            // tapePhase = TAPE_PHASE_PAUSE;
-                            // tapeNext = 0;
-
                             tapeCurBlock++;
                             GetBlock();
                         } else {
@@ -1101,6 +1093,13 @@ IRAM_ATTR void Tape::Read() {
                     tapebufByteCount += 2;
                 }
                 break;
+            case TAPE_PHASE_END:
+                tapeEarBit = 1;
+                tapeCurBlock = 0;
+                Stop();
+                rewind(tape);
+                tapeNext = 0xFFFFFFFF;
+                break;
             case TAPE_PHASE_TAIL:
                 tapeEarBit = 0;
                 tapePhase=TAPE_PHASE_PAUSE;
@@ -1112,7 +1111,13 @@ IRAM_ATTR void Tape::Read() {
                 GetBlock();
             } 
         } while (tapeCurrent >= tapeNext);
-        tapeStart = CPU::global_tstates + CPU::tstates - tapeCurrent;
+
+        // More precision just for DRB and CSW. Makes some loaders work but bigger TAIL_LEN also does and seems better solution.
+        // if (tapePhase == TAPE_PHASE_DRB || tapePhase == TAPE_PHASE_CSW)
+            tapeStart = CPU::global_tstates + CPU::tstates - tapeCurrent;
+        // else
+        //     tapeStart = CPU::global_tstates + CPU::tstates;
+
     }
 }
 
