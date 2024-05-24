@@ -535,13 +535,16 @@ void Tape::TZX_GetBlock() {
     for (;;) {
 
         if (tapeCurBlock >= tapeNumBlocks) {
-            tapeEarBit ^= 1;
-            tapePhase = TAPE_PHASE_END;
-            tapeNext = 7000;
-            // tapeCurBlock = 0;
-            // Stop();
-            // rewind(tape);
-            // tapeNext = 0xFFFFFFFF;
+            if (GDBEnd) {
+                tapeEarBit ^= 1;
+                tapePhase = TAPE_PHASE_END;
+                tapeNext = 7000;
+            } else {
+                tapeCurBlock = 0;
+                Stop();
+                rewind(tape);
+                tapeNext = 0xFFFFFFFF;
+            }
             return;
 
             // //HACK: Sometimes a tape might have it's last tail pulse missing.
@@ -762,7 +765,7 @@ void Tape::TZX_GetBlock() {
 
             case 0x19:
 
-                printf("\n\n------------------------------------------------------------------------------------------------------------------------\nTZX block: %d, ID 0x19 - Generalized Data Block, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
+                // printf("\n\n------------------------------------------------------------------------------------------------------------------------\nTZX block: %d, ID 0x19 - Generalized Data Block, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
                 tapeData = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
                 
@@ -778,7 +781,7 @@ void Tape::TZX_GetBlock() {
                 asd = readByteFile(tape);
                 if (asd == 0) asd = 256;
 
-                // tapebufByteCount += 18;
+                tapebufByteCount += 18;
 
                 // Calc number of bits -> nb = ceil(log2(asd))
                 nb = 0;
@@ -795,11 +798,11 @@ void Tape::TZX_GetBlock() {
                     for (int i = 0; i < asp; i++) {
                         // Initialize each element in the row
                         SymDefTable[i].SymbolFlags = readByteFile(tape);
-                        // tapebufByteCount += 1;
+                        tapebufByteCount += 1;
                         SymDefTable[i].PulseLenghts = new uint16_t[npp];
                         for(int j = 0; j < npp; j++) {
                             SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
-                            // tapebufByteCount += 2;
+                            tapebufByteCount += 2;
                         }
 
                     }
@@ -816,7 +819,7 @@ void Tape::TZX_GetBlock() {
                     // }
                     // printf("-----------------------\n");
 
-                    printf("\nPULSES (PILOT SYNC)\n");
+                    // printf("\nPULSES (PILOT SYNC)\n");
 
                     // Read pulse data
                     GDBsymbol = readByteFile(tape); // Read Symbol to be represented from PRLE[0]
@@ -842,18 +845,17 @@ void Tape::TZX_GetBlock() {
                     // Get number of repetitions from PRLE[0]
                     tapeHdrPulses = readByteFile(tape) | (readByteFile(tape) << 8); // Number of repetitions of symbol
 
-                    printf("PULSE%d %d %d Flags: %d\n",tapeEarBit,tapeNext,tapeHdrPulses,(int)SymDefTable[GDBsymbol].SymbolFlags);
+                    // printf("PULSE%d %d %d Flags: %d\n",tapeEarBit,tapeNext,tapeHdrPulses,(int)SymDefTable[GDBsymbol].SymbolFlags);
 
                     curGDBSymbol = 0;
                     curGDBPulse = 0;
 
-                    // tapebufByteCount += 3;
+                    tapebufByteCount += 3;
 
                     tapePhase=TAPE_PHASE_GDB_PILOTSYNC;
 
-                } /* else if (totd > 0) {
+                } else if (totd > 0) {
 
-                    // Populate Data symbol definition table
                     // Allocate memory for the array of pointers to struct Symdef
                     SymDefTable = new Symdef[asd];
 
@@ -861,35 +863,73 @@ void Tape::TZX_GetBlock() {
                     for (int i = 0; i < asd; i++) {
                         // Initialize each element in the row
                         SymDefTable[i].SymbolFlags = readByteFile(tape);
+                        tapebufByteCount += 1;
                         SymDefTable[i].PulseLenghts = new uint16_t[npd];
                         for(int j = 0; j < npd; j++) {
                             SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
+                            tapebufByteCount += 2;
                         }
 
                     }
 
-                    printf("-- NO GDB PILOT !! ---\n");
-                    printf("Data Sync Symbol Table\n");
-                    printf("Asd: %d, Npd: %d\n",asd,npd);
-                    printf("-----------------------\n");
-                    for (int i = 0; i < asd; i++) {
-                        printf("%d: %d; ",i,(int)SymDefTable[i].SymbolFlags);
-                        for (int j = 0; j < npd; j++) {
-                            printf("%d,",(int)SymDefTable[i].PulseLenghts[j]);
-                        }
-                        printf("\n");
+                    // printf("-- NO GDB PILOT !! ---\n");
+                    // printf("Data Sync Symbol Table\n");
+                    // printf("Asd: %d, Npd: %d\n",asd,npd);
+                    // printf("-----------------------\n");
+                    // for (int i = 0; i < asd; i++) {
+                    //     printf("%d: %d; ",i,(int)SymDefTable[i].SymbolFlags);
+                    //     for (int j = 0; j < npd; j++) {
+                    //         printf("%d,",(int)SymDefTable[i].PulseLenghts[j]);
+                    //     }
+                    //     printf("\n");
+                    // }
+                    // printf("-----------------------\n");
+
+                    curGDBSymbol = 0;
+                    curGDBPulse = 0;
+                    curBit = 7;
+
+                    // Read data stream first symbol
+                    GDBsymbol = 0;
+
+                    tapeCurByte = readByteFile(tape);
+                    tapebufByteCount += 1;
+
+                    for (int i = nb; i > 0; i--) {
+                        GDBsymbol <<= 1;
+                        GDBsymbol |= ((tapeCurByte >> (curBit)) & 0x01);
+                        if (curBit == 0) {
+                            tapeCurByte = readByteFile(tape);
+                            tapebufByteCount += 1;
+                            curBit = 7;
+                        } else
+                            curBit--;
                     }
-                    printf("-----------------------\n");
+                    
+                    // Get symbol flags
+                    switch (SymDefTable[GDBsymbol].SymbolFlags) {
+                    case 0:
+                        tapeEarBit ^= 1;
+                        break;
+                    case 1:
+                        break;                                    
+                    case 2:
+                        tapeEarBit = 0;
+                        break;
+                    case 3:
+                        tapeEarBit = 1;
+                        break;
+                    }
 
-                    tapePhase=TAPE_PHASE_GDB_DATA;
-                    tapeNext=TAPE_PHASE_TAIL_LEN; // Provisional
+                    // Get first pulse lenght from array of pulse lenghts
+                    tapeNext = SymDefTable[GDBsymbol].PulseLenghts[0];
+                    tapePhase = TAPE_PHASE_GDB_DATA;
 
-                } */
+                }
 
                 // Provisional GDB in development
                 tapeBlockLen += tapeData + 4 + 1;
-                // tapebufByteCount += 1;
-                tapebufByteCount = tapeBlockLen;
+                tapebufByteCount += 1;
 
                 return;
 
@@ -928,7 +968,7 @@ void Tape::TZX_GetBlock() {
 
             case 0x21:
 
-                printf("TZX block: %d, ID 0x21 - Group Start, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
+                // printf("TZX block: %d, ID 0x21 - Group Start, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
                 tapeData = readByteFile(tape);
                 fseek(tape,tapeData,SEEK_CUR);

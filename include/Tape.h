@@ -232,6 +232,7 @@ private:
     static uint8_t GDBsymbol;    
     static uint8_t nb; 
     static uint8_t curBit;       
+    static bool GDBEnd;     
     static Symdef* SymDefTable;
 
 };
