@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -62,32 +62,48 @@ uint8_t VIDEO::flash_ctr= 0;
 uint8_t VIDEO::OSD = 0;
 uint8_t VIDEO::tStatesPerLine;
 int VIDEO::tStatesScreen;
+int VIDEO::tStatesBorder;
 uint8_t* VIDEO::grmem;
 uint16_t VIDEO::offBmp[SPEC_H];
 uint16_t VIDEO::offAtt[SPEC_H];
 uint32_t* VIDEO::SaveRect;
 int VIDEO::VsyncFinetune[2];
 uint32_t VIDEO::framecnt = 0;
+uint8_t VIDEO::dispUpdCycle;
+uint8_t VIDEO::att1;
+uint8_t VIDEO::bmp1;
+uint8_t VIDEO::att2;
+uint8_t VIDEO::bmp2;
+bool VIDEO::snow_att = false;
+bool VIDEO::dbl_att = false;
+// bool VIDEO::opCodeFetch;
+uint8_t VIDEO::lastbmp;
+uint8_t VIDEO::lastatt;    
+uint8_t VIDEO::snowpage;
+uint8_t VIDEO::snowR;
+bool VIDEO::snow_toggle = false;
 
+#ifdef DIRTY_LINES
+uint8_t VIDEO::dirty_lines[SPEC_H];
+// uint8_t VIDEO::linecalc[SPEC_H];
+#endif //  DIRTY_LINES
 static unsigned int is169;
 
-// static unsigned char DrawStatus;
-
 static uint32_t* lineptr32;
-static uint16_t* lineptr16;
 
 static unsigned int tstateDraw; // Drawing start point (in Tstates)
 static unsigned int linedraw_cnt;
-static unsigned int lin_end, lin_end2, lin_end3;
+static unsigned int lin_end, lin_end2 /*, lin_end3*/;
 static unsigned int coldraw_cnt;
 static unsigned int col_end;
 static unsigned int video_rest;
+static unsigned int video_opcode_rest;
+static unsigned int curline;
 
 static unsigned int bmpOffset;  // offset for bitmap in graphic memory
 static unsigned int attOffset;  // offset for attrib in graphic memory
 
-/* DRAM_ATTR */ static const uint8_t wait_st[243] = { 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+static const uint8_t wait_st[128] = {
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
@@ -96,13 +112,6 @@ static unsigned int attOffset;  // offset for attrib in graphic memory
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0
 }; // sequence of wait states
 
 IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
@@ -156,14 +165,20 @@ IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
 
 }
 
-#ifdef NO_VIDEO
-void (*VIDEO::Draw)(unsigned int, bool) = &VIDEO::NoVideo;
-#else
 void (*VIDEO::Draw)(unsigned int, bool) = &VIDEO::Blank;
-#endif
+void (*VIDEO::Draw_Opcode)(bool) = &VIDEO::Blank_Opcode;
+void (*VIDEO::Draw_OSD169)(unsigned int, bool) = &VIDEO::MainScreen;
+void (*VIDEO::Draw_OSD43)() = &VIDEO::BottomBorder;
 
-void (*VIDEO::DrawOSD43)(unsigned int, bool) = &VIDEO::BottomBorder;
-void (*VIDEO::DrawOSD169)(unsigned int, bool) = &VIDEO::MainScreen;
+void (*VIDEO::DrawBorder)() = &VIDEO::TopBorder_Blank;
+
+
+static uint32_t* brdptr32;
+static uint16_t* brdptr16;
+
+uint32_t VIDEO::lastBrdTstate;
+bool VIDEO::brdChange = false;
+bool VIDEO::brdnextframe = true;
 
 // void precalcColors() {
     
@@ -235,6 +250,7 @@ void precalcULASWAP() {
     for (int i = 0; i < SPEC_H; i++) {
         VIDEO::offBmp[i] = ULA_SWAP(i) << 5;
         VIDEO::offAtt[i] = ((i >> 3) << 5) + 0x1800;
+        // VIDEO::linecalc[i] = ULA_SWAP(i);
     }
 }
 
@@ -252,10 +268,25 @@ const int bluPins[] = {BLU_PINS_6B};
 
 void VIDEO::vgataskinit(void *unused) {
 
-    uint8_t Mode = (Config::videomode == 1 ? 2 : 8) + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 2 : 4)) + (Config::aspect_16_9 ? 1 : 0);
+    uint8_t Mode;
 
-    OSD::scrW = vidmodes[Mode][vmodeproperties::hRes];
-    OSD::scrH = vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv];
+    if (Config::videomode == 1) {
+
+        Mode = 4 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 4 : 8)) + (Config::aspect_16_9 ? 2 : 0);
+
+        Mode += Config::scanlines;
+
+        OSD::scrW = vidmodes[Mode][vmodeproperties::hRes];
+        OSD::scrH = (vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv]) >> Config::scanlines;
+
+    } else {
+
+        Mode = 16 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 2 : 4)) + (Config::aspect_16_9 ? 1 : 0);
+        
+        OSD::scrW = vidmodes[Mode][vmodeproperties::hRes];
+        OSD::scrH = vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv];
+
+    }
 
     vga.VGA6Bit_useinterrupt=true;
     
@@ -285,12 +316,16 @@ void VIDEO::Init() {
         for (;;) {
             if (ESPectrum::vsync) break;
         }
+        
     } else {
 
-        int Mode = Config::aspect_16_9 ? 1 : 0;
+        int Mode = Config::aspect_16_9 ? 2 : 0;
+
+        Mode += Config::scanlines;
 
         OSD::scrW = vidmodes[Mode][vmodeproperties::hRes];
-        OSD::scrH = vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv];
+        OSD::scrH = (vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv]) >> Config::scanlines;
+        
         vga.VGA6Bit_useinterrupt=false;
 
         vga.init( Mode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
@@ -331,7 +366,8 @@ void VIDEO::Reset() {
 
     if (Config::arch == "48K") {
         tStatesPerLine = TSTATES_PER_LINE;
-        tStatesScreen = is169 ? TS_SCREEN_360x200 : TS_SCREEN_320x240;
+        tStatesScreen = TS_SCREEN_48;
+        tStatesBorder = is169 ? TS_BORDER_360x200 : TS_BORDER_320x240;        
         if (Config::videomode == 1) {
             VsyncFinetune[0] = is169 ? -1 : 0;
             VsyncFinetune[1] = is169 ? 152 : 0;
@@ -340,12 +376,14 @@ void VIDEO::Reset() {
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
 
-        DrawOSD43 = VIDEO::BottomBorder;
-        DrawOSD169 = VIDEO::MainScreen;
+        Draw_OSD169 = MainScreen;
+        Draw_OSD43 = BottomBorder;
+        DrawBorder = TopBorder_Blank;        
 
     } else if (Config::arch == "128K") {
         tStatesPerLine = TSTATES_PER_LINE_128;
-        tStatesScreen = is169 ? TS_SCREEN_360x200_128 : TS_SCREEN_320x240_128;
+        tStatesScreen = TS_SCREEN_128;
+        tStatesBorder = is169 ? TS_BORDER_360x200_128 : TS_BORDER_320x240_128;        
         if (Config::videomode == 1) {
             VsyncFinetune[0] = is169 ? 1 : 1;
             VsyncFinetune[1] = is169 ? 123 : 123;
@@ -354,12 +392,14 @@ void VIDEO::Reset() {
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
 
-        DrawOSD43 = VIDEO::BottomBorder;
-        DrawOSD169 = VIDEO::MainScreen;
+        Draw_OSD169 = MainScreen;
+        Draw_OSD43 = BottomBorder;
+        DrawBorder = TopBorder_Blank;        
 
     } else if (Config::arch == "Pentagon") {
         tStatesPerLine = TSTATES_PER_LINE_PENTAGON;
-        tStatesScreen = is169 ? TS_SCREEN_360x200_PENTAGON : TS_SCREEN_320x240_PENTAGON;
+        tStatesScreen = TS_SCREEN_PENTAGON;
+        tStatesBorder = is169 ? TS_BORDER_360x200_PENTAGON : TS_BORDER_320x240_PENTAGON;        
         // TODO: ADJUST THESE VALUES FOR PENTAGON
         if (Config::videomode == 1) {
             VsyncFinetune[0] = is169 ? 1 : 1;
@@ -369,34 +409,41 @@ void VIDEO::Reset() {
             VsyncFinetune[1] = is169 ? 0 : 0;
         }
 
-        DrawOSD43 = BottomBorder_Pentagon;
-        DrawOSD169 = MainScreen_Pentagon;
+        Draw_OSD169 = MainScreen;
+        Draw_OSD43 = BottomBorder_Pentagon;
+        DrawBorder = TopBorder_Blank_Pentagon;        
 
     }
 
     if (is169) {
         lin_end = 4;
         lin_end2 = 196;
-        lin_end3 = 200;
     } else {
         lin_end = 24;
         lin_end2 = 216;
-        lin_end3 = 240;
-
-        // Fake scanlines test
-        // lin_end = 24 << 1;
-        // lin_end2 = 216 << 1;
-        // lin_end3 = 240 << 1;
-
     }
 
     grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
-    #ifdef NO_VIDEO
-        Draw = &NoVideo;
-    #else
+    #ifdef DIRTY_LINES
+    // for (int i=0; i < SPEC_H; i++) VIDEO::dirty_lines[i] = 0x01;
+    memset((uint8_t *)VIDEO::dirty_lines,0x01,SPEC_H);
+    #endif // DIRTY_LINES
+
+    VIDEO::snow_toggle = Config::arch != "Pentagon" ? Config::render : false;
+
+    if (VIDEO::snow_toggle) {
+        Draw = &Blank_Snow;
+        Draw_Opcode = &Blank_Snow_Opcode;
+    } else {
         Draw = &Blank;
-    #endif
+        Draw_Opcode = &Blank_Opcode;
+    }
+
+    // Restart border drawing
+    lastBrdTstate = tStatesBorder;
+    brdChange = false;
+    brdnextframe = true;
 
 }
 
@@ -404,725 +451,782 @@ void VIDEO::Reset() {
 //  VIDEO DRAW FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef NO_VIDEO
-void VIDEO::NoVideo(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
-#endif
-
-// IRAM_ATTR void VIDEO::NoDraw(unsigned int statestoadd, bool contended) {
-//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-//     CPU::tstates += statestoadd;
-//     video_rest += statestoadd;
-// }
-
-IRAM_ATTR void VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) {
-
-    CPU::tstates += statestoadd;
-
-    if (CPU::tstates > tstateDraw) {
-        video_rest = CPU::tstates - tstateDraw;
-        tstateDraw += tStatesPerLine;
-        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 5: 0);
-        coldraw_cnt = 0;
-        Draw = &TopBorder;
-        TopBorder(0,false);
-    }
-
-}
-
-IRAM_ATTR void VIDEO::TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended) {
-
-    CPU::tstates += statestoadd;
-
-    if (CPU::tstates > tstateDraw) {
-        video_rest = CPU::tstates - tstateDraw;
-        tstateDraw += tStatesPerLine;
-        lineptr16 = (uint16_t *)(vga.frameBuffer[linedraw_cnt]);
-        if (is169) {
-            coldraw_cnt = 10;
-            col_end = 170;
-        } else {
-            coldraw_cnt = 0;
-            col_end = 160;
-        }
-        Draw = &TopBorder_Pentagon;
-        TopBorder_Pentagon(0,false);
-    }
-
-}
-
-IRAM_ATTR void VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = statestoadd & 0x03; // Mod 4
-
-    unsigned int i = coldraw_cnt;
-
-    coldraw_cnt += statestoadd >> 2;
-    
-    if (coldraw_cnt >= 40) {
-
-        for (;i < 40;i++) {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        }
-
-        // linedraw_cnt++; // Fake scanlines test
-
-        Draw = ++linedraw_cnt == lin_end ? &MainScreen_Blank : &TopBorder_Blank;
-
-    } else {
-
-        for (;i < coldraw_cnt; i++) {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        }
-
-    }
-
-}
-
-IRAM_ATTR void VIDEO::TopBorder_Pentagon(unsigned int statestoadd, bool contended) {
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-    
-    video_rest = 0;
-  
-    if (coldraw_cnt + statestoadd >= col_end) {
-
-        for (;;) {
-
-            lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-
-            if (++coldraw_cnt == col_end) {
-                Draw = ++linedraw_cnt == lin_end ? &MainScreen_Blank_Pentagon : &TopBorder_Blank_Pentagon;
-                return;
-            }
-
-        }
-
-    } else {
-
-        for (; statestoadd > 0; statestoadd--) {
-            lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-            coldraw_cnt++;
-        }
-
-    }
-
-}
-
 IRAM_ATTR void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {    
     
     CPU::tstates += statestoadd;
 
-    if (CPU::tstates > tstateDraw) {
-        video_rest = CPU::tstates - tstateDraw;
-        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 5: 0);
+    if (CPU::tstates >= tstateDraw) {
+
+        if (brdChange) DrawBorder(); // Needed to avoid tearing in demos like Gabba (Pentagon)
+        
+        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 13: 8);
+
         coldraw_cnt = 0;
-        unsigned int curline = linedraw_cnt - lin_end;
 
-        // curline >>= 1; // Fake scanlines test
-
+        curline = linedraw_cnt - lin_end;
         bmpOffset = offBmp[curline];
         attOffset = offAtt[curline];
-        Draw = MainScreenLB;
-        MainScreenLB(0,contended);
-    }
+        
+        #ifdef DIRTY_LINES
+        // Force line draw (for testing)
+        // dirty_lines[curline] = 1;
+        #endif // DIRTY_LINES
 
-}    
+        Draw = linedraw_cnt >= 176 && linedraw_cnt <= 191 ? Draw_OSD169 : MainScreen;
+        Draw_Opcode = MainScreen_Opcode;
 
-IRAM_ATTR void VIDEO::MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended) {    
-    
-    CPU::tstates += statestoadd;
-
-    if (CPU::tstates > tstateDraw) {
         video_rest = CPU::tstates - tstateDraw;
-        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]);
-        lineptr16 = (uint16_t *)(vga.frameBuffer[linedraw_cnt]);
-        unsigned int curline = linedraw_cnt - lin_end;        
-        bmpOffset = offBmp[curline];
-        attOffset = offAtt[curline];
-        if (is169) {
-            lineptr32 += 5;
-            coldraw_cnt = 10;
-            col_end = 25;
-        } else {
-            coldraw_cnt = 0;
-            col_end = 15;
-            curline -= 20;
-        }
-        Draw = MainScreenLB_Pentagon;
-        MainScreenLB_Pentagon(0,false);
+        Draw(0,false);
+
     }
 
 }    
 
-IRAM_ATTR void VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {    
-  
+IRAM_ATTR void VIDEO::MainScreen_Blank_Opcode(bool contended) { MainScreen_Blank(4, contended); }
+
+IRAM_ATTR void VIDEO::MainScreen_Blank_Snow(unsigned int statestoadd, bool contended) {    
+    
+    CPU::tstates += statestoadd;
+
+    if (CPU::tstates >= tstateDraw) {
+
+        if (brdChange) DrawBorder();
+
+        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 13: 8);
+
+        coldraw_cnt = 0;
+
+        curline = linedraw_cnt - lin_end;
+        bmpOffset = offBmp[curline];
+        attOffset = offAtt[curline];
+
+        snowpage = MemESP::videoLatch ? 7 : 5;
+        
+        dispUpdCycle = 0; // For ULA cycle perfect emulation
+
+        #ifdef DIRTY_LINES
+        // Force line draw (for testing)
+        // dirty_lines[curline] = 1;
+        #endif // DIRTY_LINES
+
+        Draw = &MainScreen_Snow;
+        Draw_Opcode = &MainScreen_Snow_Opcode;
+
+        // For ULA cycle perfect emulation
+        int vid_rest = CPU::tstates - tstateDraw;
+        if (vid_rest) {
+            CPU::tstates = tstateDraw;
+            Draw(vid_rest,false);
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::MainScreen_Blank_Snow_Opcode(bool contended) {    
+    
+    CPU::tstates += 4;
+
+    if (CPU::tstates >= tstateDraw) {
+
+        if (brdChange) DrawBorder();
+
+        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 13: 8);
+
+        coldraw_cnt = 0;
+
+        curline = linedraw_cnt - lin_end;
+        bmpOffset = offBmp[curline];
+        attOffset = offAtt[curline];
+
+        snowpage = MemESP::videoLatch ? 7 : 5;
+        
+        dispUpdCycle = 0; // For ptime-128 compliant version
+
+        #ifdef DIRTY_LINES
+        // Force line draw (for testing)
+        // dirty_lines[curline] = 1;
+        #endif // DIRTY_LINES
+
+        Draw = &MainScreen_Snow;
+        Draw_Opcode = &MainScreen_Snow_Opcode;
+
+        // For ULA cycle perfect emulation
+        video_opcode_rest = CPU::tstates - tstateDraw;
+        if (video_opcode_rest) {
+            CPU::tstates = tstateDraw;
+            Draw_Opcode(false);
+            video_opcode_rest = 0;
+        }
+
+    }
+
+}    
+
+#ifndef DIRTY_LINES
+
+// ----------------------------------------------------------------------------------
+// Fast video emulation with no ULA cycle emulation and no snow effect support
+// ----------------------------------------------------------------------------------
+/*IRAM_ATTR*/ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
+
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
     statestoadd += video_rest;
-    video_rest = statestoadd & 0x03; // Mod 4
-
-    for (int i=0; i < (statestoadd >> 2); i++) {    
-        *lineptr32++ = brd;
-        *lineptr32++ = brd;
-        if (++coldraw_cnt > 3) {      
-            Draw = DrawOSD169;
-            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            Draw(0,false);
-            return;
-        }
-    }
-    
-}
-
-// // ---------------------------
-// // ptime-128 compliant version
-// // ---------------------------    
-// IRAM_ATTR void VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {    
-  
-//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-
-//     CPU::tstates += statestoadd;
-//     statestoadd += video_rest;
-//     video_rest = statestoadd & 0x03; // Mod 4
-
-//     for (int i=0; i < (statestoadd >> 2); i++) {    
-//         *lineptr32++ = brd;
-//         *lineptr32++ = brd;
-//         if (++coldraw_cnt > 3) {      
-//             Draw = DrawOSD169;
-//             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-//             dispUpdCycle = 6 + CPU::latetiming;
-//             Draw(0,false);
-//             video_rest = 0;
-//             return;
-//         }
-//     }
-    
-// }
-
-IRAM_ATTR void VIDEO::MainScreenLB_Pentagon(unsigned int statestoadd, bool contended) {    
-  
-    CPU::tstates += statestoadd;
-    statestoadd += video_rest;
-
-    video_rest = 0;
-    for (int i=0; i < statestoadd; i++) {    
-        lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-        if (++coldraw_cnt > col_end) {
-            lineptr32 += 8;
-            coldraw_cnt = 4;
-            col_end = is169 ? 154 : 144;
-            Draw = DrawOSD169;
-            video_rest += statestoadd - (i + 1) + 2; // Add 2 to compensate +2 in TS_SCREEN_320x240_PENTAGON
-            Draw(0,false);
-            return;
-        }
-    }
-
-}
-
-/* IRAM_ATTR */void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
-
-    uint8_t att, bmp;
-
-    if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
     video_rest = statestoadd & 0x03;
-    
     unsigned int loopCount = statestoadd >> 2;
+    coldraw_cnt += loopCount;
 
-    if (loopCount) {
-
-        if (coldraw_cnt + loopCount > 35) {
-
-            for (;;) {
-
-                att = grmem[attOffset++];
-                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-
-                *lineptr32++ = AluByte[bmp >> 4][att];
-                *lineptr32++ = AluByte[bmp & 0xF][att];
-
-                loopCount--;
-
-                if (++coldraw_cnt > 35) {
-                    Draw = MainScreenRB;
-                    video_rest += loopCount << 2;
-                    MainScreenRB(0,false);
-                    return;
-                }
-
-            }
-
+    if (coldraw_cnt >= 32) {
+        tstateDraw += tStatesPerLine;
+        if (++linedraw_cnt == lin_end2) {
+            Draw = &Blank;
+            Draw_Opcode = &Blank_Opcode;
         } else {
-
-            coldraw_cnt += loopCount;
-
-            for (;loopCount > 0 ; loopCount--) {
-
-                att = grmem[attOffset++];       // get attribute byte
-                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-
-                *lineptr32++ = AluByte[bmp >> 4][att];
-                *lineptr32++ = AluByte[bmp & 0xF][att];
-
-            }
-
+            Draw = &MainScreen_Blank;
+            Draw_Opcode = &MainScreen_Blank_Opcode;
         }
+        loopCount -= coldraw_cnt - 32;
+    }
 
+    for (;loopCount--;) {
+        uint8_t att = grmem[attOffset++];
+        uint8_t bmp = att & flashing ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+        *lineptr32++ = AluByte[bmp >> 4][att];
+        *lineptr32++ = AluByte[bmp & 0xF][att];
     }
 
 }
-
-/* IRAM_ATTR */void VIDEO::MainScreen_Pentagon(unsigned int statestoadd, bool contended) {    
-
-    uint8_t att, bmp;
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = statestoadd & 0x03;
-   
-    int loopCount = statestoadd >> 2;
-   
-    if (loopCount) {
-
-        if (coldraw_cnt + loopCount > 35) {
-
-            for (;;) {
-                
-                att = grmem[attOffset++];
-                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-
-                *lineptr32++ = AluByte[bmp >> 4][att];
-                *lineptr32++ = AluByte[bmp & 0xF][att];
-
-                loopCount--;
-
-                if (++coldraw_cnt > 35) {
-                    coldraw_cnt = 0;
-                    Draw = MainScreen_Pentagon_delay;            
-                    video_rest += loopCount << 2;
-                    MainScreen_Pentagon_delay(0,false);
-                    return;
-                }
-
-            }
-
-        } else {
-
-            coldraw_cnt += loopCount;
-
-            for (;loopCount > 0 ; loopCount--) {
-
-                att = grmem[attOffset++];
-                bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-
-                *lineptr32++ = AluByte[bmp >> 4][att];
-                *lineptr32++ = AluByte[bmp & 0xF][att];
-
-            }
-
-        }
-
-    }
-
-}
-
-// Needed to compensate +2 tstates added before in MainScreenLB_Pentagon
-IRAM_ATTR void VIDEO::MainScreen_Pentagon_delay(unsigned int statestoadd, bool contended) {    
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = 0;
-
-    for (int i=0; i < statestoadd; i++) {
-        if (++coldraw_cnt > 1) {
-            coldraw_cnt = col_end;
-            col_end = is169 ? 170 : 160;
-            Draw = MainScreenRB_Pentagon;
-            video_rest += statestoadd - (i + 1);
-            MainScreenRB_Pentagon(0,false);
-            return;
-        }
-    }
-
-}
-
-// // ---------------------------
-// // ptime-128 compliant version
-// // ---------------------------    
-// void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
-
-//     static uint8_t att1,bmp1;
-
-//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-
-//     CPU::tstates += statestoadd;
-
-//     statestoadd += video_rest;
-    
-//     for (int i=0; i < statestoadd; i++) {    
-
-//         switch(dispUpdCycle) {
-//             case 0:
-//             case 2:
-//                 bmp1 = grmem[bmpOffset++];
-//                 break;
-//             case 1:
-//                 att1 = grmem[attOffset++];  // get attribute byte
-//             case 5:
-
-//                 if (att1 & flashing) bmp1 = ~bmp1;
-//                 *lineptr32++ = AluByte[bmp1 >> 4][att1];
-//                 *lineptr32++ = AluByte[bmp1 & 0xF][att1];
-
-//                 if (++coldraw_cnt > 35) {
-//                     Draw = MainScreenRB;
-//                     video_rest += statestoadd - (i + 1);
-//                     MainScreenRB(0,false);
-//                     return;
-//                 }
-
-//                 break;
-//             case 3:
-//                 att1 = grmem[attOffset++];  // get attribute byte
-//                 break;
-//         }
-
-//         // Update the cycle counter.
-//         ++dispUpdCycle &= 0x07;
-
-//     }
-
-// }
 
 IRAM_ATTR void VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {    
 
-    uint8_t att, bmp;
-
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
-
     statestoadd += video_rest;
+    video_rest = statestoadd & 0x03;
+    unsigned int loopCount = statestoadd >> 2; 
+    unsigned int coldraw_osd = coldraw_cnt;
+    coldraw_cnt += loopCount;
+    
+    if (coldraw_cnt >= 32) {
+        tstateDraw += tStatesPerLine;
+        if (++linedraw_cnt == lin_end2) {
+            Draw = &Blank;
+            Draw_Opcode = &Blank_Opcode;
+        } else {
+            Draw = &MainScreen_Blank;
+            Draw_Opcode = &MainScreen_Blank_Opcode;
+        }
+        loopCount -= coldraw_cnt - 32;
+    }
 
-    video_rest = statestoadd & 0x03; // Mod 4
-
-    for (int i=0; i < (statestoadd >> 2); i++) {    
-
-        if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>16) && (coldraw_cnt<35)) {
+    for (;loopCount--;) {
+        if (coldraw_osd >= 13 && coldraw_osd <= 30) {
             lineptr32+=2;
             attOffset++;
             bmpOffset++;
         } else {
-            att = grmem[attOffset++];       // get attribute byte
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-
+            uint8_t att = grmem[attOffset++];
+            uint8_t bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
             *lineptr32++ = AluByte[bmp >> 4][att];
             *lineptr32++ = AluByte[bmp & 0xF][att];
-
         }
-
-        if (++coldraw_cnt > 35) {
-            Draw = MainScreenRB;
-            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            MainScreenRB(0,false);
-            return;
-        }
-
+        coldraw_osd++;
     }
 
 }
 
-IRAM_ATTR void VIDEO::MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended) {    
+IRAM_ATTR void VIDEO::MainScreen_Opcode(bool contended) { Draw(4,contended); }
 
-    uint8_t att, bmp;
+// ----------------------------------------------------------------------------------
+// ULA cycle perfect emulation with snow effect support
+// ----------------------------------------------------------------------------------
+IRAM_ATTR void VIDEO::MainScreen_Snow(unsigned int statestoadd, bool contended) {
+
+    bool do_stats = false;
+
+    if (contended) statestoadd += wait_st[coldraw_cnt]; // [CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = statestoadd & 0x03; // Mod 4
     
-    for (int i=0; i < (statestoadd >> 2); i++) {
+    unsigned int col_osd = coldraw_cnt >> 2;
+    if (linedraw_cnt >= 176 && linedraw_cnt <= 191) do_stats = (VIDEO::Draw_OSD169 == VIDEO::MainScreen_OSD);
+    
+    coldraw_cnt += statestoadd;
 
-        if ((linedraw_cnt>175) && (linedraw_cnt<192) && (coldraw_cnt>16) && (coldraw_cnt<35)) {
-
-            lineptr32 += 2;
-            attOffset++;
-            bmpOffset++;
-
-        } else {
-
-            att = grmem[attOffset++];       // get attribute byte
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-
-            *lineptr32++ = AluByte[bmp >> 4][att];
-            *lineptr32++ = AluByte[bmp & 0xF][att];
-        
-        }
-
-        if (++coldraw_cnt > 35) {
-            coldraw_cnt = 0;
-            Draw = MainScreen_Pentagon_delay;
-            video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            MainScreen_Pentagon_delay(0,false);
-            return;
-        }
-
-    }
-
-}
-
-IRAM_ATTR void VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
-
-    if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = statestoadd & 0x03;
-
-    for (int i = 0; i < statestoadd >> 2; i++) {
-
-        *lineptr32++ = brd;
-        *lineptr32++ = brd;
-
-        if (++coldraw_cnt == 40) {
-
-            tstateDraw += tStatesPerLine;
-
-            // linedraw_cnt++; // Fake scanlines test            
-
-            Draw = ++linedraw_cnt == lin_end2 ? &BottomBorder_Blank : &MainScreen_Blank;
-            return;
-
-        }
-
-    }
-
-}
-
-IRAM_ATTR void VIDEO::MainScreenRB_Pentagon(unsigned int statestoadd, bool contended) {    
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-    video_rest = 0;
-    for (int i=0; i < statestoadd; i++) {
-        lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-        if (++coldraw_cnt == col_end) {
-            tstateDraw += tStatesPerLine;
-            Draw = ++linedraw_cnt == lin_end2 ? &BottomBorder_Blank_Pentagon : &MainScreen_Blank_Pentagon;            
-            return;
-        }
-
-    }
-
-}
-
-IRAM_ATTR void VIDEO::BottomBorder_Blank(unsigned int statestoadd, bool contended) {    
-
-    CPU::tstates += statestoadd;
-
-    if (CPU::tstates > tstateDraw) {
-        video_rest = CPU::tstates - tstateDraw;
+    if (coldraw_cnt >= 128) {
         tstateDraw += tStatesPerLine;
-        lineptr32 = (uint32_t *)(vga.frameBuffer[linedraw_cnt]) + (is169 ? 5 : 0);
-        coldraw_cnt = 0;
-        Draw = DrawOSD43;
-        Draw(0,contended);
-    }
-
-}
-
-IRAM_ATTR void VIDEO::BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended) {    
-
-    CPU::tstates += statestoadd;
-
-    if (CPU::tstates > tstateDraw) {
-        video_rest = CPU::tstates - tstateDraw;
-        tstateDraw += tStatesPerLine;
-        lineptr16 = (uint16_t *)(vga.frameBuffer[linedraw_cnt]); // Pentagon
-        if (is169) {
-            coldraw_cnt = 10;
-            col_end = 170;
+        if (++linedraw_cnt == lin_end2) {
+            Draw = &Blank_Snow;
+            Draw_Opcode = &Blank_Snow_Opcode;
         } else {
-            coldraw_cnt = 0;
-            col_end = 160;
+            Draw = &MainScreen_Blank_Snow;
+            Draw_Opcode = &MainScreen_Blank_Snow_Opcode;
         }
-        Draw = DrawOSD43;
-        Draw(0,false);
+        statestoadd -= coldraw_cnt - 128;  
     }
 
-}
+    for (;statestoadd--;) {
 
-IRAM_ATTR void VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {    
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = statestoadd & 0x03; // Mod 4
-    
-    unsigned int i = coldraw_cnt;
-
-    coldraw_cnt += statestoadd >> 2;
-    
-    if (coldraw_cnt > 39) {
-
-        for (;i < 40;i++) {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        }
-
-        // linedraw_cnt++; // Fake scanlines test
-
-        Draw = ++linedraw_cnt == lin_end3 ? &Blank : &BottomBorder_Blank ;
-
-    } else {
-
-        for (;i < coldraw_cnt; i++) {
-            *lineptr32++ = brd;
-            *lineptr32++ = brd;
-        }
-
-    }
-
-}
-
-IRAM_ATTR void VIDEO::BottomBorder_Pentagon(unsigned int statestoadd, bool contended) {    
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = 0;
-    for (int i=0; i < statestoadd; i++) {    
-        lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-        if (++coldraw_cnt == col_end) {
-            Draw = ++linedraw_cnt == lin_end3 ? &Blank : &BottomBorder_Blank_Pentagon;
-            return;
-        }
-    }
-
-}
-
-IRAM_ATTR void VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended) {
-
-    CPU::tstates += statestoadd;
-
-    statestoadd += video_rest;
-
-    video_rest = statestoadd & 0x03; // Mod 4
-
-    // if (linedraw_cnt < 440 || linedraw_cnt > 470) { // Fake scanlines test
-
-    if (linedraw_cnt < 220 || linedraw_cnt > 235) {
-
-        unsigned int i = coldraw_cnt;
-
-        coldraw_cnt += statestoadd >> 2;
-    
-        if (coldraw_cnt > 39) {
-
-            for (;i < 40;i++) {
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
-            }
-
-            // linedraw_cnt++; // Fake scanlines test
-            // Draw = ++linedraw_cnt == 480 ? &Blank : &BottomBorder_Blank ;
-
-            Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
-
-        } else {
-
-            for (;i < coldraw_cnt; i++) {
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
-            }
-
-        }
-
-    } else {
-
-        for (unsigned int i=0; i < statestoadd >> 2; i++) {    
+        switch(dispUpdCycle) {
             
-            if (coldraw_cnt < 21) {
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
-            } else if (coldraw_cnt > 38) {
-                *lineptr32++ = brd;
-                *lineptr32++ = brd;
+            // In Weiv's Spectramine cycle starts in 2 and half black strip shows at 14349 in ptime-128.tap (early timings).
+            // In SpecEmu cycle starts in 3, black strip at 14350. Will use Weiv's data for now.
+            case 2:
+                bmp1 = grmem[bmpOffset++];
+                lastbmp = bmp1;
+                break;
+            case 3:
+                if (snow_att) {
+                    att1 = MemESP::ram[snowpage][(attOffset++ & 0xff80) | snowR];  // get attribute byte
+                    snow_att = false;
+                } else
+                    att1 = grmem[attOffset++];  // get attribute byte                
 
-                // linedraw_cnt++; // Fake scanlines test
-                // Draw = ++linedraw_cnt == 480 ? &Blank : &BottomBorder_Blank ;
+                lastatt = att1;
 
-                Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
-                return;
-            } else lineptr32 += 2;
+                if (do_stats && (col_osd >= 13 && col_osd <= 30)) {                    
+                    lineptr32 += 2;
+                } else {
+                    if (att1 & flashing) bmp1 = ~bmp1;
+                    *lineptr32++ = AluByte[bmp1 >> 4][att1];
+                    *lineptr32++ = AluByte[bmp1 & 0xF][att1];
+                }
 
-            coldraw_cnt++;
+                col_osd++;
+
+                break;
+            case 4:
+                bmp2 = grmem[bmpOffset++];
+                break;
+            case 5:            
+                if (dbl_att) {
+                    att2 = lastatt;
+                    attOffset++;
+                    dbl_att = false;
+                } else
+                    att2 = grmem[attOffset++];  // get attribute byte
+
+                if (do_stats && (col_osd >= 13 && col_osd <= 30)) {
+                    lineptr32 += 2;
+                } else {
+                    if (att2 & flashing) bmp2 = ~bmp2;
+                    *lineptr32++ = AluByte[bmp2 >> 4][att2];
+                    *lineptr32++ = AluByte[bmp2 & 0xF][att2];
+
+                }
+
+                col_osd++;
 
         }
+
+        ++dispUpdCycle &= 0x07; // Update the cycle counter.
 
     }
 
 }
 
-IRAM_ATTR void VIDEO::BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended) {
+// ----------------------------------------------------------------------------------
+// ULA cycle perfect emulation with snow effect support
+// ----------------------------------------------------------------------------------
+IRAM_ATTR void VIDEO::MainScreen_Snow_Opcode(bool contended) {
+
+    int snow_effect = 0;
+    unsigned int addr;
+    bool do_stats = false;
+
+    unsigned int statestoadd = video_opcode_rest ? video_opcode_rest : 4;
+
+    if (contended) statestoadd += wait_st[coldraw_cnt]; // [CPU::tstates - tstateDraw];
 
     CPU::tstates += statestoadd;
 
-    statestoadd += video_rest;
+    unsigned int col_osd = coldraw_cnt >> 2;
+    if (linedraw_cnt >= 176 && linedraw_cnt <= 191) do_stats = (VIDEO::Draw_OSD169 == VIDEO::MainScreen_OSD);
+    
+    coldraw_cnt += statestoadd;
 
-    video_rest = 0;
-
-    for(;statestoadd > 0; statestoadd--) {
-
-        if (linedraw_cnt < 220 || linedraw_cnt > 235)
-            lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-        else if (coldraw_cnt < 84 || coldraw_cnt > 155)
-            lineptr16[coldraw_cnt ^ 1] = (uint16_t) brd;
-        
-        if (++coldraw_cnt > 159) {
-            Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank_Pentagon;
-            return;
+    if (coldraw_cnt >= 128) {
+        tstateDraw += tStatesPerLine;
+        if (++linedraw_cnt == lin_end2) {
+            Draw =&Blank_Snow;
+            Draw_Opcode = &Blank_Snow_Opcode;
+        } else {
+            Draw = &MainScreen_Blank_Snow;
+            Draw_Opcode = &MainScreen_Blank_Snow_Opcode;
         }
+
+        statestoadd -= coldraw_cnt - 128;
+
+    }
+
+    if (dispUpdCycle == 6) {
+        dispUpdCycle = 2;
+        return;
+    }
+
+    // Determine if snow effect can be applied
+    uint8_t page = Z80::getRegI() & 0xc0;
+    if (page == 0x40) { // Snow 48K, 128K
+        snow_effect = 1;
+        snowpage = MemESP::videoLatch ? 7 : 5;
+    } else if (Z80Ops::is128 && (MemESP::bankLatch & 0x01) && page == 0xc0) {  // Snow 128K
+        snow_effect = 1;
+        if (MemESP::bankLatch == 1 || MemESP::bankLatch == 3)
+            snowpage = MemESP::videoLatch ? 3 : 1;
+        else
+            snowpage = MemESP::videoLatch ? 7 : 5;
+    }
+
+    for (;statestoadd--;) {
+
+        switch(dispUpdCycle) {
+            
+            // In Weiv's Spectramine cycle starts in 2 and half black strip shows at 14349 in ptime-128.tap (early timings).
+            // In SpecEmu cycle starts in 3, black strip at 14350. Will use Weiv's data for now.
+            
+            case 2:
+
+                if (snow_effect && statestoadd == 0) {
+                    snowR = Z80::getRegR() & 0x7f;
+                    bmp1 = MemESP::ram[snowpage][(bmpOffset++ & 0xff80) | snowR];
+                    snow_att = true;
+                } else
+                    bmp1 = grmem[bmpOffset++];
+
+                lastbmp = bmp1;
+
+                break;
+
+            case 3:
+
+                if (snow_att) {
+                    att1 = MemESP::ram[snowpage][(attOffset++ & 0xff80) | snowR];  // get attribute byte
+                    snow_att = false;
+                } else
+                    att1 = grmem[attOffset++];  // get attribute byte                
+
+                lastatt = att1;
+
+                if (do_stats && (col_osd >= 13 && col_osd <= 30)) {
+                    lineptr32 += 2;
+                } else {
+                    if (att1 & flashing) bmp1 = ~bmp1;
+                    *lineptr32++ = AluByte[bmp1 >> 4][att1];
+                    *lineptr32++ = AluByte[bmp1 & 0xF][att1];
+                }
+
+                col_osd++;
+
+                break;
+
+            case 4:
+
+                if (snow_effect && statestoadd == 0) {
+                    bmp2 = lastbmp;
+                    bmpOffset++;
+                    dbl_att = true;                    
+                } else
+                    bmp2 = grmem[bmpOffset++];
+
+                break;
+
+            case 5:            
+
+                if (dbl_att) {
+                    att2 = lastatt;
+                    attOffset++;
+                    dbl_att = false;
+                } else
+                    att2 = grmem[attOffset++];  // get attribute byte
+
+                if (do_stats && (col_osd >= 13 && col_osd <= 30)) {
+                    lineptr32 += 2;
+                } else {
+                    if (att2 & flashing) bmp2 = ~bmp2;
+                    *lineptr32++ = AluByte[bmp2 >> 4][att2];
+                    *lineptr32++ = AluByte[bmp2 & 0xF][att2];
+                }
+
+                col_osd++;
+
+        }
+
+        ++dispUpdCycle &= 0x07; // Update the cycle counter.
+
     }
 
 }
 
-IRAM_ATTR void VIDEO::Blank(unsigned int statestoadd, bool contended) {
+#else
 
-    CPU::tstates += statestoadd;
+// IRAM_ATTR void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {    
 
-}
+//     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
+
+//     CPU::tstates += statestoadd;
+//     statestoadd += video_rest;
+//     video_rest = statestoadd & 0x03;
+//     unsigned int loopCount = statestoadd >> 2;
+//     coldraw_cnt += loopCount;
+
+//     if (coldraw_cnt >= 32) {
+//         tstateDraw += tStatesPerLine;
+//         Draw = ++linedraw_cnt == lin_end2 ? &Blank : &MainScreen_Blank;
+//         if (dirty_lines[curline]) {
+//             loopCount -= coldraw_cnt - 32;
+//             for (;loopCount--;) {
+//                 uint8_t att = grmem[attOffset++];
+//                 uint8_t bmp = att & flashing ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+//                 *lineptr32++ = AluByte[bmp >> 4][att];
+//                 *lineptr32++ = AluByte[bmp & 0xF][att];
+//             }
+//             dirty_lines[curline] &= 0x80;
+//         }
+//         return;
+//     }
+
+//     if (dirty_lines[curline]) {
+//         for (;loopCount--;) {
+//             uint8_t att = grmem[attOffset++];
+//             uint8_t bmp = att & flashing ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
+//             *lineptr32++ = AluByte[bmp >> 4][att];
+//             *lineptr32++ = AluByte[bmp & 0xF][att];
+//         }
+//     } else {
+//         attOffset += loopCount;
+//         bmpOffset += loopCount;
+//         lineptr32 += loopCount << 1;
+//     }
+
+// }
+
+#endif
+
+IRAM_ATTR void VIDEO::Blank(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
+IRAM_ATTR void VIDEO::Blank_Opcode(bool contended) { CPU::tstates += 4; }
+IRAM_ATTR void VIDEO::Blank_Snow(unsigned int statestoadd, bool contended) { CPU::tstates += statestoadd; }
+IRAM_ATTR void VIDEO::Blank_Snow_Opcode(bool contended) { CPU::tstates += 4; }
 
 IRAM_ATTR void VIDEO::EndFrame() {
 
-    linedraw_cnt = 0;
+    linedraw_cnt = is169 ? 4 : 24;
+
     tstateDraw = tStatesScreen;
-    Draw = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
+
+    if (VIDEO::snow_toggle) {
+        Draw = &MainScreen_Blank_Snow;
+        Draw_Opcode = &MainScreen_Blank_Snow_Opcode;
+    } else {
+        Draw = &MainScreen_Blank;
+        Draw_Opcode = &MainScreen_Blank_Opcode;
+    }
+
+    if (brdChange) {
+        DrawBorder();
+        brdnextframe = true;
+    } else {
+        if (brdnextframe) {
+            DrawBorder();
+            brdnextframe = false;
+        }
+    }
+
+    // Restart border drawing
+    DrawBorder = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
+    lastBrdTstate = tStatesBorder;
+    brdChange = false;
+
     framecnt++;
 
 }
+
+//----------------------------------------------------------------------------------------------------------------
+// Border Drawing
+//----------------------------------------------------------------------------------------------------------------
+
+// IRAM_ATTR void VIDEO::DrawBorderFast() {
+
+//     uint8_t border = zxColor(borderColor,0);
+
+//     int i = 0;
+
+//     // Top border
+//     for (; i < lin_end; i++) memset((uint32_t *)(vga.frameBuffer[i]),border, vga.xres);
+
+//     // Paper border
+//     int brdsize = (vga.xres - SPEC_W) >> 1;
+//     for (; i < lin_end2; i++) {
+//         memset((uint32_t *)(vga.frameBuffer[i]), border, brdsize);
+//         memset((uint32_t *)(vga.frameBuffer[i] + vga.xres - brdsize), border, brdsize);
+//     }
+
+//     // Bottom border
+//     for (; i < OSD::scrH; i++) memset((uint32_t *)(vga.frameBuffer[i]),border, vga.xres);
+
+// }
+
+static int brdcol_cnt = 0;
+static int brdlin_cnt = 0;
+
+IRAM_ATTR void VIDEO::TopBorder_Blank() {
+
+    if (CPU::tstates >= tStatesBorder) {
+        brdcol_cnt = 0;
+        brdlin_cnt = 0;
+        brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
+        DrawBorder = &TopBorder;
+        DrawBorder();
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::TopBorder() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        *brdptr32++ = brd;
+        *brdptr32++ = brd;
+
+        lastBrdTstate+=4;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == 40) {
+            brdlin_cnt++;
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
+            brdcol_cnt = 0;
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;
+            if (brdlin_cnt == (is169 ? 4 : 24)) {                                
+                DrawBorder = &MiddleBorder;
+                MiddleBorder();
+                return;
+            }
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::MiddleBorder() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        *brdptr32++ = brd;
+        *brdptr32++ = brd;        
+
+        lastBrdTstate+=4;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == 4) {
+            lastBrdTstate += 128;
+            brdptr32 += 64;
+            brdcol_cnt = 36;
+        } else if (brdcol_cnt == 40) {
+            brdlin_cnt++;
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);  
+            brdcol_cnt = 0;          
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;            
+            if (brdlin_cnt == (is169 ? 196 : 216)) {                                
+                DrawBorder = Draw_OSD43;
+                DrawBorder();
+                return;
+            }
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::BottomBorder() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        *brdptr32++ = brd;
+        *brdptr32++ = brd;        
+
+        lastBrdTstate+=4;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == 40) {
+            brdlin_cnt++;
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
+            brdcol_cnt = 0;
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;                        
+            if (brdlin_cnt == (is169 ? 200 : 240)) {                
+                DrawBorder = &Border_Blank;
+                return;
+            }
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::BottomBorder_OSD() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        if (brdlin_cnt < 220 || brdlin_cnt > 235) {
+            *brdptr32++ = brd;
+            *brdptr32++ = brd;        
+        } else if (brdcol_cnt < 21 || brdcol_cnt > 38) {
+            *brdptr32++ = brd;
+            *brdptr32++ = brd;        
+        } else {
+            brdptr32 += 2;
+        }
+
+        lastBrdTstate+=4;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == 40) {
+            brdlin_cnt++;
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
+            brdcol_cnt = 0;
+            lastBrdTstate += Z80Ops::is128 ? 68 : 64;                                    
+            if (brdlin_cnt == 240) {
+                DrawBorder = &Border_Blank;
+                return;
+            }
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::Border_Blank() {
+
+}    
+
+static int brdcol_end = 0;
+static int brdcol_end1 = 0;
+
+IRAM_ATTR void VIDEO::TopBorder_Blank_Pentagon() {
+
+    if (CPU::tstates >= tStatesBorder) {
+        brdcol_cnt = is169 ? 10 : 0;
+        brdcol_end = is169 ? 170 : 160;        
+        brdcol_end1 = is169 ? 26 : 16;
+        brdlin_cnt = 0;
+        brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
+        DrawBorder = &TopBorder_Pentagon;
+        DrawBorder();
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::TopBorder_Pentagon() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        brdptr16[brdcol_cnt ^ 1] = (uint16_t) brd;
+
+        lastBrdTstate++;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == brdcol_end) {
+            brdlin_cnt++;
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);            
+            brdcol_cnt = is169 ? 10 : 0;
+            lastBrdTstate += 64;
+            if (brdlin_cnt == (is169 ? 4 : 24)) {
+                DrawBorder = &MiddleBorder_Pentagon;
+                MiddleBorder_Pentagon();
+                return;
+            }
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::MiddleBorder_Pentagon() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        brdptr16[brdcol_cnt ^ 1] = (uint16_t) brd;
+
+        lastBrdTstate++;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == brdcol_end1) {
+            lastBrdTstate += 128;
+            brdcol_cnt = 144 + (is169 ? 10 : 0);
+        } else if (brdcol_cnt == brdcol_end) {
+            brdlin_cnt++;
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);                        
+            brdcol_cnt = is169 ? 10 : 0;
+            lastBrdTstate += 64;
+            if (brdlin_cnt == (is169 ? 196 : 216)) {
+                DrawBorder = Draw_OSD43;
+                DrawBorder();
+                return;
+            }
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::BottomBorder_Pentagon() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        brdptr16[brdcol_cnt ^ 1] = (uint16_t) brd;
+
+        lastBrdTstate++;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == brdcol_end) {
+            brdlin_cnt++;
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
+            brdcol_cnt = is169 ? 10 : 0;
+            lastBrdTstate += 64;
+            if (brdlin_cnt == (is169 ? 200 : 240)) {
+                DrawBorder = &Border_Blank;
+                return;
+            }
+        }
+
+    }
+
+}    
+
+IRAM_ATTR void VIDEO::BottomBorder_OSD_Pentagon() {
+
+    while (lastBrdTstate <= CPU::tstates) {
+
+        if (brdlin_cnt < 220 || brdlin_cnt > 235)
+            brdptr16[brdcol_cnt ^ 1] = (uint16_t) brd;
+        else if (brdcol_cnt < 84 || brdcol_cnt > 155)
+            brdptr16[brdcol_cnt ^ 1] = (uint16_t) brd;
+
+        lastBrdTstate++;
+
+        brdcol_cnt++;
+
+        if (brdcol_cnt == brdcol_end) {
+            brdlin_cnt++;
+            brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
+            brdcol_cnt = is169 ? 10 : 0;
+            brdcol_cnt = 0;
+            lastBrdTstate += 64;
+            if (brdlin_cnt == 240) {
+                DrawBorder = &Border_Blank;
+                return;
+            }
+        }
+
+    }
+
+}    
+

@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -47,15 +47,17 @@ visit https://zxespectrum.speccy.org/contacto
 #define TSTATES_PER_LINE_128 228
 #define TSTATES_PER_LINE_PENTAGON 224
 
-#define TS_SCREEN_320x240 8944  // START OF VISIBLE ULA DRAW 48K @ 320x240, SCANLINE 40, -16 FROM BORDER
-#define TS_SCREEN_320x240_128 8874  // START OF VISIBLE ULA DRAW 128K @ 320x240, SCANLINE 39, -16 FROM BORDER
-                                    // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)
-#define TS_SCREEN_320x240_PENTAGON 12594  // START OF VISIBLE ULA DRAW PENTAGON @ 320x240, SCANLINE 56 + 48TS + 2TS (NEEDED TO FIT BORDER)
+#define TS_SCREEN_48           14335  // START OF ULA DRAW PAPER 48K
+#define TS_SCREEN_128          14361  // START OF ULA DRAW PAPER 128K
+#define TS_SCREEN_PENTAGON     17983  // START OF ULA DRAW PAPER PENTAGON
 
-#define TS_SCREEN_360x200 13424 // START OF VISIBLE ULA DRAW 48K @ 360x200, SCANLINE 60, -16 FROM BORDER
-#define TS_SCREEN_360x200_128 13434 // START OF VISIBLE ULA DRAW 128K @ 360x200, SCANLINE 59, -16 FROM BORDER
-                                    // ( ADDITIONAL -2 SEEMS NEEDED IF NOT USING 2 TSTATES AT A TIME PAPER DRAWING VERSION)                                    
-#define TS_SCREEN_360x200_PENTAGON 17074 // START OF VISIBLE ULA DRAW PENTAGON @ 360x200, SCANLINE 76, +48TS + 2TS (NEEDED TO FIT BORDER)
+#define TS_BORDER_320x240 8948  // START OF BORDER 48
+#define TS_BORDER_320x240_128 8878  // START OF BORDER 128
+#define TS_BORDER_320x240_PENTAGON 12595  // START OF BORDER PENTAGON
+
+#define TS_BORDER_360x200 13428  // START OF BORDER 48
+#define TS_BORDER_360x200_128 13438  // START OF BORDER 128
+#define TS_BORDER_360x200_PENTAGON 17075  // START OF BORDER PENTAGON
 
 // Colors for 6 bit mode
 //                  //  BBGGRR 
@@ -92,42 +94,44 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Video draw functions
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Common
-  #ifdef NO_VIDEO
-  static void NoVideo(unsigned int statestoadd, bool contended);
-  #endif
-  // static void NoDraw(unsigned int statestoadd, bool contended);
   static void EndFrame();
   static void Blank(unsigned int statestoadd, bool contended);
-  
+  static void Blank_Opcode(bool contended);
+  static void Blank_Snow(unsigned int statestoadd, bool contended);
+  static void Blank_Snow_Opcode(bool contended);
   // 48 / 128
-  static void TopBorder_Blank(unsigned int statestoadd, bool contended);
-  static void TopBorder(unsigned int statestoadd, bool contended);
   static void MainScreen_Blank(unsigned int statestoadd, bool contended);
-  static void MainScreenLB(unsigned int statestoadd, bool contended);
+  static void MainScreen_Blank_Opcode(bool contended);
   static void MainScreen(unsigned int statestoadd, bool contended);
   static void MainScreen_OSD(unsigned int statestoadd, bool contended);
-  static void MainScreenRB(unsigned int statestoadd, bool contended);    
-  static void BottomBorder_Blank(unsigned int statestoadd, bool contended);
-  static void BottomBorder(unsigned int statestoadd, bool contended);
-  static void BottomBorder_OSD(unsigned int statestoadd, bool contended);    
-    
-  // Pentagon
-  static void TopBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void TopBorder_Pentagon(unsigned int statestoadd, bool contended);
-  static void MainScreen_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void MainScreenLB_Pentagon(unsigned int statestoadd, bool contended);    
-  static void MainScreen_Pentagon(unsigned int statestoadd, bool contended);
-  static void MainScreen_Pentagon_delay(unsigned int statestoadd, bool contended);  
-  static void MainScreen_OSD_Pentagon(unsigned int statestoadd, bool contended);
-  static void MainScreenRB_Pentagon(unsigned int statestoadd, bool contended);    
-  static void BottomBorder_Blank_Pentagon(unsigned int statestoadd, bool contended);
-  static void BottomBorder_Pentagon(unsigned int statestoadd, bool contended);
-  static void BottomBorder_OSD_Pentagon(unsigned int statestoadd, bool contended);
+  static void MainScreen_Opcode(bool contended);
+  static void MainScreen_OSD_Opcode(bool contended);
+  static void MainScreen_Blank_Snow(unsigned int statestoadd, bool contended);
+  static void MainScreen_Blank_Snow_Opcode(bool contended);
+  static void MainScreen_Snow(unsigned int statestoadd, bool contended);
+  static void MainScreen_Snow_Opcode(bool contended);
+  
+  // static void DrawBorderFast();
+
+  static void TopBorder_Blank();
+  static void TopBorder();
+  static void MiddleBorder();
+  static void BottomBorder();
+  static void BottomBorder_OSD();
+  static void Border_Blank();
+
+  static void TopBorder_Blank_Pentagon();
+  static void TopBorder_Pentagon();
+  static void MiddleBorder_Pentagon();
+  static void BottomBorder_Pentagon();
+  static void BottomBorder_OSD_Pentagon();  
   
   static void (*Draw)(unsigned int, bool);
-  static void (*DrawOSD43)(unsigned int, bool);
-  static void (*DrawOSD169)(unsigned int, bool);
+  static void (*Draw_Opcode)(bool);
+  static void (*Draw_OSD169)(unsigned int, bool);
+  static void (*Draw_OSD43)();
+  
+  static void (*DrawBorder)();
 
   static void vgataskinit(void *unused);
 
@@ -143,18 +147,37 @@ public:
   static uint8_t borderColor;
   static uint32_t border32[8];
   static uint32_t brd;
+  static bool brdChange;
+  static bool brdnextframe;
+  static uint32_t lastBrdTstate;
 
   static uint8_t tStatesPerLine;
   static int tStatesScreen;
+  static int tStatesBorder;  
 
   static uint8_t flashing;
   static uint8_t flash_ctr;
 
-  // static uint8_t dispUpdCycle;
+  static uint8_t att1;
+  static uint8_t bmp1;
+  static uint8_t att2;
+  static uint8_t bmp2;
+  // static bool opCodeFetch;
 
-  // static uint8_t contendOffset;
-  // static uint8_t contendMod;    
-
+  static uint8_t dispUpdCycle;
+  static bool snow_att;
+  static bool dbl_att;
+  static uint8_t lastbmp;
+  static uint8_t lastatt;    
+  static uint8_t snowpage;
+  static uint8_t snowR;
+  static bool snow_toggle;
+  
+  #ifdef DIRTY_LINES
+  static uint8_t dirty_lines[SPEC_H];
+  // static uint8_t linecalc[SPEC_H];
+  #endif // DIRTY_LINES
+ 
   static uint8_t OSD;
 
   static uint32_t* SaveRect;

@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -109,29 +109,34 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
     // ULA PORT    
     if ((address & 0x0001) == 0) {
 
-        VIDEO::Draw(3, true);   // I/O Contention (Late)
+        VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
 
-        // The default port value is 0xBF.
-        data = 0xbf;
+        data = 0xbf; // default port value is 0xBF.
 
         uint8_t portHigh = ~(address >> 8) & 0xff;
         for (int row = 0, mask = 0x01; row < 8; row++, mask <<= 1) {
-            if ((portHigh & mask) != 0) {
+            if ((portHigh & mask) != 0)
                 data &= port[row];
-            }
         }
 
-        if (Tape::tapeStatus==TAPE_LOADING) {
-            Tape::TAP_Read();
-            bitWrite(data,6,Tape::tapeEarBit);            
-        } else {
-            // Issue 2 behaviour only on Spectrum 48K
-    		if ((Z80Ops::is48) && (Config::Issue2)) {
-				if (port254 & 0x18) data |= 0x40;
-			} else {
-				if (port254 & 0x10) data |= 0x40;
-			}
-		}
+        // if (Tape::tapeStatus==TAPE_LOADING) {
+        //     Tape::Read();
+        //     bitWrite(data,6,Tape::tapeEarBit);
+        // } else {
+    	// 	if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
+		// 		if (port254 & 0x18) data |= 0x40;
+		// 	else
+		// 		if (port254 & 0x10) data |= 0x40;
+		// }
+
+        if (Tape::tapeStatus==TAPE_LOADING) Tape::Read();
+
+        if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
+            if (port254 & 0x18) data |= 0x40;
+        else
+            if (port254 & 0x10) data |= 0x40;
+
+        if (Tape::tapeEarBit) data ^= 0x40;
 
     } else {
 
@@ -200,18 +205,60 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
                 if (!MemESP::pagingLock) {
                     MemESP::pagingLock = bitRead(data, 5);
-                    MemESP::bankLatch = data & 0x7;
-                    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-                    MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
-                    if (MemESP::videoLatch != bitRead(data, 3)) {
-                        MemESP::videoLatch = bitRead(data, 3);
-                        // This, if not using the ptime128 draw version, fixs ptime and ptime128
-                        if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
-                            VIDEO::Draw(2, false);
-                            CPU::tstates -= 2;
+
+                    if (MemESP::bankLatch != (data & 0x7)) {
+
+                        #ifdef DIRTY_LINES
+                        // printf("Bank latch IN! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
+                        #endif
+
+                        MemESP::bankLatch = data & 0x7;
+                        MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+                        MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
+
+                        #ifdef DIRTY_LINES
+
+                        if (MemESP::bankLatch == 5 || MemESP::bankLatch == 7) {
+                            uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
+                            for (int n=0; n < 24; n++) {
+                                *dr++ |= 0x01010101;
+                                *dr++ |= 0x01010101;
+                            }
                         }
-                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+
+                        #endif
                     }
+
+                    if (MemESP::videoLatch != bitRead(data, 3)) {
+
+                        #ifdef DIRTY_LINES
+                        // printf("Video latch IN! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
+                        #endif
+
+                        MemESP::videoLatch = bitRead(data, 3);
+
+                        // // This, if not using the ptime128 draw version, fixs ptime and ptime128
+                        // if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
+                        //     VIDEO::Draw(2, false);
+                        //     CPU::tstates -= 2;
+                        // }
+
+                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+
+                        #ifdef DIRTY_LINES
+                        uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
+                        uint32_t *gr = (uint32_t *)VIDEO::grmem + 6144;
+                        for (int i=0; i < 24; i++) {
+                            uint32_t dirty_data = 0x01010101;
+                            for (int n=0; n < 8; n++)
+                                if(*gr++ & 0x80808080) dirty_data = 0x81818181;
+                            *dr++ = dirty_data;
+                            *dr++ = dirty_data;                   
+                        }
+                        #endif
+
+                    }
+                    
                     MemESP::romLatch = bitRead(data, 4);
                     bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
                     MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];            
@@ -241,12 +288,19 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         // Border color
         if (VIDEO::borderColor != data & 0x07) {
-            VIDEO::borderColor = data & 0x07;
+            
+            VIDEO::brdChange = true;
+            
             if (!Z80Ops::isPentagon) VIDEO::Draw(0,true); // Seems not needed in Pentagon
+
+            VIDEO::DrawBorder();
+
+            VIDEO::borderColor = data & 0x07;
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+
         }
     
-        if (ESPectrum::ESP_delay) {
+        if (ESPectrum::ESP_delay) { // Disable beeper on turbo mode
 
             if (Config::tape_player)
                 Audiobit = Tape::tapeEarBit ? 255 : 0; // For tape player mode
@@ -271,13 +325,13 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                 AySound::setRegisterData(data);
             }
 
-            VIDEO::Draw(3, true);   // I/O Contention (Late)
+            VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
             
             return;
 
         }
 
-        VIDEO::Draw(3, true);   // I/O Contention (Late)
+        VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
 
     } else {
 
@@ -337,29 +391,76 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         if (!MemESP::pagingLock) {
 
+            // printf("OUT 128! %d\n",(int)data);
+            
             MemESP::pagingLock = bitRead(data, 5);
 
-            MemESP::bankLatch = data & 0x7;
-            MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-            MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
+            if (MemESP::bankLatch != (data & 0x7)) {
+
+                #ifdef DIRTY_LINES
+                // printf("Bank latch OUT! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
+                #endif
+
+                MemESP::bankLatch = data & 0x7;
+                MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+                MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
+
+                #ifdef DIRTY_LINES
+
+                if (MemESP::bankLatch == 5 || MemESP::bankLatch == 7) {
+
+                    // printf("Curline: %d\n",VIDEO::curline);
+
+                    uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
+                    for (int n=0; n < 24; n++) {
+                        *dr++ |= 0x01010101;
+                        *dr++ |= 0x01010101;
+                    }
+
+                    // This is the line that keeps active in fusetest. Why??
+                    // VIDEO::dirty_lines[128] |= 0x01;
+
+                }
+
+                #endif
+
+            }
 
             MemESP::romLatch = bitRead(data, 4);
             bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
+
+                #ifdef DIRTY_LINES
+                // printf("Video latch OUT! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
+                #endif
+
                 MemESP::videoLatch = bitRead(data, 3);
                 
-                // Seems not needed in Pentagon
-                // This, if not using the ptime128 draw version, fixs ptime and ptime128
-                if (!Z80Ops::isPentagon) {
-                    if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
-                        VIDEO::Draw(2, false);
-                        CPU::tstates -= 2;
-                    }
-                }
+                // // Seems not needed in Pentagon
+                // // This, if not using the ptime128 draw version, fixs ptime and ptime128
+                // if (!Z80Ops::isPentagon) {
+                //     if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
+                //         VIDEO::Draw(2, false);
+                //         CPU::tstates -= 2;
+                //     }
+                // }
 
                 VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+                
+                #ifdef DIRTY_LINES
+                uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
+                uint32_t *gr = (uint32_t *)VIDEO::grmem + 6144;
+                for (int i=0; i < 24; i++) {
+                    uint32_t dirty_data = 0x01010101;
+                    for (int n=0; n < 8; n++)
+                        if(*gr++ & 0x80808080) dirty_data = 0x81818181;
+                    *dr++ = dirty_data;
+                    *dr++ = dirty_data;                   
+                }
+                #endif
+
             }
 
         }

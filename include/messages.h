@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "       v1.1 "
+#define EMU_VERSION "       v1.2 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -278,7 +278,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Preferred ROM\t>\n"\	
     "Joystick\t>\n"\
     "Joystick emulation\t>\n"\
-    "Aspect ratio\t>\n"\
+    "Video\t>\n"\
     "Other\t>\n"\
     "Language\t>\n"\
 	"Update\t>\n"
@@ -289,7 +289,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "ROM preferida\t>\n"\	
     "Joystick\t>\n"\
     "Emulaci" "\xA2" "n joystick\t>\n"\
-    "Relaci" "\xA2" "n de aspecto\t>\n"\
+    "Video\t>\n"\
     "Otros\t>\n"\
     "Idioma\t>\n"\
 	"Actualizar\t>\n"
@@ -307,6 +307,28 @@ static const char *MENU_OPTIONS[2] = { MENU_OPTIONS_EN,MENU_OPTIONS_ES };
 	"ROM Custom 128k\n"		
 static const char *MENU_UPDATE_FW[2] = { MENU_UPDATE_EN,MENU_UPDATE_ES };
 
+#define MENU_VIDEO_EN \
+    "Video\n"\
+    "Render type\t>\n"\
+    "Aspect Ratio\t>\n"\
+    "Scanlines\t>\n"
+#define MENU_VIDEO_ES \
+    "Video\n"\
+    "Tipo render\t>\n"\
+	"Relaci" "\xA2" "n de aspecto\t>\n"\
+    "Scanlines\t>\n"
+static const char *MENU_VIDEO[2] = { MENU_VIDEO_EN, MENU_VIDEO_ES };
+
+#define MENU_RENDER_EN \
+    "Render type\n"\
+    "Standard\t[S]\n"\
+    "Snow effect\t[A]\n"
+#define MENU_RENDER_ES \
+    "Tipo render\n"\
+    "Estandar\t[S]\n"\
+    "Efecto nieve\t[A]\n"
+static const char *MENU_RENDER[2] = { MENU_RENDER_EN, MENU_RENDER_ES };
+
 #define MENU_ASPECT_EN \
     "Aspect Ratio\n"\
     "4:3\t[4]\n"\
@@ -316,6 +338,8 @@ static const char *MENU_UPDATE_FW[2] = { MENU_UPDATE_EN,MENU_UPDATE_ES };
     "4:3\t[4]\n"\
     "16:9\t[1]\n"
 static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
+
+static const char *MENU_SCANLINES[2] = { "Scanlines\n", "Scanlines\n" };
 
 #define MENU_RESET_EN \
     "Reset Menu\n"\
@@ -506,13 +530,17 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN MENU_JOYS, MENU_JOY_ES MENU_JOYS}
 
 static const char *MENU_DEFJOY[2] = { MENU_DEFJOY_TITLE MENU_DEFJOYS MENU_DEFJOY_EN, MENU_DEFJOY_TITLE MENU_DEFJOYS MENU_DEFJOY_ES };
 
-#define MENU_JOYPS2_EN "Joystick emulation\n" MENU_DEFJOYS "Cursor Keys as Joy\t>\n"
+#define MENU_JOYPS2_EN "Joystick emulation\n" "Joy type\t>\n" "Cursor Keys as Joy\t>\n" "TAB as fire 1\t>\n"
 
-#define MENU_JOYPS2_ES "Emulaci" "\xA2" "n Joystick\n" MENU_DEFJOYS "Joy en teclas de cursor\t>\n"
+#define MENU_JOYPS2_ES "Emulaci" "\xA2" "n Joystick\n" "Tipo joystick\t>\n" "Joy en teclas de cursor\t>\n" "TAB como disparo 1\t>\n"
 
 static const char *MENU_JOYPS2[2] = { MENU_JOYPS2_EN, MENU_JOYPS2_ES };
 
+static const char *MENU_PS2JOYTYPE[2] = { "Joy type\n" MENU_DEFJOYS, "Tipo joystick\n" MENU_DEFJOYS};
+
 static const char *MENU_CURSORJOY[2] = { "Cursor as Joy\n" , "Joy en Cursor\n" };
+
+static const char *MENU_TABASFIRE[2] = { "TAB as fire 1\n" , "TAB disparo 1\n" };
 
 #define DEDICATORIA "\nF1Dedicado especialmente a:\r"\
 	"\nB1      _       _ _\r"\
@@ -535,10 +563,10 @@ static const char *MENU_CURSORJOY[2] = { "Cursor as Joy\n" , "Joy en Cursor\n" }
 	"\r"\
 	"\nA1The Jet Set Willys:\r"\
 	"\r"\
-	"\nD1DopierRex \nE1Juan Carlos Galea\r"\
-	"\nB1Raul Jimenez \nC1Serafin Moraton\r"\
-	"\nD1Eduard Ruiz \nE1Igor Peruchi \nB1Inacio Santos\r"\
-	"\r"\
+	"\nB1DopierRex \nC1German Filera \nD1Juan C. Galea\r"\
+	"\nE1Juanje \nB1Raul Jimenez \nC1Juanma Martin\r"\
+	"\nD1Serafin Moraton \nE1Eduard Ruiz\r"\
+	"\nB1Igor Peruchi \nC1Inacio Santos\r"\
 	"\r"
 
 #define PATREONS2 "\r"\
@@ -562,15 +590,28 @@ static const char *MENU_CURSORJOY[2] = { "Cursor as Joy\n" , "Joy en Cursor\n" }
 	"\nC1Santiago Romero \nD1Julia Salvador\r"\
 	"\nE1Juan Diego Sanchez \nB1Marta Sicilia\r"\
 	"\nC1Fco. Jose Soldado \nD1Vida Extra Retro\r"\
-	"\nE1Radek Wojciechowski\r"\
+	"\nE1Radek Wojciechowski \nB1Jesus Mu" "\xA4" "oz\r"\
+	"\nC1Antonio Jesus Sanchez \nD1Gregorio Perez\r"\
+	"\nE1Leonardo Coca" "\xA4" "a \nB1Manuel Cuenca\r"\
+	"\nC1Ovi P. \nD1Jose Medina \nE1Miguel A. Montejo\r"
+
+#define PATREONS4 "\r"\
+	"\nA1The Manic Miners:\r"\
+	"\r"\
+	"\nB1Jakub Rzepecki \nC1Seb \nD1Simon Gomez\r"\
+	"\nE1Victor Salado \nB1Miguel A. Gonzalez\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
 	"\r"\
 	"\r"\
 	"\r"
 
-static const char *AboutMsg[2][8] = {
+static const char *AboutMsg[2][9] = {
 	{
-	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
-	"        David Crespo  \"dcrespo3d\"\r"\
+	"\nF1(C)2023-24 Victor Iborra \"Eremus\"\r"\
+	"   2023 David Crespo  \"dcrespo3d\"\r"\
 	"\r"\
 	"\nA1Based on ZX-ESPectrum-Wiimote\r"\
 	"(C)2020-2023 David Crespo\r"\
@@ -606,6 +647,9 @@ static const char *AboutMsg[2][8] = {
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS3
 	,
+	"\nF1Big thanks to our Patreons:\r"\
+	PATREONS4
+	,
 	"\nF1Thanks for help and donations to:\r"\
 	"\r"\
 	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
@@ -637,8 +681,8 @@ static const char *AboutMsg[2][8] = {
 	DEDICATORIA
 	},
 	{
-	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
-	"        David Crespo  \"dcrespo3d\"\r"\
+	"\nF1(C)2023-24 Victor Iborra \"Eremus\"\r"\
+	"   2023 David Crespo  \"dcrespo3d\"\r"\
 	"\r"\
 	"\nA1Basado en ZX-ESPectrum-Wiimote\r"\
 	"(C)2020-2023 David Crespo\r"\
@@ -673,6 +717,9 @@ static const char *AboutMsg[2][8] = {
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS3
+	,
+	"\nF1Muchas gracias a nuestros Patreons:\r"\
+	PATREONS4
 	,
 	"\nF1Gracias por su ayuda y donaciones a:\r"\
 	"\r"\
@@ -793,6 +840,32 @@ static const char *AboutMsg[2][8] = {
     " [N]       NMI\n"\
     " [P]       Pausa\n"\
     " [S]       Captura BMP (Carpeta /.c)\n"
+
+static const char *StartMsg[2] = {
+	"\xAD" "Hola! " "\xAD" "Gracias por elegir    ectrum!\n"\
+	"\n"\
+	"   ectrum es software de c" "\xA2" "digo abier-\n"\
+	"to bajo licencia GPL v3, puedes usarlo\n"\
+	"modificarlo y compartirlo gratis.\n"\
+	"\n"\
+	"Si te gusta    ectrum considera hacer-\n"\
+	"te patrocinador. Tu apoyo nos ayuda a\n"\ 
+	"mantener y mejorar el proyecto para\n"\ 
+	"todos los usuarios. Puedes hacerlo\n"\
+	"en\n"
+	,
+	"Hi! Thanks for choosing    ectrum!\n"\
+	"\n"\
+	"   ectrum is open source sofware\n"\
+	"licensed under GPL v3, you can use,\n"\
+	"modify and share it for free.\n"\
+	"\n"\
+	"If you like    ectrum consider\n"\
+	"becoming Patreon. Your support help\n"\ 
+	"us to maintain and improve the project\n"\ 
+	"for all users. You can do it\n"\
+	"at\n"
+};
 
 const uint8_t ESPectrum_logo[] = {
 	0x45, 0x42, 0x46, 0x38, 0xBB, 0x00, 0x1B, 0x00, 0xC0, 0xC0, 0xC0, 0xFF,

@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -76,6 +76,10 @@ public:
     static void readKbdJoy();
     static fabgl::PS2Controller PS2Controller;
     static fabgl::VirtualKey JoyVKTranslation[24];
+    static fabgl::VirtualKey VK_ESPECTRUM_FIRE1;
+    static fabgl::VirtualKey VK_ESPECTRUM_FIRE2;
+    static fabgl::VirtualKey VK_ESPECTRUM_TAB;
+    static fabgl::VirtualKey VK_ESPECTRUM_GRAVEACCENT;
 
     // Audio
     static void BeeperGetSample();
@@ -106,8 +110,11 @@ public:
     static double totalsecondsnodelay;
     static int64_t elapsed;
     static int64_t idle;
+    static int ESPoffset;
 
-    static int ESPoffset; // Testing
+    static int ESPtestvar;
+    static int ESPtestvar1;
+    static int ESPtestvar2;        
 
     static volatile bool vsync;
 

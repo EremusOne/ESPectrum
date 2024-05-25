@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -79,6 +79,10 @@ public:
     static bool hasSNAextension(string filename);
     static bool hasZ80extension(string filename);
     static bool hasPextension(string filename);
+    static bool hasTAPextension(string filename);
+    static bool hasTZXextension(string filename);    
+
+    static void deleteFilesWithExtension(const char *folder_path, const char *extension);
 
     static string MountPoint;
     static bool SDReady;

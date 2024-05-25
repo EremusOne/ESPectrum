@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -326,6 +326,23 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
     if (CTRL) {
 
+        // if (KeytoESP == fabgl::VK_F11) { // Toggle snow effect
+
+        //     VIDEO::snow_toggle ^= 0X01;  
+
+        //     if (VIDEO::snow_toggle) {
+        //         VIDEO::Draw = &VIDEO::MainScreen_Blank_Snow;
+        //         VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Snow_Opcode;
+        //     } else {
+        //         VIDEO::Draw = &VIDEO::MainScreen_Blank;
+        //         VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Opcode;
+        //     }
+
+        // } else
+        if (KeytoESP == fabgl::VK_F1) { // Show mem info
+            OSD::HWInfo();
+            if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
+        } else
         if (KeytoESP == fabgl::VK_F2) { // Turbo mode
             ESPectrum::ESP_delay = !ESPectrum::ESP_delay;
         } else 
@@ -336,17 +353,35 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             Z80::triggerNMI();
         } else 
         // if (KeytoESP == fabgl::VK_F3) { 
-        
         //     // Test variable decrease
-        //     // ESPectrum::ESPoffset -= 5;
-        
+        //     ESPectrum::ESPtestvar -= 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
         // } else 
         // if (KeytoESP == fabgl::VK_F4) {
-
-            // Test variable increase
-            // ESPectrum::ESPoffset += 5;
-        
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar += 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
         // } else 
+        // if (KeytoESP == fabgl::VK_F5) {
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar1 -= 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F6) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar1 += 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F7) {
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar2 -= 1;
+        //     printf("ESPtestvar2: %d\n",ESPectrum::ESPtestvar2);
+        // } else 
+        // if (KeytoESP == fabgl::VK_F8) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar2 += 1;
+        //     printf("ESPtestvar2: %d\n",ESPectrum::ESPtestvar2);
+        // }
         if (KeytoESP == fabgl::VK_F5) {
             if (Config::CenterH > -16) Config::CenterH--;
             Config::save("CenterH");
@@ -365,11 +400,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F8) {
             if (Config::CenterV < 16) Config::CenterV++;
             Config::save("CenterV");
-            
             osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
-        } else
-        if (KeytoESP == fabgl::VK_F1) { // Show mem info
-            OSD::HWInfo();
         }
 
     } else {
@@ -413,6 +444,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 Config::ram_file = fname;
                 Config::last_ram_file = fname;
             }
+            if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
         else if (KeytoESP == fabgl::VK_F3) {
             menu_level = 0;
@@ -448,44 +480,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             menu_saverect = false;  
             string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
             if (mFile != "") {
-
-                string keySel = mFile.substr(0,1);
-                mFile.erase(0, 1);
-
-                if ((keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs")) {
-
-                        OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
-
-                        if (Z80Ops::is48)
-                            FileZ80::loader48();
-                        else
-                            FileZ80::loader128();
-
-                        // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                        // https://skoolkid.github.io/rom/asm/5C78.html
-                        MemESP::writebyte(0x5C78,rand() % 256);
-                        MemESP::writebyte(0x5C79,rand() % 256);            
-
-                        if (Config::ram_file != NO_RAM_FILE) {
-                            Config::ram_file = NO_RAM_FILE;
-                        }
-                        Config::last_ram_file = NO_RAM_FILE;
-
-                }
-
-                Tape::TAP_Stop();
-
-                // Read and analyze tape file
-                Tape::TAP_Open(mFile);
-
-                ESPectrum::TapeNameScroller = 0;
-
+                Tape::LoadTape(mFile);
             }
-
+            if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
         else if (KeytoESP == fabgl::VK_F6) {
             // Start / Stop .tap reproduction
-            Tape::TAP_Play();
+            if (Tape::tapeStatus == TAPE_STOPPED)
+                Tape::Play();
+            else
+                Tape::Stop();
             click();
         }
         else if (KeytoESP == fabgl::VK_F7) {
@@ -500,54 +504,134 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
                 if (tBlock >= 0) {
                     Tape::tapeCurBlock = tBlock;
-                    Tape::TAP_Stop();
+                    Tape::Stop();
                 }
             }
 
         }
         else if (KeytoESP == fabgl::VK_F8) {
             // Show / hide OnScreen Stats
-            if (VIDEO::OSD == 0)
-                VIDEO::OSD = Tape::tapeStatus == TAPE_LOADING ? 1 : 2;
+            if ((VIDEO::OSD & 0x03) == 0)
+                VIDEO::OSD |= Tape::tapeStatus == TAPE_LOADING ? 1 : 2;
             else
                 VIDEO::OSD++;
 
-            if (VIDEO::OSD > 2) {
-                if (Config::aspect_16_9) 
-                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_Pentagon : VIDEO::MainScreen;
-                else
-                    VIDEO::DrawOSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
-                VIDEO::OSD = 0;
+            if ((VIDEO::OSD & 0x03) > 2) {
+                if ((VIDEO::OSD & 0x04) == 0) {
+                    if (Config::aspect_16_9) 
+                        VIDEO::Draw_OSD169 = VIDEO::MainScreen;
+                    else
+                        VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
+                }
+                VIDEO::OSD &= 0xfc;
             } else {
-                if (Config::aspect_16_9) 
-                    VIDEO::DrawOSD169 = Z80Ops::isPentagon ? VIDEO::MainScreen_OSD_Pentagon : VIDEO::MainScreen_OSD;
-                else
-                    VIDEO::DrawOSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                if ((VIDEO::OSD & 0x04) == 0) {
+                    if (Config::aspect_16_9) 
+                        VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                    else
+                        VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                    OSD::drawStats();
+                }
 
                 ESPectrum::TapeNameScroller = 0;
-                OSD::drawStats();
+
             }
 
             click();
 
         }
-        else if (KeytoESP == fabgl::VK_F9) { 
+        // else if (KeytoESP == fabgl::VK_F9) { 
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar -= 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // }
+        // else if (KeytoESP == fabgl::VK_F10) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar += 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // }
+        else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUMEDOWN) { 
+
+            if (VIDEO::OSD == 0) {
+
+                if (Config::aspect_16_9) 
+                    VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                else
+                    VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                VIDEO::OSD = 0x04;
+
+            } else VIDEO::OSD |= 0x04;
+
+            ESPectrum::totalseconds = 0;
+            ESPectrum::totalsecondsnodelay = 0;
+            VIDEO::framecnt = 0;
+
             if (ESPectrum::aud_volume>ESP_VOLUME_MIN) {
                 ESPectrum::aud_volume--;
-                if (Config::tape_player) 
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
-                else
-                    OSD::click();
+                pwm_audio_set_volume(ESPectrum::aud_volume);
             }
+
+            unsigned short x,y;
+
+            if (Config::aspect_16_9) {
+                x = 156;
+                y = 180;
+            } else {
+                x = 168;
+                y = 224;
+            }
+
+            VIDEO::vga.fillRect(x ,y - 4, 24 * 6, 16, zxColor(1, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
+            VIDEO::vga.setFont(Font6x8);
+            VIDEO::vga.setCursor(x + 4,y + 1);
+            VIDEO::vga.print(Config::tape_player ? "TAP" : "VOL");
+            for (int i = 0; i < ESPectrum::aud_volume + 16; i++)
+                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));                
+
         }
-        else if (KeytoESP == fabgl::VK_F10) { 
+        else if (KeytoESP == fabgl::VK_F10 || KeytoESP == fabgl::VK_VOLUMEUP) { 
+
+            if (VIDEO::OSD == 0) {
+
+                if (Config::aspect_16_9) 
+                    VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                else
+                    VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+
+                VIDEO::OSD = 0x04;
+
+            } else VIDEO::OSD |= 0x04;
+
+            ESPectrum::totalseconds = 0;
+            ESPectrum::totalsecondsnodelay = 0;
+            VIDEO::framecnt = 0;
+
             if (ESPectrum::aud_volume<ESP_VOLUME_MAX) {
                 ESPectrum::aud_volume++;
-                if (Config::tape_player) 
-                    pwm_audio_set_volume(ESPectrum::aud_volume);
-                else
-                    OSD::click();
+                pwm_audio_set_volume(ESPectrum::aud_volume);
             }
+
+            unsigned short x,y;
+            if (Config::aspect_16_9) {
+                x = 156;
+                y = 180;
+            } else {
+                x = 168;
+                y = 224;
+            }
+
+            VIDEO::vga.fillRect(x ,y - 4, 24 * 6, 16, zxColor(1, 0));
+            VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
+            VIDEO::vga.setFont(Font6x8);
+            VIDEO::vga.setCursor(x + 4,y + 1);
+            VIDEO::vga.print(Config::tape_player ? "TAP" : "VOL");
+            for (int i = 0; i < ESPectrum::aud_volume + 16; i++)
+                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));                                
+
         }
         else if (KeytoESP == fabgl::VK_F11) { // Hard reset
             if (Config::ram_file != NO_RAM_FILE) {
@@ -656,49 +740,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             // Select TAP File
                             string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,28,16);
                             if (mFile != "") {
-
-                                string keySel = mFile.substr(0,1);
-                                mFile.erase(0, 1);
-
-                                if ((keySel ==  "R") && (Config::flashload)) {
-
-                                        OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
-                                        
-                                        if (Z80Ops::is48) {
-                                            FileZ80::loader48();
-                                            // changeSnapshot(FileUtils::MountPoint + "/load48.z80");
-                                        } else {
-                                            FileZ80::loader128();
-                                            // changeSnapshot(FileUtils::MountPoint + "/load128.z80");
-                                        }
-
-                                        // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                                        // https://skoolkid.github.io/rom/asm/5C78.html
-                                        MemESP::writebyte(0x5C78,rand() % 256);
-                                        MemESP::writebyte(0x5C79,rand() % 256);            
-
-                                        if (Config::ram_file != NO_RAM_FILE) {
-                                            Config::ram_file = NO_RAM_FILE;
-                                        }
-                                        Config::last_ram_file = NO_RAM_FILE;
-
-                                }
-
-                                Tape::TAP_Stop();
-
-                                // Read and analyze tape file
-                                // Tape::Open(FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile);
-                                Tape::TAP_Open(mFile);
-                                
-                                ESPectrum::TapeNameScroller = 0;
-
+                                Tape::LoadTape(mFile);
                                 return;
-
                             }
                         }
                         else if (tap_num == 2) {
                             // Start / Stop .tap reproduction
-                            Tape::TAP_Play();
+                            if (Tape::tapeStatus == TAPE_STOPPED)
+                                Tape::Play();
+                            else
+                                Tape::Stop();
                             return;                        
                         }
                         else if (tap_num == 3) {
@@ -716,7 +767,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
                                 if (tBlock >= 0) {
                                     Tape::tapeCurBlock = tBlock;
-                                    Tape::TAP_Stop();
+                                    Tape::Stop();
                                 }
                                 return;
                             }
@@ -1281,37 +1332,136 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         }
                     }                          
                     else if (options_num == 6) {
+
                         menu_level = 2;
                         menu_curopt = 1;                    
                         menu_saverect = true;
                         while (1) {
-                            // aspect ratio
-                            string asp_menu = MENU_ASPECT[Config::lang];
-                            bool prev_asp = Config::aspect_16_9;
-                            if (prev_asp) {
-                                asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
-                                asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
-                            } else {
-                                asp_menu.replace(asp_menu.find("[4",0),2,"[*");
-                                asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
-                            }
-                            uint8_t opt2 = menuRun(asp_menu);
-                            if (opt2) {
-                                if (opt2 == 1)
-                                    Config::aspect_16_9 = false;
-                                else
-                                    Config::aspect_16_9 = true;
+                            // Video
+                            uint8_t options_num = menuRun(MENU_VIDEO[Config::lang]);
+                            if (options_num > 0) {
+                                if (options_num == 1) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;                    
+                                    menu_saverect = true;
+                                    while (1) {
+                                        string opt_menu = MENU_RENDER[Config::lang];
+                                        uint8_t prev_opt = Config::render;
+                                        if (prev_opt) {
+                                            opt_menu.replace(opt_menu.find("[S",0),2,"[ ");
+                                            opt_menu.replace(opt_menu.find("[A",0),2,"[*");
+                                        } else {
+                                            opt_menu.replace(opt_menu.find("[S",0),2,"[*");
+                                            opt_menu.replace(opt_menu.find("[A",0),2,"[ ");
+                                        }
+                                        uint8_t opt2 = menuRun(opt_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::render = 0;
+                                            else
+                                                Config::render = 1;
 
-                                if (Config::aspect_16_9 != prev_asp) {
-                                    Config::ram_file = "none";
-                                    Config::save("asp169");
-                                    Config::save("ram");
-                                    esp_hard_reset();
+                                            if (Config::render != prev_opt) {
+                                                Config::save("render");
+
+                                                VIDEO::snow_toggle = Config::arch != "Pentagon" ? Config::render : false;                                                
+
+                                                if (VIDEO::snow_toggle) {
+                                                    VIDEO::Draw = &VIDEO::MainScreen_Blank_Snow;
+                                                    VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Snow_Opcode;
+                                                } else {
+                                                    VIDEO::Draw = &VIDEO::MainScreen_Blank;
+                                                    VIDEO::Draw_Opcode = &VIDEO::MainScreen_Blank_Opcode;
+                                                }
+
+                                            }
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+                                        } else {
+                                            menu_curopt = 1;
+                                            menu_level = 2;                                       
+                                            break;
+                                        }
+                                    }
                                 }
+                                else if (options_num == 2) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;                    
+                                    menu_saverect = true;
+                                    while (1) {
 
-                                menu_curopt = opt2;
-                                menu_saverect = false;
+                                        // aspect ratio
+                                        string asp_menu = MENU_ASPECT[Config::lang];
+                                        bool prev_asp = Config::aspect_16_9;
+                                        if (prev_asp) {
+                                            asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
+                                            asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
+                                        } else {
+                                            asp_menu.replace(asp_menu.find("[4",0),2,"[*");
+                                            asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
+                                        }
+                                        uint8_t opt2 = menuRun(asp_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::aspect_16_9 = false;
+                                            else
+                                                Config::aspect_16_9 = true;
 
+                                            if (Config::aspect_16_9 != prev_asp) {
+                                                Config::ram_file = "none";
+                                                Config::save("asp169");
+                                                Config::save("ram");
+                                                esp_hard_reset();
+                                            }
+
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+
+                                        } else {
+                                            menu_curopt = 2;
+                                            menu_level = 2;
+                                            break;
+                                        }
+                                    }
+                                }
+                                else if (options_num == 3) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;                    
+                                    menu_saverect = true;
+                                    while (1) {
+                                        string opt_menu = MENU_SCANLINES[Config::lang];
+                                        opt_menu += MENU_YESNO[Config::lang];
+                                        uint8_t prev_opt = Config::scanlines;
+                                        if (prev_opt) {
+                                            opt_menu.replace(opt_menu.find("[Y",0),2,"[*");
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[ ");                        
+                                        } else {
+                                            opt_menu.replace(opt_menu.find("[Y",0),2,"[ ");
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[*");                        
+                                        }
+                                        uint8_t opt2 = menuRun(opt_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::scanlines = 1;
+                                            else
+                                                Config::scanlines = 0;
+
+                                            if (Config::scanlines != prev_opt) {
+                                                Config::ram_file = "none";
+                                                Config::save("scanlines");
+                                                Config::save("ram");
+                                                // Reset to apply if mode != CRT
+                                                if (Config::videomode!=2) esp_hard_reset();
+                                            }
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+                                        } else {
+                                            menu_curopt = 3;
+                                            menu_level = 2;                                       
+                                            break;
+                                        }
+                                    }
+                                }
                             } else {
                                 menu_curopt = 6;
                                 break;
@@ -1358,6 +1508,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         menu_saverect = false;
                                     } else if (optjoy == 6) {
                                         joyDialog(opt2);
+                                        if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                                                        
                                         return;
                                     } else {
                                         menu_curopt = opt2;
@@ -1378,65 +1529,124 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         while (1) {
                             // joystick
                             string Mnustr = MENU_JOYPS2[Config::lang];
-                            std::size_t pos = Mnustr.find("[",0);
-                            int nfind = 0;
-                            while (pos != string::npos) {
-                                if (nfind == Config::joyPS2) {
-                                    Mnustr.replace(pos,2,"[*");
-                                    break;
-                                }
-                                pos = Mnustr.find("[",pos + 1);
-                                nfind++;
-                            }
                             uint8_t opt2 = menuRun(Mnustr);
-                            if (opt2 > 0 &&  opt2 < 6) {
-                                if (Config::joyPS2 != (opt2 - 1)) {
-                                    Config::joyPS2 = opt2 - 1;
-                                    Config::save("joyPS2");
-                                }
-                                menu_curopt = opt2;
-                                menu_saverect = false;
-                            } else {
-                                if (opt2) {
-                                    // Menu cursor keys as joy
-                                    menu_level = 3;
-                                    menu_curopt = 1;
-                                    menu_saverect = true;
-                                    while (1) {
-                                        string csasjoy_menu = MENU_CURSORJOY[Config::lang];
-                                        csasjoy_menu += MENU_YESNO[Config::lang];
-                                        if (Config::CursorAsJoy) {
-                                            csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
-                                            csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
-                                        } else {
-                                            csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
-                                            csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
-                                        }
-                                        uint8_t opt2 = menuRun(csasjoy_menu);
-                                        if (opt2) {
-                                            if (opt2 == 1)
-                                                Config::CursorAsJoy = true;
-                                            else
-                                                Config::CursorAsJoy = false;
-
-                                            ESPectrum::PS2Controller.keyboard()->setLEDs(false,false,Config::CursorAsJoy);
-                                            if(ESPectrum::ps2kbd2)
-                                                ESPectrum::PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
-                                            Config::save("CursorAsJoy");
-
-                                            menu_curopt = opt2;
-                                            menu_saverect = false;
-                                        } else {
-                                            menu_curopt = 6;
-                                            menu_level = 2;                                       
+                            if (opt2 == 1) {
+                                // Joystick type
+                                menu_level = 3;
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string joy_menu = MENU_PS2JOYTYPE[Config::lang];
+                                    std::size_t pos = joy_menu.find("[",0);
+                                    int nfind = 0;
+                                    while (pos != string::npos) {
+                                        if (nfind == Config::joyPS2) {
+                                            joy_menu.replace(pos,2,"[*");
                                             break;
                                         }
+                                        pos = joy_menu.find("[",pos + 1);
+                                        nfind++;
                                     }
-
-                                } else {
-                                    menu_curopt = 5;
-                                    break;
+                                    uint8_t optjoy = menuRun(joy_menu);
+                                    if (optjoy > 0 && optjoy < 6) {
+                                        if (Config::joyPS2 != (optjoy - 1)) {
+                                            Config::joyPS2 = optjoy - 1;
+                                            Config::save("joyPS2");
+                                        }
+                                        menu_curopt = optjoy;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 1;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
                                 }
+                            } else if (opt2 == 2) {
+                                // Menu cursor keys as joy
+                                menu_level = 3;
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string csasjoy_menu = MENU_CURSORJOY[Config::lang];
+                                    csasjoy_menu += MENU_YESNO[Config::lang];
+                                    if (Config::CursorAsJoy) {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
+                                    } else {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(csasjoy_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::CursorAsJoy = true;
+                                        else
+                                            Config::CursorAsJoy = false;
+
+                                        ESPectrum::PS2Controller.keyboard()->setLEDs(false,false,Config::CursorAsJoy);
+                                        if(ESPectrum::ps2kbd2)
+                                            ESPectrum::PS2Controller.keybjoystick()->setLEDs(false, false, Config::CursorAsJoy);
+                                        Config::save("CursorAsJoy");
+
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 2;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+                            } else if (opt2 == 3) {
+                                // Menu TAB as fire 1
+                                menu_level = 3;
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string csasjoy_menu = MENU_TABASFIRE[Config::lang];
+                                    csasjoy_menu += MENU_YESNO[Config::lang];
+                                    bool prev_opt = Config::TABasfire1;
+                                    if (prev_opt) {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
+                                    } else {
+                                        csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
+                                    }
+                                    uint8_t opt2 = menuRun(csasjoy_menu);
+                                    if (opt2) {
+                                        if (opt2 == 1)
+                                            Config::TABasfire1 = true;
+                                        else
+                                            Config::TABasfire1 = false;
+
+                                        if (Config::TABasfire1 != prev_opt) {
+
+                                            if (Config::TABasfire1) {
+                                                ESPectrum::VK_ESPECTRUM_FIRE1 = fabgl::VK_TAB;
+                                                ESPectrum::VK_ESPECTRUM_FIRE2 = fabgl::VK_GRAVEACCENT;
+                                                ESPectrum::VK_ESPECTRUM_TAB = fabgl::VK_NONE;
+                                                ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_NONE;
+                                            } else {
+                                                ESPectrum::VK_ESPECTRUM_FIRE1 = fabgl::VK_NONE;
+                                                ESPectrum::VK_ESPECTRUM_FIRE2 = fabgl::VK_NONE;
+                                                ESPectrum::VK_ESPECTRUM_TAB = fabgl::VK_TAB;
+                                                ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_GRAVEACCENT;
+                                            }
+
+                                            Config::save("TABasfire1");
+                                        }
+
+                                        menu_curopt = opt2;
+                                        menu_saverect = false;
+                                    } else {
+                                        menu_curopt = 3;
+                                        menu_level = 2;                                       
+                                        break;
+                                    }
+                                }
+                            } else {
+                                menu_curopt = 5;
+                                break;
                             }
                         }
                     }
@@ -1640,7 +1850,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     if (res == DLG_YES) {
 
                                         // Open firmware file
-                                        FILE *firmware = fopen("/sd/firmware.bin", "rb");
+                                        FILE *firmware = fopen("/sd/firmware.upg", "rb");
                                         if (firmware == NULL) {
                                             osdCenteredMsg(OSD_NOFIRMW_ERR[Config::lang], LEVEL_WARN, 2000);
                                         } else {
@@ -1719,36 +1929,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             }
                         }
 
-                        // menu_level = 2;
-
-                        // string title = OSD_FIRMW_UPDATE[Config::lang];
-                        // string msg = OSD_DLG_SURE[Config::lang];
-                        // uint8_t res = msgDialog(title,msg);
-
-                        // if (res == DLG_YES) {
-
-                        //     // Open firmware file
-                        //     FILE *firmware = fopen("/sd/firmware.bin", "rb");
-                        //     if (firmware == NULL) {
-                        //         osdCenteredMsg(OSD_NOFIRMW_ERR[Config::lang], LEVEL_WARN, 2000);
-                        //         return;
-                        //     } else {
-                        //         esp_err_t res = updateFirmware(firmware);
-                        //         fclose(firmware);
-                        //         string errMsg = OSD_FIRMW_ERR[Config::lang];
-                        //         errMsg += " Code = " + to_string(res);
-                        //         osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
-                        //     }
-
-                        //     return;
-
-                        // } else {
-
-                        //     menu_curopt = 9;
-                        //     menu_saverect = false;
-
-                        // }
-
                     } else {
                         menu_curopt = 6;
                         break;
@@ -1783,6 +1963,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 }
 
                 click();
+
+                if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
 
                 return;
 
@@ -1858,7 +2040,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             osdRow  = 0;
                             msgChar = 0;
                             msgIndex++;
-                            if (msgIndex==8) msgIndex = 0;
+                            if (msgIndex==9) msgIndex = 0;
                         }
                     }
 
@@ -1887,6 +2069,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 }
 
                 click();
+
+                if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
 
                 return;            
 
@@ -2609,6 +2793,10 @@ if (result != ESP_OK) {
 
 // osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
 progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_END[Config::lang],100,1);
+
+// Enable StartMsg
+Config::StartMsg = true;
+Config::save("StartMsg");
 
 delay(1000);
 

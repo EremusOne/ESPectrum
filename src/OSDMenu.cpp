@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -669,7 +669,10 @@ void OSD::tapemenuRedraw(string title) {
         menu = title + "\n";
         for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
             if (i > Tape::tapeNumBlocks) break;
-            menu += Tape::tapeBlockReadData(i);
+            if (Tape::tapeFileType == TAPE_FTYPE_TAP)
+                menu += Tape::tapeBlockReadData(i);
+            else
+                menu += Tape::tzxBlockReadData(i);
         }
 
         for (uint8_t row = 1; row < virtual_rows; row++) {
@@ -838,7 +841,10 @@ int OSD::menuTape(string title) {
                     click();
                 } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
                     click();
-                    Tape::CalcTapBlockPos(begin_row + focus - 2);
+                    if (Tape::tapeFileType == TAPE_FTYPE_TAP)
+                        Tape::CalcTapBlockPos(begin_row + focus - 2);
+                    else
+                        Tape::CalcTZXBlockPos(begin_row + focus - 2);
                     // printf("Ret value: %d\n", begin_row + focus - 2);
                     return (begin_row + focus - 2);
                 } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {

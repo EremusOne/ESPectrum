@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -42,21 +42,40 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
+// Tape file types
+#define TAPE_FTYPE_EMPTY 0
+#define TAPE_FTYPE_TAP 1
+#define TAPE_FTYPE_TZX 2
+
 // Tape status definitions
 #define TAPE_STOPPED 0
 #define TAPE_LOADING 1
-#define TAPE_PAUSED 2
 
 // Saving status
 #define SAVE_STOPPED 0
 #define TAPE_SAVING 1
 
 // Tape phases
+#define TAPE_PHASE_STOPPED 0
 #define TAPE_PHASE_SYNC 1
 #define TAPE_PHASE_SYNC1 2
 #define TAPE_PHASE_SYNC2 3
-#define TAPE_PHASE_DATA 4
+#define TAPE_PHASE_DRB 4
 #define TAPE_PHASE_PAUSE 5
+#define TAPE_PHASE_TAIL 6
+#define TAPE_PHASE_DATA1 7
+#define TAPE_PHASE_DATA2 8
+#define TAPE_PHASE_PURETONE 9
+#define TAPE_PHASE_PULSESEQ 10
+#define TAPE_PHASE_CSW 11
+#define TAPE_PHASE_GDB_PILOTSYNC 12
+#define TAPE_PHASE_GDB_DATA 13
+
+#define TAPE_PHASE_TAIL_GDB 14
+#define TAPE_PHASE_PAUSE_GDB 15
+#define TAPE_PHASE_TAIL_LEN_GDB 945
+
+#define TAPE_PHASE_END 16
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -69,25 +88,44 @@ using namespace std;
 #define TAPE_BIT0_PULSELEN 855 // tstates = 244 ms, lenght of pulse for bit 0
 #define TAPE_BIT1_PULSELEN 1710 // tstates = 488 ms, lenght of pulse for bit 1
 
-//#define TAPE_BLK_PAUSELEN 3500000UL // 1000 ms. of pause between blocks
-#define TAPE_BLK_PAUSELEN 1750000UL // 500 ms. of pause between blocks
-//#define TAPE_BLK_PAUSELEN 875000UL // 250 ms. of pause between blocks
+#define TAPE_PHASE_TAIL_LEN 7000 // 7000 -> 2 ms. (It seems more solid with some loader than 1 ms.)
+
+#define TAPE_BLK_PAUSELEN 3500000UL // 1000 ms. of pause between blocks
 
 // Tape sync phases lenght in microseconds for Rodolfo Guerra ROMs
 #define TAPE_SYNC_LEN_RG 1408 // 620 microseconds for 2168 tStates (48K)
 #define TAPE_SYNC1_LEN_RG 397 // 190 microseconds for 667 tStates (48K)
 #define TAPE_SYNC2_LEN_RG 317 // 210 microseconds for 735 tStates (48K)
 
-#define TAPE_BIT0_PULSELEN_RG 325 // tstates = 244 ms, lenght of pulse for bit 0
-#define TAPE_BIT1_PULSELEN_RG 649 // tstates = 488 ms, lenght of pulse for bit 1
-
 #define TAPE_HDR_LONG_RG 4835   // Header sync lenght in pulses
 #define TAPE_HDR_SHORT_RG 1930  // Data sync lenght in pulses
 
+#define TAPE_BIT0_PULSELEN_RG 325 // tstates = 244 ms, lenght of pulse for bit 0
+#define TAPE_BIT1_PULSELEN_RG 649 // tstates = 488 ms, lenght of pulse for bit 1
+
 #define TAPE_BLK_PAUSELEN_RG 1113000UL // 318 ms.
 
-class TapeBlock
-{
+#define TAPE_LISTING_DIV 16
+
+#define CHUNK_SIZE 1024
+struct TZXBlock {
+    uint8_t BlockType;   
+    char FileName[11];
+    uint16_t PauseLenght;
+    uint32_t BlockLenght;
+};
+
+struct Symdef {
+    uint8_t SymbolFlags;
+    uint16_t* PulseLenghts;
+};
+
+struct Prle {
+    uint8_t Symbol;
+    uint16_t Repetitions;
+};
+
+class TapeBlock {
 public:
     enum BlockType {
         Program_header,
@@ -98,34 +136,57 @@ public:
         Info,
         Unassigned
     };
-    // uint8_t Index;          // Index (position) of the tape block in the tape file.
-    // BlockType Type;         // Type of tape block (enum).
-    // char FileName[11];      // File name in header block.
-    // bool IsHeaderless;      // Set to true for data blocks without a header.
-    // uint8_t Checksum;       // Header checksum byte.
-    // uint8_t BlockTypeNum;   // Block type, 0x00 = header; 0xFF = data block.
     uint32_t StartPosition; // Start point of this block?
-    // uint16_t BlockLength;
 };
 
-class Tape
-{
+class Tape {
 public:
 
     // Tape
     static FILE *tape;
+    static FILE *cswBlock;    
     static string tapeFileName;
     static string tapeSaveName;
+    static int tapeFileType;
     static uint8_t tapeEarBit;
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
     static uint8_t romLoading;
-    static uint16_t tapeCurBlock;  
-    static uint16_t tapeNumBlocks;  
+    static int tapeCurBlock;  
+    static int tapeNumBlocks;  
     static uint32_t tapebufByteCount;
     static uint32_t tapePlayOffset;    
     static size_t tapeFileSize;
  
+    static uint8_t tapePhase;    
+
+    static std::vector<TapeBlock> TapeListing;
+
+    static void Init();
+    static void LoadTape(string mFile);
+    static void Play();
+    static void Stop();
+    static void Read();
+    static bool FlashLoad();
+    static void Save();
+
+    static uint32_t CalcTapBlockPos(int block);
+    static uint32_t CalcTZXBlockPos(int block);    
+    static string tapeBlockReadData(int Blocknum);
+    static string tzxBlockReadData(int Blocknum);    
+
+private:
+
+    static void (*GetBlock)();
+
+    static void TAP_Open(string name);
+    static void TAP_GetBlock();    
+    static void TZX_Open(string name);
+    static void TZX_GetBlock();    
+    static void TZX_BlockLen(TZXBlock &blockdata);
+
+    static int inflateCSW(int blocknumber, long startPos, long data_length);
+
     // Tape timing values
     static uint16_t tapeSyncLen;
     static uint16_t tapeSync1Len;
@@ -134,22 +195,47 @@ public:
     static uint16_t tapeBit1PulseLen; // lenght of pulse for bit 1
     static uint16_t tapeHdrLong;  // Header sync lenght in pulses
     static uint16_t tapeHdrShort; // Data sync lenght in pulses
-    static uint16_t tapeBlkPauseLen; 
-    static uint8_t tapeLastBitUsedBytes;
+    static uint32_t tapeBlkPauseLen; 
+    static uint8_t tapeLastByteUsedBits;
+    static uint8_t tapeEndBitMask;
+    static uint32_t tapeNext;
 
-    static std::vector<TapeBlock> TapeListing;
+    static uint8_t tapeCurByte;
+    static uint64_t tapeStart;
+    static uint16_t tapeHdrPulses;
+    static uint32_t tapeBlockLen;
+    static uint8_t tapeBitMask;
 
-    static void Init();
-    static void TZX_Open(string name);
-    static void TAP_Open(string name);
-    static void TAP_Play();
-    static void TAP_Stop();    
-    static void TAP_Read();
-    static bool FlashLoad();
-    static void Save();
-    static uint32_t CalcTapBlockPos(int block);
-    static string tapeBlockReadData(int Blocknum);
+    static uint16_t nLoops;
+    static uint16_t loopStart;
+    static uint32_t loop_tapeBlockLen;
+    static uint32_t loop_tapebufByteCount;
+    static bool loop_first;
+
+    static uint16_t callSeq;
+    static int callBlock;
+
+    static int CSW_SampleRate;
+    static int CSW_PulseLenght;    
+    static uint8_t CSW_CompressionType;
+    static uint32_t CSW_StoredPulses;
+
+    // GDB vars
+    static uint32_t totp;
+    static uint8_t npp;
+    static uint16_t asp;
+    static uint32_t totd;
+    static uint8_t npd;
+    static uint16_t asd;
+    static uint32_t curGDBSymbol;
+    static uint8_t curGDBPulse;
+    static uint8_t GDBsymbol;    
+    static uint8_t nb; 
+    static uint8_t curBit;       
+    static bool GDBEnd;     
+    static Symdef* SymDefTable;
 
 };
+
 
 #endif

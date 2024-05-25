@@ -8,7 +8,7 @@
 // Copyright (c) 2021 dcrespo3d - https://github.com/dcrespo3d
 //
 // ESPectrum specific optimizations and code
-// Copyright (c) 2023-24 Eremus - https://github.com/EremusOne
+// Copyright (c) 2023-24 Víctor Iborra [Eremus] - https://github.com/EremusOne
 //
 
 // Converted to C++ from Java at
@@ -981,13 +981,7 @@ IRAM_ATTR void Z80::check_trdos_unpage() {
  */
 void Z80::interrupt(void) {
     
-    // lastFlagQ = false;
-    
-    // Si estaba en un HALT esperando una INT, lo saca de la espera
-    // if (halted) {
-        halted = false;
-    //     REG_PC++;
-    // }
+    halted = false;
 
     // Z80Ops::interruptHandlingTime(7);
     VIDEO::Draw(7, false);
@@ -1061,10 +1055,18 @@ IRAM_ATTR void Z80::incRegR(uint8_t inc) {
 
 }
 
+
 IRAM_ATTR void Z80::execute() {
 
+    // // if (!(CPU::tstates & 0xf)) {
+    //     if (Tape::tapeStatus == TAPE_LOADING) {
+    //     // if (Tape::tapePhase == TAPE_PHASE_DATA) {
+    //         Tape::Read();
+    //     }
+    // // }
+
     uint8_t pg = REG_PC >> 14;
-    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
     opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
 
     regR++;
@@ -1073,45 +1075,25 @@ IRAM_ATTR void Z80::execute() {
 
         REG_PC++;
 
-        // El prefijo 0xCB no cuenta para esta guerra.
-        // En CBxx todas las xx producen un código válido
-        // de instrucción, incluyendo CBCB.
-        switch (prefixOpcode) {
-            case 0x00:
-                flagQ = pendingEI = false;
-                dcOpcode[opCode]();
-                break;
-            case 0xDD:
-                prefixOpcode = 0;
-                decodeDDFD(regIX);
-                break;
-            case 0xED:
-                prefixOpcode = 0;
-                decodeED();
-                break;
-            case 0xFD:
-                prefixOpcode = 0;
-                decodeDDFD(regIY);
-                break;
-            default:
-                return;
-        }
+        if (prefixOpcode == 0) {
+            flagQ = pendingEI = false;
+            dcOpcode[opCode]();
+        } else if (prefixOpcode == 0xDD) {
+            prefixOpcode = 0;
+            decodeDDFD(regIX);
+        } else if (prefixOpcode == 0xED) {
+            prefixOpcode = 0;
+            decodeED();
+        } else if (prefixOpcode == 0xFD) {
+            prefixOpcode = 0;
+            decodeDDFD(regIY);
+        } else return;
 
         if (prefixOpcode != 0) return;
 
         lastFlagQ = flagQ;
 
     }
-
-    // Primero se comprueba NMI
-    // Si se activa NMI no se comprueba INT porque la siguiente
-    // instrucción debe ser la de 0x0066.
-    // if (activeNMI) {
-    //     activeNMI = false;
-    //     lastFlagQ = false;
-    //     nmi();
-    //     return;
-    // }
 
     // Ahora se comprueba si está activada la señal INT
     checkINT();
@@ -1120,43 +1102,33 @@ IRAM_ATTR void Z80::execute() {
 
 IRAM_ATTR void Z80::exec_nocheck() {
 
-    uint8_t pg = REG_PC >> 14;
-    VIDEO::Draw(4,MemESP::ramContended[pg]);
-    opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+    while (CPU::tstates < CPU::stFrame) {
 
-    regR++;
-
-    if (!halted) {
-
+        uint8_t pg = REG_PC >> 14;
+        VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
+        opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
+        regR++;
         REG_PC++;
 
-        // El prefijo 0xCB no cuenta para esta guerra.
-        // En CBxx todas las xx producen un código válido
-        // de instrucción, incluyendo CBCB.
-        switch (prefixOpcode) {
-            case 0x00:
-                flagQ = pendingEI = false;
-                dcOpcode[opCode]();
-                break;
-            case 0xDD:
-                prefixOpcode = 0;
-                decodeDDFD(regIX);
-                break;
-            case 0xED:
-                prefixOpcode = 0;
-                decodeED();
-                break;
-            case 0xFD:
-                prefixOpcode = 0;
-                decodeDDFD(regIY);
-                break;
-            default:
-                return;
-        }
+        if (prefixOpcode == 0) {
+            flagQ = pendingEI = false;
+            dcOpcode[opCode]();
+            lastFlagQ = flagQ;
+            continue;
+        } 
 
-        if (prefixOpcode != 0) return;
+        if (prefixOpcode == 0xDD) {
+            prefixOpcode = 0;
+            decodeDDFD(regIX);
+        } else if (prefixOpcode == 0xED) {
+            prefixOpcode = 0;
+            decodeED();
+        } else if (prefixOpcode == 0xFD) {
+            prefixOpcode = 0;
+            decodeDDFD(regIY);
+        } else continue;
 
-        lastFlagQ = flagQ;
+        if (prefixOpcode == 0) lastFlagQ = flagQ;
 
     }
    
@@ -1924,12 +1896,10 @@ void Z80::decodeOpcode75()
 void Z80::decodeOpcode76()
 { /* HALT */
 
-    // REG_PC--;
-    
-    // Signal HALT to CPU Loop
-    CPU::tstates |= 0xFF000000;    
-
     halted = true;
+
+    // Signal HALT to CPU Loop
+    CPU::stFrame = 0;
 
 }
 
@@ -2337,7 +2307,7 @@ IRAM_ATTR void Z80::decodeOpcodebf()
 
         // printf("Trap Load!\n");
 
-        if ((Config::flashload) && (Tape::tapeFileName != "none") && (Tape::tapeStatus != TAPE_LOADING)) {
+        if ((Config::flashload) && (Tape::tapeFileType == TAPE_FTYPE_TAP) && (Tape::tapeFileName != "none") && (Tape::tapeStatus != TAPE_LOADING)) {
             // printf("Loading tape %s\n",Tape::tapeFileName.c_str());
             if (Tape::FlashLoad()) REG_PC = 0x5e2;
         }
@@ -2462,7 +2432,7 @@ void Z80::decodeOpcodecb()
 
 
     uint8_t pg = REG_PC >> 14;
-    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
     opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
     // FETCH_OPCODE(opCode, REG_PC);
 
@@ -2663,7 +2633,7 @@ void Z80::decodeOpcodedd()
 { /* Subconjunto de instrucciones */
     // opCode = Z80Ops::fetchOpcode(REG_PC++);
     uint8_t pg = REG_PC >> 14;
-    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
     opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
     // FETCH_OPCODE(opCode,REG_PC);
 
@@ -2825,7 +2795,7 @@ void Z80::decodeOpcodeed() /*Subconjunto de instrucciones*/
 { 
     // opCode = Z80Ops::fetchOpcode(REG_PC++);
     uint8_t pg = REG_PC >> 14;
-    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
     opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
     // FETCH_OPCODE(opCode,REG_PC);
     REG_PC++;
@@ -2975,7 +2945,7 @@ void Z80::decodeOpcodefd() /* Subconjunto de instrucciones */
 {     
     // opCode = Z80Ops::fetchOpcode(REG_PC++);
     uint8_t pg = REG_PC >> 14;
-    VIDEO::Draw(4,MemESP::ramContended[pg]);
+    VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
     opCode = MemESP::ramCurrent[pg][REG_PC & 0x3fff];
     // FETCH_OPCODE(opCode,REG_PC);
     REG_PC++;
@@ -6219,17 +6189,17 @@ void Z80::decodeED(void) {
             }
             break;
         }
-        case 0xDD:
-            prefixOpcode = 0xDD;
-            break;
-        case 0xED:
-            prefixOpcode = 0xED;
-            break;
-        case 0xFD:
-            prefixOpcode = 0xFD;
-            break;
-        default:
-            break;
+        // case 0xDD:
+            // prefixOpcode = 0xDD;
+            // break;
+        // case 0xED:
+            // prefixOpcode = 0xED;
+            // break;
+        // case 0xFD:
+            // prefixOpcode = 0xFD;
+            // break;
+        // default:
+        //     break;
     }
 }
 

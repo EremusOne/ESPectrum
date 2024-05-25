@@ -11,15 +11,17 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 ## Features
 
 - ZX Spectrum 48K, 128K and Pentagon 128K 100% cycle accurate emulation (no PSRAM needed).
-- Perfect Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
+- State of the art Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
 - Selectable Sinclair 48K, Sinclair 128K and Amstrad +2 english and spanish ROMs.
 - Possibility of using one 48K and one 128K custom ROM with easy flashing procedure from SD card.
 - ZX81+ IF2 ROM by courtesy Paul Farrow with .P file loading from SD card.
 - 6 bpp VGA output in three modes: Standard VGA (60 and 70hz), VGA 50hz and CRT 15khz 50hz.
+- VGA fake scanlines effect.
 - Support for two aspect ratios: 16:9 or 4:3 monitors (using 360x200 or 320x240 modes)
 - Multicolor attribute effects emulated (Bifrost*2, Nirvana and Nirvana+ engines).
 - Border effects emulated (Aquaplane, The Sentinel, Overscan demo).
 - Floating bus effect emulated (Arkanoid, Sidewize).
+- Snow effect accurate emulation (as [described](https://spectrumcomputing.co.uk/forums/viewtopic.php?t=8240) by Weiv and MartianGirl).
 - Contended memory and contended I/O emulation.
 - AY-3-8912 sound emulation.
 - Beeper & Mic emulation (Cobra’s Arc).
@@ -27,7 +29,9 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - PS/2 Joystick emulation (Cursor, Sinclair, Kempston and Fuller).
 - Two real joysticks support (Up to 8 button joysticks) using [ESPjoy adapter](https://antoniovillena.es/store/product/espjoy-for-espectrum/) or DIY DB9 to PS/2 converter.
 - Emulation of Betadisk interface with four drives and TRD (read and write) and SCL (read only) support.
-- Realtime (with OSD) and fast TAP file loading.
+- Realtime (with OSD) TZX and TAP file loading.
+- Flashload of TAP files.
+- Rodolfo Guerra's ROMs fast load routines support with on the fly standard speed blocks translation.
 - TAP file saving to SD card.
 - SNA and Z80 snapshot loading.
 - Snapshot saving and loading.
@@ -38,9 +42,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 ## Work in progress
 
 - +2A/+3 models.
-- TZX support.
 - DSK support.
-- On screen keyboard.
 
 ## Installing
 
@@ -170,8 +172,9 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - David Carrión for hardware and ZX keyboard code.
 - ZjoyKiLer for his testing, code and ideas.
 - [Ackerman](https://github.com/rpsubc8/ESP32TinyZXSpectrum) for his code and ideas.
-- [Mark Woodmass](https://specemu.zxe.io) and [Juan Carlos González Amestoy](https://www.retrovirtualmachine.org) for his excellent emulators and his help with wd1793 emulation.
+- [Mark Woodmass](https://specemu.zxe.io) and [Juan Carlos González Amestoy](https://www.retrovirtualmachine.org) for his excellent emulators and his help with wd1793 emulation and many other things.
 - [Rodolfo Guerra](https://sites.google.com/view/rodolfoguerra) for his wonderful enhanced ROMs and his help for adding tape load turbo mode support to the emulator.
+- Weiv and [MartianGirl](https://github.com/MartianGirl) for his detailed analysis of Snow effect.
 - [Antonio Villena](https://antoniovillena.es/store) for creating the ESPectrum board.
 - Tsvetan Usunov from [Olimex Ltd](https://www.olimex.com).
 - [Amstrad PLC](http://www.amstrad.com) for the ZX-Spectrum ROM binaries [liberated for emulation purposes](http://www.worldofspectrum.org/permits/amstrad-roms.txt).

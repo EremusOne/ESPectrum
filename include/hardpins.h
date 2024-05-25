@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -40,6 +40,14 @@ visit https://zxespectrum.speccy.org/contacto
 
 // Audio Out
 #define SPEAKER_PIN 25
+
+// PS/2 (fabGL library) GPIOs
+// Allowed GPIOs: GPIO_NUM_0, GPIO_NUM_2, GPIO_NUM_4, GPIO_NUM_12, GPIO_NUM_13, GPIO_NUM_14, GPIO_NUM_15, GPIO_NUM_25, GPIO_NUM_26, GPIO_NUM_27, GPIO_NUM_32, GPIO_NUM_33
+// Not allowed from GPIO_NUM_34 to GPIO_NUM_39
+// #define PIN_CLK_PS2PORT1 GPIO_NUM_33
+// #define PIN_DAT_PS2PORT1 GPIO_NUM_32
+// #define PIN_CLK_PS2PORT2 GPIO_NUM_26
+// #define PIN_DAT_PS2PORT2 GPIO_NUM_27
 
 // Storage mode: pins for external SD card (LILYGO TTGO VGA32 Board and ESPectrum Board)
 #define PIN_NUM_MISO_LILYGO_ESPECTRUM GPIO_NUM_2

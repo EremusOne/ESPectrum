@@ -1529,6 +1529,10 @@ enum VirtualKey {
   VK_FULLER_UP,
   VK_FULLER_FIRE,
 
+  VK_VOLUMEUP,        /**< Volume UP */
+  VK_VOLUMEDOWN,      /**< Volume DOWN */
+  VK_VOLUMEMUTE,      /**< MUTE */
+
   VK_ASCII,           /**< Specifies an ASCII code - used when virtual key is embedded in VirtualKeyItem structure and VirtualKeyItem.ASCII is valid */
   VK_LAST,            // marks the last virtual key
 

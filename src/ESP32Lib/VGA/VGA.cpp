@@ -82,11 +82,37 @@ void VGA::allocateLineBuffers(void **frameBuffer) {
 		dmaBufferDescriptors[d++].setBuffer(inactiveBuffer, inactiveSamples);
 		dmaBufferDescriptors[d++].setBuffer(blankActiveBuffer, vidmodes[mode][vmodeproperties::hRes]);
 	}
-	for (int i = 0; i < vidmodes[mode][vmodeproperties::vRes]; i++)
-	{
-		dmaBufferDescriptors[d++].setBuffer(inactiveBuffer, inactiveSamples);
-		dmaBufferDescriptors[d++].setBuffer(frameBuffer[i / vidmodes[mode][vmodeproperties::vDiv]], vidmodes[mode][vmodeproperties::hRes]);
+
+	if (vidmodes[mode][vmodeproperties::vRes] == 480 && vidmodes[mode][vmodeproperties::vDiv] == 1) { // 480 mode for scanline simulation
+		for (int i = 0; i < vidmodes[mode][vmodeproperties::vRes]; i++)
+		{
+			dmaBufferDescriptors[d++].setBuffer(inactiveBuffer, inactiveSamples);
+			if (i & 0x01) {
+				// Apuntar a framebuffer nulo
+				dmaBufferDescriptors[d++].setBuffer(frameBuffer[240], vidmodes[mode][vmodeproperties::hRes]);
+			} else {
+				dmaBufferDescriptors[d++].setBuffer(frameBuffer[i >> 1], vidmodes[mode][vmodeproperties::hRes]);
+			}
+		}
+	} else if (vidmodes[mode][vmodeproperties::vRes] == 400 && vidmodes[mode][vmodeproperties::vDiv] == 1) { // 400 mode for scanline simulation
+		for (int i = 0; i < vidmodes[mode][vmodeproperties::vRes]; i++)
+		{
+			dmaBufferDescriptors[d++].setBuffer(inactiveBuffer, inactiveSamples);
+			if (i & 0x01) {
+				// Apuntar a framebuffer nulo
+				dmaBufferDescriptors[d++].setBuffer(frameBuffer[200], vidmodes[mode][vmodeproperties::hRes]);
+			} else {
+				dmaBufferDescriptors[d++].setBuffer(frameBuffer[i >> 1], vidmodes[mode][vmodeproperties::hRes]);
+			}
+		}
+	} else {
+		for (int i = 0; i < vidmodes[mode][vmodeproperties::vRes]; i++)
+		{
+			dmaBufferDescriptors[d++].setBuffer(inactiveBuffer, inactiveSamples);
+			dmaBufferDescriptors[d++].setBuffer(frameBuffer[i / vidmodes[mode][vmodeproperties::vDiv]], vidmodes[mode][vmodeproperties::hRes]);
+		}
 	}
+
 	// printf("buffer descriptors count: %d\n",d);
 
 }

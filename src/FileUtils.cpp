@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -34,6 +34,8 @@ visit https://zxespectrum.speccy.org/contacto
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -66,7 +68,7 @@ string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (fo
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
 DISK_FTYPE FileUtils::fileTypes[3] = {
     {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
-    {".tap,.TAP",".t",2,2,0,""},
+    {".tap,.TAP,.tzx,.TZX",".t",2,2,0,""},
     {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
 };
 
@@ -573,6 +575,55 @@ bool FileUtils::hasPextension(string filename)
     if (filename.substr(filename.size()-2,2) == ".P") return true;
 
     return false;
+
+}
+
+bool FileUtils::hasTAPextension(string filename)
+{
+    
+    if (filename.substr(filename.size()-4,4) == ".tap") return true;
+    if (filename.substr(filename.size()-4,4) == ".TAP") return true;
+
+    return false;
+
+}
+
+bool FileUtils::hasTZXextension(string filename)
+{
+    
+    if (filename.substr(filename.size()-4,4) == ".tzx") return true;
+    if (filename.substr(filename.size()-4,4) == ".TZX") return true;
+
+    return false;
+
+}
+
+void FileUtils::deleteFilesWithExtension(const char *folder_path, const char *extension) {
+
+    DIR *dir;
+    struct dirent *entry;
+    dir = opendir(folder_path);
+
+    if (dir == NULL) {
+        // perror("Unable to open directory");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            if (strstr(entry->d_name, extension) != NULL) {
+                char file_path[512];
+                snprintf(file_path, sizeof(file_path), "%s/%s", folder_path, entry->d_name);
+                if (remove(file_path) == 0) {
+                    printf("Deleted file: %s\n", entry->d_name);
+                } else {
+                    printf("Failed to delete file: %s\n", entry->d_name);
+                }
+            }
+        }
+    }
+
+    closedir(dir);
 
 }
 

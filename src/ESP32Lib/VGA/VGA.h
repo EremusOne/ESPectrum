@@ -37,12 +37,15 @@ enum vmodeproperties {
 // VGA STANDARD MODES (IN STANDARD MODE TIMING DEPENDS ON PWM_AUDIO SO 48K MODES = 128K MODES)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define VgaMode_320x240 { 8, 48, 24, 320, 10, 2, 33, 480, 2, 1, 1, 41,84,7,7,6,6 } // 31469 / 59.94 INDUSTRY STANDARD
-
+// #define VgaMode_320x240 { 8, 48, 24, 320, 10, 2, 33, 480, 2, 1, 1, 41,84,7,7,6,6 } // 31469 / 59.94 INDUSTRY STANDARD
 // Fake scanlines test
 // #define VgaMode_320x240 { 8, 48, 24, 320, 10, 2, 33, 480, 1, 1, 1, 41,84,7,7,6,6 } // 31469 / 59.94 INDUSTRY STANDARD
 
+#define VgaMode_320x240 { 8, 48, 24, 320, 10, 2, 33, 480, 2, 1, 1, 47,84,7,7,6,6 } // 31469 / 59.94 INDUSTRY STANDARD
+#define VgaMode_320x240_scanlines { 8, 48, 24, 320, 10, 2, 33, 480, 1, 1, 1, 47,84,7,7,6,6 } // 31469 / 59.94 INDUSTRY STANDARD
+
 #define VgaMode_360x200 { 9, 54, 27, 360, 12, 2, 35, 400, 2, 1, 0, 48,84,7,6,6,5 } // 31469 / 70.087 TAKEN FROM SAMSUNG S22C450 MANUAL
+#define VgaMode_360x200_scanlines { 9, 54, 27, 360, 12, 2, 35, 400, 1, 1, 0, 48,84,7,6,6,5 } // 31469 / 70.087 TAKEN FROM SAMSUNG S22C450 MANUAL
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // VGA 50HZ MODES
@@ -52,24 +55,34 @@ enum vmodeproperties {
 
 // 48K 50hz VGA, SYNC @ 19968 micros, DAPR AUDIO LAG TEST -> CLEAN TONE
 #define VgaMode_320x240_50_48 { 8, 42, 50, 320, 27, 6, 53, 720, 3, 1, 1, 0,44,6,4,8,5 } // 40365 / 50.0801282
-
-// MODOS CVT -> TESTAR SINCRONIZACION REFRESCO PANTALLA
-// CVT: const Mode VGA::MODE320x240(8, 32, 40, 320, 3, 10, 16, 480, 2, 10196314, 1, 0, 59,45,5,7,0,0,5,7);  // 25491 / 50.0801282
-// #define VgaMode_320x240_50_48 { 8, 32, 40, 320, 3, 10, 16, 480, 2, 1, 0, 59,45,5,7,5,7 } // 25491 / 50.0801282
+// MODOS CVT PARA SCANLINES -> TESTAR SINCRONIZACION REFRESCO PANTALLA
+#define VgaMode_320x240_50_48_scanlines { 8, 32, 40, 320, 3, 10, 16, 480, 1, 1, 0, 59,45,5,7,5,7 } // 25491 / 50.0801282
 
 #define VgaMode_360x200_50_48 { 18, 36, 54, 360, 31, 3, 33, 600, 3, 1, 1, 51,97,5,4,7,5 } // 33403 / 50.0801282
+// MODOS CVT PARA SCANLINES -> TESTAR SINCRONIZACION REFRESCO PANTALLA
+#define VgaMode_360x200_50_48_scanlines { 8, 32, 40, 360, 3, 10, 6, 400, 1, 1, 0, 151,59,5,8,8,11 } // 20984 / 50.0801282
 
 // 128K
 
 // 128K 50hz VGA, SYNC @ 19992 micros, DAPR AUDIO LAG TEST -> CLEAN TONE
 #define VgaMode_320x240_50_128 { 8, 42, 50, 320, 27, 6, 53, 720, 3, 1, 1, 224,40,6,4,8,5 } // 40316 / 50.020008
+// MODOS CVT -> TESTAR SINCRONIZACION REFRESCO PANTALLA
+#define VgaMode_320x240_50_128_scanlines { 8, 32, 40, 320, 3, 10, 16, 480, 1, 1, 0, 105,42,5,7,5,7 } // 25460 / 50.020008
+
 #define VgaMode_360x200_50_128 { 18, 36, 54, 360, 31, 3, 33, 600, 3, 1, 1, 194,125,8,6,7,5 } // 33363 / 50.020008
+// MODOS CVT -> TESTAR SINCRONIZACION REFRESCO PANTALLA
+#define VgaMode_360x200_50_128_scanlines { 8, 32, 40, 360, 3, 10, 6, 400, 1, 1, 0, 231,16,7,10,8,11 } // 20958 / 50.020008
 
 // PENTAGON 128K
 
 // PENTAGON 128K 50hz VGA, SYNC @ 20480 micros, DAPR AUDIO LAG TEST -> CLEAN TONE
 #define VgaMode_320x240_50_PENTAGON { 8, 42, 50, 320, 27, 6, 53, 720, 3, 1, 1, 13,146,7,5,6,4 } // 39355 / 48.838125
+// MODOS CVT -> TESTAR SINCRONIZACION REFRESCO PANTALLA
+#define VgaMode_320x240_50_PENTAGON_scanlines { 8, 32, 40, 320, 3, 10, 16, 480, 1, 1, 0, 160,238,7,10,5,7 } // 24859 / 48.838125
+
 #define VgaMode_360x200_50_PENTAGON { 18, 36, 54, 360, 31, 3, 33, 600, 3, 1, 1, 143,49,8,6,5,4 } // 32568 / 48.838125
+// MODOS CVT -> TESTAR SINCRONIZACION REFRESCO PANTALLA
+#define VgaMode_360x200_50_PENTAGON_scanlines { 8, 32, 40, 360, 3, 10, 6, 400, 1, 1, 0, 120,231,5,9,5,8 } // 20463 / 48.838125
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TV MODES
@@ -113,14 +126,19 @@ enum vmodeproperties {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const unsigned short int vidmodes[14][17]={ 
-	VgaMode_320x240, VgaMode_360x200,
-	VgaMode_320x240_50_48, VgaMode_360x200_50_48, VgaMode_320x240_50_128, VgaMode_360x200_50_128, VgaMode_320x240_50_PENTAGON , VgaMode_360x200_50_PENTAGON,
+const unsigned short int vidmodes[22][17]={ 
+	VgaMode_320x240, VgaMode_320x240_scanlines, VgaMode_360x200, VgaMode_360x200_scanlines,
+
+	VgaMode_320x240_50_48, VgaMode_320x240_50_48_scanlines, VgaMode_360x200_50_48,  VgaMode_360x200_50_48_scanlines,
+	VgaMode_320x240_50_128, VgaMode_320x240_50_128_scanlines, VgaMode_360x200_50_128, VgaMode_360x200_50_128_scanlines,
+	VgaMode_320x240_50_PENTAGON , VgaMode_320x240_50_PENTAGON_scanlines, VgaMode_360x200_50_PENTAGON, VgaMode_360x200_50_PENTAGON_scanlines,
 
 	// OVERSCAN / FOR FUTURE USE
 	// CrtMode_352x272_TV_48 , VgaMode_360x200_TV_48, CrtMode_352x272_TV_128, VgaMode_360x200_TV_128, CrtMode_352x272_TV_PENTAGON, VgaMode_360x200_TV_PENTAGON		
 	
-	VgaMode_320x240_TV_48, VgaMode_360x200_TV_48, VgaMode_320x240_TV_128, VgaMode_360x200_TV_128, VgaMode_320x240_TV_PENTAGON , VgaMode_360x200_TV_PENTAGON		
+	VgaMode_320x240_TV_48, VgaMode_360x200_TV_48, 
+	VgaMode_320x240_TV_128, VgaMode_360x200_TV_128, 
+	VgaMode_320x240_TV_PENTAGON , VgaMode_360x200_TV_PENTAGON		
 
 };
 

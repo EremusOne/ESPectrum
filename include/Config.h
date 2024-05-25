@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -115,6 +115,13 @@ public:
     static uint16_t DSK_focus;
     static uint8_t  DSK_fdMode;
     static string   DSK_fileSearch;
+
+    static uint8_t scanlines;
+    static uint8_t render;    
+
+    static bool TABasfire1; 
+
+    static bool StartMsg;    
 
 };
 

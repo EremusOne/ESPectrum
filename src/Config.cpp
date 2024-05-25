@@ -2,7 +2,7 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023 Víctor Iborra [Eremus] and David Crespo [dcrespo3d]
+Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
 https://github.com/EremusOne/ZX-ESPectrum-IDF
 
 Based on ZX-ESPectrum-Wiimote
@@ -128,6 +128,13 @@ uint16_t Config::DSK_begin_row = 1;
 uint16_t Config::DSK_focus = 1;
 uint8_t  Config::DSK_fdMode = 0;
 string   Config::DSK_fileSearch = "";
+
+uint8_t Config::scanlines = 0;
+uint8_t Config::render = 0;
+
+bool     Config::TABasfire1 = false;
+
+bool     Config::StartMsg = true;
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -507,6 +514,34 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_u8(handle, "scanlines", &Config::scanlines);
+        if (err == ESP_OK) {
+            // printf("scanlines:%u\n",Config::scanlines);
+        }
+
+        err = nvs_get_u8(handle, "render", &Config::render);
+        if (err == ESP_OK) {
+            // printf("render:%u\n",Config::render);
+        }
+
+        err = nvs_get_str(handle, "TABasfire1", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "TABasfire1", str_data, &required_size);
+            // printf("TABasfire1:%s\n",str_data);
+            TABasfire1 = strcmp(str_data, "false");
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "StartMsg", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "StartMsg", str_data, &required_size);
+            // printf("StartMsg:%s\n",str_data);
+            StartMsg = strcmp(str_data, "false");
+            free(str_data);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -673,6 +708,18 @@ void Config::save(string value) {
 
         if((value=="DSK_fileSearch") || (value=="all"))
             nvs_set_str(handle,"DSK_fileSearch",Config::DSK_fileSearch.c_str());
+
+        if((value=="scanlines") || (value=="all"))
+            nvs_set_u8(handle,"scanlines",Config::scanlines);
+
+        if((value=="render") || (value=="all"))
+            nvs_set_u8(handle,"render",Config::render);
+
+        if((value=="TABasfire1") || (value=="all"))
+            nvs_set_str(handle,"TABasfire1", TABasfire1 ? "true" : "false");
+
+        if((value=="StartMsg") || (value=="all"))
+            nvs_set_str(handle,"StartMsg", StartMsg ? "true" : "false");
 
         // printf("Committing updates in NVS ... ");
 
