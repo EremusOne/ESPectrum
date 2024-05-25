@@ -21,7 +21,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Multicolor attribute effects emulated (Bifrost*2, Nirvana and Nirvana+ engines).
 - Border effects emulated (Aquaplane, The Sentinel, Overscan demo).
 - Floating bus effect emulated (Arkanoid, Sidewize).
-- Snow effect accurate emulation (as described by Weiv and MartianGirl in https://spectrumcomputing.co.uk/forums/viewtopic.php?t=8240 ).
+- Snow effect accurate emulation (as [described](https://spectrumcomputing.co.uk/forums/viewtopic.php?t=8240) by Weiv and MartianGirl).
 - Contended memory and contended I/O emulation.
 - AY-3-8912 sound emulation.
 - Beeper & Mic emulation (Cobra’s Arc).
