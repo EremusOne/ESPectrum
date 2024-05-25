@@ -134,6 +134,8 @@ uint8_t Config::render = 0;
 
 bool     Config::TABasfire1 = false;
 
+bool     Config::StartMsg = true;
+
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
     s.erase(std::remove_if(s.begin(), s.end(), 
@@ -531,6 +533,15 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_str(handle, "StartMsg", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "StartMsg", str_data, &required_size);
+            // printf("StartMsg:%s\n",str_data);
+            StartMsg = strcmp(str_data, "false");
+            free(str_data);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -706,6 +717,9 @@ void Config::save(string value) {
 
         if((value=="TABasfire1") || (value=="all"))
             nvs_set_str(handle,"TABasfire1", TABasfire1 ? "true" : "false");
+
+        if((value=="StartMsg") || (value=="all"))
+            nvs_set_str(handle,"StartMsg", StartMsg ? "true" : "false");
 
         // printf("Committing updates in NVS ... ");
 

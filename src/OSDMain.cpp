@@ -2040,7 +2040,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             osdRow  = 0;
                             msgChar = 0;
                             msgIndex++;
-                            if (msgIndex==8) msgIndex = 0;
+                            if (msgIndex==9) msgIndex = 0;
                         }
                     }
 
@@ -2793,6 +2793,10 @@ if (result != ESP_OK) {
 
 // osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
 progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_END[Config::lang],100,1);
+
+// Enable StartMsg
+Config::StartMsg = true;
+Config::save("StartMsg");
 
 delay(1000);
 

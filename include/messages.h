@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "   v1.2 rc1 "
+#define EMU_VERSION "       v1.2 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -563,10 +563,10 @@ static const char *MENU_TABASFIRE[2] = { "TAB as fire 1\n" , "TAB disparo 1\n" }
 	"\r"\
 	"\nA1The Jet Set Willys:\r"\
 	"\r"\
-	"\nD1DopierRex \nE1Juan Carlos Galea\r"\
-	"\nB1Raul Jimenez \nC1Serafin Moraton\r"\
-	"\nD1Eduard Ruiz \nE1Igor Peruchi \nB1Inacio Santos\r"\
-	"\r"\
+	"\nB1DopierRex \nC1German Filera \nD1Juan C. Galea\r"\
+	"\nE1Juanje \nB1Raul Jimenez \nC1Juanma Martin\r"\
+	"\nD1Serafin Moraton \nE1Eduard Ruiz\r"\
+	"\nB1Igor Peruchi \nC1Inacio Santos\r"\
 	"\r"
 
 #define PATREONS2 "\r"\
@@ -590,15 +590,28 @@ static const char *MENU_TABASFIRE[2] = { "TAB as fire 1\n" , "TAB disparo 1\n" }
 	"\nC1Santiago Romero \nD1Julia Salvador\r"\
 	"\nE1Juan Diego Sanchez \nB1Marta Sicilia\r"\
 	"\nC1Fco. Jose Soldado \nD1Vida Extra Retro\r"\
-	"\nE1Radek Wojciechowski\r"\
+	"\nE1Radek Wojciechowski \nB1Jesus Mu" "\xA4" "oz\r"\
+	"\nC1Antonio Jesus Sanchez \nD1Gregorio Perez\r"\
+	"\nE1Leonardo Coca" "\xA4" "a \nB1Manuel Cuenca\r"\
+	"\nC1Ovi P. \nD1Jose Medina \nE1Miguel A. Montejo\r"
+
+#define PATREONS4 "\r"\
+	"\nA1The Manic Miners:\r"\
+	"\r"\
+	"\nB1Jakub Rzepecki \nC1Seb \nD1Simon Gomez\r"\
+	"\nE1Victor Salado \nB1Miguel A. Gonzalez\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
 	"\r"\
 	"\r"\
 	"\r"
 
-static const char *AboutMsg[2][8] = {
+static const char *AboutMsg[2][9] = {
 	{
-	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
-	"        David Crespo  \"dcrespo3d\"\r"\
+	"\nF1(C)2023-24 Victor Iborra \"Eremus\"\r"\
+	"   2023 David Crespo  \"dcrespo3d\"\r"\
 	"\r"\
 	"\nA1Based on ZX-ESPectrum-Wiimote\r"\
 	"(C)2020-2023 David Crespo\r"\
@@ -634,6 +647,9 @@ static const char *AboutMsg[2][8] = {
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS3
 	,
+	"\nF1Big thanks to our Patreons:\r"\
+	PATREONS4
+	,
 	"\nF1Thanks for help and donations to:\r"\
 	"\r"\
 	"\nA1Abel Bayon @Baycorps \nF1Amstrad Eterno\r"\
@@ -665,8 +681,8 @@ static const char *AboutMsg[2][8] = {
 	DEDICATORIA
 	},
 	{
-	"\nF1(C)2023 Victor Iborra \"Eremus\"\r"\
-	"        David Crespo  \"dcrespo3d\"\r"\
+	"\nF1(C)2023-24 Victor Iborra \"Eremus\"\r"\
+	"   2023 David Crespo  \"dcrespo3d\"\r"\
 	"\r"\
 	"\nA1Basado en ZX-ESPectrum-Wiimote\r"\
 	"(C)2020-2023 David Crespo\r"\
@@ -701,6 +717,9 @@ static const char *AboutMsg[2][8] = {
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS3
+	,
+	"\nF1Muchas gracias a nuestros Patreons:\r"\
+	PATREONS4
 	,
 	"\nF1Gracias por su ayuda y donaciones a:\r"\
 	"\r"\
@@ -821,6 +840,32 @@ static const char *AboutMsg[2][8] = {
     " [N]       NMI\n"\
     " [P]       Pausa\n"\
     " [S]       Captura BMP (Carpeta /.c)\n"
+
+static const char *StartMsg[2] = {
+	"\xAD" "Hola! " "\xAD" "Gracias por elegir    ectrum!\n"\
+	"\n"\
+	"   ectrum es software de c" "\xA2" "digo abier-\n"\
+	"to bajo licencia GPL v3, puedes usarlo\n"\
+	"modificarlo y compartirlo gratis.\n"\
+	"\n"\
+	"Si te gusta    ectrum considera hacer-\n"\
+	"te patrocinador. Tu apoyo nos ayuda a\n"\ 
+	"mantener y mejorar el proyecto para\n"\ 
+	"todos los usuarios. Puedes hacerlo\n"\
+	"en\n"
+	,
+	"Hi! Thanks for choosing    ectrum!\n"\
+	"\n"\
+	"   ectrum is open source sofware\n"\
+	"licensed under GPL v3, you can use,\n"\
+	"modify and share it for free.\n"\
+	"\n"\
+	"If you like    ectrum consider\n"\
+	"becoming Patreon. Your support help\n"\ 
+	"us to maintain and improve the project\n"\ 
+	"for all users. You can do it\n"\
+	"at\n"
+};
 
 const uint8_t ESPectrum_logo[] = {
 	0x45, 0x42, 0x46, 0x38, 0xBB, 0x00, 0x1B, 0x00, 0xC0, 0xC0, 0xC0, 0xFF,

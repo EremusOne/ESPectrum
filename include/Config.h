@@ -121,6 +121,8 @@ public:
 
     static bool TABasfire1; 
 
+    static bool StartMsg;    
+
 };
 
 #endif // Config.h
