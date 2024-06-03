@@ -42,7 +42,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "       v1.2 "
+#define EMU_VERSION "      v1.22 "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -221,13 +221,13 @@ static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
 
 #define MENU_TAPE_EN \
     "Tape menu\n"\
-    "Select (TAP)\t(F5) >\n"\
+    "Select (TAP,TZX)\t(F5) >\n"\
     "Play/Stop\t(F6)  \n"\
     "Tape browser\t(F7)  \n"\
 	"Player mode\t>\n"
 #define MENU_TAPE_ES \
     "Casete\n"\
-    "Elegir (TAP)\t(F5) >\n"\
+    "Elegir (TAP,TZX)\t(F5) >\n"\
     "Play/Stop\t(F6)  \n"\
     "Navegador cinta\t(F7)  \n"\
 	"Modo reproductor\t>\n"

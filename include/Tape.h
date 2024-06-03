@@ -70,12 +70,11 @@ using namespace std;
 #define TAPE_PHASE_CSW 11
 #define TAPE_PHASE_GDB_PILOTSYNC 12
 #define TAPE_PHASE_GDB_DATA 13
-
 #define TAPE_PHASE_TAIL_GDB 14
 #define TAPE_PHASE_PAUSE_GDB 15
-#define TAPE_PHASE_TAIL_LEN_GDB 945
-
 #define TAPE_PHASE_END 16
+
+#define TAPE_PHASE_TAIL_LEN_GDB 945
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -106,6 +105,12 @@ using namespace std;
 #define TAPE_BLK_PAUSELEN_RG 1113000UL // 318 ms.
 
 #define TAPE_LISTING_DIV 16
+
+#define FACTOR128K 1.013376779 // Pulse length compensation for Spectrum 128K
+// #define FACTOR128K 1 // Disable pulse length compensation for Spectrum 128K
+
+#define TAPEHIGH 0
+#define TAPELOW 1
 
 #define CHUNK_SIZE 1024
 struct TZXBlock {
