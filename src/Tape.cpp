@@ -461,6 +461,15 @@ void Tape::TAP_Open(string name) {
 
     }
 
+    if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+        tapeSyncLen *= FACTOR128K;
+        tapeSync1Len *= FACTOR128K;
+        tapeSync2Len *= FACTOR128K;                                        
+        tapeBit0PulseLen *= FACTOR128K;
+        tapeBit1PulseLen *= FACTOR128K;
+        tapeBlkPauseLen *= FACTOR128K;                                        
+    }
+
 }
 
 uint32_t Tape::CalcTapBlockPos(int block) {
@@ -586,7 +595,7 @@ void Tape::Play() {
     }
 
     // Init tape vars
-    tapeEarBit = 1;
+    tapeEarBit = TAPEHIGH;
     tapeBitMask=0x80;
     tapeLastByteUsedBits = 8;
     tapeEndBitMask=0x80;
@@ -711,10 +720,10 @@ IRAM_ATTR void Tape::Read() {
                                 case 1:
                                     break;                                    
                                 case 2:
-                                    tapeEarBit = 0;
+                                    tapeEarBit = TAPELOW;
                                     break;
                                 case 3:
-                                    tapeEarBit = 1;
+                                    tapeEarBit = TAPEHIGH;
                                     break;
                             }
 
@@ -753,6 +762,7 @@ IRAM_ATTR void Tape::Read() {
                                     SymDefTable[i].PulseLenghts = new uint16_t[npd];
                                     for(int j = 0; j < npd; j++) {
                                         SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
+                                        if (Z80Ops::is128) SymDefTable[i].PulseLenghts[j] *= FACTOR128K; // Apply TZX compensation for 128K
                                         tapebufByteCount += 2;
                                     }
 
@@ -804,10 +814,10 @@ IRAM_ATTR void Tape::Read() {
                                 case 1:
                                     break;                                    
                                 case 2:
-                                    tapeEarBit = 0;
+                                    tapeEarBit = TAPELOW;
                                     break;
                                 case 3:
-                                    tapeEarBit = 1;
+                                    tapeEarBit = TAPEHIGH;
                                     break;
                                 }
 
@@ -841,10 +851,10 @@ IRAM_ATTR void Tape::Read() {
                             case 1:
                                 break;                                    
                             case 2:
-                                tapeEarBit = 0;
+                                tapeEarBit = TAPELOW;
                                 break;
                             case 3:
-                                tapeEarBit = 1;
+                                tapeEarBit = TAPEHIGH;
                                 break;
                         }
 
@@ -865,17 +875,15 @@ IRAM_ATTR void Tape::Read() {
             case TAPE_PHASE_GDB_DATA:
 
                 // Get next pulse lenght from current symbol
-                if (++curGDBPulse < npd)
-                    tapeNext = SymDefTable[GDBsymbol].PulseLenghts[curGDBPulse];
+                if (++curGDBPulse < npd) tapeNext = SymDefTable[GDBsymbol].PulseLenghts[curGDBPulse];
 
                 if (curGDBPulse == npd || tapeNext == 0) {
 
                     // Get next symbol in data stream
                     curGDBSymbol++;
 
-                    if (curGDBSymbol < totd) { // If not end of data stream
+                    if (curGDBSymbol < totd) { // If not end of data stream read next symbol
 
-                        // Read data stream next symbol
                         GDBsymbol = 0;
 
                         // printf("tapeCurByte: %d, NB: %d, ", tapeCurByte,nb);
@@ -899,10 +907,10 @@ IRAM_ATTR void Tape::Read() {
                             case 1:
                                 break;                                    
                             case 2:
-                                tapeEarBit = 0;
+                                tapeEarBit = TAPELOW;
                                 break;
                             case 3:
-                                tapeEarBit = 1;
+                                tapeEarBit = TAPEHIGH;
                                 break;
                         }
 
@@ -926,7 +934,6 @@ IRAM_ATTR void Tape::Read() {
                         if (tapeBlkPauseLen == 0) {
 
                             if (tapeCurByte == 0x13) tapeEarBit ^= 1; // This is needed for Basil, maybe for others (next block == Pulse sequence)
-                            // if (tapeCurByte != 0x19) tapeEarBit ^= 1; // This is needed for Basil, maybe for others (next block != GDB)
 
                             GDBEnd = true; // Provisional: add special end to GDB data blocks with pause 0
 
@@ -944,19 +951,19 @@ IRAM_ATTR void Tape::Read() {
                         }
 
                     }
-                } else {
+                } else
                     tapeEarBit ^= 1;
-                }
+
                 break;
 
             case TAPE_PHASE_TAIL_GDB:
-                tapeEarBit = 0;
+                tapeEarBit = TAPELOW;
                 tapePhase=TAPE_PHASE_PAUSE_GDB;
                 tapeNext=tapeBlkPauseLen;
                 break;
 
             case TAPE_PHASE_PAUSE_GDB:
-                tapeEarBit = 1;
+                tapeEarBit = TAPEHIGH;
                 tapeCurBlock++;
                 GetBlock();
                 break;
@@ -983,9 +990,9 @@ IRAM_ATTR void Tape::Read() {
                     } else {
                         tapeEndBitMask = 0x80;
                     }
-                    tapeEarBit = tapeCurByte & tapeBitMask ? 1 : 0;
+                    tapeEarBit = tapeCurByte & tapeBitMask ? TAPEHIGH : TAPELOW;
                 } else {
-                    tapeEarBit = tapeCurByte & tapeBitMask ? 1 : 0;
+                    tapeEarBit = tapeCurByte & tapeBitMask ? TAPEHIGH : TAPELOW;
                 }
                 break;
             case TAPE_PHASE_SYNC:
@@ -1066,19 +1073,19 @@ IRAM_ATTR void Tape::Read() {
                 }
                 break;
             case TAPE_PHASE_END:
-                tapeEarBit = 1;
+                tapeEarBit = TAPEHIGH;
                 tapeCurBlock = 0;
                 Stop();
                 rewind(tape);
                 tapeNext = 0xFFFFFFFF;
                 break;
             case TAPE_PHASE_TAIL:
-                tapeEarBit = 0;
+                tapeEarBit = TAPELOW;
                 tapePhase=TAPE_PHASE_PAUSE;
                 tapeNext=tapeBlkPauseLen;
                 break;
             case TAPE_PHASE_PAUSE:
-                tapeEarBit = 1;
+                tapeEarBit = TAPEHIGH;
                 tapeCurBlock++;
                 GetBlock();
             } 

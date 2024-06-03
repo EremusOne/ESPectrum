@@ -538,7 +538,8 @@ void Tape::TZX_GetBlock() {
             if (GDBEnd) {
                 tapeEarBit ^= 1;
                 tapePhase = TAPE_PHASE_END;
-                tapeNext = 7000;
+                // tapeNext = 7000;
+                tapeNext = TAPE_PHASE_TAIL_LEN;
             } else {
                 tapeCurBlock = 0;
                 Stop();
@@ -602,6 +603,15 @@ void Tape::TZX_GetBlock() {
                 tapeCurByte = readByteFile(tape);
                 if (tapeCurByte & 0x80) tapeHdrPulses=tapeHdrShort; else tapeHdrPulses=tapeHdrLong;                
 
+                if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+                    tapeSyncLen *= FACTOR128K;
+                    tapeSync1Len *= FACTOR128K;
+                    tapeSync2Len *= FACTOR128K;                                        
+                    tapeBit0PulseLen *= FACTOR128K;
+                    tapeBit1PulseLen *= FACTOR128K;
+                    tapeBlkPauseLen *= FACTOR128K;                                        
+                }
+
                 tapePhase = TAPE_PHASE_SYNC;
                 tapeNext = tapeSyncLen;
 
@@ -628,6 +638,15 @@ void Tape::TZX_GetBlock() {
 
                 tapeCurByte = readByteFile(tape);
 
+                if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+                    tapeSyncLen *= FACTOR128K;
+                    tapeSync1Len *= FACTOR128K;
+                    tapeSync2Len *= FACTOR128K;                                        
+                    tapeBit0PulseLen *= FACTOR128K;
+                    tapeBit1PulseLen *= FACTOR128K;
+                    tapeBlkPauseLen *= FACTOR128K;                                        
+                }
+
                 tapePhase=TAPE_PHASE_SYNC;
                 tapeNext = tapeSyncLen;
 
@@ -643,6 +662,10 @@ void Tape::TZX_GetBlock() {
                 tapeBlockLen += 0x4 + 1;
                 tapebufByteCount += 0x4 + 1;
 
+                if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+                    tapeSyncLen *= FACTOR128K;
+                }
+
                 tapePhase = TAPE_PHASE_PURETONE;
                 tapeNext = tapeSyncLen;
 
@@ -657,6 +680,10 @@ void Tape::TZX_GetBlock() {
 
                 tapeBlockLen += (tapeHdrPulses << 1) + 1 + 1;
                 tapebufByteCount += 0x3 + 1;
+
+                if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+                    tapeSyncLen *= FACTOR128K;
+                }
 
                 tapePhase = TAPE_PHASE_PULSESEQ;
                 tapeNext = tapeSyncLen;                
@@ -683,6 +710,12 @@ void Tape::TZX_GetBlock() {
 
                 tapeCurByte = readByteFile(tape);
 
+                if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+                    tapeBit0PulseLen *= FACTOR128K;
+                    tapeBit1PulseLen *= FACTOR128K;
+                    tapeBlkPauseLen *= FACTOR128K;                                        
+                }
+
                 tapePhase=TAPE_PHASE_DATA1;
                 tapeNext = tapeCurByte & tapeBitMask ? tapeBit1PulseLen : tapeBit0PulseLen;
 
@@ -706,7 +739,12 @@ void Tape::TZX_GetBlock() {
                 if (((tapebufByteCount + 1) == tapeBlockLen) && (tapeLastByteUsedBits < 8)) tapeEndBitMask >>= tapeLastByteUsedBits;
 
                 tapeCurByte = readByteFile(tape);
-                tapeEarBit = tapeCurByte & tapeBitMask ? 1 : 0;
+                tapeEarBit = tapeCurByte & tapeBitMask ? TAPEHIGH : TAPELOW;
+
+                if (Z80Ops::is128) { // Apply TZX compensation for 128K
+                    tapeSyncLen *= FACTOR128K;
+                    tapeBlkPauseLen *= FACTOR128K;                                        
+                }
 
                 tapePhase=TAPE_PHASE_DRB;
                 tapeNext = tapeSyncLen;
@@ -725,6 +763,11 @@ void Tape::TZX_GetBlock() {
                 CSW_StoredPulses = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
                 
                 tapebufByteCount += 0x0e + 1;
+
+                if (Z80Ops::is128) { // Apply TZX compensation for 128K
+                    CSW_SampleRate *= FACTOR128K;
+                    tapeBlkPauseLen *= FACTOR128K;
+                }
 
                 if (CSW_CompressionType == 0x2) { // Z-RLE compression
 
@@ -788,6 +831,8 @@ void Tape::TZX_GetBlock() {
                 for (int i = asd; i > 0; i >>=1, nb++);
                 if ((asd & (asd - 1)) == 0) nb--;
 
+                if (Z80Ops::is128) tapeBlkPauseLen *= FACTOR128K; // Apply TZX compensation for 128K
+
                 // Populate Pilot and Sync definition table
                 if (totp > 0) {
 
@@ -802,6 +847,7 @@ void Tape::TZX_GetBlock() {
                         SymDefTable[i].PulseLenghts = new uint16_t[npp];
                         for(int j = 0; j < npp; j++) {
                             SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
+                            if (Z80Ops::is128) SymDefTable[i].PulseLenghts[j] *= FACTOR128K; // Apply TZX compensation for 128K
                             tapebufByteCount += 2;
                         }
 
@@ -832,10 +878,10 @@ void Tape::TZX_GetBlock() {
                         case 1:
                             break;
                         case 2:
-                            tapeEarBit = 0;
+                            tapeEarBit = TAPELOW;
                             break;
                         case 3:
-                            tapeEarBit = 1;
+                            tapeEarBit = TAPEHIGH;
                             break;
                     }
 
@@ -867,6 +913,7 @@ void Tape::TZX_GetBlock() {
                         SymDefTable[i].PulseLenghts = new uint16_t[npd];
                         for(int j = 0; j < npd; j++) {
                             SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
+                            if (Z80Ops::is128) SymDefTable[i].PulseLenghts[j] *= FACTOR128K; // Apply TZX compensation for 128K
                             tapebufByteCount += 2;
                         }
 
@@ -914,10 +961,10 @@ void Tape::TZX_GetBlock() {
                     case 1:
                         break;                                    
                     case 2:
-                        tapeEarBit = 0;
+                        tapeEarBit = TAPELOW;
                         break;
                     case 3:
-                        tapeEarBit = 1;
+                        tapeEarBit = TAPEHIGH;
                         break;
                     }
 
@@ -947,16 +994,18 @@ void Tape::TZX_GetBlock() {
                         tapeCurBlock++;
                     } else {
                         tapeCurBlock = 0;
-                        tapeEarBit = 0;
+                        tapeEarBit = TAPELOW;
                         rewind(tape);
                     }
 
                 } else {
 
+                    if (Z80Ops::is128) tapeBlkPauseLen *= FACTOR128K; // Apply TZX compensation for 128K
+
                     tapeBlockLen += 2 + 1;
                     tapebufByteCount += 2 + 1;
 
-                    tapeEarBit = 0;
+                    tapeEarBit = TAPELOW;
                     tapePhase=TAPE_PHASE_PAUSE;
                     tapeNext=tapeBlkPauseLen;
 
