@@ -272,7 +272,7 @@ void VIDEO::vgataskinit(void *unused) {
 
     if (Config::videomode == 1) {
 
-        Mode = 4 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 4 : 8)) + (Config::aspect_16_9 ? 2 : 0);
+        Mode = 4 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 4 : 8)) + (Config::aspect_letterbox ? 2 : 0);
 
         Mode += Config::scanlines;
 
@@ -281,7 +281,7 @@ void VIDEO::vgataskinit(void *unused) {
 
     } else {
 
-        Mode = 16 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 2 : 4)) + (Config::aspect_16_9 ? 1 : 0);
+        Mode = 16 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 2 : 4)) + (Config::aspect_letterbox ? 1 : 0);
         
         OSD::scrW = vidmodes[Mode][vmodeproperties::hRes];
         OSD::scrH = vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv];
@@ -319,7 +319,7 @@ void VIDEO::Init() {
         
     } else {
 
-        int Mode = Config::aspect_16_9 ? 2 : 0;
+        int Mode = Config::aspect_letterbox ? 2 : 0;
 
         Mode += Config::scanlines;
 
@@ -360,7 +360,7 @@ void VIDEO::Reset() {
     borderColor = 7;
     brd = border32[7];
 
-    is169 = Config::aspect_16_9 ? 1 : 0;
+    is169 = Config::aspect_letterbox ? 1 : 0;
 
     OSD = 0;
 
