@@ -75,16 +75,16 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
   
     // Position
     if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 4);
-        y = (Config::aspect_16_9 ? 4 : 4);
+        x = (Config::aspect_letterbox ? 24 : 4);
+        y = (Config::aspect_letterbox ? 4 : 4);
     } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        x = (Config::aspect_letterbox ? 24 : 8) + (60 * menu_level);
         y = 8 + (16 * menu_level);
     }
 
     // Columns and Rows
     cols = mfcols;
-    mf_rows = mfrows + (Config::aspect_16_9 ? 0 : 1);
+    mf_rows = mfrows + (Config::aspect_letterbox ? 0 : 1);
 
     // printf("Focus: %d, Begin_row: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) mf_rows);
     if (FileUtils::fileTypes[ftype].focus > mf_rows - 1) {
@@ -351,14 +351,14 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                 unsigned int elem = FileUtils::fileTypes[ftype].fdMode ? fdSearchElements : elements;
                 if (elem) {
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
+                    menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
                     char elements_txt[13];
                     int nitem = (FileUtils::fileTypes[ftype].begin_row + FileUtils::fileTypes[ftype].focus ) - (4 + ndirs) + (fdir.length() == 1);
                     snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elem);
                     VIDEO::vga.print(std::string(12 - strlen(elements_txt), ' ').c_str());
                     VIDEO::vga.print(elements_txt);
                 } else {
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - 13);
+                    menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), cols - 13);
                     VIDEO::vga.print("             ");
                 }
 
@@ -435,7 +435,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             fdCursorFlash = 63;
 
-                            // menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                            // menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
                             // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                             // VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
                             // VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
@@ -448,7 +448,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                         } else {
 
-                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                            menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                             VIDEO::vga.print("      " "          ");
 
@@ -633,7 +633,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                 if ((++fdCursorFlash & 0xf) == 0) {
 
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                    menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                     VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
                     VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
