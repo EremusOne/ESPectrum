@@ -1861,11 +1861,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                             osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
                                         }
                                     
-                                    } else {
-                                        menu_curopt = 1;
-                                        menu_level = 2;                                       
-                                        menu_saverect = false;
                                     }
+
+                                    menu_curopt = 1;
+                                    menu_level = 2;                                       
+                                    menu_saverect = false;
 
                                 } else if (opt2 == 2) {
 
@@ -1888,11 +1888,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                             osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
                                         }
 
-                                    } else {
-                                        menu_curopt = 2;
-                                        menu_level = 2;                                       
-                                        menu_saverect = false;
                                     }
+
+                                    menu_curopt = 2;
+                                    menu_level = 2;                                       
+                                    menu_saverect = false;
 
                                 } else if (opt2 == 3) {                                    
 
@@ -1915,11 +1915,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                             osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
                                         }
 
-                                    } else {
-                                        menu_curopt = 3;
-                                        menu_level = 2;                                       
-                                        menu_saverect = false;
                                     }
+
+                                    menu_curopt = 3;
+                                    menu_level = 2;                                       
+                                    menu_saverect = false;
 
                                 }
 
@@ -2714,94 +2714,94 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
 esp_err_t OSD::updateFirmware(FILE *firmware) {
 
-char ota_write_data[FWBUFFSIZE + 1] = { 0 };
+    char ota_write_data[FWBUFFSIZE + 1] = { 0 };
 
-// get the currently running partition
-const esp_partition_t *partition = esp_ota_get_running_partition();
-if (partition == NULL) {
-    return ESP_ERR_NOT_FOUND;
-}
+    // get the currently running partition
+    const esp_partition_t *partition = esp_ota_get_running_partition();
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
 
-// Grab next update target
-// const esp_partition_t *target = esp_ota_get_next_update_partition(NULL);
-string splabel;
-if (strcmp(partition->label,"esp0")==0) splabel = "esp1"; else splabel= "esp0";
-const esp_partition_t *target = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
-if (target == NULL) {
-    return ESP_ERR_NOT_FOUND;
-}
+    // Grab next update target
+    // const esp_partition_t *target = esp_ota_get_next_update_partition(NULL);
+    string splabel;
+    if (strcmp(partition->label,"esp0")==0) splabel = "esp1"; else splabel= "esp0";
+    const esp_partition_t *target = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
+    if (target == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
 
-// printf("Running partition %s type %d subtype %d at offset 0x%x.\n", partition->label, partition->type, partition->subtype, partition->address);
-// printf("Target  partition %s type %d subtype %d at offset 0x%x.\n", target->label, target->type, target->subtype, target->address);
+    // printf("Running partition %s type %d subtype %d at offset 0x%x.\n", partition->label, partition->type, partition->subtype, partition->address);
+    // printf("Target  partition %s type %d subtype %d at offset 0x%x.\n", target->label, target->type, target->subtype, target->address);
 
-// osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
+    // osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
 
-progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_BEGIN[Config::lang],0,0);
+    progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_BEGIN[Config::lang],0,0);
 
-// Fake erase progress bar ;D
-delay(100);
-for(int n=0; n <= 100; n += 10) {
-    progressDialog("","",n,1);
+    // Fake erase progress bar ;D
     delay(100);
-}
+    for(int n=0; n <= 100; n += 10) {
+        progressDialog("","",n,1);
+        delay(100);
+    }
 
-esp_ota_handle_t ota_handle;
-esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);
-if (result != ESP_OK) {
-    progressDialog("","",0,2);
-    return result;
-}
-
-size_t bytesread;
-uint32_t byteswritten = 0;
-
-// osdCenteredMsg(OSD_FIRMW_WRITE[Config::lang], LEVEL_INFO,0);
-progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_WRITE[Config::lang],0,1);
-
-// Get firmware size
-fseek(firmware, 0, SEEK_END);
-long bytesfirmware = ftell(firmware);
-rewind(firmware);
-
-while (1) {
-    bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
-    result = esp_ota_write(ota_handle,(const void *) ota_write_data, bytesread);
+    esp_ota_handle_t ota_handle;
+    esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);
     if (result != ESP_OK) {
         progressDialog("","",0,2);
         return result;
     }
-    byteswritten += bytesread;
-    progressDialog("","",(float) 100 / ((float) bytesfirmware / (float) byteswritten),1);
-    // printf("Bytes written: %d\n",byteswritten);
-    if (feof(firmware)) break;
-}
 
-result = esp_ota_end(ota_handle);
-if (result != ESP_OK) 
-{
-    // printf("esp_ota_end failed, err=0x%x.\n", result);
-    progressDialog("","",0,2);
-    return result;
-}
+    size_t bytesread;
+    uint32_t byteswritten = 0;
 
-result = esp_ota_set_boot_partition(target);
-if (result != ESP_OK) {
-    // printf("esp_ota_set_boot_partition failed, err=0x%x.\n", result);
-    progressDialog("","",0,2);
-    return result;
-}
+    // osdCenteredMsg(OSD_FIRMW_WRITE[Config::lang], LEVEL_INFO,0);
+    progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_WRITE[Config::lang],0,1);
 
-// osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
-progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_END[Config::lang],100,1);
+    // Get firmware size
+    fseek(firmware, 0, SEEK_END);
+    long bytesfirmware = ftell(firmware);
+    rewind(firmware);
 
-// Enable StartMsg
-Config::StartMsg = true;
-Config::save("StartMsg");
+    while (1) {
+        bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
+        result = esp_ota_write(ota_handle,(const void *) ota_write_data, bytesread);
+        if (result != ESP_OK) {
+            progressDialog("","",0,2);
+            return result;
+        }
+        byteswritten += bytesread;
+        progressDialog("","",(float) 100 / ((float) bytesfirmware / (float) byteswritten),1);
+        // printf("Bytes written: %d\n",byteswritten);
+        if (feof(firmware)) break;
+    }
 
-delay(1000);
+    result = esp_ota_end(ota_handle);
+    if (result != ESP_OK) 
+    {
+        // printf("esp_ota_end failed, err=0x%x.\n", result);
+        progressDialog("","",0,2);
+        return result;
+    }
 
-// Firmware written: reboot
-OSD::esp_hard_reset();
+    result = esp_ota_set_boot_partition(target);
+    if (result != ESP_OK) {
+        // printf("esp_ota_set_boot_partition failed, err=0x%x.\n", result);
+        progressDialog("","",0,2);
+        return result;
+    }
+
+    // osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
+    progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_END[Config::lang],100,1);
+
+    // Enable StartMsg
+    Config::StartMsg = true;
+    Config::save("StartMsg");
+
+    delay(1000);
+
+    // Firmware written: reboot
+    OSD::esp_hard_reset();
 
 }
 
