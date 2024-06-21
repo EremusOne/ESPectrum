@@ -1869,25 +1869,38 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                 } else if (opt2 == 2) {
 
-                                    string title = OSD_ROM[Config::lang];
-                                    title += " 48K   ";            
-                                    string msg = OSD_DLG_SURE[Config::lang];
-                                    uint8_t res = msgDialog(title,msg);
+                                    menu_saverect = true;
 
-                                    if (res == DLG_YES) {
+                                    string tt = MENU_ROM_TITLE[Config::lang];
+                                    tt += " (48K)";
+                                    string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
 
-                                        // Flash custom ROM 48K
-                                        FILE *customrom = fopen("/sd/48custom.rom", "rb");
-                                        if (customrom == NULL) {
-                                            osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
-                                        } else {
-                                            esp_err_t res = updateROM(customrom, 1);
-                                            fclose(customrom);
-                                            string errMsg = OSD_ROM_ERR[Config::lang];
-                                            errMsg += " Code = " + to_string(res);
-                                            osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                    if (mFile != "") {
+                                        mFile.erase(0, 1);
+                                        string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
+
+                                        menu_saverect = false;
+
+                                        string title = OSD_ROM[Config::lang];
+                                        title += " 48K   ";
+                                        string msg = OSD_DLG_SURE[Config::lang];
+                                        uint8_t res = msgDialog(title,msg);
+
+                                        if (res == DLG_YES) {
+
+                                            // Flash custom ROM 48K
+                                            FILE *customrom = fopen(fname.c_str() /*"/sd/48custom.rom"*/, "rb");
+                                            if (customrom == NULL) {
+                                                osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
+                                            } else {
+                                                esp_err_t res = updateROM(customrom, 1);
+                                                fclose(customrom);
+                                                string errMsg = OSD_ROM_ERR[Config::lang];
+                                                errMsg += " Code = " + to_string(res);
+                                                osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                            }
+
                                         }
-
                                     }
 
                                     menu_curopt = 2;
@@ -1896,25 +1909,38 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                 } else if (opt2 == 3) {                                    
 
-                                    string title = OSD_ROM[Config::lang];
-                                    title += " 128K  ";
-                                    string msg = OSD_DLG_SURE[Config::lang];
-                                    uint8_t res = msgDialog(title,msg);
+                                    menu_saverect = true;
 
-                                    if (res == DLG_YES) {
+                                    string tt = MENU_ROM_TITLE[Config::lang];
+                                    tt += " (128K)";
+                                    string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
 
-                                        // Flash custom ROM 128K
-                                        FILE *customrom = fopen("/sd/128custom.rom", "rb");
-                                        if (customrom == NULL) {
-                                            osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
-                                        } else {
-                                            esp_err_t res = updateROM(customrom, 2);
-                                            fclose(customrom);
-                                            string errMsg = OSD_ROM_ERR[Config::lang];
-                                            errMsg += " Code = " + to_string(res);
-                                            osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                    if (mFile != "") {
+                                        mFile.erase(0, 1);
+                                        string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
+
+                                        menu_saverect = false;
+
+                                        string title = OSD_ROM[Config::lang];
+                                        title += " 128K  ";
+                                        string msg = OSD_DLG_SURE[Config::lang];
+                                        uint8_t res = msgDialog(title,msg);
+
+                                        if (res == DLG_YES) {
+
+                                            // Flash custom ROM 128K
+                                            FILE *customrom = fopen(fname.c_str() /*"/sd/128custom.rom"*/, "rb");
+                                            if (customrom == NULL) {
+                                                osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
+                                            } else {
+                                                esp_err_t res = updateROM(customrom, 2);
+                                                fclose(customrom);
+                                                string errMsg = OSD_ROM_ERR[Config::lang];
+                                                errMsg += " Code = " + to_string(res);
+                                                osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                            }
+
                                         }
-
                                     }
 
                                     menu_curopt = 3;
@@ -2485,7 +2511,6 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         return result;
     }
 
-
     // Copy active to target injecting new custom roms
     uint32_t psize = partition->size;
 
@@ -2500,7 +2525,6 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     //     printf("FileSNA: Error opening firmware.out for writing");
     //     return;
     // }
-
     
     progressDialog(dlgTitle,OSD_ROM_WRITE[Config::lang],0,1);
 
