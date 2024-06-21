@@ -66,6 +66,41 @@ int OSD::timeScroll;
 uint8_t OSD::fdCursorFlash;
 bool OSD::fdSearchRefresh;    
 
+void OSD::restoreBackbufferData(bool force = false) {
+    // Restore backbuffer data
+    if (menu_saverect || force) {
+        int j = SaveRectpos - (((w >> 2) + 1) * h);
+        SaveRectpos = j - 4;
+        for (int  m = y; m < y + h; m++) {
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
+            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+                backbuffer32[n] = VIDEO::SaveRect[j];
+                j++;
+            }
+        }
+        menu_saverect = false;
+    }
+}
+
+void OSD::saveBackbufferData() {
+    if (menu_saverect) {
+        // Save backbuffer data
+        VIDEO::SaveRect[SaveRectpos] = x;
+        VIDEO::SaveRect[SaveRectpos + 1] = y;
+        VIDEO::SaveRect[SaveRectpos + 2] = w;
+        VIDEO::SaveRect[SaveRectpos + 3] = h;
+        SaveRectpos += 4;
+        for (int  m = y; m < y + h; m++) {
+            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
+            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
+                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
+                SaveRectpos++;
+            }
+        }
+        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);
+    }
+}
+
 // Run a new file menu
 string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows) {
 
@@ -220,6 +255,14 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 } else {
 
                     printf("Error opening %s\n",filedir.c_str());
+
+                    FileUtils::unmountSDCard();
+
+                    OSD::restoreBackbufferData();
+
+                    fclose(dirfile);
+                    dirfile = NULL;
+                    click();
                     return "";
 
                 }
@@ -251,6 +294,12 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
             dirfile = fopen((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), "r");
             if (dirfile == NULL) {
                 printf("Error opening index file\n");
+
+                FileUtils::unmountSDCard();
+
+                OSD::restoreBackbufferData();
+                click();
+
                 return "";
             }
 
@@ -571,19 +620,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             break;
                         } else {
 
-                            if (menu_saverect) {
-                                // Restore backbuffer data
-                                int j = SaveRectpos - (((w >> 2) + 1) * h);
-                                SaveRectpos = j - 4;
-                                for (int  m = y; m < y + h; m++) {
-                                    uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                                    for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                        backbuffer32[n] = VIDEO::SaveRect[j];
-                                        j++;
-                                    }
-                                }
-                                menu_saverect = false;                                
-                            }
+                            OSD::restoreBackbufferData();
 
                             rtrim(filedir);
                             click();
@@ -592,19 +629,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                     } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
 
-                        // Restore backbuffer data
-                        if (menu_saverect) {
-                            int j = SaveRectpos - (((w >> 2) + 1) * h);
-                            SaveRectpos = j - 4;
-                            for (int  m = y; m < y + h; m++) {
-                                uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                                for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                    backbuffer32[n] = VIDEO::SaveRect[j];
-                                    j++;
-                                }
-                            }
-                            menu_saverect = false;
-                        }
+                        OSD::restoreBackbufferData();
 
                         fclose(dirfile);
                         dirfile = NULL;

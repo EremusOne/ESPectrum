@@ -436,19 +436,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         else if (KeytoESP == fabgl::VK_F2) {
             menu_level = 0;
             menu_saverect = false;
-            string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
-            if (mFile != "") {
-                mFile.erase(0, 1);
-                string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
-                LoadSnapshot(fname,"","");
-                Config::ram_file = fname;
-                Config::last_ram_file = fname;
+
+            FileUtils::remountSDCardIfNeeded();
+
+            if ( FileUtils::SDReady ) {
+                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
+                if (mFile != "") {
+                    mFile.erase(0, 1);
+                    string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
+                    LoadSnapshot(fname,"","");
+                    Config::ram_file = fname;
+                    Config::last_ram_file = fname;
+                }
             }
             if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
         else if (KeytoESP == fabgl::VK_F3) {
             menu_level = 0;
             menu_curopt = 1;
+
             // Persist Load
             string menuload = MENU_PERSIST_LOAD[Config::lang];
             for(int i=1; i <= 100; i++) {
@@ -456,31 +462,40 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             }
             uint8_t opt2 = menuRun(menuload);
             if (opt2) {
-                persistLoad(opt2);
+                FileUtils::remountSDCardIfNeeded();
+
+                if ( FileUtils::SDReady ) persistLoad(opt2);
+                menu_curopt = opt2;
             }
         }
         else if (KeytoESP == fabgl::VK_F4) {
             // Persist Save
             menu_level = 0;
             menu_curopt = 1;
-            while (1) {
-                string menusave = MENU_PERSIST_SAVE[Config::lang];
-                for(int i=1; i <= 100; i++) {
-                    menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-                }
-                uint8_t opt2 = menuRun(menusave);
-                if (opt2) {
-                    if (persistSave(opt2)) return;
-                    menu_curopt = opt2;
-                } else break;
+            
+            string menusave = MENU_PERSIST_SAVE[Config::lang];
+            for(int i=1; i <= 100; i++) {
+                menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+            }
+            uint8_t opt2 = menuRun(menusave);
+            if (opt2) {
+                FileUtils::remountSDCardIfNeeded();
+
+                if ( FileUtils::SDReady ) if (persistSave(opt2)) return;
+                menu_curopt = opt2;
             }
         }
         else if (KeytoESP == fabgl::VK_F5) {
             menu_level = 0; 
             menu_saverect = false;  
-            string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
-            if (mFile != "") {
-                Tape::LoadTape(mFile);
+
+            FileUtils::remountSDCardIfNeeded();
+
+            if ( FileUtils::SDReady ) {
+                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
+                if (mFile != "") {
+                    Tape::LoadTape(mFile);
+                }
             }
             if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
@@ -671,15 +686,24 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (sna_mnu == 1) {
-                            string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,28,16);
-                            if (mFile != "") {
-                                mFile.erase(0, 1);
-                                string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
-                                LoadSnapshot(fname,"","");
-                                Config::ram_file = fname;
-                                Config::last_ram_file = fname;
-                                return;
+
+                            FileUtils::remountSDCardIfNeeded();
+
+                            if ( FileUtils::SDReady ) {
+                                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,28,16);
+                                if (mFile != "") {
+                                    mFile.erase(0, 1);
+                                    string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
+                                    LoadSnapshot(fname,"","");
+                                    Config::ram_file = fname;
+                                    Config::last_ram_file = fname;
+                                    return;
+                                }
+                            } else {
+                                menu_saverect = false;
+                                menu_curopt = sna_mnu;
                             }
+
                         }
                         else if (sna_mnu == 2) {
                             // Persist Load
@@ -736,12 +760,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (tap_num == 1) {
-                            // menu_curopt = 1;
-                            // Select TAP File
-                            string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,28,16);
-                            if (mFile != "") {
-                                Tape::LoadTape(mFile);
-                                return;
+
+                            FileUtils::remountSDCardIfNeeded();
+
+                            if ( FileUtils::SDReady ) {
+                                // menu_curopt = 1;
+                                // Select TAP File
+                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,28,16);
+                                if (mFile != "") {
+                                    Tape::LoadTape(mFile);
+                                    return;
+                                }
+                            } else {
+                                menu_saverect = false;
+                                menu_curopt = tap_num;
                             }
                         }
                         else if (tap_num == 2) {
@@ -841,14 +873,21 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             uint8_t opt2 = menuRun(drvmenu);
                             if (opt2 > 0) {
                                 if (opt2 == 1) {
-                                    menu_saverect = true;
-                                    string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],DISK_DSKFILE,26,15);
-                                    if (mFile != "") {
-                                        mFile.erase(0, 1);
-                                        string fname = FileUtils::MountPoint + "/" + FileUtils::DSK_Path + "/" + mFile;
-                                        ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
-                                        ESPectrum::Betadisk.InsertDisk(dsk_num - 1,fname);
-                                        return;
+                                    FileUtils::remountSDCardIfNeeded();
+
+                                    if ( FileUtils::SDReady ) {
+                                        menu_saverect = true;
+                                        string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],DISK_DSKFILE,26,15);
+                                        if (mFile != "") {
+                                            mFile.erase(0, 1);
+                                            string fname = FileUtils::MountPoint + "/" + FileUtils::DSK_Path + "/" + mFile;
+                                            ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
+                                            ESPectrum::Betadisk.InsertDisk(dsk_num - 1,fname);
+                                            return;
+                                        }
+                                    } else {
+                                        menu_saverect = false;
+                                        menu_curopt = opt2;
                                     }
                                 } else 
                                 if (opt2 == 2) {
@@ -1869,37 +1908,42 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                 } else if (opt2 == 2) {
 
-                                    menu_saverect = true;
+                                    FileUtils::remountSDCardIfNeeded();
 
-                                    string tt = MENU_ROM_TITLE[Config::lang];
-                                    tt += " (48K)";
-                                    string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
+                                    if ( FileUtils::SDReady ) {
 
-                                    if (mFile != "") {
-                                        mFile.erase(0, 1);
-                                        string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
+                                        menu_saverect = true;
 
-                                        menu_saverect = false;
+                                        string tt = MENU_ROM_TITLE[Config::lang];
+                                        tt += " (48K)";
+                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
 
-                                        string title = OSD_ROM[Config::lang];
-                                        title += " 48K   ";
-                                        string msg = OSD_DLG_SURE[Config::lang];
-                                        uint8_t res = msgDialog(title,msg);
+                                        if (mFile != "") {
+                                            mFile.erase(0, 1);
+                                            string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
 
-                                        if (res == DLG_YES) {
+                                            menu_saverect = false;
 
-                                            // Flash custom ROM 48K
-                                            FILE *customrom = fopen(fname.c_str() /*"/sd/48custom.rom"*/, "rb");
-                                            if (customrom == NULL) {
-                                                osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
-                                            } else {
-                                                esp_err_t res = updateROM(customrom, 1);
-                                                fclose(customrom);
-                                                string errMsg = OSD_ROM_ERR[Config::lang];
-                                                errMsg += " Code = " + to_string(res);
-                                                osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                            string title = OSD_ROM[Config::lang];
+                                            title += " 48K   ";
+                                            string msg = OSD_DLG_SURE[Config::lang];
+                                            uint8_t res = msgDialog(title,msg);
+
+                                            if (res == DLG_YES) {
+
+                                                // Flash custom ROM 48K
+                                                FILE *customrom = fopen(fname.c_str() /*"/sd/48custom.rom"*/, "rb");
+                                                if (customrom == NULL) {
+                                                    osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
+                                                } else {
+                                                    esp_err_t res = updateROM(customrom, 1);
+                                                    fclose(customrom);
+                                                    string errMsg = OSD_ROM_ERR[Config::lang];
+                                                    errMsg += " Code = " + to_string(res);
+                                                    osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                                }
+
                                             }
-
                                         }
                                     }
 
@@ -1909,37 +1953,41 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                 } else if (opt2 == 3) {                                    
 
-                                    menu_saverect = true;
+                                    FileUtils::remountSDCardIfNeeded();
 
-                                    string tt = MENU_ROM_TITLE[Config::lang];
-                                    tt += " (128K)";
-                                    string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
+                                    if ( FileUtils::SDReady ) {
+                                        menu_saverect = true;
 
-                                    if (mFile != "") {
-                                        mFile.erase(0, 1);
-                                        string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
+                                        string tt = MENU_ROM_TITLE[Config::lang];
+                                        tt += " (128K)";
+                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
 
-                                        menu_saverect = false;
+                                        if (mFile != "") {
+                                            mFile.erase(0, 1);
+                                            string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
 
-                                        string title = OSD_ROM[Config::lang];
-                                        title += " 128K  ";
-                                        string msg = OSD_DLG_SURE[Config::lang];
-                                        uint8_t res = msgDialog(title,msg);
+                                            menu_saverect = false;
 
-                                        if (res == DLG_YES) {
+                                            string title = OSD_ROM[Config::lang];
+                                            title += " 128K  ";
+                                            string msg = OSD_DLG_SURE[Config::lang];
+                                            uint8_t res = msgDialog(title,msg);
 
-                                            // Flash custom ROM 128K
-                                            FILE *customrom = fopen(fname.c_str() /*"/sd/128custom.rom"*/, "rb");
-                                            if (customrom == NULL) {
-                                                osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
-                                            } else {
-                                                esp_err_t res = updateROM(customrom, 2);
-                                                fclose(customrom);
-                                                string errMsg = OSD_ROM_ERR[Config::lang];
-                                                errMsg += " Code = " + to_string(res);
-                                                osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                            if (res == DLG_YES) {
+
+                                                // Flash custom ROM 128K
+                                                FILE *customrom = fopen(fname.c_str() /*"/sd/128custom.rom"*/, "rb");
+                                                if (customrom == NULL) {
+                                                    osdCenteredMsg(OSD_NOROMFILE_ERR[Config::lang], LEVEL_WARN, 2000);
+                                                } else {
+                                                    esp_err_t res = updateROM(customrom, 2);
+                                                    fclose(customrom);
+                                                    string errMsg = OSD_ROM_ERR[Config::lang];
+                                                    errMsg += " Code = " + to_string(res);
+                                                    osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
+                                                }
+
                                             }
-
                                         }
                                     }
 
@@ -2922,9 +2970,7 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
                 j++;
             }
         }
-
     }
-
 }
 
 uint8_t OSD::msgDialog(string title, string msg) {
