@@ -169,6 +169,34 @@ void FileUtils::unmountSDCard() {
     esp_vfs_fat_sdcard_unmount(MOUNT_POINT_SD, card);
     // //deinitialize the bus after all devices are removed
     spi_bus_free(SPI2_HOST);
+
+    SDReady = false;
+}
+
+bool FileUtils::isMountedSDCard() {
+    // Dirty SDCard mount detection
+    DIR* dir = opendir("/sd");
+    if ( !dir ) return false;
+    struct dirent* de = readdir(dir);
+    if ( !de && ( errno == EIO || errno == EBADF ) ) {
+        closedir(dir);
+        return false;
+    }
+    closedir(dir);
+    return true;
+}
+
+void FileUtils::remountSDCardIfNeeded() {
+    if ( FileUtils::SDReady && !FileUtils::isMountedSDCard() ) {
+        FileUtils::unmountSDCard();
+    }
+
+    if ( !FileUtils::SDReady ) {
+        FileUtils::initFileSystem();
+        if ( !FileUtils::SDReady ) {
+            OSD::osdCenteredMsg(ERR_FS_EXT_FAIL[Config::lang], LEVEL_ERROR);
+        }
+    }
 }
 
 // String FileUtils::getAllFilesFrom(const String path) {
