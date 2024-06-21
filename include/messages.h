@@ -50,7 +50,11 @@ visit https://zxespectrum.speccy.org/contacto
 #define ERR_READ_FILE "Cannot read file!"
 #define ERR_BANK_FAIL "Failed to allocate RAM bank"
 #define ERR_FS_INT_FAIL "Cannot mount internal storage!"
-#define ERR_FS_EXT_FAIL "Cannot mount external storage!"
+
+#define ERR_FS_EXT_FAIL_EN "Cannot mount external storage!"
+#define ERR_FS_EXT_FAIL_ES "\xAD" "Almacenamiento externo no disponible!"
+static const char *ERR_FS_EXT_FAIL[2] = { ERR_FS_EXT_FAIL_EN, ERR_FS_EXT_FAIL_ES };
+
 #define ERR_DIR_OPEN "Cannot open directory!"
 
 // OSD
