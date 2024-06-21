@@ -167,6 +167,10 @@ static const char *OSD_NOFIRMW_ERR[2] = { OSD_NOFIRMW_ERR_EN,OSD_NOFIRMW_ERR_ES}
 #define OSD_FIRMW_ERR_ES "Error actualizando firmware."
 static const char *OSD_FIRMW_ERR[2] = { OSD_FIRMW_ERR_EN,OSD_FIRMW_ERR_ES};
 
+#define MENU_ROM_TITLE_EN "Select ROM file"
+#define MENU_ROM_TITLE_ES "Elija fichero de ROM"
+static const char *MENU_ROM_TITLE[2] = { MENU_ROM_TITLE_EN,MENU_ROM_TITLE_ES };
+
 #define OSD_ROM_ERR_EN "Problem flashing ROM."
 #define OSD_ROM_ERR_ES "Error flasheando ROM."
 static const char *OSD_ROM_ERR[2] = { OSD_ROM_ERR_EN,OSD_ROM_ERR_ES};
