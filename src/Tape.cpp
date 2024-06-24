@@ -320,8 +320,8 @@ void Tape::TAP_Open(string name) {
     fseek(tape,0,SEEK_END);
     tapeFileSize = ftell(tape);
     rewind(tape);
-    if (tapeFileSize == 0) return;
-    
+//    if (tapeFileSize == 0) return;
+
     tapeFileName = name;
 
     Tape::TapeListing.clear(); // Clear TapeListing vector
@@ -331,101 +331,103 @@ void Tape::TAP_Open(string name) {
     int tapeContentIndex=0;
     int tapeBlkLen=0;
     TapeBlock block;
-    do {
+    if ( tapeFileSize > 0 ) {
+        do {
 
-        // Analyze .tap file
-        tapeBlkLen=(readByteFile(tape) | (readByteFile(tape) << 8));
+            // Analyze .tap file
+            tapeBlkLen=(readByteFile(tape) | (readByteFile(tape) << 8));
 
-        // printf("Analyzing block %d\n",tapeListIndex);
-        // printf("    Block Len: %d\n",tapeBlockLen - 2);        
+            // printf("Analyzing block %d\n",tapeListIndex);
+            // printf("    Block Len: %d\n",tapeBlockLen - 2);        
 
-        // Read the flag byte from the block.
-        // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
-        // to indicate a data block.
-        uint8_t flagByte;
-        if (tapeContentIndex + 2 < tapeFileSize) {
-            flagByte = readByteFile(tape);
-        } else {
-            flagByte = 255;
-        }
-
-        // Process the block depending on if it is a header or a data block.
-        // Block type 0 should be a header block, but it happens that headerless blocks also
-        // have block type 0, so we need to check the block length as well.
-        if (flagByte == 0 && tapeBlkLen == 19) { // This is a header.
-
-            // Get the block type.
-            TapeBlock::BlockType dataBlockType;
-            uint8_t blocktype = readByteFile(tape);
-            switch (blocktype)
-            {
-                case 0:
-                    dataBlockType = TapeBlock::BlockType::Program_header;
-                    break;
-                case 1:
-                    dataBlockType = TapeBlock::BlockType::Number_array_header;
-                    break;
-                case 2:
-                    dataBlockType = TapeBlock::BlockType::Character_array_header;
-                    break;
-                case 3:
-                    dataBlockType = TapeBlock::BlockType::Code_header;
-                    break;
-                default:
-                    dataBlockType = TapeBlock::BlockType::Unassigned;
-                    break;
-            }
-
-            // Get the filename.
-            for (int i = 0; i < 10; i++) {
-                uint8_t tst = readByteFile(tape);
-            }
-
-            fseek(tape,6,SEEK_CUR);
-
-            // Get the checksum.
-            uint8_t checksum = readByteFile(tape);
-        
-            if ((tapeListIndex & (TAPE_LISTING_DIV - 1)) == 0) {
-                block.StartPosition = tapeContentIndex;
-                TapeListing.push_back(block);
-            }
-
-        } else {
-
-            // Get the block content length.
-            int contentLength;
-            int contentOffset;
-            if (tapeBlkLen >= 2) {
-                // Normally the content length equals the block length minus two
-                // (the flag byte and the checksum are not included in the content).
-                contentLength = tapeBlkLen - 2;
-                // The content is found at an offset of 3 (two byte block size + one flag byte).
-                contentOffset = 3;
+            // Read the flag byte from the block.
+            // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
+            // to indicate a data block.
+            uint8_t flagByte;
+            if (tapeContentIndex + 2 < tapeFileSize) {
+                flagByte = readByteFile(tape);
             } else {
-                // Fragmented data doesn't have a flag byte or a checksum.
-                contentLength = tapeBlkLen;
-                // The content is found at an offset of 2 (two byte block size).
-                contentOffset = 2;
+                flagByte = 255;
             }
 
-            fseek(tape,contentLength,SEEK_CUR);
+            // Process the block depending on if it is a header or a data block.
+            // Block type 0 should be a header block, but it happens that headerless blocks also
+            // have block type 0, so we need to check the block length as well.
+            if (flagByte == 0 && tapeBlkLen == 19) { // This is a header.
 
-            // Get the checksum.
-            uint8_t checksum = readByteFile(tape);
+                // Get the block type.
+                TapeBlock::BlockType dataBlockType;
+                uint8_t blocktype = readByteFile(tape);
+                switch (blocktype)
+                {
+                    case 0:
+                        dataBlockType = TapeBlock::BlockType::Program_header;
+                        break;
+                    case 1:
+                        dataBlockType = TapeBlock::BlockType::Number_array_header;
+                        break;
+                    case 2:
+                        dataBlockType = TapeBlock::BlockType::Character_array_header;
+                        break;
+                    case 3:
+                        dataBlockType = TapeBlock::BlockType::Code_header;
+                        break;
+                    default:
+                        dataBlockType = TapeBlock::BlockType::Unassigned;
+                        break;
+                }
 
-            if ((tapeListIndex & (TAPE_LISTING_DIV - 1)) == 0) {
-                block.StartPosition = tapeContentIndex;
-                TapeListing.push_back(block);
+                // Get the filename.
+                for (int i = 0; i < 10; i++) {
+                    uint8_t tst = readByteFile(tape);
+                }
+
+                fseek(tape,6,SEEK_CUR);
+
+                // Get the checksum.
+                uint8_t checksum = readByteFile(tape);
+            
+                if ((tapeListIndex & (TAPE_LISTING_DIV - 1)) == 0) {
+                    block.StartPosition = tapeContentIndex;
+                    TapeListing.push_back(block);
+                }
+
+            } else {
+
+                // Get the block content length.
+                int contentLength;
+                int contentOffset;
+                if (tapeBlkLen >= 2) {
+                    // Normally the content length equals the block length minus two
+                    // (the flag byte and the checksum are not included in the content).
+                    contentLength = tapeBlkLen - 2;
+                    // The content is found at an offset of 3 (two byte block size + one flag byte).
+                    contentOffset = 3;
+                } else {
+                    // Fragmented data doesn't have a flag byte or a checksum.
+                    contentLength = tapeBlkLen;
+                    // The content is found at an offset of 2 (two byte block size).
+                    contentOffset = 2;
+                }
+
+                fseek(tape,contentLength,SEEK_CUR);
+
+                // Get the checksum.
+                uint8_t checksum = readByteFile(tape);
+
+                if ((tapeListIndex & (TAPE_LISTING_DIV - 1)) == 0) {
+                    block.StartPosition = tapeContentIndex;
+                    TapeListing.push_back(block);
+                }
+
             }
 
-        }
+            tapeListIndex++;
+            
+            tapeContentIndex += tapeBlkLen + 2;
 
-        tapeListIndex++;
-        
-        tapeContentIndex += tapeBlkLen + 2;
-
-    } while(tapeContentIndex < tapeFileSize);
+        } while(tapeContentIndex < tapeFileSize);
+    }
 
     tapeCurBlock = 0;
     tapeNumBlocks = tapeListIndex;
@@ -1136,6 +1138,7 @@ void Tape::Save() {
 
     fclose(fichero);
 
+    Tape::TAP_Open( tapeFileName );
 }
 
 bool Tape::FlashLoad() {
