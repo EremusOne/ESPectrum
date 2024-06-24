@@ -180,6 +180,7 @@ private:
     static void (*GetBlock)();
 
     static void TAP_Open(string name);
+    static void TAP_ReOpen();
     static void TAP_GetBlock();    
     static void TZX_Open(string name);
     static void TZX_GetBlock();    

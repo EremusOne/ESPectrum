@@ -313,46 +313,46 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         if (FileUtils::fileTypes[ftype].fdMode) {
 
-                // Recalc items number
-                long prevpos = ftell(dirfile);
+            // Recalc items number
+            long prevpos = ftell(dirfile);
 
-                unsigned int foundcount = 0;
-                fdSearchElements = 0;
-                rewind(dirfile);
-                char buf[128];
-                char upperbuf[128];
-                string search = FileUtils::fileTypes[ftype].fileSearch;
-                std::transform(search.begin(), search.end(), search.begin(), ::toupper);
-                while(1) {
-                    fgets(buf, sizeof(buf), dirfile);
-                    if (feof(dirfile)) break;
-                    if (buf[0] == ASCII_SPC) {
-                            foundcount++;
-                            // printf("%s",buf);
-                    }else {
-                        for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
-                        char *pch = strstr(upperbuf, search.c_str());
-                        if (pch != NULL) {
-                            foundcount++;
-                            fdSearchElements++;
-                            // printf("%s",buf);
-                        }
+            unsigned int foundcount = 0;
+            fdSearchElements = 0;
+            rewind(dirfile);
+            char buf[128];
+            char upperbuf[128];
+            string search = FileUtils::fileTypes[ftype].fileSearch;
+            std::transform(search.begin(), search.end(), search.begin(), ::toupper);
+            while(1) {
+                fgets(buf, sizeof(buf), dirfile);
+                if (feof(dirfile)) break;
+                if (buf[0] == ASCII_SPC) {
+                        foundcount++;
+                        // printf("%s",buf);
+                }else {
+                    for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
+                    char *pch = strstr(upperbuf, search.c_str());
+                    if (pch != NULL) {
+                        foundcount++;
+                        fdSearchElements++;
+                        // printf("%s",buf);
                     }
                 }
+            }
 
-                if (foundcount) {
-                    // Redraw rows
-                    real_rows = foundcount + 2; // Add 2 for title and status bar
-                    virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
-                    last_begin_row = last_focus = 0;
-                    // FileUtils::fileTypes[ftype].focus = 2;
-                    // FileUtils::fileTypes[ftype].begin_row = 2;
-                    // fd_Redraw(title, fdir, ftype);
-                } else {
-                    fseek(dirfile,prevpos,SEEK_SET);
-                }
+            if (foundcount) {
+                // Redraw rows
+                real_rows = foundcount + 2; // Add 2 for title and status bar
+                virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
+                last_begin_row = last_focus = 0;
+                // FileUtils::fileTypes[ftype].focus = 2;
+                // FileUtils::fileTypes[ftype].begin_row = 2;
+                // fd_Redraw(title, fdir, ftype);
+            } else {
+                fseek(dirfile,prevpos,SEEK_SET);
+            }
 
-                fdSearchRefresh = false;
+            fdSearchRefresh = false;
 
         } else {
 
@@ -428,7 +428,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                         if (FileUtils::fileTypes[ftype].fdMode) {
 
-                            if (FileUtils::fileTypes[ftype].fileSearch.length()<10) {
+                            if (FileUtils::fileTypes[ftype].fileSearch.length()<16) {
                                 FileUtils::fileTypes[ftype].fileSearch += char(fsearch);
                                 fdSearchRefresh = true;
                                 click();
@@ -476,6 +476,27 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             }
                         }
 
+                    } else if (Menukey.vk == fabgl::VK_F2 && 
+                                ftype == DISK_TAPFILE // Dirty hack
+                              ) {
+                        string new_tap = OSD::input( 1, mfrows + (Config::aspect_letterbox ? 0 : 1), Config::lang ? "Nomb: " : "Name: ", 30 );
+
+                        if ( new_tap != "" ) {
+                            fclose(dirfile);
+                            dirfile = NULL;
+
+                            FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
+
+                            return "S" + new_tap + ".tap";
+
+                        } else {
+                            menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
+                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            VIDEO::vga.print("      " "                              ");
+                        }
+
+//                        fd_Redraw(title, fdir, ftype);
+
                     } else if (Menukey.vk == fabgl::VK_F3) {
 
                         FileUtils::fileTypes[ftype].fdMode ^= 1;
@@ -491,7 +512,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                             // VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
                             // VIDEO::vga.print("K");
                             // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            // VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+                            // VIDEO::vga.print(std::string(16 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
 
                             fdSearchRefresh = FileUtils::fileTypes[ftype].fileSearch != "";
 
@@ -499,7 +520,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            VIDEO::vga.print("      " "          ");
+                            VIDEO::vga.print("      " "                ");
 
                             if (FileUtils::fileTypes[ftype].fileSearch != "") {
                                 // FileUtils::fileTypes[ftype].fileSearch="";
@@ -657,7 +678,6 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
             if (FileUtils::fileTypes[ftype].fdMode) {
 
                 if ((++fdCursorFlash & 0xf) == 0) {
-
                     menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                     VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
@@ -668,7 +688,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     }
                     VIDEO::vga.print("K");
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                    VIDEO::vga.print(std::string(10 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+                    VIDEO::vga.print(std::string(16 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
                 }
 
                 if (fdSearchRefresh) {
@@ -715,6 +735,13 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     fdSearchRefresh = false;
                 }
 
+            } else {
+                menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
+                VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                if ( ftype == DISK_TAPFILE ) { // Dirty hack
+                    VIDEO::vga.print(Config::lang ? "F2: Nuevo | " : "F2: New | " );
+                }
+                VIDEO::vga.print(Config::lang ? "F3: Busq" : "F3: Find" );
             }
 
             vTaskDelay(5 / portTICK_PERIOD_MS);
