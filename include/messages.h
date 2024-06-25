@@ -167,6 +167,10 @@ static const char *OSD_NOFIRMW_ERR[2] = { OSD_NOFIRMW_ERR_EN,OSD_NOFIRMW_ERR_ES}
 #define OSD_FIRMW_ERR_ES "Error actualizando firmware."
 static const char *OSD_FIRMW_ERR[2] = { OSD_FIRMW_ERR_EN,OSD_FIRMW_ERR_ES};
 
+#define MENU_ROM_TITLE_EN "Select ROM file"
+#define MENU_ROM_TITLE_ES "Elija fichero de ROM"
+static const char *MENU_ROM_TITLE[2] = { MENU_ROM_TITLE_EN,MENU_ROM_TITLE_ES };
+
 #define OSD_ROM_ERR_EN "Problem flashing ROM."
 #define OSD_ROM_ERR_ES "Error flasheando ROM."
 static const char *OSD_ROM_ERR[2] = { OSD_ROM_ERR_EN,OSD_ROM_ERR_ES};
@@ -331,12 +335,12 @@ static const char *MENU_RENDER[2] = { MENU_RENDER_EN, MENU_RENDER_ES };
 
 #define MENU_ASPECT_EN \
     "Aspect Ratio\n"\
-    "4:3\t[4]\n"\
-    "16:9\t[1]\n"
+    "Stretch\t[4]\n"\
+    "Letterbox\t[1]\n"
 #define MENU_ASPECT_ES \
     "Rel. aspecto\n"\
-    "4:3\t[4]\n"\
-    "16:9\t[1]\n"
+    "Estirar\t[4]\n"\
+    "Lat. negros\t[1]\n"
 static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
 
 static const char *MENU_SCANLINES[2] = { "Scanlines\n", "Scanlines\n" };
