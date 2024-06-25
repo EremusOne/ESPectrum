@@ -331,12 +331,12 @@ static const char *MENU_RENDER[2] = { MENU_RENDER_EN, MENU_RENDER_ES };
 
 #define MENU_ASPECT_EN \
     "Aspect Ratio\n"\
-    "4:3\t[4]\n"\
-    "16:9\t[1]\n"
+    "Stretch\t[4]\n"\
+    "Letterbox\t[1]\n"
 #define MENU_ASPECT_ES \
     "Rel. aspecto\n"\
-    "4:3\t[4]\n"\
-    "16:9\t[1]\n"
+    "Estirar\t[4]\n"\
+    "Lat. negros\t[1]\n"
 static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
 
 static const char *MENU_SCANLINES[2] = { "Scanlines\n", "Scanlines\n" };

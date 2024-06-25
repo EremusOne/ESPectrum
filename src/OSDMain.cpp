@@ -199,7 +199,7 @@ void OSD::drawStats() {
 
     unsigned short x,y;
 
-    if (Config::aspect_16_9) {
+    if (Config::aspect_letterbox) {
         x = 156;
         y = 176;
     } else {
@@ -518,7 +518,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if ((VIDEO::OSD & 0x03) > 2) {
                 if ((VIDEO::OSD & 0x04) == 0) {
-                    if (Config::aspect_16_9) 
+                    if (Config::aspect_letterbox) 
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen;
                     else
                         VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
@@ -527,7 +527,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             } else {
 
                 if ((VIDEO::OSD & 0x04) == 0) {
-                    if (Config::aspect_16_9) 
+                    if (Config::aspect_letterbox) 
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                     else
                         VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -556,7 +556,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if (VIDEO::OSD == 0) {
 
-                if (Config::aspect_16_9) 
+                if (Config::aspect_letterbox) 
                     VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -576,7 +576,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             unsigned short x,y;
 
-            if (Config::aspect_16_9) {
+            if (Config::aspect_letterbox) {
                 x = 156;
                 y = 180;
             } else {
@@ -597,7 +597,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if (VIDEO::OSD == 0) {
 
-                if (Config::aspect_16_9) 
+                if (Config::aspect_letterbox) 
                     VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -616,7 +616,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             }
 
             unsigned short x,y;
-            if (Config::aspect_16_9) {
+            if (Config::aspect_letterbox) {
                 x = 156;
                 y = 180;
             } else {
@@ -1392,7 +1392,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         // aspect ratio
                                         string asp_menu = MENU_ASPECT[Config::lang];
-                                        bool prev_asp = Config::aspect_16_9;
+                                        bool prev_asp = Config::aspect_letterbox;
                                         if (prev_asp) {
                                             asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
                                             asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
@@ -1403,11 +1403,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         uint8_t opt2 = menuRun(asp_menu);
                                         if (opt2) {
                                             if (opt2 == 1)
-                                                Config::aspect_16_9 = false;
+                                                Config::aspect_letterbox = false;
                                             else
-                                                Config::aspect_16_9 = true;
+                                                Config::aspect_letterbox = true;
 
-                                            if (Config::aspect_16_9 != prev_asp) {
+                                            if (Config::aspect_letterbox != prev_asp) {
                                                 Config::ram_file = "none";
                                                 Config::save("asp169");
                                                 Config::save("ram");
@@ -1861,11 +1861,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                             osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
                                         }
                                     
-                                    } else {
-                                        menu_curopt = 1;
-                                        menu_level = 2;                                       
-                                        menu_saverect = false;
                                     }
+
+                                    menu_curopt = 1;
+                                    menu_level = 2;                                       
+                                    menu_saverect = false;
 
                                 } else if (opt2 == 2) {
 
@@ -1888,11 +1888,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                             osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
                                         }
 
-                                    } else {
-                                        menu_curopt = 2;
-                                        menu_level = 2;                                       
-                                        menu_saverect = false;
                                     }
+
+                                    menu_curopt = 2;
+                                    menu_level = 2;                                       
+                                    menu_saverect = false;
 
                                 } else if (opt2 == 3) {                                    
 
@@ -1915,11 +1915,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                             osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
                                         }
 
-                                    } else {
-                                        menu_curopt = 3;
-                                        menu_level = 2;                                       
-                                        menu_saverect = false;
                                     }
+
+                                    menu_curopt = 3;
+                                    menu_level = 2;                                       
+                                    menu_saverect = false;
 
                                 }
 
@@ -1974,12 +1974,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 // About
                 drawOSD(false);
                 
-                VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 12 : 32,240,50,zxColor(0, 0));            
+                VIDEO::vga.fillRect(Config::aspect_letterbox ? 60 : 40,Config::aspect_letterbox ? 12 : 32,240,50,zxColor(0, 0));            
 
                 // Decode Logo in EBF8 format
                 uint8_t *logo = (uint8_t *)ESPectrum_logo;
-                int pos_x = Config::aspect_16_9 ? 86 : 66;
-                int pos_y = Config::aspect_16_9 ? 23 : 43;
+                int pos_x = Config::aspect_letterbox ? 86 : 66;
+                int pos_y = Config::aspect_letterbox ? 23 : 43;
                 int logo_w = (logo[5] << 8) + logo[4]; // Get Width
                 int logo_h = (logo[7] << 8) + logo[6]; // Get Height
                 logo+=8; // Skip header
@@ -1992,8 +1992,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
                 // VIDEO::vga.print(Config::lang ? OSD_ABOUT1_ES : OSD_ABOUT1_EN);
                 
-                pos_x = Config::aspect_16_9 ? 66 : 46;
-                pos_y = Config::aspect_16_9 ? 68 : 88;            
+                pos_x = Config::aspect_letterbox ? 66 : 46;
+                pos_y = Config::aspect_letterbox ? 68 : 88;            
                 int osdRow = 0; int osdCol = 0;
                 int msgIndex = 0; int msgChar = 0;
                 int msgDelay = 0; int cursorBlink = 16; int nextChar = 0;
@@ -2035,7 +2035,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     } else {
                         msgDelay--;
                         if (msgDelay==0) {
-                            VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 64 : 84,240,114,zxColor(1, 0));
+                            VIDEO::vga.fillRect(Config::aspect_letterbox ? 60 : 40,Config::aspect_letterbox ? 64 : 84,240,114,zxColor(1, 0));
                             osdCol = 0;
                             osdRow  = 0;
                             msgChar = 0;
@@ -2714,94 +2714,94 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
 esp_err_t OSD::updateFirmware(FILE *firmware) {
 
-char ota_write_data[FWBUFFSIZE + 1] = { 0 };
+    char ota_write_data[FWBUFFSIZE + 1] = { 0 };
 
-// get the currently running partition
-const esp_partition_t *partition = esp_ota_get_running_partition();
-if (partition == NULL) {
-    return ESP_ERR_NOT_FOUND;
-}
+    // get the currently running partition
+    const esp_partition_t *partition = esp_ota_get_running_partition();
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
 
-// Grab next update target
-// const esp_partition_t *target = esp_ota_get_next_update_partition(NULL);
-string splabel;
-if (strcmp(partition->label,"esp0")==0) splabel = "esp1"; else splabel= "esp0";
-const esp_partition_t *target = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
-if (target == NULL) {
-    return ESP_ERR_NOT_FOUND;
-}
+    // Grab next update target
+    // const esp_partition_t *target = esp_ota_get_next_update_partition(NULL);
+    string splabel;
+    if (strcmp(partition->label,"esp0")==0) splabel = "esp1"; else splabel= "esp0";
+    const esp_partition_t *target = esp_partition_find_first(ESP_PARTITION_TYPE_APP,ESP_PARTITION_SUBTYPE_ANY,splabel.c_str());
+    if (target == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
 
-// printf("Running partition %s type %d subtype %d at offset 0x%x.\n", partition->label, partition->type, partition->subtype, partition->address);
-// printf("Target  partition %s type %d subtype %d at offset 0x%x.\n", target->label, target->type, target->subtype, target->address);
+    // printf("Running partition %s type %d subtype %d at offset 0x%x.\n", partition->label, partition->type, partition->subtype, partition->address);
+    // printf("Target  partition %s type %d subtype %d at offset 0x%x.\n", target->label, target->type, target->subtype, target->address);
 
-// osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
+    // osdCenteredMsg(OSD_FIRMW_BEGIN[Config::lang], LEVEL_INFO,0);
 
-progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_BEGIN[Config::lang],0,0);
+    progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_BEGIN[Config::lang],0,0);
 
-// Fake erase progress bar ;D
-delay(100);
-for(int n=0; n <= 100; n += 10) {
-    progressDialog("","",n,1);
+    // Fake erase progress bar ;D
     delay(100);
-}
+    for(int n=0; n <= 100; n += 10) {
+        progressDialog("","",n,1);
+        delay(100);
+    }
 
-esp_ota_handle_t ota_handle;
-esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);
-if (result != ESP_OK) {
-    progressDialog("","",0,2);
-    return result;
-}
-
-size_t bytesread;
-uint32_t byteswritten = 0;
-
-// osdCenteredMsg(OSD_FIRMW_WRITE[Config::lang], LEVEL_INFO,0);
-progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_WRITE[Config::lang],0,1);
-
-// Get firmware size
-fseek(firmware, 0, SEEK_END);
-long bytesfirmware = ftell(firmware);
-rewind(firmware);
-
-while (1) {
-    bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
-    result = esp_ota_write(ota_handle,(const void *) ota_write_data, bytesread);
+    esp_ota_handle_t ota_handle;
+    esp_err_t result = esp_ota_begin(target, OTA_SIZE_UNKNOWN, &ota_handle);
     if (result != ESP_OK) {
         progressDialog("","",0,2);
         return result;
     }
-    byteswritten += bytesread;
-    progressDialog("","",(float) 100 / ((float) bytesfirmware / (float) byteswritten),1);
-    // printf("Bytes written: %d\n",byteswritten);
-    if (feof(firmware)) break;
-}
 
-result = esp_ota_end(ota_handle);
-if (result != ESP_OK) 
-{
-    // printf("esp_ota_end failed, err=0x%x.\n", result);
-    progressDialog("","",0,2);
-    return result;
-}
+    size_t bytesread;
+    uint32_t byteswritten = 0;
 
-result = esp_ota_set_boot_partition(target);
-if (result != ESP_OK) {
-    // printf("esp_ota_set_boot_partition failed, err=0x%x.\n", result);
-    progressDialog("","",0,2);
-    return result;
-}
+    // osdCenteredMsg(OSD_FIRMW_WRITE[Config::lang], LEVEL_INFO,0);
+    progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_WRITE[Config::lang],0,1);
 
-// osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
-progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_END[Config::lang],100,1);
+    // Get firmware size
+    fseek(firmware, 0, SEEK_END);
+    long bytesfirmware = ftell(firmware);
+    rewind(firmware);
 
-// Enable StartMsg
-Config::StartMsg = true;
-Config::save("StartMsg");
+    while (1) {
+        bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
+        result = esp_ota_write(ota_handle,(const void *) ota_write_data, bytesread);
+        if (result != ESP_OK) {
+            progressDialog("","",0,2);
+            return result;
+        }
+        byteswritten += bytesread;
+        progressDialog("","",(float) 100 / ((float) bytesfirmware / (float) byteswritten),1);
+        // printf("Bytes written: %d\n",byteswritten);
+        if (feof(firmware)) break;
+    }
 
-delay(1000);
+    result = esp_ota_end(ota_handle);
+    if (result != ESP_OK) 
+    {
+        // printf("esp_ota_end failed, err=0x%x.\n", result);
+        progressDialog("","",0,2);
+        return result;
+    }
 
-// Firmware written: reboot
-OSD::esp_hard_reset();
+    result = esp_ota_set_boot_partition(target);
+    if (result != ESP_OK) {
+        // printf("esp_ota_set_boot_partition failed, err=0x%x.\n", result);
+        progressDialog("","",0,2);
+        return result;
+    }
+
+    // osdCenteredMsg(OSD_FIRMW_END[Config::lang], LEVEL_INFO, 0);
+    progressDialog(OSD_FIRMW[Config::lang],OSD_FIRMW_END[Config::lang],100,1);
+
+    // Enable StartMsg
+    Config::StartMsg = true;
+    Config::save("StartMsg");
+
+    delay(1000);
+
+    // Firmware written: reboot
+    OSD::esp_hard_reset();
 
 }
 
