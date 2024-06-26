@@ -708,7 +708,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             FileUtils::remountSDCardIfNeeded();
 
                             if ( FileUtils::SDReady ) {
-                                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,28,16);
+                                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 36, 15);
                                 if (mFile != "") {
                                     mFile.erase(0, 1);
                                     string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
@@ -784,7 +784,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             if ( FileUtils::SDReady ) {
                                 // menu_curopt = 1;
                                 // Select TAP File
-                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,28,16);
+                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 10);
                                 if (mFile != "") {
                                     Tape::LoadTape(mFile);
                                     return;
@@ -895,7 +895,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                     if ( FileUtils::SDReady ) {
                                         menu_saverect = true;
-                                        string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang],DISK_DSKFILE,26,15);
+                                        string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang], DISK_DSKFILE, 36, 15);
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + "/" + FileUtils::DSK_Path + "/" + mFile;
@@ -1934,7 +1934,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         string tt = MENU_ROM_TITLE[Config::lang];
                                         tt += " (48K)";
-                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
+                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 36, 8);
 
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
@@ -1978,7 +1978,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         string tt = MENU_ROM_TITLE[Config::lang];
                                         tt += " (128K)";
-                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 20, 8);
+                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 36, 8);
 
                                         if (mFile != "") {
                                             mFile.erase(0, 1);

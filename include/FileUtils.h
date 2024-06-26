@@ -62,6 +62,8 @@ struct DISK_FTYPE {
     string fileSearch;    
 };
 
+#define DIR_CACHE_SIZE 64
+
 class FileUtils
 {
 public:
@@ -80,7 +82,7 @@ public:
     // static File           safeOpenFileRead(String filename);
     // static string getFileEntriesFromDir(string path);
     static void DirToFile(string Dir, uint8_t ftype /*string fileExts*/);
-    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
+//    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
     // static string getSortedFileList(string fileDir);
     static bool hasSNAextension(string filename);

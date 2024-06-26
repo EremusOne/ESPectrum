@@ -117,6 +117,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
         y = 8 + (16 * menu_level);
     }
 
+    if ( x + mfcols * OSD_FONT_W > 52 * OSD_FONT_W ) x = ( 52 - mfcols ) * OSD_FONT_W;
+
     // Columns and Rows
     cols = mfcols;
     mf_rows = mfrows + (Config::aspect_letterbox ? 0 : 1);
@@ -492,7 +494,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                         } else {
                             menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            VIDEO::vga.print("      " "                              ");
+                            VIDEO::vga.print("      " "                               ");
                         }
 
 //                        fd_Redraw(title, fdir, ftype);
