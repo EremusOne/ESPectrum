@@ -4596,39 +4596,21 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
                     for (int i=0; i < 10; i++)
                         name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
                     rtrim(name);
-                    Tape::tapeSaveName = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name + ".tap";
+
+                    SaveRes = DLG_YES;
 
                     struct stat stat_buf;
-                    SaveRes = DLG_YES;
-                    if (stat(Tape::tapeSaveName.c_str(), &stat_buf) == 0) {
-                        string title = OSD_TAPE_SAVE[Config::lang];
-                        string msg = OSD_TAPE_SAVE_EXIST[Config::lang];
-                        SaveRes = OSD::msgDialog(title,msg);
-                    }
 
-                    if (SaveRes == DLG_YES) {
-
-                        // printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
-                        /*int result = */remove(Tape::tapeSaveName.c_str());
-
-                        // check if file has been deleted successfully
-                        // if (result != 0) {
-                        //     // print error message
-                        //     printf("File deletion failed\n");
-                        // }
-                        // else {
-                        //     printf("File deleted succesfully\n");
-                        // }            
-
-                        // printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
-                        
+                    if ( Tape::tapeSaveName == "" || Tape::tapeSaveName == "none" || !FileUtils::hasTAPextension(Tape::tapeSaveName) || stat(Tape::tapeSaveName.c_str(), &stat_buf) ) {
+                        OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
+                        SaveRes = DLG_NO;
+                    } else {
                         REG_DE--;
                         regA = 0x00;
 
                         Tape::Save();
 
                         REG_PC = 0x555;
-                    
                     }
 
                 } else {
