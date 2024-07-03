@@ -318,8 +318,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
             unsigned int foundcount = 0;
             fdSearchElements = 0;
             rewind(dirfile);
-            char buf[128];
-            char upperbuf[128];
+            char buf[FILENAMELEN+1];
+            char upperbuf[FILENAMELEN+1];
             string search = FileUtils::fileTypes[ftype].fileSearch;
             std::transform(search.begin(), search.end(), search.begin(), ::toupper);
             while(1) {
@@ -415,10 +415,12 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     if (!Menukey.down) continue;
 
                     // Search first ocurrence of letter if we're not on that letter yet
-                    if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
+                    if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || Menukey.vk == fabgl::VK_SPACE || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
 
                         int fsearch;
-                        if (Menukey.vk<=fabgl::VK_9)
+                        if (Menukey.vk==fabgl::VK_SPACE)
+                            fsearch = ASCII_SPC;
+                        else if (Menukey.vk<=fabgl::VK_9)
                             fsearch = Menukey.vk + 46;
                         else if (Menukey.vk<=fabgl::VK_z)
                             fsearch = Menukey.vk + 75;
@@ -436,16 +438,16 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                         } else {
                             uint8_t letra = rowGet(menu,FileUtils::fileTypes[ftype].focus).at(0);
                             // printf("%d %d\n",(int)letra,fsearch);
-                            if (letra != fsearch) { 
+                            if (toupper(letra) != toupper(fsearch)) { 
                                 // Seek first ocurrence of letter/number
                                 long prevpos = ftell(dirfile);
-                                char buf[128];
+                                char buf[FILENAMELEN+1];
                                 int cnt = 0;
                                 fseek(dirfile,0,SEEK_SET);
                                 while(!feof(dirfile)) {
                                     fgets(buf, sizeof(buf), dirfile);
                                     // printf("%c %d\n",buf[0],int(buf[0]));
-                                    if (buf[0] == char(fsearch)) break;
+                                    if (toupper(buf[0]) == toupper(char(fsearch))) break;
                                     cnt++;
                                 }
                                 // printf("Cnt: %d Letra: %d\n",cnt,int(letra));
@@ -619,7 +621,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             }       
                         }                  
-                    } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
+                    } else if (Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
 
                         fclose(dirfile);
                         dirfile = NULL;
@@ -698,8 +700,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     unsigned int foundcount = 0;
                     fdSearchElements = 0;
                     rewind(dirfile);
-                    char buf[128];
-                    char upperbuf[128];
+                    char buf[FILENAMELEN+1];
+                    char upperbuf[FILENAMELEN+1];
                     string search = FileUtils::fileTypes[ftype].fileSearch;
                     std::transform(search.begin(), search.end(), search.begin(), ::toupper);
                     while(1) {
@@ -760,7 +762,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
 
         // Read bunch of rows
         menu = title + "\n" + ( fdir.length() == 1 ? fdir : fdir.substr(0,fdir.length()-1)) + "\n";
-        char buf[128];
+        char buf[FILENAMELEN+1];
         if (FileUtils::fileTypes[ftype].fdMode == 0 || FileUtils::fileTypes[ftype].fileSearch == "") {
             fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * 64,SEEK_SET);
             for (int i = 2; i < virtual_rows; i++) {
@@ -774,7 +776,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
             int count = 2;
             string search = FileUtils::fileTypes[ftype].fileSearch;
             std::transform(search.begin(), search.end(), search.begin(), ::toupper);
-            char upperbuf[128];
+            char upperbuf[FILENAMELEN+1];
             while (1) {
                 fgets(buf, sizeof(buf), dirfile);
                 if (feof(dirfile)) break;
