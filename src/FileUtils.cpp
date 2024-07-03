@@ -168,8 +168,8 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
     }
 
     // This seems to fix problems when video framebuffer is too big (400x300 i.e.)
-    host.max_freq_khz = 10000;
-    host.set_card_clk(host.slot, 10000);
+    host.max_freq_khz = 19000;
+    host.set_card_clk(host.slot, 19000);
 
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
@@ -474,25 +474,28 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
 
             if ( readFile2 ) {
                 if (buffer.empty()) { // Fill buffer with directory entries
-                    while ( buffer.size() < bufferSize && (de = readdir(dir)) != nullptr ) {
-                        if (de->d_type == DT_REG || de->d_type == DT_DIR) {
+                    if ( bufferSize ) {
+                        while ( buffer.size() < bufferSize && (de = readdir(dir)) != nullptr ) {
                             if (de->d_name[0] != '.') {
                                 string fname = de->d_name;
                                 if (de->d_type == DT_DIR) {
                                     buffer.push_back( " " + fname );
                                     OSD::ndirs++;
-                                } else if (std::find(filexts.begin(), filexts.end(), getLCaseExt(fname)) != filexts.end()) {
+                                } else if (de->d_type == DT_REG && std::find(filexts.begin(), filexts.end(), getLCaseExt(fname)) != filexts.end()) {
                                     buffer.push_back( fname );
                                     OSD::elements++;
                                 }
                             }
                         }
-                    }
 
-                    // Sort buffer loaded with processed directory entries
-                    sort(buffer.begin(), buffer.end(), [](const string& a, const string& b) {
-                        return ::toLower(a) < toLower(b);
-                    });
+                        // Sort buffer loaded with processed directory entries
+                        sort(buffer.begin(), buffer.end(), [](const string& a, const string& b) {
+                            return ::toLower(a) < toLower(b);
+                        });
+                    } else {
+                        eof2 = true;
+                        readFile2 = false;
+                    }
                 }
 
                 if (!buffer.empty()) {
@@ -557,6 +560,12 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
 
         fin = fopen((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string(n&1)).c_str(), "rb");
         if ( !fin ) {
+            buffer.clear(); // Clear vector
+            std::vector<std::string>().swap(buffer); // free memory
+
+            filexts.clear(); // Clear vector
+            std::vector<std::string>().swap(filexts); // free memory  
+
             closedir( dir );
             // Close progress dialog
             OSD::progressDialog("","",0,2);
@@ -573,6 +582,12 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         n++;
     }
 
+    buffer.clear(); // Clear vector
+    std::vector<std::string>().swap(buffer); // free memory
+
+    filexts.clear(); // Clear vector
+    std::vector<std::string>().swap(filexts); // free memory    
+
     if ( fin ) fclose(fin);
     closedir(dir);
 
@@ -586,30 +601,22 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         return;
     }
 
-    char bhash[21]; // Reserva espacio para el número más un carácter nulo
-    int length = snprintf(bhash, sizeof(bhash), "%020lu", hash); // Formatea el número con longitud fija
-    fputs(bhash, fout); // Escribe la cadena formateada en el archivo
-//    fputs(std::to_string(hash).c_str(), fout);
+//    char bhash[21]; // Reserva espacio para el número más un carácter nulo
+//    int length = snprintf(bhash, sizeof(bhash), "%020lu", hash); // Formatea el número con longitud fija
+//    fputs(bhash, fout); // Escribe la cadena formateada en el archivo
+    fprintf( fout, "%020lu", hash );
     fclose(fout);
-
-    buffer.clear(); // Clear vector
-    std::vector<std::string>().swap(buffer); // free memory
-
-    filexts.clear(); // Clear vector
-    std::vector<std::string>().swap(filexts); // free memory    
 
     if ( n ) {
         OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_3[Config::lang],0,1);
         remove((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string((n-1)&1)).c_str());
-        OSD::progressDialog("","",(float) 100 /* / ((float) ( !dirExisted ? 2 : 1 ) / (float) 1) */,1);
+        OSD::progressDialog("","",(float) 100 / ((float) ( !dirExisted ? 2 : 1 ) / (float) 1),1);
 
-#if 0
         // Si el directorio no existía previamente, eliminarlo
         if (!dirExisted ) {
             rmdir(tempDir.c_str());
             OSD::progressDialog("","",(float) 100 / ((float) 2 / (float) 2),1);
         }
-#endif
     }
 
     // Close progress dialog
