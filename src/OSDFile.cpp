@@ -101,6 +101,22 @@ void OSD::saveBackbufferData() {
     }
 }
 
+
+// Función para convertir una cadena de dígitos en un número
+// se agrega esta funcion porque atoul crashea si no hay digitos en el buffer
+unsigned long getLong(char *buffer) {
+    unsigned long result = 0;
+    char * p = buffer;
+
+    while (p && isdigit(*p)) {
+        result = result * 10 + (*p - '0');
+        ++p;
+    }
+
+    return result;
+}
+
+
 // Run a new file menu
 string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows) {
 
@@ -178,119 +194,100 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         // fclose(dirfile);
 
+        std::vector<std::string> filexts;
+        size_t pos = 0;
+        string ss = FileUtils::fileTypes[ftype].fileExts;
+        while ((pos = ss.find(",")) != std::string::npos) {
+            filexts.push_back(ss.substr(0, pos));
+            ss.erase(0, pos + 1);
+        }
+        filexts.push_back(ss.substr(0));
+
+        unsigned long hash = 0; // Name checksum variables
+
+        // Get Dir Stats
+        int result = FileUtils::getDirStats(filedir, filexts, &hash, &elements, &ndirs);
+
+        filexts.clear(); // Clear vector
+        std::vector<std::string>().swap(filexts); // free memory   
+
+        if ( result == -1 ) {
+            printf("Error opening %s\n",filedir.c_str());
+
+            FileUtils::unmountSDCard();
+
+            OSD::restoreBackbufferData();
+
+            click();
+            return "";
+
+        }
+
         // Open dir file for read
         dirfile = fopen((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), "r");
         if (dirfile == NULL) {
-
             // printf("No dir file found: reindexing\n");
             reIndex = true;
-
         } else {
-
             // stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
             fseek(dirfile,0,SEEK_END);
             dirfilesize = ftell(dirfile);
             
-            // if (!sessid_ok) {
+            fseek(dirfile, dirfilesize - 20, SEEK_SET);                
 
-                // Read dir hash from file
-                // fseek(dirfile, (stat_buf.st_size >> 5) << 5,SEEK_SET);
-                fseek(dirfile, (dirfilesize >> 6) << 6,SEEK_SET);                
+            char fhash[21];
+            memset( fhash, '\0', sizeof(fhash));
+            fgets(fhash, sizeof(fhash), dirfile);
+            // printf("File Hash: %s\n",fhash);
 
-                char fhash[32];
-                fgets(fhash, sizeof(fhash), dirfile);
-                // printf("File Hash: %s\n",fhash);
-
-                // Count dir items and calc hash
-                DIR *dir;
-                struct dirent* de;
-
-                std::vector<std::string> filexts;
-                size_t pos = 0;
-                string ss = FileUtils::fileTypes[ftype].fileExts;
-                while ((pos = ss.find(",")) != std::string::npos) {
-                    filexts.push_back(ss.substr(0, pos));
-                    ss.erase(0, pos + 1);
-                }
-                filexts.push_back(ss.substr(0));
-
-                unsigned long hash = 0, high; // Name checksum variables
-
-                string fdir = filedir.substr(0,filedir.length() - 1);
-                if ((dir = opendir(fdir.c_str())) != nullptr) {
-                    
-                    elements = 0;
-                    ndirs = 0;
-                    while ((de = readdir(dir)) != nullptr) {
-                        string fname = de->d_name;
-                        if (de->d_type == DT_REG || de->d_type == DT_DIR) {
-                            if (fname.compare(0,1,".") != 0) {
-                                // printf("Fname: %s Fname size: %d\n",fname.c_str(),fname.size());
-
-//                                size_t fpos = fname.find_last_of(".");
-                                // if (fpos != string::npos) {
-                                //     printf("%s %s\n", fname.c_str(), fname.substr(fname.find_last_of(".")).c_str());
-                                // }
-
-                                // if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
-                                if ((de->d_type == DT_DIR) || ( (std::find(filexts.begin(),filexts.end(), FileUtils::getLCaseExt(fname)) != filexts.end()) /*(fpos != string::npos) && (std::find(filexts.begin(),filexts.end(),fname.substr(fpos)) != filexts.end())*/)) {
-
-                                    // Calculate name checksum
-                                    for (int i = 0; i < fname.length(); i++) {
-                                        hash = (hash << 4) + fname[i];
-                                        if (high = hash & 0xF0000000) hash ^= high >> 24;
-                                        hash &= ~high;
-                                    }
-                                    if (de->d_type == DT_REG) 
-                                        elements++; // Count elements in dir
-                                    else if (de->d_type == DT_DIR)
-                                            ndirs++;
-                                }
-                            }
-                        }
-                    }
-
-                    // printf("Hashcode : %lu\n",hash);
-                    
-                    closedir(dir);
-
-                } else {
-
-                    printf("Error opening %s\n",filedir.c_str());
-
-                    FileUtils::unmountSDCard();
-
-                    OSD::restoreBackbufferData();
-
-                    fclose(dirfile);
-                    dirfile = NULL;
-                    click();
-                    return "";
-
-                }
-
-                filexts.clear(); // Clear vector
-                std::vector<std::string>().swap(filexts); // free memory   
-
-                // If calc hash and file hash are different refresh dir index
-                if (stoul(fhash) != hash) {
-                    fclose(dirfile);
-                    reIndex = true;
-                }
-
-            // }
-
+            // If calc hash and file hash are different refresh dir index
+            if ( getLong(fhash) != hash ||
+                 dirfilesize - 20 != FILENAMELEN * ( ndirs+elements + ( filedir != ( FileUtils::MountPoint + "/" ) ? 1 : 0 ) ) ) {
+                reIndex = true;
+            }
         }
 
-        // // Force reindex (for testing)
-        // fclose(dirfile);
+        // Force reindex (for testing)
         // reIndex = true;
 
         // There was no index or hashes are different: reIndex
         if (reIndex) {
+            if ( dirfile ) {
+                fclose(dirfile);
+                dirfile = nullptr;
+            }
 
-            FileUtils::DirToFile(filedir, ftype); // Prepare filelist
+#if 1
+            multi_heap_info_t info;    
+            size_t ram_consumption;
 
+            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+
+            printf("\n=======================================================\n");            
+            printf("ORDENANDO CARPETA\n");
+            printf("=======================================================\n");            
+            printf("\nTotal free bytes          : %d\n", info.total_free_bytes);
+            printf("Minimum free ever         : %d\n", info.minimum_free_bytes);
+
+            size_t minimum_before = info.minimum_free_bytes;
+
+            uint32_t time_start = esp_timer_get_time();
+#endif
+
+            FileUtils::DirToFile(filedir, ftype, hash, ndirs + elements ); // Prepare filelist
+
+#if 1
+            uint32_t time_elapsed = esp_timer_get_time() - time_start;
+
+            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+
+            printf("TIEMPO DE ORDENACION      : %6.2f segundos\n", (float)time_elapsed / 1000000);
+            printf("Total free bytes  despues : %d\n", info.total_free_bytes);
+            printf("Minimum free ever despues : %d\n", info.minimum_free_bytes);
+            printf("Consumo RAM               : %d\n", minimum_before - info.minimum_free_bytes);
+
+            printf("\n=======================================================\n");
+#endif
             // stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
 
             dirfile = fopen((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), "r");

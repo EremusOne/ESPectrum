@@ -39,6 +39,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <stdio.h>
 #include <inttypes.h>
 #include <string>
+#include <vector>
 #include "sdmmc_cmd.h"
 
 using namespace std;
@@ -62,8 +63,6 @@ struct DISK_FTYPE {
     string fileSearch;    
 };
 
-#define DIR_CACHE_SIZE 64
-
 class FileUtils
 {
 public:
@@ -81,7 +80,8 @@ public:
     // static void           sanitizeFilename(String filename); // in-place
     // static File           safeOpenFileRead(String filename);
     // static string getFileEntriesFromDir(string path);
-    static void DirToFile(string Dir, uint8_t ftype /*string fileExts*/);
+    static int getDirStats(const string& filedir, const vector<string>& filexts, unsigned long* hash, unsigned int* elements, unsigned int* ndirs);
+    static void DirToFile(string Dir, uint8_t ftype /*string fileExts*/, unsigned long hash, unsigned int item_count);
 //    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
     // static string getSortedFileList(string fileDir);
@@ -136,7 +136,8 @@ private:
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
 
-#define MAX_FNAMES_PER_CHUNK 128
+#define DIR_CACHE_SIZE 256
+#define FILENAMELEN 64
 
 // inline utility functions for uniform access to file/memory
 // and making it easy to to implement SNA/Z80 functions
