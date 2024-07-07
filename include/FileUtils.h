@@ -136,7 +136,7 @@ private:
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
 
-#define DIR_CACHE_SIZE 256
+#define DIR_CACHE_SIZE 128
 #define FILENAMELEN 64
 
 // inline utility functions for uniform access to file/memory
