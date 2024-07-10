@@ -46,7 +46,7 @@ using namespace std;
 #include "FileUtils.h"
 #include "Config.h"
 #include "ESPectrum.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Video.h"
 #include "messages.h"
 #include "OSDMain.h"

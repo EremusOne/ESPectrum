@@ -37,7 +37,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "hardconfig.h"
 #include "FileUtils.h"
 #include "Config.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Video.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
@@ -255,11 +255,11 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset) {
 
     // printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
 
-    MemESP::bankLatch = 0;
-    MemESP::pagingLock = 1;
-    MemESP::videoLatch = 0;
-    MemESP::romLatch = 0;
-    MemESP::romInUse = 0;
+    // MemESP::bankLatch = 0;
+    // MemESP::pagingLock = 1;
+    // MemESP::videoLatch = 0;
+    // MemESP::romLatch = 0;
+    // MemESP::romInUse = 0;
 
     // Read in the registers
     Z80::setRegI(readByteFile(file));

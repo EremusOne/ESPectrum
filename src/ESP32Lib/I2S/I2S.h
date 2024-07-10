@@ -28,7 +28,7 @@ class I2S {
 
 	int i2sIndex;
 	intr_handle_t interruptHandle;
-	int dmaBufferDescriptorCount;
+	// int dmaBufferDescriptorCount;
 	int dmaBufferDescriptorActive;
 	DMABufferDescriptor *dmaBufferDescriptors;
 	volatile bool stopSignal;

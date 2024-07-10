@@ -42,7 +42,11 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
 
-#define EMU_VERSION "      v1.22 "
+#ifdef ESPECTRUM_PSRAM
+#define EMU_VERSION "  v2.0 beta "
+#else
+#define EMU_VERSION "     v1.3pr "
+#endif
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -619,7 +623,7 @@ static const char *AboutMsg[2][9] = {
 	"\nB1Inspired by previous projects\r"\
 	"from Pete Todd and Rampa & Queru\r"\
 	"\r"\
-	"\nC1Z80 emulation by JL Sanchez\r"\
+	"\nC1Z80 emulation by J.L. Sanchez\r"\
 	"\nD1VGA driver by BitLuni\r"\
 	"\nE1AY-3-8912 library by A. Sashnov\r"\
 	"\nF1PS2 driver by Fabrizio di Vittorio\r"
@@ -631,11 +635,11 @@ static const char *AboutMsg[2][9] = {
 	"\nC1azesmbog        \nF1Testing & ideas\r"\
 	"\nD1David Carrion   \nF1H/W code, ZX kbd\r"\
 	"\nE1Ramon Martinez  \nF1AY emul. improvements\r"\
-	"\nA1Ron             \nF1Testing & broadcasting\r"\
-	"\nB1J. L. Sanchez   \nF1Z80 core improvements\r"\
-	"\nC1Antonio Villena \nF1Hardware support\r"\
-	"\nD1ZjoyKiLer       \nF1Testing & ideas\r"\
-	"\r"\
+	"\nA1J.J. Ponteprino \nF1Code & improvements\r"\
+	"\nB1Ron             \nF1Testing & broadcasting\r"\
+	"\nC1J.L. Sanchez    \nF1Z80 core improvements\r"\
+	"\nD1Antonio Villena \nF1Hardware support\r"\
+	"\nE1ZjoyKiLer       \nF1Testing & ideas\r"\
 	"\r"		
 	,
 	"\nF1Big thanks to our Patreons:\r"\
@@ -690,7 +694,7 @@ static const char *AboutMsg[2][9] = {
 	"\nB1Inspirado en proyectos anteriores\r"\
 	"de Pete Todd y Rampa & Queru\r"\
 	"\r"\
-	"\nC1Emulacion Z80 por JL Sanchez\r"\
+	"\nC1Emulacion Z80 por J.L. Sanchez\r"\
 	"\nD1Driver VGA por BitLuni\r"\
 	"\nE1Libreria AY-3-8912 por A. Sashnov\r"\
 	"\nF1Driver PS2 por Fabrizio di Vittorio\r"
@@ -702,11 +706,11 @@ static const char *AboutMsg[2][9] = {
 	"\nC1azesmbog        \nF1Testing e ideas\r"\
 	"\nD1David Carrion   \nF1Codigo h/w, teclado ZX\r"\
 	"\nE1Ramon Martinez  \nF1Mejoras emulacion AY\r"\
-	"\nA1Ron             \nF1Testing y difusion\r"\
-	"\nB1J. L. Sanchez   \nF1Mejoras core Z80\r"\
-	"\nC1Antonio Villena \nF1Soporte hardware\r"\
-	"\nD1ZjoyKiLer       \nF1Testing e ideas\r"\
-	"\r"\
+	"\nA1J.J. Ponteprino \nF1Codigo y mejoras\r"\
+	"\nB1Ron             \nF1Testing y difusion\r"\
+	"\nC1J.L. Sanchez    \nF1Mejoras core Z80\r"\
+	"\nD1Antonio Villena \nF1Soporte hardware\r"\
+	"\nE1ZjoyKiLer       \nF1Testing e ideas\r"\
 	"\r"		
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\

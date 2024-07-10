@@ -63,7 +63,7 @@ string   Config::pref_romSet_128 = "128K";
 string   Config::ram_file = NO_RAM_FILE;
 string   Config::last_ram_file = NO_RAM_FILE;
 
-bool     Config::slog_on = false;
+bool     Config::slog_on = true;
 bool     Config::aspect_16_9 = false;
 uint8_t  Config::videomode = 0; // 0 -> SAFE VGA, 1 -> 50HZ VGA, 2 -> 50HZ CRT
 uint8_t  Config::esp32rev = 0;
@@ -738,8 +738,7 @@ void Config::save(string value) {
 
 }
 
-void Config::requestMachine(string newArch, string newRomSet)
-{
+void Config::requestMachine(string newArch, string newRomSet) {
 
     arch = newArch;
 
@@ -800,16 +799,6 @@ void Config::requestMachine(string newArch, string newRomSet)
 
     MemESP::rom[4] = (uint8_t *) gb_rom_4_trdos_503;
 
-    // MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-    // MemESP::ramCurrent[1] = MemESP::ram[5];
-    // MemESP::ramCurrent[2] = MemESP::ram[2];
-    // MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-
-    // MemESP::ramContended[0] = false;
-    // MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
-    // MemESP::ramContended[2] = false;
-    // MemESP::ramContended[3] = false;
-  
 }
 
 void Config::setJoyMap(uint8_t joynum, uint8_t joytype) {

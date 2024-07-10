@@ -44,7 +44,7 @@ using namespace std;
 
 #include "Tape.h"
 #include "FileUtils.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Video.h"
 #include "OSDMain.h"
 #include "Config.h"

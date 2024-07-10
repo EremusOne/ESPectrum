@@ -41,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <algorithm>
 #include "FileUtils.h"
 #include "Config.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
 #include "hardpins.h"
@@ -66,11 +66,19 @@ sdmmc_card_t *FileUtils::card;
 string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (for future folder support)
 string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
+
+
 DISK_FTYPE FileUtils::fileTypes[3] = {
-    {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
-    {".tap,.TAP,.tzx,.TZX",".t",2,2,0,""},
-    {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
+    {".sna,.SNA,.z80,.Z80,.p,.P",".s2",2,2,0,""},
+    {".tap,.TAP,.tzx,.TZX",".t2",2,2,0,""},
+    {".trd,.TRD,.scl,.SCL",".d2",2,2,0,""}
 };
+
+// DISK_FTYPE FileUtils::fileTypes[3] = {
+//     {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
+//     {".tap,.TAP,.tzx,.TZX",".t",2,2,0,""},
+//     {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
+// };
 
 void FileUtils::initFileSystem() {
 
@@ -134,6 +142,15 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
         vTaskDelay(20 / portTICK_PERIOD_MS);    
         return false;
     }
+
+    // This seems to fix problems when video framebuffer is too big (400x300 i.e.)
+    host.max_freq_khz = SDCARD_HOST_MAXFREQ;
+    host.set_card_clk(host.slot, SDCARD_HOST_MAXFREQ);
+
+    printf("SD Host max freq: %d\n",host.max_freq_khz);
+
+    // Card has been initialized, print its properties
+    sdmmc_card_print_info(stdout, card);
 
     vTaskDelay(20 / portTICK_PERIOD_MS);
 
@@ -357,7 +374,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype) {
                             OSD::progressDialog("","",0,2);
                             return;
                         }
-                        for (int n=0; n < MAX_FNAMES_PER_CHUNK; n++) fputs((filenames[n] + std::string(63 - filenames[n].size(), ' ') + "\n").c_str(),f);
+                        for (int n=0; n < MAX_FNAMES_PER_CHUNK; n++) fputs((filenames[n] + std::string((MAX_CHARS_PER_FNAME - 1) - filenames[n].size(), ' ') + "\n").c_str(),f);
                         fclose(f);
                         filenames.clear();
                         cnt = 0;
@@ -398,7 +415,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype) {
             OSD::progressDialog("","",0,2);
             return;
         }
-        for (int n=0; n < cnt;n++) fputs((filenames[n] + std::string(63 - filenames[n].size(), ' ') + "\n").c_str(),f);
+        for (int n=0; n < cnt;n++) fputs((filenames[n] + std::string((MAX_CHARS_PER_FNAME - 1)  - filenames[n].size(), ' ') + "\n").c_str(),f);
         fclose(f);
     }
 
@@ -443,8 +460,8 @@ void FileUtils::Mergefiles(string fpath, uint8_t ftype, int chunk_cnt) {
 
     // Merge sort
     FILE *file1,*file2,*fout;
-    char fname1[64];
-    char fname2[64];
+    char fname1[MAX_CHARS_PER_FNAME];
+    char fname2[MAX_CHARS_PER_FNAME];
 
     file1 = fopen((fpath + fileTypes[ftype].indexFilename + "0").c_str(), "r");
     file2 = fopen((fpath + fileTypes[ftype].indexFilename + "1").c_str(), "r");

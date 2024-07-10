@@ -35,7 +35,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "Video.h"
 #include "VidPrecalc.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "MemESP.h"
 #include "ZXKeyb.h"
 #include "Config.h"
@@ -102,6 +102,25 @@ static unsigned int curline;
 
 static unsigned int bmpOffset;  // offset for bitmap in graphic memory
 static unsigned int attOffset;  // offset for attrib in graphic memory
+
+unsigned short VIDEO::cpc_colors[NUM_CPC_COLORS]={
+CPC_BLACK, CPC_BLUE, CPC_BRIGHTBLUE, CPC_RED, CPC_MAGENTA, CPC_MAUVE, CPC_BRIGHTRED, CPC_PURPLE,
+CPC_BRIGHTMAGENTA, CPC_GREEN, CPC_CYAN, CPC_SKYBLUE, CPC_YELLOW, CPC_WHITE, CPC_PASTELBLUE,
+CPC_ORANGE, CPC_PINK, CPC_PASTELMAGENTA, CPC_BRIGHTGREEN, CPC_SEAGREEN, CPC_BRIGHTCYAN, CPC_LIME,
+CPC_PASTELGREEN, CPC_PASTELCYAN, CPC_BRIGHTYELLOW, CPC_PASTELYELLOW, CPC_BRIGHTWHITE
+};
+
+
+void PreparaPaletaColor() {
+
+    for (unsigned char i=0;i<NUM_CPC_COLORS;i++){ //DAC 6 bits 64 colores
+        // printf("RGBAXMask: %d, SBits: %d\n",(int)VIDEO::vga.RGBAXMask,(int)VIDEO::vga.SBits);
+        // printf("Before: %d -> %d, ",i,(int)VIDEO::cpc_colors[i]);
+        VIDEO::cpc_colors[i] = (VIDEO::cpc_colors[i] & VIDEO::vga.RGBAXMask) | VIDEO::vga.SBits;
+        // printf("After : %d -> %d\n",i,(int)VIDEO::cpc_colors[i]);
+    }  
+
+}
 
 static const uint8_t wait_st[128] = {
     6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
