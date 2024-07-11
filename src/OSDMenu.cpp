@@ -174,15 +174,18 @@ unsigned short OSD::menuRun(string new_menu) {
     if (menu_level == 0) {
         x = (Config::aspect_16_9 ? 24 : 8);
         y = 8;
+        prev_y[0] = 0;
     } else {
         x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        if (menu_saverect) {
+        if (menu_saverect && !prev_y[menu_level]) {
             y += (8 + (8 * menu_prevopt));
             prev_y[menu_level] = y;
         } else {
             y = prev_y[menu_level];
         }
     }
+
+    for ( int i = menu_level + 1; i < 5; i++ ) prev_y[i] = 0;
 
     // Rows
     real_rows = rowCount(menu);
@@ -209,6 +212,8 @@ unsigned short OSD::menuRun(string new_menu) {
     // Size
     w = (cols * OSD_FONT_W) + 2;
     h = (virtual_rows * OSD_FONT_H) + 2;
+
+    if ( x + cols * OSD_FONT_W > 52 * OSD_FONT_W ) x = ( 52 - cols ) * OSD_FONT_W;
 
     WindowDraw(); // Draw menu outline
 
@@ -647,13 +652,13 @@ int OSD::menuTape(string title) {
     // printf(menu.c_str());
 
     // Position
-    if (menu_level == 0) {
+//    if (menu_level == 0) {
         x = (Config::aspect_16_9 ? 24 : 8);
         y = 8;
-    } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        y = 8 + (16 * menu_level);
-    }
+//    } else {
+//        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+//        y = 8 + (16 * menu_level);
+//    }
 
     // Columns
     cols = 39; // 36 for block info + 2 pre and post space + 1 for scrollbar

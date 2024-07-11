@@ -131,8 +131,8 @@ private:
 #ifdef ESPECTRUM_PSRAM
 
 // Experimental values for PSRAM
-#define MAX_FNAMES_PER_CHUNK 256
-#define MAX_CHARS_PER_FNAME 192
+//#define MAX_FNAMES_PER_CHUNK 256
+//#define MAX_CHARS_PER_FNAME 192
 
 #define DIR_CACHE_SIZE 64
 #define FILENAMELEN 128
@@ -140,8 +140,8 @@ private:
 #else
 
 // Values for no PSRAM
-#define MAX_FNAMES_PER_CHUNK 64
-#define MAX_CHARS_PER_FNAME 128
+//#define MAX_FNAMES_PER_CHUNK 64
+//#define MAX_CHARS_PER_FNAME 128
 
 #define DIR_CACHE_SIZE 64
 #define FILENAMELEN 128

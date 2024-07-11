@@ -318,7 +318,8 @@ void VIDEO::vgataskinit(void *unused) {
     // Init mode
     vga.init(Mode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);    
     
-    for (;;){}    
+    // This 'for' is needed for video mode with use_interruption = true.
+    for (;;){}
 
 }
 

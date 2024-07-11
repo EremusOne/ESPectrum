@@ -93,8 +93,9 @@ public:
     static void osdCenteredMsg(string msg, uint8_t warn_level);
     static void osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause);
 
-    static void restoreBackbufferData(bool force);
-    static void saveBackbufferData();
+    static void restoreBackbufferData(bool force = false);
+    static void saveBackbufferData(uint16_t x, uint16_t y, uint16_t w, uint16_t h, bool force = false);
+    static void saveBackbufferData(bool force = false);
 
     // Menu
     static unsigned short menuRealRowFor(uint8_t virtual_row_num);
