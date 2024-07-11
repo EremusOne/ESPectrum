@@ -451,17 +451,21 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             menu_level = 0;
             menu_curopt = 1;
 
-            // Persist Load
-            string menuload = MENU_PERSIST_LOAD[Config::lang];
-            for(int i=1; i <= 100; i++) {
-                menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-            }
-            uint8_t opt2 = menuRun(menuload);
-            if (opt2) {
-                FileUtils::remountSDCardIfNeeded();
+            FileUtils::remountSDCardIfNeeded();
 
-                if ( FileUtils::SDReady ) persistLoad(opt2);
-                menu_curopt = opt2;
+            if ( FileUtils::SDReady ) {
+                // Persist Load
+                string menuload = MENU_PERSIST_LOAD[Config::lang];
+                for(int i=1; i <= 100; i++) {
+                    menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                }
+                uint8_t opt2 = menuRun(menuload);
+                if (opt2) {
+                    FileUtils::remountSDCardIfNeeded();
+
+                    if ( FileUtils::SDReady ) persistLoad(opt2);
+                    menu_curopt = opt2;
+                }
             }
         }
         else if (KeytoESP == fabgl::VK_F4) {
@@ -469,16 +473,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             menu_level = 0;
             menu_curopt = 1;
             
-            string menusave = MENU_PERSIST_SAVE[Config::lang];
-            for(int i=1; i <= 100; i++) {
-                menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-            }
-            uint8_t opt2 = menuRun(menusave);
-            if (opt2) {
-                FileUtils::remountSDCardIfNeeded();
+            FileUtils::remountSDCardIfNeeded();
 
-                if ( FileUtils::SDReady ) if (persistSave(opt2)) return;
-                menu_curopt = opt2;
+            if ( FileUtils::SDReady ) {
+                string menusave = MENU_PERSIST_SAVE[Config::lang];
+                for(int i=1; i <= 100; i++) {
+                    menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                }
+                uint8_t opt2 = menuRun(menusave);
+                if (opt2) {
+                    FileUtils::remountSDCardIfNeeded();
+
+                    if ( FileUtils::SDReady ) if (persistSave(opt2)) return;
+                    menu_curopt = opt2;
+                }
             }
         }
         else if (KeytoESP == fabgl::VK_F5) {
@@ -526,7 +534,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             click();
         }
         else if (KeytoESP == fabgl::VK_F7) {
-
             // Tape Browser
             if (Tape::tapeFileName=="none") {
                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
@@ -724,36 +731,44 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         }
                         else if (sna_mnu == 2) {
                             // Persist Load
-                            menu_curopt = 1;
-                            menu_saverect = true;
-                            while (1) {
-                                string menuload = MENU_PERSIST_LOAD[Config::lang];
-                                for(int i=1; i <= 100; i++) {
-                                    menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                            FileUtils::remountSDCardIfNeeded();
+
+                            if ( FileUtils::SDReady ) {
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string menuload = MENU_PERSIST_LOAD[Config::lang];
+                                    for(int i=1; i <= 100; i++) {
+                                        menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                                    }
+                                    uint8_t opt2 = menuRun(menuload);
+                                    if (opt2) {
+                                        if (persistLoad(opt2)) return;
+                                        menu_saverect = false;
+                                        menu_curopt = opt2;
+                                    } else break;
                                 }
-                                uint8_t opt2 = menuRun(menuload);
-                                if (opt2) {
-                                    if (persistLoad(opt2)) return;
-                                    menu_saverect = false;
-                                    menu_curopt = opt2;
-                                } else break;
                             }
                         }
                         else if (sna_mnu == 3) {
                             // Persist Save
-                            menu_curopt = 1;
-                            menu_saverect = true;
-                            while (1) {
-                                string menusave = MENU_PERSIST_SAVE[Config::lang];
-                                for(int i=1; i <= 100; i++) {
-                                    menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                            FileUtils::remountSDCardIfNeeded();
+
+                            if ( FileUtils::SDReady ) {
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string menusave = MENU_PERSIST_SAVE[Config::lang];
+                                    for(int i=1; i <= 100; i++) {
+                                        menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                                    }
+                                    uint8_t opt2 = menuRun(menusave);
+                                    if (opt2) {
+                                        if (persistSave(opt2)) return;
+                                        menu_saverect = false;
+                                        menu_curopt = opt2;
+                                    } else break;
                                 }
-                                uint8_t opt2 = menuRun(menusave);
-                                if (opt2) {
-                                    if (persistSave(opt2)) return;
-                                    menu_saverect = false;
-                                    menu_curopt = opt2;
-                                } else break;
                             }
                         }
                         menu_curopt = sna_mnu;
