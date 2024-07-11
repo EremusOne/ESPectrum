@@ -515,10 +515,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         }
         else if (KeytoESP == fabgl::VK_F6) {
             // Start / Stop .tap reproduction
-            if (Tape::tapeStatus == TAPE_STOPPED)
-                Tape::Play();
-            else
-                Tape::Stop();
+            if (Tape::tapeFileName=="none") {
+                OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
+            } else {
+                if (Tape::tapeStatus == TAPE_STOPPED)
+                    Tape::Play();
+                else
+                    Tape::Stop();
+            }
             click();
         }
         else if (KeytoESP == fabgl::VK_F7) {
