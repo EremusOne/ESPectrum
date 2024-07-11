@@ -319,18 +319,17 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
             fdSearchElements = 0;
             rewind(dirfile);
             char buf[FILENAMELEN+1];
-            char upperbuf[FILENAMELEN+1];
             string search = FileUtils::fileTypes[ftype].fileSearch;
             std::transform(search.begin(), search.end(), search.begin(), ::toupper);
             while(1) {
                 fgets(buf, sizeof(buf), dirfile);
                 if (feof(dirfile)) break;
                 if (buf[0] == ASCII_SPC) {
-                        foundcount++;
-                        // printf("%s",buf);
+                    foundcount++;
+                    // printf("%s",buf);
                 }else {
-                    for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
-                    char *pch = strstr(upperbuf, search.c_str());
+                    char *p = buf; while(*p) *p++ = toupper(*p);
+                    char *pch = strstr(buf, search.c_str());
                     if (pch != NULL) {
                         foundcount++;
                         fdSearchElements++;
@@ -355,8 +354,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         } else {
 
-            // real_rows = (stat_buf.st_size / MAX_CHARS_PER_FNAME) + 2; // Add 2 for title and status bar
-            real_rows = (dirfilesize / MAX_CHARS_PER_FNAME) + 2; // Add 2 for title and status bar        
+            // real_rows = (stat_buf.st_size / FILENAMELEN) + 2; // Add 2 for title and status bar
+            real_rows = (dirfilesize / FILENAMELEN) + 2; // Add 2 for title and status bar        
             virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
             // printf("Real rows: %d; st_size: %d; Virtual rows: %d\n",real_rows,stat_buf.st_size,virtual_rows);
 
@@ -525,7 +524,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             if (FileUtils::fileTypes[ftype].fileSearch != "") {
                                 // FileUtils::fileTypes[ftype].fileSearch="";
-                                real_rows = (dirfilesize / MAX_CHARS_PER_FNAME) + 2; // Add 2 for title and status bar        
+                                real_rows = (dirfilesize / FILENAMELEN) + 2; // Add 2 for title and status bar        
                                 virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
                                 last_begin_row = last_focus = 0;
                                 FileUtils::fileTypes[ftype].focus = 2;
@@ -701,7 +700,6 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     fdSearchElements = 0;
                     rewind(dirfile);
                     char buf[FILENAMELEN+1];
-                    char upperbuf[FILENAMELEN+1];
                     string search = FileUtils::fileTypes[ftype].fileSearch;
                     std::transform(search.begin(), search.end(), search.begin(), ::toupper);
                     while(1) {
@@ -711,8 +709,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                                 foundcount++;
                                 // printf("%s",buf);
                         }else {
-                            for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
-                            char *pch = strstr(upperbuf, search.c_str());
+                            char *p = buf; while(*p) *p++ = toupper(*p);
+                            char *pch = strstr(buf, search.c_str());
                             if (pch != NULL) {
                                 foundcount++;
                                 fdSearchElements++;
@@ -764,15 +762,12 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
         menu = title + "\n" + ( fdir.length() == 1 ? fdir : fdir.substr(0,fdir.length()-1)) + "\n";
         char buf[FILENAMELEN+1];
         if (FileUtils::fileTypes[ftype].fdMode == 0 || FileUtils::fileTypes[ftype].fileSearch == "") {
-            fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * MAX_CHARS_PER_FNAME,SEEK_SET);
+            fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * FILENAMELEN, SEEK_SET);
             for (int i = 2; i < virtual_rows; i++) {
                 fgets(buf, sizeof(buf), dirfile);
                 if (feof(dirfile)) break;
                 menu += buf;
             }
-
-            // printf("virtual_rows: %d\n%s\n",virtual_rows,menu.c_str());
-
         } else {
             rewind(dirfile);
             int i = 2;
@@ -790,7 +785,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
                     }
                     i++;
                 } else {
-                    for(int i=0;i<strlen(buf);i++) upperbuf[i] = toupper(buf[i]);
+                    for(int i=0; buf[i]; i++) upperbuf[i] = toupper(buf[i]);
                     char *pch = strstr(upperbuf, search.c_str());
                     if (pch != NULL) {
                         if (i >= FileUtils::fileTypes[ftype].begin_row) {

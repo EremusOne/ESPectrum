@@ -66,7 +66,6 @@ sdmmc_card_t *FileUtils::card;
 string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (for future folder support)
 string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
-
 string FileUtils::ROM_Path = "/"; // DISK_ROM_DIR; // Current path on the SD (for future folder support)
 DISK_FTYPE FileUtils::fileTypes[4] = {
 //    {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
@@ -465,7 +464,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
                 if ( !fin || feof( fin ) ) eof1 = true;
                 if ( !eof1 ) {
                     size_t res = fread( line, sizeof(char), FILENAMELEN, fin);
-                    if ( !res || feof( fin ) /*|| res != 64 */ ) {
+                    if ( !res || feof( fin ) ) {
                         eof1 = true;
                     } else {
                         line[FILENAMELEN-1] = '\0';

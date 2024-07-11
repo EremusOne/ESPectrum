@@ -127,19 +127,25 @@ private:
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
 
-#define DIR_CACHE_SIZE 128
-#define FILENAMELEN 128
 
 #ifdef ESPECTRUM_PSRAM
+
 // Experimental values for PSRAM
 #define MAX_FNAMES_PER_CHUNK 256
 #define MAX_CHARS_PER_FNAME 192
+
+#define DIR_CACHE_SIZE 64
+#define FILENAMELEN 128
+
 #else
+
 // Values for no PSRAM
-// #define MAX_FNAMES_PER_CHUNK 128
-// #define MAX_CHARS_PER_FNAME 64
-#define MAX_FNAMES_PER_CHUNK 128
+#define MAX_FNAMES_PER_CHUNK 64
 #define MAX_CHARS_PER_FNAME 128
+
+#define DIR_CACHE_SIZE 64
+#define FILENAMELEN 128
+
 #endif
 
 #define SDCARD_HOST_MAXFREQ 19000
