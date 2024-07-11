@@ -132,8 +132,8 @@ private:
 #else
 
 // Values for no PSRAM
-#define DIR_CACHE_SIZE 128
-#define FILENAMELEN 64
+#define DIR_CACHE_SIZE 64
+#define FILENAMELEN 128
 
 #endif
 

@@ -444,6 +444,10 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         // }
     // }
 
+    // Borrar y crear el directorio temporal (si lo dejo se genera pico de consumo y minimum free ever baja muchisimo)
+    rmdir(tempDir.c_str());
+    mkdir(tempDir.c_str(), 0755);
+
     printf("\nAfter checking tempdir");
     ESPectrum::showMemInfo();
     printf("\n");
