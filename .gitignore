@@ -14,3 +14,4 @@ downloaded_fs*.bin
 /releases
 /releases/**
 
+dependencies.lock

@@ -370,7 +370,7 @@ int FileUtils::getDirStats(const string& filedir, const vector<string>& filexts,
 void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsigned int item_count) {
     FILE* fin = nullptr;
     FILE* fout = nullptr;
-    char line[65];
+    char line[FILENAMELEN+1];
     string fname1 = "";
     string fname2 = "";
     string fnameLastSaved = "";
@@ -421,10 +421,9 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
 
     // Verificar si el directorio ya existía
     struct stat info;
-    bool dirExisted = (stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 
     // Crear el directorio si no existe
-    if (!dirExisted) {
+    if (!(stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR))) {
         if (mkdir(tempDir.c_str(), 0755) != 0) {
             printf( "TMP directory creation failed\n" );
             closedir(dir);
@@ -612,13 +611,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     if ( n ) {
         OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_3[Config::lang],0,1);
         remove((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string((n-1)&1)).c_str());
-        OSD::progressDialog("","",(float) 100 / ((float) ( !dirExisted ? 2 : 1 ) / (float) 1),1);
-
-        // Si el directorio no existía previamente, eliminarlo
-        if (!dirExisted ) {
-            rmdir(tempDir.c_str());
-            OSD::progressDialog("","",(float) 100 / ((float) 2 / (float) 2),1);
-        }
+        OSD::progressDialog("","",(float) 100, 1);
     }
 
     // Close progress dialog
