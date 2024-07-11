@@ -43,7 +43,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "OSDMain.h"
 #include "Ports.h"
 #include "MemESP.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Video.h"
 #include "messages.h"
 #include "AySound.h"
@@ -53,7 +53,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include "fabgl.h"
 #include "wd1793.h"
 
-#ifndef ESP32_SDL2_WRAPPER
 #include "ZXKeyb.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -63,7 +62,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 // #include "bootloader_random.h"
-#endif
 
 using namespace std;
 
@@ -116,11 +114,7 @@ WD1793 ESPectrum::Betadisk;
 // ARDUINO FUNCTIONS
 //=======================================================================================
 
-#ifndef ESP32_SDL2_WRAPPER
 #define NOP() asm volatile ("nop")
-#else
-#define NOP() {for(int i=0;i<1000;i++){}}
-#endif
 
 IRAM_ATTR unsigned long millis()
 {
@@ -240,8 +234,6 @@ void ShowStartMsg() {
 
 void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 
-#ifndef ESP32_SDL2_WRAPPER
-
 multi_heap_info_t info;
 
 heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
@@ -288,8 +280,6 @@ printf("========================================================================
 // // printf("Loop Task Stack HWM: %u\n", wm);
 // wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
 // printf("Video Task Stack HWM: %u\n", wm);
-
-#endif
 
 }
 
@@ -399,8 +389,6 @@ void ESPectrum::setup()
     // printf("SESSION ID: %08X\n",(unsigned int)sessid);
     // bootloader_random_disable();    
 
-    #ifndef ESP32_SDL2_WRAPPER
-
     if (Config::slog_on) {
 
         printf("------------------------------------\n");
@@ -410,8 +398,6 @@ void ESPectrum::setup()
         showMemInfo();
 
     }
-
-    #endif
 
     //=======================================================================================
     // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
@@ -505,8 +491,6 @@ void ESPectrum::setup()
         ESPectrum::VK_ESPECTRUM_GRAVEACCENT = fabgl::VK_GRAVEACCENT;
     }
 
-    #ifndef ESP32_SDL2_WRAPPER
-
     if (Config::slog_on) {
         showMemInfo("Keyboard started");
     }
@@ -536,8 +520,6 @@ void ESPectrum::setup()
 
     }
     
-    #endif
-
     //=======================================================================================
     // BOOTKEYS: Read keyboard for 200 ms. checking boot keys
     //=======================================================================================
@@ -550,60 +532,32 @@ void ESPectrum::setup()
     // MEMORY SETUP
     //=======================================================================================
 
-    // for (int i=0; i < 8; i++) {
-    //     MemESP::ram[i] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    //     if (MemESP::ram[i] == NULL)
-    //         if (Config::slog_on) printf("ERROR! Unable to allocate ram%d\n",i);
-    // }
-
-    MemESP::ram[5] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-
-    // MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x8000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    // MemESP::ram[2] = ((unsigned char *) MemESP::ram[0]) + 0x4000;
-    // MemESP::ram[0] = (unsigned char *) staticMemPage0;
-    // MemESP::ram[2] = ((unsigned char *) staticMemPage0) + 0x4000;
-
-    MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    MemESP::ram[7] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-
-    // MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    // MemESP::ram[3] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-
-    MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x8000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    MemESP::ram[3] = ((unsigned char *) MemESP::ram[1]) + 0x4000;
-
-    MemESP::ram[4] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-    MemESP::ram[6] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
-
-    // MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram[3] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram[4] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    // MemESP::ram[6] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    MemESP::Init();
 
     // Load romset
     Config::requestMachine(Config::arch, Config::romSet);
 
-    MemESP::romInUse = 0;
-    MemESP::bankLatch = 0;
-    MemESP::videoLatch = 0;
-    MemESP::romLatch = 0;
+    MemESP::Reset();
 
-    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = MemESP::ram[5];
-    MemESP::ramCurrent[2] = MemESP::ram[2];
-    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+    // MemESP::romInUse = 0;
+    // MemESP::bankLatch = 0;
+    // MemESP::videoLatch = 0;
+    // MemESP::romLatch = 0;
 
-    MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = Config::arch == "Pentagon" ? false : true;
-    MemESP::ramContended[2] = false;
-    MemESP::ramContended[3] = false;
+    // MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    // MemESP::ramCurrent[1] = MemESP::ram[5];
+    // MemESP::ramCurrent[2] = MemESP::ram[2];
+    // MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
-    // if (Config::arch == "48K") MemESP::pagingLock = 1; else MemESP::pagingLock = 0;
-    MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
+    // MemESP::ramContended[0] = false;
+    // MemESP::ramContended[1] = Config::arch == "Pentagon" ? false : true;
+    // MemESP::ramContended[2] = false;
+    // MemESP::ramContended[3] = false;
+
+    // MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
 
     if (Config::slog_on) showMemInfo("RAM Initialized");
-
+    
     //=======================================================================================
     // VIDEO
     //=======================================================================================
@@ -659,7 +613,9 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+    
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048 /* 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
     AySound::init();
@@ -743,24 +699,8 @@ void ESPectrum::reset()
     for (int n = 0; n < 24; n++)
         ESPectrum::JoyVKTranslation[n] = (fabgl::VirtualKey) Config::joydef[n];
 
-    // Memory
-    MemESP::romInUse = 0;
-    MemESP::bankLatch = 0;
-    MemESP::videoLatch = 0;
-    MemESP::romLatch = 0;
-
-    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[1] = MemESP::ram[5];
-    MemESP::ramCurrent[2] = MemESP::ram[2];
-    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-
-    MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = Config::arch == "Pentagon" ? false : true;
-    MemESP::ramContended[2] = false;
-    MemESP::ramContended[3] = false;
-
-    MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
-
+    MemESP::Reset(); // Reset Memory
+    
     VIDEO::Reset();
 
     // Reinit disk controller

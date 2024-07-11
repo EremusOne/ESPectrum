@@ -35,7 +35,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "OSDMain.h"
 #include "FileUtils.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Video.h"
 #include "ESPectrum.h"
 #include "messages.h"
@@ -48,7 +48,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Z80_JLS/z80.h"
 #include "roms.h"
 
-#ifndef ESP32_SDL2_WRAPPER
 #include "esp_system.h"
 #include "esp_ota_ops.h"
 #include "esp_efuse.h"
@@ -62,7 +61,6 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#endif
 
 #include <string>
 
@@ -148,14 +146,12 @@ IRAM_ATTR void OSD::click() {
 
 void OSD::esp_hard_reset() {
     // RESTART ESP32 (This is the most similar way to hard resetting it)
-#ifndef ESP32_SDL2_WRAPPER
     rtc_wdt_protect_off();
     rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
     rtc_wdt_set_time(RTC_WDT_STAGE0, 100);
     rtc_wdt_enable();
     rtc_wdt_protect_on();
     while (true);
-#endif
 }
 
 // // Cursor to OSD first row,col
@@ -2390,28 +2386,32 @@ void OSD::HWInfo() {
     VIDEO::vga.print(" --------------------------------------\n");
 
     heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-    textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
+    textout = " Total free bytes         : " + to_string(info.total_free_bytes) + "\n";
     VIDEO::vga.print(textout.c_str());
 
-    textout = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
+    textout = " Minimum free ever        : " + to_string(info.minimum_free_bytes) + "\n";
     VIDEO::vga.print(textout.c_str());    
     
-    textout = " Largest free block         : " + to_string(info.largest_free_block) + "\n";
+    textout = " Largest free block       : " + to_string(info.largest_free_block) + "\n";
     VIDEO::vga.print(textout.c_str());
     
-    textout = " Free (MALLOC_CAP_32BIT)    : " + to_string(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT)) + "\n";
+    textout = " Free (MALLOC_CAP_32BIT)  : " + to_string(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT)) + "\n";
     VIDEO::vga.print(textout.c_str());
         
     UBaseType_t wm;
+    wm = uxTaskGetStackHighWaterMark(NULL);
+    textout = " Main  Task Stack HWM     : " + to_string(wm) + "\n";
+    VIDEO::vga.print(textout.c_str());
+
     wm = uxTaskGetStackHighWaterMark(ESPectrum::audioTaskHandle);
-    textout = " Audio Task Stack HWM       : " + to_string(wm) + "\n";
+    textout = " Audio Task Stack HWM     : " + to_string(wm) + "\n";
     VIDEO::vga.print(textout.c_str());
 
     // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
     // printf("Loop Task Stack HWM: %u\n", wm);
 
     wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
-    textout = " Video Task Stack HWM       : " + (Config::videomode ? to_string(wm) : "N/A") + "\n";    
+    textout = " Video Task Stack HWM     : " + (Config::videomode ? to_string(wm) : "N/A") + "\n";    
     VIDEO::vga.print(textout.c_str());
 
     // Wait for key
@@ -2798,7 +2798,12 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     delay(1000);
 
     // Firmware written: reboot
-    OSD::esp_hard_reset();
+    // OSD::esp_hard_reset();
+
+    // Close progress dialog
+    progressDialog("","",0,2);
+
+    return result;
 
 }
 

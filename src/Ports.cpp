@@ -41,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "Video.h"
 #include "AySound.h"
 #include "Tape.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "wd1793.h"
 
 // #pragma GCC optimize("O3")

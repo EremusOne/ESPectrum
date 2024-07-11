@@ -108,20 +108,11 @@ private:
     static sdmmc_card_t *card;    
 };
 
-#ifndef ESP32_SDL2_WRAPPER
 #define MOUNT_POINT_SPIFFS "/data"
 #define MOUNT_POINT_SD "/sd"
-#else
-#define MOUNT_POINT_SPIFFS "./data"
-#define MOUNT_POINT_SD "./sd"
-#endif
 
 // Use internal spiffs first
-#ifndef ESP32_SDL2_WRAPPER
 #define DISK_BOOT_FILENAME "/data/boot.cfg"
-#else
-#define DISK_BOOT_FILENAME "./data/boot.cfg"
-#endif
 #define DISK_ROM_DIR "/r"
 #define DISK_SNA_DIR "/s"
 #define DISK_TAP_DIR "/t"
@@ -138,6 +129,20 @@ private:
 
 #define DIR_CACHE_SIZE 256
 #define FILENAMELEN 64
+
+#ifdef ESPECTRUM_PSRAM
+// Experimental values for PSRAM
+#define MAX_FNAMES_PER_CHUNK 256
+#define MAX_CHARS_PER_FNAME 192
+#else
+// Values for no PSRAM
+// #define MAX_FNAMES_PER_CHUNK 128
+// #define MAX_CHARS_PER_FNAME 64
+#define MAX_FNAMES_PER_CHUNK 128
+#define MAX_CHARS_PER_FNAME 128
+#endif
+
+#define SDCARD_HOST_MAXFREQ 19000
 
 // inline utility functions for uniform access to file/memory
 // and making it easy to to implement SNA/Z80 functions

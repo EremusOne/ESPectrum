@@ -109,8 +109,8 @@ using namespace std;
 #define FACTOR128K 1.013376779 // Pulse length compensation for Spectrum 128K
 // #define FACTOR128K 1 // Disable pulse length compensation for Spectrum 128K
 
-#define TAPEHIGH 0
-#define TAPELOW 1
+#define TAPEHIGH 1
+#define TAPELOW 0
 
 #define CHUNK_SIZE 1024
 struct TZXBlock {

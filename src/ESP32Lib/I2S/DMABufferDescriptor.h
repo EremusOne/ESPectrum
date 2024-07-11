@@ -12,11 +12,9 @@
 #pragma once
 #include "../Tools/Log.h"
 
-class DMABufferDescriptor : protected lldesc_t
-{
+class DMABufferDescriptor : protected lldesc_t {
   public:
-	static void *allocateBuffer(int bytes, bool clear = true, unsigned long clearValue = 0)
-	{
+	static void *allocateBuffer(int bytes, bool clear = true, unsigned long clearValue = 0)	{
 		bytes = (bytes + 3) & 0xfffffffc;
 		void *b = heap_caps_malloc(bytes, MALLOC_CAP_DMA);
 		if (!b)
@@ -27,44 +25,42 @@ class DMABufferDescriptor : protected lldesc_t
 		return b;
 	}
 
-	static void **allocateDMABufferArray(int count, int bytes, bool clear = true, unsigned long clearValue = 0)
-	{
+	static void **allocateDMABufferArray(int count, int bytes, bool clear = true, unsigned long clearValue = 0)	{
 
-		if (count == 480) {
+		if (count == 480 || count == 400) {
 
-			// 480, fake scanlines mode
-			void **arr = (void **)malloc(241 * sizeof(void *));
+			// 480 or 400 fake scanlines mode
+			int nlin = (count >> 1) + 1;
+			void **arr = (void **)malloc(nlin * sizeof(void *));
 			if(!arr)
 				ERROR("Not enough DMA memory");
-			for (int i = 0; i < 241; i++)
-			{
+			for (int i = 0; i < nlin; i++) {
 				arr[i] = DMABufferDescriptor::allocateBuffer(bytes, true, clearValue);
 				if(!arr[i])
 					ERROR("Not enough DMA memory");
 			}
 			return arr;
 
-		} else if (count == 400) {
+		// } else if (count == 400) {
 
-			// 400, fake scanlines mode
-			void **arr = (void **)malloc(201 * sizeof(void *));
-			if(!arr)
-				ERROR("Not enough DMA memory");
-			for (int i = 0; i < 201; i++)
-			{
-				arr[i] = DMABufferDescriptor::allocateBuffer(bytes, true, clearValue);
-				if(!arr[i])
-					ERROR("Not enough DMA memory");
-			}
-			return arr;
+		// 	// 400, fake scanlines mode
+		// 	void **arr = (void **)malloc(201 * sizeof(void *));
+		// 	if(!arr)
+		// 		ERROR("Not enough DMA memory");
+		// 	for (int i = 0; i < 201; i++)
+		// 	{
+		// 		arr[i] = DMABufferDescriptor::allocateBuffer(bytes, true, clearValue);
+		// 		if(!arr[i])
+		// 			ERROR("Not enough DMA memory");
+		// 	}
+		// 	return arr;
 
 		} else {
 
 			void **arr = (void **)malloc(count * sizeof(void *));
 			if(!arr)
 				ERROR("Not enough DMA memory");
-			for (int i = 0; i < count; i++)
-			{
+			for (int i = 0; i < count; i++) {
 				arr[i] = DMABufferDescriptor::allocateBuffer(bytes, true, clearValue);
 				if(!arr[i])
 					ERROR("Not enough DMA memory");
@@ -75,20 +71,17 @@ class DMABufferDescriptor : protected lldesc_t
 
 	}
 
-	void setBuffer(void *buffer, int bytes)
-	{
+	void setBuffer(void *buffer, int bytes)	{
 		length = bytes;
 		size = length;
 		buf = (uint8_t *)buffer;
 	}
 
-	void *buffer() const
-	{
+	void *buffer() const {
 		return (void *)buf;
 	}
 
-	void init()
-	{
+	void init()	{
 		length = 0;
 		size = 0;
 		owner = 1;
@@ -109,23 +102,20 @@ class DMABufferDescriptor : protected lldesc_t
 		return b;
 	}
 
-	void next(DMABufferDescriptor &next)
-	{
+	void next(DMABufferDescriptor &next) {
 		qe.stqe_next = &next;
 	}
 
-	int sampleCount() const
-	{
+	int sampleCount() const	{
 		return length / 4;
 	}
 
-	void destroy()
-	{
-		if (buf)
-		{
+	void destroy() {
+		if (buf) {
 			free((void *)buf);
 			buf = 0;
 		}
 		free(this);
 	}
+
 };

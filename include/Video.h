@@ -81,6 +81,40 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define NUM_SPECTRUM_COLORS 17
 
+#define NUM_CPC_COLORS 27
+
+// Colors for 6 bit mode
+//                          //  BBGGRR 
+#define CPC_BLACK           0b00000000      
+#define CPC_BLUE            0b00010000
+#define CPC_BRIGHTBLUE      0b00110000
+#define CPC_RED             0b00000001
+#define CPC_MAGENTA         0b00010001
+#define CPC_MAUVE           0b00110001
+#define CPC_BRIGHTRED       0b00000011
+#define CPC_PURPLE          0b00010011
+#define CPC_BRIGHTMAGENTA   0b00110011
+#define CPC_GREEN           0b00000100
+#define CPC_CYAN            0b00010100
+#define CPC_SKYBLUE         0b00110100
+#define CPC_YELLOW          0b00000101
+#define CPC_WHITE           0b00010101
+#define CPC_PASTELBLUE      0b00110101
+#define CPC_ORANGE          0b00000111
+#define CPC_PINK            0b00010111
+#define CPC_PASTELMAGENTA   0b00110111
+#define CPC_BRIGHTGREEN     0b00001100
+#define CPC_SEAGREEN        0b00011100
+#define CPC_BRIGHTCYAN      0b00111100
+#define CPC_LIME            0b00001101
+#define CPC_PASTELGREEN     0b00011101
+#define CPC_PASTELCYAN      0b00111101
+#define CPC_BRIGHTYELLOW    0b00001111
+#define CPC_PASTELYELLOW    0b00011111
+#define CPC_BRIGHTWHITE     0b00111111
+
+void PreparaPaletaColor();
+
 class VIDEO
 {
 public:
@@ -187,6 +221,8 @@ public:
   static int VsyncFinetune[2];
 
   static uint32_t framecnt; // Frames elapsed
+
+  static uint16_t cpc_colors[NUM_CPC_COLORS];
 
 };
 

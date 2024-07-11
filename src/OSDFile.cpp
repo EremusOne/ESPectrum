@@ -47,7 +47,7 @@ using namespace std;
 #include "FileUtils.h"
 #include "Config.h"
 #include "ESPectrum.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Video.h"
 #include "messages.h"
 #include <math.h>
@@ -355,8 +355,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
         } else {
 
-            // real_rows = (stat_buf.st_size / 64) + 2; // Add 2 for title and status bar
-            real_rows = (dirfilesize / 64) + 2; // Add 2 for title and status bar        
+            // real_rows = (stat_buf.st_size / MAX_CHARS_PER_FNAME) + 2; // Add 2 for title and status bar
+            real_rows = (dirfilesize / MAX_CHARS_PER_FNAME) + 2; // Add 2 for title and status bar        
             virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
             // printf("Real rows: %d; st_size: %d; Virtual rows: %d\n",real_rows,stat_buf.st_size,virtual_rows);
 
@@ -525,7 +525,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             if (FileUtils::fileTypes[ftype].fileSearch != "") {
                                 // FileUtils::fileTypes[ftype].fileSearch="";
-                                real_rows = (dirfilesize / 64) + 2; // Add 2 for title and status bar        
+                                real_rows = (dirfilesize / MAX_CHARS_PER_FNAME) + 2; // Add 2 for title and status bar        
                                 virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
                                 last_begin_row = last_focus = 0;
                                 FileUtils::fileTypes[ftype].focus = 2;
@@ -764,12 +764,15 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
         menu = title + "\n" + ( fdir.length() == 1 ? fdir : fdir.substr(0,fdir.length()-1)) + "\n";
         char buf[FILENAMELEN+1];
         if (FileUtils::fileTypes[ftype].fdMode == 0 || FileUtils::fileTypes[ftype].fileSearch == "") {
-            fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * 64,SEEK_SET);
+            fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * MAX_CHARS_PER_FNAME,SEEK_SET);
             for (int i = 2; i < virtual_rows; i++) {
                 fgets(buf, sizeof(buf), dirfile);
                 if (feof(dirfile)) break;
                 menu += buf;
             }
+
+            // printf("virtual_rows: %d\n%s\n",virtual_rows,menu.c_str());
+
         } else {
             rewind(dirfile);
             int i = 2;

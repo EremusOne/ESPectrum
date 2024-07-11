@@ -41,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <algorithm>
 #include "FileUtils.h"
 #include "Config.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
 #include "hardpins.h"
@@ -66,6 +66,7 @@ sdmmc_card_t *FileUtils::card;
 string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (for future folder support)
 string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
+
 string FileUtils::ROM_Path = "/"; // DISK_ROM_DIR; // Current path on the SD (for future folder support)
 DISK_FTYPE FileUtils::fileTypes[4] = {
 //    {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
@@ -168,8 +169,10 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
     }
 
     // This seems to fix problems when video framebuffer is too big (400x300 i.e.)
-    host.max_freq_khz = 19000;
-    host.set_card_clk(host.slot, 19000);
+    host.max_freq_khz = SDCARD_HOST_MAXFREQ;
+    host.set_card_clk(host.slot, SDCARD_HOST_MAXFREQ);
+
+    printf("SD Host max freq: %d\n",host.max_freq_khz);
 
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);

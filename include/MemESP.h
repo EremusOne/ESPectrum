@@ -58,6 +58,9 @@ public:
 
     static uint8_t romInUse;
 
+    static bool Init();
+    static void Reset();    
+
     static uint8_t readbyte(uint16_t addr);
     static uint16_t readword(uint16_t addr);
     static void writebyte(uint16_t addr, uint8_t data);
