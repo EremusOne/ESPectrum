@@ -72,6 +72,8 @@ void CaptureToBmp()
     string filelist;
     string scrdir = (string) MOUNT_POINT_SD + DISK_SCR_DIR;
 
+    FileUtils::remountSDCardIfNeeded();
+
     // Create dir if it doesn't exist
     struct stat stat_buf;
     if (stat(scrdir.c_str(), &stat_buf) != 0) {

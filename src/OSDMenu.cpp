@@ -142,22 +142,7 @@ void OSD::WindowDraw() {
 
     if (menu_level == 0) SaveRectpos = 0;
 
-    if (menu_saverect) {
-        // Save backbuffer data
-        VIDEO::SaveRect[SaveRectpos] = x;
-        VIDEO::SaveRect[SaveRectpos + 1] = y;
-        VIDEO::SaveRect[SaveRectpos + 2] = w;
-        VIDEO::SaveRect[SaveRectpos + 3] = h;
-        SaveRectpos += 4;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-                SaveRectpos++;
-            }
-        }
-        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);
-    }
+    OSD::saveBackbufferData();
 
     // Menu border
     VIDEO::vga.rect(x, y, w, h, zxColor(0, 0));
@@ -187,10 +172,10 @@ unsigned short OSD::menuRun(string new_menu) {
 
     // Position
     if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
+        x = (Config::aspect_letterbox ? 24 : 8);
         y = 8;
     } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        x = (Config::aspect_letterbox ? 24 : 8) + (60 * menu_level);
         if (menu_saverect) {
             y += (8 + (8 * menu_prevopt));
             prev_y[menu_level] = y;
@@ -316,23 +301,7 @@ unsigned short OSD::menuRun(string new_menu) {
                     menu_prevopt = menuRealRowFor(focus);
                     return menu_prevopt;
                 } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_F1 || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
-
-                    if (menu_level!=0) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        menu_saverect = false;                        
-                    }
-
+                    if (menu_level!=0) OSD::restoreBackbufferData(true);
                     click();
                     return 0;
                 }
@@ -369,25 +338,9 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
     // Set font
     VIDEO::vga.setFont(Font6x8);
 
-    if (menu_saverect) {
-        
-        if (menu_level == 0) SaveRectpos = 0;
-        
-        // Save backbuffer data
-        VIDEO::SaveRect[SaveRectpos] = x;
-        VIDEO::SaveRect[SaveRectpos + 1] = y;
-        VIDEO::SaveRect[SaveRectpos + 2] = w;
-        VIDEO::SaveRect[SaveRectpos + 3] = h;
-        SaveRectpos += 4;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-                SaveRectpos++;
-            }
-        }
-        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);
-    }
+    if (menu_saverect && menu_level == 0) SaveRectpos = 0;
+
+    OSD::saveBackbufferData();
 
     // Menu border
     VIDEO::vga.rect(x, y, w, h, zxColor(0, 0));
@@ -480,43 +433,12 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
                     menuRedraw();
                     click();
                 } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY2C) {
-                    // if (menu_saverect) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        menu_saverect = false;                        
-                    // }
-
+                    OSD::restoreBackbufferData(true);
                     click();
                     menu_prevopt = menuRealRowFor(focus);
                     return menu_prevopt;
                 } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_F1 || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
-
-                    // if (menu_saverect) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        menu_saverect = false;                        
-                    // }
-
+                    OSD::restoreBackbufferData(true);
                     click();
                     return 0;
                 }
@@ -726,10 +648,10 @@ int OSD::menuTape(string title) {
 
     // Position
     if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
+        x = (Config::aspect_letterbox ? 24 : 8);
         y = 8;
     } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        x = (Config::aspect_letterbox ? 24 : 8) + (60 * menu_level);
         y = 8 + (16 * menu_level);
     }
 
@@ -853,28 +775,14 @@ int OSD::menuTape(string title) {
                         fseek(Tape::tape, tapeBckPos, SEEK_SET);
                     // }
 
-                    if (menu_level!=0) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        menu_saverect = false;
-                    }
-
+                    if (menu_level!=0) OSD::restoreBackbufferData(true);
                     click();
                     return -1;
                 }
             }
         }
 
-        vTaskDelay(5 / portTICK_PERIOD_MS);    
-
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 

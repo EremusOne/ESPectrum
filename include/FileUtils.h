@@ -39,6 +39,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <stdio.h>
 #include <inttypes.h>
 #include <string>
+#include <vector>
 #include "sdmmc_cmd.h"
 
 using namespace std;
@@ -51,6 +52,7 @@ using namespace std;
 #define DISK_SNAFILE 0
 #define DISK_TAPFILE 1
 #define DISK_DSKFILE 2
+#define DISK_ROMFILE 3
 
 struct DISK_FTYPE {
     string fileExts;
@@ -64,16 +66,23 @@ struct DISK_FTYPE {
 class FileUtils
 {
 public:
+    static string getLCaseExt(const string& filename);
+
     static void initFileSystem();
     static bool mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS);
     static void unmountSDCard();
+
+    static bool isMountedSDCard();
+    static void remountSDCardIfNeeded();
+
     // static String         getAllFilesFrom(const String path);
     // static void           listAllFiles();
     // static void           sanitizeFilename(String filename); // in-place
     // static File           safeOpenFileRead(String filename);
     // static string getFileEntriesFromDir(string path);
-    static void DirToFile(string Dir, uint8_t ftype /*string fileExts*/);
-    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
+    static int getDirStats(const string& filedir, const vector<string>& filexts, unsigned long* hash, unsigned int* elements, unsigned int* ndirs);
+    static void DirToFile(string Dir, uint8_t ftype /*string fileExts*/, unsigned long hash, unsigned int item_count);
+//    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
     // static string getSortedFileList(string fileDir);
     static bool hasSNAextension(string filename);
@@ -90,8 +99,9 @@ public:
     static string SNA_Path; // Current SNA path on the SD
     static string TAP_Path; // Current TAP path on the SD
     static string DSK_Path; // Current DSK path on the SD
+    static string ROM_Path; // Current ROM path on the SD
 
-    static DISK_FTYPE fileTypes[3];
+    static DISK_FTYPE fileTypes[4];
 
 private:
     friend class Config;
@@ -116,6 +126,9 @@ private:
 #define SNA_48K_SIZE 49179
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
+
+#define DIR_CACHE_SIZE 256
+#define FILENAMELEN 64
 
 #ifdef ESPECTRUM_PSRAM
 // Experimental values for PSRAM

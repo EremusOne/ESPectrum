@@ -93,6 +93,9 @@ public:
     static void osdCenteredMsg(string msg, uint8_t warn_level);
     static void osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause);
 
+    static void restoreBackbufferData(bool force);
+    static void saveBackbufferData();
+
     // Menu
     static unsigned short menuRealRowFor(uint8_t virtual_row_num);
     // static bool menuIsSub(uint8_t virtual_row_num);
@@ -127,6 +130,8 @@ public:
     string inputBox(int x, int y, string text);
     static void joyDialog(uint8_t joynum);
     static void pokeDialog();
+
+    static string input(int x, int y, string inputLabel, int maxSize );
 
     // Rows
     static unsigned short rowCount(string menu);

@@ -67,18 +67,43 @@ string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (fo
 string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
 string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
 
-
-DISK_FTYPE FileUtils::fileTypes[3] = {
-    {".sna,.SNA,.z80,.Z80,.p,.P",".s2",2,2,0,""},
-    {".tap,.TAP,.tzx,.TZX",".t2",2,2,0,""},
-    {".trd,.TRD,.scl,.SCL",".d2",2,2,0,""}
+string FileUtils::ROM_Path = "/"; // DISK_ROM_DIR; // Current path on the SD (for future folder support)
+DISK_FTYPE FileUtils::fileTypes[4] = {
+//    {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
+//    {".tap,.TAP,.tzx,.TZX",".t",2,2,0,""},
+//    {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
+    {"sna,z80,p",".s",2,2,0,""},
+    {"tap,tzx,",".t",2,2,0,""},
+    {"trd,scl",".d",2,2,0,""},
+    {"rom,bin",".r",2,2,0,""}
 };
 
-// DISK_FTYPE FileUtils::fileTypes[3] = {
-//     {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
-//     {".tap,.TAP,.tzx,.TZX",".t",2,2,0,""},
-//     {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
-// };
+string toLower(const std::string& str) {
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+    return lowerStr;
+}
+
+// get extension in lowercase
+string FileUtils::getLCaseExt(const string& filename) {
+    size_t dotPos = filename.rfind('.'); // find the last dot position
+    if (dotPos == string::npos) {
+        return ""; // dot position don't found
+    }
+
+    // get the substring after dot
+    string extension = filename.substr(dotPos + 1);
+
+    // convert extension to lowercase
+//    for (char& c : extension) {
+//        c = ::tolower(static_cast<unsigned char>(c));
+//    }
+
+//    return extension;
+
+    return toLower( extension );
+
+}
 
 void FileUtils::initFileSystem() {
 
@@ -163,6 +188,34 @@ void FileUtils::unmountSDCard() {
     esp_vfs_fat_sdcard_unmount(MOUNT_POINT_SD, card);
     // //deinitialize the bus after all devices are removed
     spi_bus_free(SPI2_HOST);
+
+    SDReady = false;
+}
+
+bool FileUtils::isMountedSDCard() {
+    // Dirty SDCard mount detection
+    DIR* dir = opendir("/sd");
+    if ( !dir ) return false;
+    struct dirent* de = readdir(dir);
+    if ( !de && ( errno == EIO || errno == EBADF ) ) {
+        closedir(dir);
+        return false;
+    }
+    closedir(dir);
+    return true;
+}
+
+void FileUtils::remountSDCardIfNeeded() {
+    if ( FileUtils::SDReady && !FileUtils::isMountedSDCard() ) {
+        FileUtils::unmountSDCard();
+    }
+
+    if ( !FileUtils::SDReady ) {
+        FileUtils::initFileSystem();
+        if ( !FileUtils::SDReady ) {
+            OSD::osdCenteredMsg(ERR_FS_EXT_FAIL[Config::lang], LEVEL_ERROR);
+        }
+    }
 }
 
 // String FileUtils::getAllFilesFrom(const String path) {
@@ -277,18 +330,57 @@ void FileUtils::unmountSDCard() {
 
 // }
 
-void FileUtils::DirToFile(string fpath, uint8_t ftype) {
+int FileUtils::getDirStats(const string& filedir, const vector<string>& filexts, unsigned long* hash, unsigned int* elements, unsigned int* ndirs) {
+    *hash = 0; // Name checksum variable
+    unsigned long high;
+    DIR* dir;
+    struct dirent* de;
 
-    char fileName[8];
+    *elements = 0;
+    *ndirs = 0;
 
-    std::vector<std::string> filenames;
-    filenames.reserve(MAX_FNAMES_PER_CHUNK);
+    string fdir = filedir.substr(0, filedir.length() - 1);
+    if ((dir = opendir(fdir.c_str())) != nullptr) {
+        while ((de = readdir(dir)) != nullptr) {
+            string fname = de->d_name;
+            if (de->d_type == DT_REG || de->d_type == DT_DIR) {
+                if (fname.compare(0, 1, ".") != 0) {
+                    if ((de->d_type == DT_DIR) || (std::find(filexts.begin(), filexts.end(), FileUtils::getLCaseExt(fname)) != filexts.end())) {
+                        // Calculate name checksum
+                        for (int i = 0; i < fname.length(); i++) {
+                            *hash = (*hash << 4) + fname[i];
+                            if (high = *hash & 0xF0000000) *hash ^= high >> 24;
+                            *hash &= ~high;
+                        }
+                        if (de->d_type == DT_REG) 
+                            (*elements)++; // Count elements in dir
+                        else if (de->d_type == DT_DIR)
+                            (*ndirs)++;
+                    }
+                }
+            }
+        }
+        closedir(dir);
+        return 0;
+    }
+
+    return -1;
+}
+
+
+void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsigned int item_count) {
+    FILE* fin = nullptr;
+    FILE* fout = nullptr;
+    char line[65];
+    string fname1 = "";
+    string fname2 = "";
+    string fnameLastSaved = "";
 
     // Populate filexts with valid filename extensions
     std::vector<std::string> filexts;
     size_t pos = 0;
     string ss = fileTypes[ftype].fileExts;
-    while ((pos = ss.find(",")) != std::string::npos) {
+    while ((pos = ss.find(",")) != string::npos) {
         // printf("%s , ",ss.substr(0,pos).c_str());
         filexts.push_back(ss.substr(0, pos));
         ss.erase(0, pos + 1);
@@ -297,321 +389,273 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype) {
     filexts.push_back(ss.substr(0));
     // printf("\n");
 
-    string fdir = fpath.substr(0,fpath.length() - 1);
-    DIR* dir = opendir(fdir.c_str());
-    if (dir == NULL) {
-        printf("Error opening %s\n",fpath.c_str());
-        return;
-    }
-
     // Remove previous dir file
     remove((fpath + fileTypes[ftype].indexFilename).c_str());
 
-    OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_1[Config::lang],0,0);
+    string fdir = fpath.substr(0, fpath.length() - 1);
+    DIR* dir = opendir(fdir.c_str());
+    if (dir == NULL) {
+        printf("Error opening %s\n", fpath.c_str());
+        return;
+    }
 
-    // Read filenames from medium into vector, sort it, and dump into MAX_FNAMES_PER_CHUNK filenames long files
-    int cnt = 0;
-    int chunk_cnt = 0;
-    int item_count = 0;
+    OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_1[Config::lang],0,0);
+    
     int items_processed = 0;
     struct dirent* de;
-
-    // Count items to process
-    rewinddir(dir);
-    while ((de = readdir(dir)) != nullptr) {        
-        if (de->d_type == DT_REG || de->d_type == DT_DIR) {
-            item_count++;
-        }
-    }
-    rewinddir(dir);
-
-    unsigned long h = 0, high; // Directory Hash
 
     OSD::elements = 0;
     OSD::ndirs = 0;
 
-    while ((de = readdir(dir)) != nullptr) {        
-        string fname = de->d_name;
-        // if (fname[0] == 'A') printf("Fname: %s\n",fname.c_str());
-        if (de->d_type == DT_REG || de->d_type == DT_DIR) {
-            if (fname.compare(0,1,".") != 0) {
-                // if (fname[0] == 'A') printf("Fname2: %s\n",fname.c_str());
-                // if ((de->d_type == DT_DIR) || (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end())) {
+    bool readFile1 = false, readFile2 = true;
+    bool eof1 = true, eof2 = false;
+    bool holdFile2 = false;
 
+    int n = 1;
 
-                // if ((de->d_type == DT_DIR) || ((fname.size() > 3) && (std::find(filexts.begin(),filexts.end(),fname.substr(fname.size()-4)) != filexts.end()))) {
-                
-                size_t fpos = fname.find_last_of(".");
-                if ((de->d_type == DT_DIR) || ((fpos != string::npos) && (std::find(filexts.begin(),filexts.end(),fname.substr(fpos)) != filexts.end()))) {                                    
+    if (fpath != ( MountPoint + "/" ) ) {
+        fname1 = "  ..";
+        eof1 = false;
+    }
 
-                    // if (fname[0] == 'A') printf("Fname3: %s\n",fname.c_str());
+    string tempDir = MountPoint + "/.tmp";
 
-                    if (de->d_type == DT_DIR) {
-                        filenames.push_back((char(32) + fname).c_str());
-                        OSD::ndirs++;
-                    } else {
-                        filenames.push_back(fname.c_str());
-                        OSD::elements++;
-                    }
+    // Verificar si el directorio ya existía
+    struct stat info;
+    bool dirExisted = (stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 
-                    // Calc hash
-                    for (int i = 0; i < fname.length(); i++) {
-                        h = (h << 4) + fname[i];
-                        if (high = h & 0xF0000000)
-                            h ^= high >> 24;
-                        h &= ~high;
-                    }
+    // Crear el directorio si no existe
+    if (!dirExisted) {
+        if (mkdir(tempDir.c_str(), 0755) != 0) {
+            printf( "TMP directory creation failed\n" );
+            closedir(dir);
+            // Close progress dialog
+            OSD::progressDialog("","",0,2);
+            return;
+        }
+    }
 
-                    cnt++;
-                    if (cnt == MAX_FNAMES_PER_CHUNK) {
-                        // Dump current chunk
-                        sort(filenames.begin(),filenames.end()); // Sort vector
-                        sprintf(fileName, "%d", chunk_cnt);
-                        FILE *f = fopen((fpath + fileTypes[ftype].indexFilename + fileName).c_str(), "w");
-                        if (f==NULL) {
-                            printf("Error opening filelist chunk\n");
-                            // Close progress dialog
-                            OSD::progressDialog("","",0,2);
-                            return;
-                        }
-                        for (int n=0; n < MAX_FNAMES_PER_CHUNK; n++) fputs((filenames[n] + std::string((MAX_CHARS_PER_FNAME - 1) - filenames[n].size(), ' ') + "\n").c_str(),f);
-                        fclose(f);
-                        filenames.clear();
-                        cnt = 0;
-                        chunk_cnt++;
-                        items_processed--;
-                    }
+    int bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort
+    std::vector<std::string> buffer;
 
-                }
-            }
+    int iterations = 0;
 
-            items_processed++;
-            OSD::progressDialog("","",(float) 100 / ((float) item_count / (float) items_processed),1);
+    while ( !eof2 || ( fin && !feof(fin)) ) {
+        fnameLastSaved = "";
+    
+        holdFile2 = false;
 
+        iterations++;
+
+        fout = fopen((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string(n&1)).c_str(), "wb");
+        if ( !fout ) {
+            if ( fin ) fclose( fin );
+            closedir( dir );
+            // Close progress dialog
+            OSD::progressDialog("","",0,2);
+            return;
         }
 
+        if (setvbuf(fout, NULL, _IOFBF, 1024) != 0) {
+            printf("setvbuf failed\n");
+        }
+
+        while (1) {
+            if ( readFile1 ) {
+                if ( !fin || feof( fin ) ) eof1 = true;
+                if ( !eof1 ) {
+                    size_t res = fread( line, sizeof(char), FILENAMELEN, fin);
+                    if ( !res || feof( fin ) /*|| res != 64 */ ) {
+                        eof1 = true;
+                    } else {
+                        line[FILENAMELEN-1] = '\0';
+                        fname1.assign(line);
+                    }
+                }
+                readFile1 = false;
+            }
+
+            if ( readFile2 ) {
+                if (buffer.empty()) { // Fill buffer with directory entries
+                    if ( bufferSize ) {
+                        while ( buffer.size() < bufferSize && (de = readdir(dir)) != nullptr ) {
+                            if (de->d_name[0] != '.') {
+                                string fname = de->d_name;
+                                if (de->d_type == DT_DIR) {
+                                    buffer.push_back( " " + fname );
+                                    OSD::ndirs++;
+                                } else if (de->d_type == DT_REG && std::find(filexts.begin(), filexts.end(), getLCaseExt(fname)) != filexts.end()) {
+                                    buffer.push_back( fname );
+                                    OSD::elements++;
+                                }
+                            }
+                        }
+
+                        // Sort buffer loaded with processed directory entries
+                        sort(buffer.begin(), buffer.end(), [](const string& a, const string& b) {
+                            return ::toLower(a) < toLower(b);
+                        });
+                    } else {
+                        eof2 = true;
+                        readFile2 = false;
+                    }
+                }
+
+                if (!buffer.empty()) {
+                    fname2 = buffer.front();
+                    buffer.erase(buffer.begin()); // Remove first element from buffer
+
+                    items_processed++;
+
+                    OSD::progressDialog("","",(float) 100 / ((float) item_count / (float) items_processed),1);
+                } else
+                if ( !de ) eof2 = true;
+
+                readFile2 = false;
+                holdFile2 = false;
+            }
+
+            string fnameToSave = "";
+
+            if ( eof1 ) {
+                if ( eof2 || holdFile2 || strcasecmp(fnameLastSaved.c_str(), fname2.c_str()) > 0 ) {
+                    break;
+                }
+                fnameToSave = fname2;
+                readFile2 = true;
+            } else 
+            // eof2 || fname1 < fname2
+            // si fname2 > fname1 entonces grabar fname1, ya que fname2 esta ordenado y no puede venir uno menor en este grupo
+            if ( eof2 || strcasecmp(fname1.c_str(), fname2.c_str()) < 0 ) {
+                fnameToSave = fname1;
+                readFile1 = true;
+            } else
+            if ( strcasecmp(fname1.c_str(), fname2.c_str()) > 0 && strcasecmp(fnameLastSaved.c_str(), fname2.c_str()) > 0 ) {
+                // fname1 > fname2 && last > fname2
+                holdFile2 = true;
+                fnameToSave = fname1;
+                readFile1 = true;
+            } else {
+                if ( strcasecmp(fnameLastSaved.c_str(), fname2.c_str()) > 0 ) {
+                    break;
+                }
+                fnameToSave = fname2;
+                readFile2 = true;
+            }
+
+            if ( fnameToSave != "" ) {
+                string sw;
+                if ( fnameToSave.length() > FILENAMELEN - 1 )   sw = fnameToSave.substr(0,FILENAMELEN - 1) + "\n";
+                else                                            sw = fnameToSave + string(FILENAMELEN - 1 - fnameToSave.size(), ' ') + "\n";
+                fwrite(sw.c_str(), sizeof(char), sw.length(), fout);
+                fnameLastSaved = fnameToSave;
+            }
+        }
+
+        if ( fin ) {
+            fclose(fin);
+            fin = nullptr;
+        }
+
+        fclose(fout);
+
+        if ( eof1 && eof2 ) break;
+
+        fin = fopen((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string(n&1)).c_str(), "rb");
+        if ( !fin ) {
+            buffer.clear(); // Clear vector
+            std::vector<std::string>().swap(buffer); // free memory
+
+            filexts.clear(); // Clear vector
+            std::vector<std::string>().swap(filexts); // free memory  
+
+            closedir( dir );
+            // Close progress dialog
+            OSD::progressDialog("","",0,2);
+            return;
+        }
+
+        if (setvbuf(fin, NULL, _IOFBF, 512) != 0) {
+            printf("setvbuf failed\n");
+        }
+
+        eof1 = false;
+        readFile1 = true;
+
+        n++;
     }
 
-    // Add previous directory entry if not on root dir
-    // printf("%s - %s\n",fpath.c_str(),(MountPoint + "/").c_str());
-    if (fpath != (MountPoint + "/")) {
-        filenames.push_back("  ..");
-        cnt++;
-    }
-
-    closedir(dir);
+    buffer.clear(); // Clear vector
+    std::vector<std::string>().swap(buffer); // free memory
 
     filexts.clear(); // Clear vector
     std::vector<std::string>().swap(filexts); // free memory    
 
-    if (cnt > 0) { 
-        // Dump last chunk
-        sort(filenames.begin(),filenames.end()); // Sort vector
-        sprintf(fileName, "%d", chunk_cnt);
-        FILE *f = fopen((fpath + fileTypes[ftype].indexFilename + fileName).c_str(), "w");
-        if (f == NULL) {
-            printf("Error opening last filelist chunk\n");
-            // Close progress dialog
-            OSD::progressDialog("","",0,2);
-            return;
-        }
-        for (int n=0; n < cnt;n++) fputs((filenames[n] + std::string((MAX_CHARS_PER_FNAME - 1)  - filenames[n].size(), ' ') + "\n").c_str(),f);
-        fclose(f);
-    }
+    if ( fin ) fclose(fin);
+    closedir(dir);
 
-    filenames.clear(); // Clear vector
-    std::vector<std::string>().swap(filenames); // free memory
-
-    if (chunk_cnt == 0) {
-        if (cnt == 0) {
-            // Close progress dialog
-            OSD::progressDialog("","",0,2);
-            return;
-        }
-        rename((fpath + fileTypes[ftype].indexFilename + "0").c_str(),(fpath + fileTypes[ftype].indexFilename).c_str());   // Rename unique chunk
-    } else {
-        OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_2[Config::lang],0,1);
-        Mergefiles(fpath, ftype, chunk_cnt);
-    }
+    rename((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string(n&1)).c_str(), (fpath + fileTypes[ftype].indexFilename).c_str());
 
     // Add directory hash to last line of file
-    // printf("Hashcode: %lu\n",h);
-    FILE *fout;
-    fout  = fopen((fpath + fileTypes[ftype].indexFilename).c_str(), "a");
-    fputs(to_string(h).c_str(),fout);
+    fout = fopen((fpath + fileTypes[ftype].indexFilename).c_str(), "a");
+    if ( !fout ) {
+        // Close progress dialog
+        OSD::progressDialog("","",0,2);
+        return;
+    }
+
+//    char bhash[21]; // Reserva espacio para el número más un carácter nulo
+//    int length = snprintf(bhash, sizeof(bhash), "%020lu", hash); // Formatea el número con longitud fija
+//    fputs(bhash, fout); // Escribe la cadena formateada en el archivo
+    fprintf( fout, "%020lu", hash );
     fclose(fout);
-    fout = NULL;
+
+    if ( n ) {
+        OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_3[Config::lang],0,1);
+        remove((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string((n-1)&1)).c_str());
+        OSD::progressDialog("","",(float) 100 / ((float) ( !dirExisted ? 2 : 1 ) / (float) 1),1);
+
+        // Si el directorio no existía previamente, eliminarlo
+        if (!dirExisted ) {
+            rmdir(tempDir.c_str());
+            OSD::progressDialog("","",(float) 100 / ((float) 2 / (float) 2),1);
+        }
+    }
 
     // Close progress dialog
     OSD::progressDialog("","",0,2);
 
-}
-
-void FileUtils::Mergefiles(string fpath, uint8_t ftype, int chunk_cnt) {
-
-    char fileName[8];
-
-    // multi_heap_info_t info;    
-    // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-    // string textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
-    // string textout2 = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
-    // printf("%s",textout.c_str());
-    // printf("%s\n",textout2.c_str());                                
-
-    // Merge sort
-    FILE *file1,*file2,*fout;
-    char fname1[MAX_CHARS_PER_FNAME];
-    char fname2[MAX_CHARS_PER_FNAME];
-
-    file1 = fopen((fpath + fileTypes[ftype].indexFilename + "0").c_str(), "r");
-    file2 = fopen((fpath + fileTypes[ftype].indexFilename + "1").c_str(), "r");
-    string bufout="";
-    int bufcnt = 0;
-
-    int  n = 1;
-    while (file2 != NULL) {
-
-        sprintf(fileName, ".tmp%d", n);
-        // printf("Creating %s\n",fileName);
-        fout  = fopen((fpath + fileName).c_str(), "w");
-
-        fgets(fname1, sizeof(fname1), file1);
-        fgets(fname2, sizeof(fname2), file2);
-
-        while(1) {
-
-            if (feof(file1)) {
-                if (feof(file2)) break;
-                bufout += fname2;
-                fgets(fname2, sizeof(fname2), file2);
-            }
-            else if (feof(file2)) {
-                if (feof(file1)) break;
-                bufout += fname1;
-                fgets(fname1, sizeof(fname1), file1);
-            } else if (strcmp(fname1,fname2)< 0) {
-                bufout += fname1;
-                fgets(fname1, sizeof(fname1), file1);
-            } else {
-                bufout += fname2;
-                fgets(fname2, sizeof(fname2), file2);
-            }
-
-            bufcnt++;
-
-            if (bufcnt == 64) {
-                // heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-                // textout = " Total free bytes           : " + to_string(info.total_free_bytes) + "\n";
-                // textout2 = " Minimum free ever          : " + to_string(info.minimum_free_bytes) + "\n";
-                // printf(" Buffer size: %d\n",bufout.length());
-                // printf("%s",textout.c_str());
-                // printf("%s\n",textout2.c_str());                                
-                fwrite(bufout.c_str(),sizeof(char),bufout.length(),fout);
-                bufout = "";
-                bufcnt = 0;
-            }
-
-        }
-
-        if (bufcnt) {
-            fwrite(bufout.c_str(),sizeof(char),bufout.length(),fout);
-        }
-
-        fclose(file1);
-        fclose (file2);
-        fclose (fout);
-
-        // Next cycle: open t<n> for read
-        sprintf(fileName, ".tmp%d", n);
-        file1 = fopen((fpath + fileName).c_str(), "r");
-
-        OSD::progressDialog("","",(float) 100 / ((float) chunk_cnt / (float) n),1);
-
-        // printf("chunkcnt: %d n: %d\n",(int) chunk_cnt, (int)n);
-
-        n++;
-
-        sprintf(fileName, "%d", n);
-        file2 = fopen((fpath + fileTypes[ftype].indexFilename + fileName).c_str(), "r");
-
-        // printf("n Opened: %d\n",(int)n);
-
-    }
-
-    // printf("Closing file1\n");
-
-    fclose(file1);
-
-    // printf("File1 closed\n");
-
-    // Rename final chunk
-    sprintf(fileName, ".tmp%d", n - 1);
-    rename((fpath + fileName).c_str(),(fpath + fileTypes[ftype].indexFilename).c_str());
-
-    OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_3[Config::lang],0,1);
-
-    // Remove temp files
-    for (int n = 0; n <= chunk_cnt; n++) {
-        sprintf(fileName, "%d", n);
-        remove((fpath + fileTypes[ftype].indexFilename + fileName).c_str());
-        sprintf(fileName, ".tmp%d", n);
-        remove((fpath + fileName).c_str());
-        OSD::progressDialog("","",(float) 100 / ((float) chunk_cnt / (float) n),1);
-    }
-
-    file1 = NULL;
-    file2 = NULL;
-    fout = NULL;
+    printf("total iterations %d\n", iterations );
 
 }
 
 bool FileUtils::hasSNAextension(string filename)
 {
-    
-    if (filename.substr(filename.size()-4,4) == ".sna") return true;
-    if (filename.substr(filename.size()-4,4) == ".SNA") return true;
-
-    return false;
+    return ( getLCaseExt(filename) == "sna" );
 
 }
 
 bool FileUtils::hasZ80extension(string filename)
 {
-
-    if (filename.substr(filename.size()-4,4) == ".z80") return true;
-    if (filename.substr(filename.size()-4,4) == ".Z80") return true;
-
-    return false;
+    return ( getLCaseExt(filename) == "z80" );
 
 }
 
 bool FileUtils::hasPextension(string filename)
 {
-
-    if (filename.substr(filename.size()-2,2) == ".p") return true;
-    if (filename.substr(filename.size()-2,2) == ".P") return true;
-
-    return false;
+    return ( getLCaseExt(filename) == "p" );
 
 }
 
 bool FileUtils::hasTAPextension(string filename)
 {
-    
-    if (filename.substr(filename.size()-4,4) == ".tap") return true;
-    if (filename.substr(filename.size()-4,4) == ".TAP") return true;
-
-    return false;
+    return ( getLCaseExt(filename) == "tap" );
 
 }
 
 bool FileUtils::hasTZXextension(string filename)
 {
-    
-    if (filename.substr(filename.size()-4,4) == ".tzx") return true;
-    if (filename.substr(filename.size()-4,4) == ".TZX") return true;
-
-    return false;
+    return ( getLCaseExt(filename) == "tzx" );
 
 }
 
