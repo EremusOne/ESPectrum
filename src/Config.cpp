@@ -300,7 +300,7 @@ void Config::load() {
             str_data = (char *)malloc(required_size);
             nvs_get_str(handle, "asp169", str_data, &required_size);
             // printf("asp169:%s\n",str_data);
-            aspect_letterbox = strcmp(str_data, "false");
+            aspect_16_9 = strcmp(str_data, "false");
             free(str_data);
         }
 
@@ -607,7 +607,7 @@ void Config::save(string value) {
             nvs_set_str(handle,"sdstorage",FileUtils::MountPoint == MOUNT_POINT_SD ? "true" : "false");
 
         if((value=="asp169") || (value=="all"))
-            nvs_set_str(handle,"asp169",aspect_letterbox ? "true" : "false");
+            nvs_set_str(handle,"asp169",aspect_16_9 ? "true" : "false");
 
         if((value=="videomode") || (value=="all"))
             nvs_set_u8(handle,"videomode",Config::videomode);

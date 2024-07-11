@@ -172,10 +172,10 @@ unsigned short OSD::menuRun(string new_menu) {
 
     // Position
     if (menu_level == 0) {
-        x = (Config::aspect_letterbox ? 24 : 8);
+        x = (Config::aspect_16_9 ? 24 : 8);
         y = 8;
     } else {
-        x = (Config::aspect_letterbox ? 24 : 8) + (60 * menu_level);
+        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
         if (menu_saverect) {
             y += (8 + (8 * menu_prevopt));
             prev_y[menu_level] = y;
@@ -648,10 +648,10 @@ int OSD::menuTape(string title) {
 
     // Position
     if (menu_level == 0) {
-        x = (Config::aspect_letterbox ? 24 : 8);
+        x = (Config::aspect_16_9 ? 24 : 8);
         y = 8;
     } else {
-        x = (Config::aspect_letterbox ? 24 : 8) + (60 * menu_level);
+        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
         y = 8 + (16 * menu_level);
     }
 

@@ -91,7 +91,7 @@ bool LoadSnapshot(string filename, string force_arch, string force_romset) {
 
     if (res && OSDprev) {
         VIDEO::OSD = OSDprev;
-        if (Config::aspect_letterbox)
+        if (Config::aspect_16_9)
             VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
         else
             VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;

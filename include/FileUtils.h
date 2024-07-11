@@ -127,8 +127,8 @@ private:
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
 
-#define DIR_CACHE_SIZE 256
-#define FILENAMELEN 64
+#define DIR_CACHE_SIZE 128
+#define FILENAMELEN 128
 
 #ifdef ESPECTRUM_PSRAM
 // Experimental values for PSRAM

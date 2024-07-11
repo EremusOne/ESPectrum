@@ -260,7 +260,7 @@ void Tape::LoadTape(string mFile) {
 
                 if (OSDprev) {
                     VIDEO::OSD = OSDprev;
-                    if (Config::aspect_letterbox)
+                    if (Config::aspect_16_9)
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                     else
                         VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;

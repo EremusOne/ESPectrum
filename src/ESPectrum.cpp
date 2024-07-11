@@ -168,12 +168,12 @@ void ShowStartMsg() {
 
     OSD::drawOSD(false);
 
-    VIDEO::vga.fillRect(Config::aspect_letterbox ? 60 : 40,Config::aspect_letterbox ? 12 : 32,240,50,zxColor(0, 0));            
+    VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 12 : 32,240,50,zxColor(0, 0));            
 
     // Decode Logo in EBF8 format
     uint8_t *logo = (uint8_t *)ESPectrum_logo;
-    int pos_x = Config::aspect_letterbox ? 86 : 66;
-    int pos_y = Config::aspect_letterbox ? 23 : 43;
+    int pos_x = Config::aspect_16_9 ? 86 : 66;
+    int pos_y = Config::aspect_16_9 ? 23 : 43;
     int logo_w = (logo[5] << 8) + logo[4]; // Get Width
     int logo_h = (logo[7] << 8) + logo[6]; // Get Height
     logo+=8; // Skip header
@@ -363,7 +363,7 @@ void ESPectrum::bootKeyboard() {
 
     if (i < 200) {
         Config::videomode = (s[0] == '1') ? 0 : (s[0] == '2') ? 1 : 2;
-        Config::aspect_letterbox = (s[1] == 'Q') ? false : true;
+        Config::aspect_16_9 = (s[1] == 'Q') ? false : true;
         Config::ram_file="none";
         Config::save();
         // printf("%s\n", s.c_str());
@@ -1574,7 +1574,7 @@ for(;;) {
 
                 if (VIDEO::OSD == 0) {
 
-                    if (Config::aspect_letterbox) 
+                    if (Config::aspect_16_9) 
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen;
                     else
                         VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;

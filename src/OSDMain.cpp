@@ -195,7 +195,7 @@ void OSD::drawStats() {
 
     unsigned short x,y;
 
-    if (Config::aspect_letterbox) {
+    if (Config::aspect_16_9) {
         x = 156;
         y = 176;
     } else {
@@ -547,7 +547,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if ((VIDEO::OSD & 0x03) > 2) {
                 if ((VIDEO::OSD & 0x04) == 0) {
-                    if (Config::aspect_letterbox) 
+                    if (Config::aspect_16_9) 
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen;
                     else
                         VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
@@ -556,7 +556,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             } else {
 
                 if ((VIDEO::OSD & 0x04) == 0) {
-                    if (Config::aspect_letterbox) 
+                    if (Config::aspect_16_9) 
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                     else
                         VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -585,7 +585,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if (VIDEO::OSD == 0) {
 
-                if (Config::aspect_letterbox) 
+                if (Config::aspect_16_9) 
                     VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -605,7 +605,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             unsigned short x,y;
 
-            if (Config::aspect_letterbox) {
+            if (Config::aspect_16_9) {
                 x = 156;
                 y = 180;
             } else {
@@ -626,7 +626,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if (VIDEO::OSD == 0) {
 
-                if (Config::aspect_letterbox) 
+                if (Config::aspect_16_9) 
                     VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -645,7 +645,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             }
 
             unsigned short x,y;
-            if (Config::aspect_letterbox) {
+            if (Config::aspect_16_9) {
                 x = 156;
                 y = 180;
             } else {
@@ -1445,7 +1445,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         // aspect ratio
                                         string asp_menu = MENU_ASPECT[Config::lang];
-                                        bool prev_asp = Config::aspect_letterbox;
+                                        bool prev_asp = Config::aspect_16_9;
                                         if (prev_asp) {
                                             asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
                                             asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
@@ -1456,11 +1456,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         uint8_t opt2 = menuRun(asp_menu);
                                         if (opt2) {
                                             if (opt2 == 1)
-                                                Config::aspect_letterbox = false;
+                                                Config::aspect_16_9 = false;
                                             else
-                                                Config::aspect_letterbox = true;
+                                                Config::aspect_16_9 = true;
 
-                                            if (Config::aspect_letterbox != prev_asp) {
+                                            if (Config::aspect_16_9 != prev_asp) {
                                                 Config::ram_file = "none";
                                                 Config::save("asp169");
                                                 Config::save("ram");
@@ -2062,12 +2062,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 // About
                 drawOSD(false);
                 
-                VIDEO::vga.fillRect(Config::aspect_letterbox ? 60 : 40,Config::aspect_letterbox ? 12 : 32,240,50,zxColor(0, 0));            
+                VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 12 : 32,240,50,zxColor(0, 0));            
 
                 // Decode Logo in EBF8 format
                 uint8_t *logo = (uint8_t *)ESPectrum_logo;
-                int pos_x = Config::aspect_letterbox ? 86 : 66;
-                int pos_y = Config::aspect_letterbox ? 23 : 43;
+                int pos_x = Config::aspect_16_9 ? 86 : 66;
+                int pos_y = Config::aspect_16_9 ? 23 : 43;
                 int logo_w = (logo[5] << 8) + logo[4]; // Get Width
                 int logo_h = (logo[7] << 8) + logo[6]; // Get Height
                 logo+=8; // Skip header
@@ -2080,8 +2080,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
                 // VIDEO::vga.print(Config::lang ? OSD_ABOUT1_ES : OSD_ABOUT1_EN);
                 
-                pos_x = Config::aspect_letterbox ? 66 : 46;
-                pos_y = Config::aspect_letterbox ? 68 : 88;            
+                pos_x = Config::aspect_16_9 ? 66 : 46;
+                pos_y = Config::aspect_16_9 ? 68 : 88;            
                 int osdRow = 0; int osdCol = 0;
                 int msgIndex = 0; int msgChar = 0;
                 int msgDelay = 0; int cursorBlink = 16; int nextChar = 0;
@@ -2123,7 +2123,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     } else {
                         msgDelay--;
                         if (msgDelay==0) {
-                            VIDEO::vga.fillRect(Config::aspect_letterbox ? 60 : 40,Config::aspect_letterbox ? 64 : 84,240,114,zxColor(1, 0));
+                            VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 64 : 84,240,114,zxColor(1, 0));
                             osdCol = 0;
                             osdRow  = 0;
                             msgChar = 0;
