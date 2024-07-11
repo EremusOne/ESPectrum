@@ -127,6 +127,8 @@ public:
 
     // static uint32_t sessid;
 
+    static void showMemInfo(const char* caption = "ESPectrum");
+
 private:
 
     static void audioTask(void* unused);

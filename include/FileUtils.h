@@ -108,15 +108,11 @@ private:
     static sdmmc_card_t *card;    
 };
 
-#define MOUNT_POINT_SPIFFS "/data"
 #define MOUNT_POINT_SD "/sd"
-
-// Use internal spiffs first
-#define DISK_BOOT_FILENAME "/data/boot.cfg"
-#define DISK_ROM_DIR "/r"
-#define DISK_SNA_DIR "/s"
-#define DISK_TAP_DIR "/t"
-#define DISK_DSK_DIR "/d"
+// #define DISK_ROM_DIR "/r"
+// #define DISK_SNA_DIR "/s"
+// #define DISK_TAP_DIR "/t"
+// #define DISK_DSK_DIR "/d"
 #define DISK_SCR_DIR "/.c"
 #define DISK_PSNA_DIR "/.p"
 #define DISK_PSNA_FILE "persist"
@@ -127,24 +123,17 @@ private:
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
 
-
 #ifdef ESPECTRUM_PSRAM
 
 // Experimental values for PSRAM
-#define MAX_FNAMES_PER_CHUNK 256
-#define MAX_CHARS_PER_FNAME 192
-
-#define DIR_CACHE_SIZE 64
+#define DIR_CACHE_SIZE 256
 #define FILENAMELEN 128
 
 #else
 
 // Values for no PSRAM
-#define MAX_FNAMES_PER_CHUNK 64
-#define MAX_CHARS_PER_FNAME 128
-
-#define DIR_CACHE_SIZE 64
-#define FILENAMELEN 128
+#define DIR_CACHE_SIZE 128
+#define FILENAMELEN 64
 
 #endif
 
@@ -153,112 +142,95 @@ private:
 // inline utility functions for uniform access to file/memory
 // and making it easy to to implement SNA/Z80 functions
 
-static inline uint8_t readByteFile(FILE *f)
-{
+static inline uint8_t readByteFile(FILE *f) {
     uint8_t result;
 
-    if (fread(&result, 1, 1, f) != 1) {
+    if (fread(&result, 1, 1, f) != 1)
         return -1;
-    }
 
     return result;
 }
 
-static inline uint16_t readWordFileLE(FILE *f)
-{
+static inline uint16_t readWordFileLE(FILE *f) {
     uint8_t lo = readByteFile(f);
     uint8_t hi = readByteFile(f);
     return lo | (hi << 8);
 }
 
-static inline uint16_t readWordFileBE(FILE *f)
-{
+static inline uint16_t readWordFileBE(FILE *f) {
     uint8_t hi = readByteFile(f);
     uint8_t lo = readByteFile(f);
     return lo | (hi << 8);
 }
 
-static inline size_t readBlockFile(FILE *f, uint8_t* dstBuffer, size_t size)
-{
+static inline size_t readBlockFile(FILE *f, uint8_t* dstBuffer, size_t size) {
     return fread(dstBuffer, 0x4000, 1, f);
 }
 
-static inline void writeByteFile(uint8_t value, FILE *f)
-{
+static inline void writeByteFile(uint8_t value, FILE *f) {
     fwrite(&value,1,1,f);
 }
 
-static inline void writeWordFileLE(uint16_t value, FILE *f)
-{
+static inline void writeWordFileLE(uint16_t value, FILE *f) {
     uint8_t lo =  value       & 0xFF;
     uint8_t hi = (value >> 8) & 0xFF;
     fwrite(&lo,1,1,f);
     fwrite(&hi,1,1,f);
 }
 
-// static inline void writeWordFileBE(uint16_t value, File f)
-// {
+// static inline void writeWordFileBE(uint16_t value, File f) {
 //     uint8_t hi = (value >> 8) & 0xFF;
 //     uint8_t lo =  value       & 0xFF;
 //     f.write(hi);
 //     f.write(lo);
 // }
 
-// static inline size_t writeBlockFile(uint8_t* srcBuffer, File f, size_t size)
-// {
+// static inline size_t writeBlockFile(uint8_t* srcBuffer, File f, size_t size) {
 //     return f.write(srcBuffer, size);
 // }
 
-// static inline uint8_t readByteMem(uint8_t*& ptr)
-// {
+// static inline uint8_t readByteMem(uint8_t*& ptr) {
 //     uint8_t value = *ptr++;
 //     return value;
 // }
 
-// static inline uint16_t readWordMemLE(uint8_t*& ptr)
-// {
+// static inline uint16_t readWordMemLE(uint8_t*& ptr) {
 //     uint8_t lo = *ptr++;
 //     uint8_t hi = *ptr++;
 //     return lo | (hi << 8);
 // }
 
-// static inline uint16_t readWordMemBE(uint8_t*& ptr)
-// {
+// static inline uint16_t readWordMemBE(uint8_t*& ptr) {
 //     uint8_t hi = *ptr++;
 //     uint8_t lo = *ptr++;
 //     return lo | (hi << 8);
 // }
 
-// static inline size_t readBlockMem(uint8_t*& srcBuffer, uint8_t* dstBuffer, size_t size)
-// {
+// static inline size_t readBlockMem(uint8_t*& srcBuffer, uint8_t* dstBuffer, size_t size) {
 //     memcpy(dstBuffer, srcBuffer, size);
 //     srcBuffer += size;
 //     return size;
 // }
 
-// static inline void writeByteMem(uint8_t value, uint8_t*& ptr)
-// {
+// static inline void writeByteMem(uint8_t value, uint8_t*& ptr) {
 //     *ptr++ = value;
 // }
 
-// static inline void writeWordMemLE(uint16_t value, uint8_t*& ptr)
-// {
+// static inline void writeWordMemLE(uint16_t value, uint8_t*& ptr) {
 //     uint8_t lo =  value       & 0xFF;
 //     uint8_t hi = (value >> 8) & 0xFF;
 //     *ptr++ = lo;
 //     *ptr++ = hi;
 // }
 
-// static inline void writeWordMemBE(uint16_t value, uint8_t*& ptr)
-// {
+// static inline void writeWordMemBE(uint16_t value, uint8_t*& ptr) {
 //     uint8_t hi = (value >> 8) & 0xFF;
 //     uint8_t lo =  value       & 0xFF;
 //     *ptr++ = hi;
 //     *ptr++ = lo;
 // }
 
-// static inline size_t writeBlockMem(uint8_t* srcBuffer, uint8_t*& dstBuffer, size_t size)
-// {
+// static inline size_t writeBlockMem(uint8_t* srcBuffer, uint8_t*& dstBuffer, size_t size) {
 //     memcpy(dstBuffer, srcBuffer, size);
 //     dstBuffer += size;
 //     return size;

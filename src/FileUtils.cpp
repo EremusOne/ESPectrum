@@ -370,10 +370,14 @@ int FileUtils::getDirStats(const string& filedir, const vector<string>& filexts,
 void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsigned int item_count) {
     FILE* fin = nullptr;
     FILE* fout = nullptr;
-    char line[65];
+    char line[FILENAMELEN + 1];
     string fname1 = "";
     string fname2 = "";
     string fnameLastSaved = "";
+
+    printf("\nJust after entering dirtofile");
+    ESPectrum::showMemInfo();
+    printf("\n");
 
     // Populate filexts with valid filename extensions
     std::vector<std::string> filexts;
@@ -417,27 +421,41 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         eof1 = false;
     }
 
+    printf("\nBefore checking tempdir");
+    ESPectrum::showMemInfo();
+    printf("\n");
+
     string tempDir = MountPoint + "/.tmp";
 
     // Verificar si el directorio ya existía
-    struct stat info;
-    bool dirExisted = (stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
+    // struct stat info;
+    // bool dirExisted = (stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 
-    // Crear el directorio si no existe
-    if (!dirExisted) {
-        if (mkdir(tempDir.c_str(), 0755) != 0) {
-            printf( "TMP directory creation failed\n" );
-            closedir(dir);
-            // Close progress dialog
-            OSD::progressDialog("","",0,2);
-            return;
-        }
-    }
+    // rmdir(tempDir.c_str());
+
+    // // Crear el directorio si no existe
+    // if (!dirExisted) {
+        // if (mkdir(tempDir.c_str(), 0755) != 0) {
+        //     printf( "TMP directory creation failed\n" );
+        //     closedir(dir);
+        //     // Close progress dialog
+        //     OSD::progressDialog("","",0,2);
+        //     return;
+        // }
+    // }
+
+    printf("\nAfter checking tempdir");
+    ESPectrum::showMemInfo();
+    printf("\n");
 
     int bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort
     std::vector<std::string> buffer;
 
     int iterations = 0;
+
+    printf("\nBefore while");
+    ESPectrum::showMemInfo();
+    printf("\n");
 
     while ( !eof2 || ( fin && !feof(fin)) ) {
         fnameLastSaved = "";
@@ -460,6 +478,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         }
 
         while (1) {
+
             if ( readFile1 ) {
                 if ( !fin || feof( fin ) ) eof1 = true;
                 if ( !eof1 ) {
@@ -475,8 +494,17 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
             }
 
             if ( readFile2 ) {
+
                 if (buffer.empty()) { // Fill buffer with directory entries
+
+                    // buffer.clear();
+                    
                     if ( bufferSize ) {
+
+                        printf("\nBefore buffer fill -> ");
+                        ESPectrum::showMemInfo();
+                        printf("\n");
+
                         while ( buffer.size() < bufferSize && (de = readdir(dir)) != nullptr ) {
                             if (de->d_name[0] != '.') {
                                 string fname = de->d_name;
@@ -490,25 +518,38 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
                             }
                         }
 
+                        // printf("Buffer size: %d\n",buffer.size());
+                        printf("Before buffer sort -> ");
+                        ESPectrum::showMemInfo();
+                        printf("\n");
+
                         // Sort buffer loaded with processed directory entries
                         sort(buffer.begin(), buffer.end(), [](const string& a, const string& b) {
                             return ::toLower(a) < toLower(b);
                         });
+
                     } else {
+
                         eof2 = true;
                         readFile2 = false;
+
                     }
+
                 }
 
                 if (!buffer.empty()) {
+
                     fname2 = buffer.front();
+
                     buffer.erase(buffer.begin()); // Remove first element from buffer
 
                     items_processed++;
 
                     OSD::progressDialog("","",(float) 100 / ((float) item_count / (float) items_processed),1);
-                } else
-                if ( !de ) eof2 = true;
+
+                } else {
+                    if ( !de ) eof2 = true;
+                }
 
                 readFile2 = false;
                 holdFile2 = false;
@@ -610,15 +651,19 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     fclose(fout);
 
     if ( n ) {
+
         OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_3[Config::lang],0,1);
         remove((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string((n-1)&1)).c_str());
-        OSD::progressDialog("","",(float) 100 / ((float) ( !dirExisted ? 2 : 1 ) / (float) 1),1);
 
-        // Si el directorio no existía previamente, eliminarlo
-        if (!dirExisted ) {
-            rmdir(tempDir.c_str());
+        // OSD::progressDialog("","",(float) 100 / ((float) ( !dirExisted ? 2 : 1 ) / (float) 1),1);
+
+        OSD::progressDialog("","",(float) 100 / ((float) 1 / (float) 1),1);
+
+        // // Si el directorio no existía previamente, eliminarlo
+        // if (!dirExisted ) {
+            // rmdir(tempDir.c_str());
             OSD::progressDialog("","",(float) 100 / ((float) 2 / (float) 2),1);
-        }
+        // }
     }
 
     // Close progress dialog

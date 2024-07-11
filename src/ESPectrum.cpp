@@ -61,6 +61,8 @@ visit https://zxespectrum.speccy.org/contacto
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+#include "esp_efuse.h"
+#include "soc/efuse_reg.h"
 // #include "bootloader_random.h"
 
 using namespace std;
@@ -232,54 +234,103 @@ void ShowStartMsg() {
 
 }
 
-void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
+void ESPectrum::showMemInfo(const char* caption) {
 
-multi_heap_info_t info;
+    string textout;
+    
+    // // Get chip information
+    // esp_chip_info_t chip_info;
+    // esp_chip_info(&chip_info);
 
-heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
-printf("=========================================================================\n");
-printf(" %s - Mem info:\n",caption);
-printf("-------------------------------------------------------------------------\n");
-printf("Total currently free in all non-continues blocks: %d\n", info.total_free_bytes);
-printf("Minimum free ever: %d\n", info.minimum_free_bytes);
-printf("Largest continues block to allocate big array: %d\n", info.largest_free_block);
-printf("Heap caps get free size (MALLOC_CAP_8BIT): %d\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
-printf("Heap caps get free size (MALLOC_CAP_32BIT): %d\n", heap_caps_get_free_size(MALLOC_CAP_32BIT));
-printf("Heap caps get free size (MALLOC_CAP_INTERNAL): %d\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-printf("=========================================================================\n\n");
+    // printf(" ------------------------------------------------------------\n");
+    // printf(" Hardware info - %s \n", caption);
+    // printf(" ------------------------------------------------------------\n");
+    // // Chip models for ESP32
+    // textout = " Chip model    : ";
+    // uint32_t chip_ver = esp_efuse_get_pkg_ver();
+    // uint32_t pkg_ver = chip_ver & 0x7;
+    // switch (pkg_ver) {
+    //     case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6 :
+    //         if (chip_info.revision == 3)
+    //             textout += "ESP32-D0WDQ6-V3";  
+    //         else
+    //             textout += "ESP32-D0WDQ6";
+    //         break;
+    //     case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5 :
+    //         if (chip_info.revision == 3)
+    //             textout += "ESP32-D0WD-V3";  
+    //         else
+    //             textout += "ESP32-D0WD";
+    //         break;                
+    //     case EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 :
+    //         textout += "ESP32-D2WD";
+    //         break;            
+    //     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 :
+    //         textout += "ESP32-PICO-D2";
+    //         break;            
+    //     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 :
+    //         textout += "ESP32-PICO-D4";
+    //         break;            
+    //     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302 :
+    //         textout += "ESP32-PICO-V3-02";
+    //         break;            
+    //     case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3 :
+    //          textout += "ESP32-D0WDR2-V3";
+    //         break;             
+    //     default:
+    //         textout += "Unknown";
+    // }
+    // textout += "\n";
+    // printf(textout.c_str());
 
-// heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
+    // textout = " Chip cores    : " + to_string(chip_info.cores) + "\n";
+    // printf(textout.c_str());
 
-// printf("=========================================================================\n");
-// heap_caps_print_heap_info(MALLOC_CAP_8BIT);            
+    // textout = " Chip revision : " + to_string(chip_info.revision) + "\n";
+    // printf(textout.c_str());
 
-// printf("=========================================================================\n");
-// heap_caps_print_heap_info(MALLOC_CAP_32BIT);                        
+    // textout = " Flash size    : " + to_string(spi_flash_get_chip_size() / (1024 * 1024)) + (chip_info.features & CHIP_FEATURE_EMB_FLASH ? "MB embedded" : "MB external") + "\n";
+    // printf(textout.c_str());
 
-// printf("=========================================================================\n");
-// heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+    multi_heap_info_t info;    
 
-// printf("=========================================================================\n");
-// heap_caps_print_heap_info(MALLOC_CAP_DMA);            
+    // heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+    // uint32_t psramsize = (info.total_free_bytes + info.total_allocated_bytes) >> 10;
+    // textout = " PSRAM size    : " + ( psramsize == 0 ? "N/A or disabled" : to_string(psramsize) + " MB") + "\n";
+    // printf(textout.c_str());
 
-// printf("=========================================================================\n");
-// heap_caps_print_heap_info(MALLOC_CAP_EXEC);            
+    // textout = " IDF Version   : " + (string)(esp_get_idf_version()) + "\n";
+    // printf(textout.c_str());
 
-// printf("=========================================================================\n");
-// heap_caps_print_heap_info(MALLOC_CAP_IRAM_8BIT);            
+    // printf("\n Memory info\n");
+    // printf(" ------------------------------------------------------------\n");    
 
-// printf("=========================================================================\n");
-// heap_caps_dump_all();
+    heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+    textout = " Total free bytes         : " + to_string(info.total_free_bytes) + "\n";
+    printf(textout.c_str());
 
-// printf("=========================================================================\n");
+    textout = " Minimum free ever        : " + to_string(info.minimum_free_bytes) + "\n";
+    printf(textout.c_str());    
+    
+    // textout = " Largest free block       : " + to_string(info.largest_free_block) + "\n";
+    // printf(textout.c_str());
+    
+    // textout = " Free (MALLOC_CAP_32BIT)  : " + to_string(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT)) + "\n";
+    // printf(textout.c_str());
+        
+    // UBaseType_t wm;
+    // wm = uxTaskGetStackHighWaterMark(NULL);
+    // textout = " Main  Task Stack HWM     : " + to_string(wm) + "\n";
+    // printf(textout.c_str());
 
-// UBaseType_t wm;
-// wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-// printf("Audio Task Stack HWM: %u\n", wm);
-// // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
-// // printf("Loop Task Stack HWM: %u\n", wm);
-// wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
-// printf("Video Task Stack HWM: %u\n", wm);
+    // wm = uxTaskGetStackHighWaterMark(ESPectrum::audioTaskHandle);
+    // textout = " Audio Task Stack HWM     : " + to_string(wm) + "\n";
+    // printf(textout.c_str());
+
+    // wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
+    // textout = " Video Task Stack HWM     : " + (Config::videomode ? to_string(wm) : "N/A") + "\n";    
+    // printf(textout.c_str());
+    // printf("\n ------------------------------------------------------------\n\n");        
 
 }
 
@@ -677,7 +728,7 @@ void ESPectrum::setup()
 
     }
 
-    if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
+    if (Config::slog_on) showMemInfo("Setup finished.");
 
     // Create loop function as task: it doesn't seem better than calling from main.cpp and increases RAM consumption (4096 bytes for stack).
     // xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);

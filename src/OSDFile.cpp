@@ -173,6 +173,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
     while(1) {
 
+        ESPectrum::showMemInfo("file dialog: before checking dir");
+
         fdCursorFlash = 0;
 
         reIndex = false;
@@ -212,6 +214,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
         std::vector<std::string>().swap(filexts); // free memory   
 
         if ( result == -1 ) {
+
             printf("Error opening %s\n",filedir.c_str());
 
             FileUtils::unmountSDCard();
@@ -224,9 +227,10 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
         }
 
         // Open dir file for read
+        printf("Checking existence of index file %s\n",(filedir + FileUtils::fileTypes[ftype].indexFilename).c_str());
         dirfile = fopen((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), "r");
         if (dirfile == NULL) {
-            // printf("No dir file found: reindexing\n");
+            printf("No dir file found: reindexing\n");
             reIndex = true;
         } else {
             // stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
@@ -242,16 +246,21 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             // If calc hash and file hash are different refresh dir index
             if ( getLong(fhash) != hash ||
-                 dirfilesize - 20 != FILENAMELEN * ( ndirs+elements + ( filedir != ( FileUtils::MountPoint + "/" ) ? 1 : 0 ) ) ) {
+                dirfilesize - 20 != FILENAMELEN * ( ndirs+elements + ( filedir != ( FileUtils::MountPoint + "/" ) ? 1 : 0 ) ) ) {
                 reIndex = true;
             }
         }
 
+        ESPectrum::showMemInfo("file dialog: after checking dir");
+
         // Force reindex (for testing)
-        // reIndex = true;
+        reIndex = ESPectrum::ESPtestvar ? true : reIndex;
 
         // There was no index or hashes are different: reIndex
         if (reIndex) {
+
+            ESPectrum::showMemInfo("file dialog: before reindex");
+
             if ( dirfile ) {
                 fclose(dirfile);
                 dirfile = nullptr;
@@ -307,6 +316,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
             // Reset position
             FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
+
+            ESPectrum::showMemInfo("file dialog: after reindex");
 
         }
 
