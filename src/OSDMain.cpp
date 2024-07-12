@@ -517,6 +517,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     Tape::tapeSaveName = tapFile;
 
                     Tape::LoadTape(mFile);
+                    return;
                 }
             }
             if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
@@ -798,7 +799,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 // menu_curopt = 1;
                                 // Select TAP File
                                 string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 15);
-                                if (mFile != "") {
+
+                                FileUtils::remountSDCardIfNeeded();
+
+                                if (mFile != "" && FileUtils::SDReady ) {
+                                    string tapFile = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile.substr(1);
+
+                                    struct stat stat_buf;
+                                    int status = stat(tapFile.c_str(), &stat_buf);
+                                    if (status == -1) {
+                                        if ( errno != ENOENT ) return;
+                                        // Create empty tap
+                                        int fd = open(tapFile.c_str(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+                                        if (!fd) return;
+                                        close(fd);
+
+                                    }
+
+                                    Tape::tapeSaveName = tapFile;
+
                                     Tape::LoadTape(mFile);
                                     return;
                                 }

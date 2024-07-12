@@ -591,15 +591,18 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 void OSD::tapemenuRedraw(string title) {
 
     if ((focus != last_focus) || (begin_row != last_begin_row)) {
-
         // Read bunch of rows
         menu = title + "\n";
-        for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
-            if (i > Tape::tapeNumBlocks) break;
-            if (Tape::tapeFileType == TAPE_FTYPE_TAP)
-                menu += Tape::tapeBlockReadData(i);
-            else
-                menu += Tape::tzxBlockReadData(i);
+        if ( Tape::tapeNumBlocks ) {
+            for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
+                if (i > Tape::tapeNumBlocks) break;
+                if (Tape::tapeFileType == TAPE_FTYPE_TAP)
+                    menu += Tape::tapeBlockReadData(i);
+                else
+                    menu += Tape::tzxBlockReadData(i);
+            }
+        } else {
+            menu += ( Config::lang ? "<Vacio>\n" : "<Empty>\n" );
         }
 
         for (uint8_t row = 1; row < virtual_rows; row++) {
@@ -630,6 +633,8 @@ int OSD::menuTape(string title) {
     real_rows = Tape::tapeNumBlocks + 1;
     virtual_rows = (real_rows > 19 ? 19 : real_rows);
     // begin_row = last_begin_row = last_focus = focus = 1;
+
+    if ( !Tape::tapeNumBlocks ) virtual_rows++;
     
     if (Tape::tapeCurBlock > 17) {
         begin_row = Tape::tapeCurBlock - 16;

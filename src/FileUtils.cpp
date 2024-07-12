@@ -104,6 +104,14 @@ string FileUtils::getLCaseExt(const string& filename) {
 
 }
 
+size_t FileUtils::fileSize(const char * mFile) {
+    struct stat stat_buf;
+    if ( !mFile ) return -1;
+    int status = stat(mFile, &stat_buf);
+    if ( status == -1 || ! ( stat_buf.st_mode & S_IFREG ) ) return -1;
+    return stat_buf.st_size;
+}
+
 void FileUtils::initFileSystem() {
 
     // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
