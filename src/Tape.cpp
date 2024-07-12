@@ -232,41 +232,42 @@ void (*Tape::GetBlock)() = &Tape::TAP_GetBlock;
 void Tape::LoadTape(string mFile) {
 
     if (FileUtils::hasTAPextension(mFile)) {
-
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
 
-        // Flashload .tap if needed
-        if ((keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs")) {
+        if ( FileUtils::fileSize( ( FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile ).c_str() ) > 0 ) {
+            // Flashload .tap if needed
+            if ((keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs")) {
 
-                OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
+                    OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD, LEVEL_INFO, 0);
 
-                uint8_t OSDprev = VIDEO::OSD;
+                    uint8_t OSDprev = VIDEO::OSD;
 
-                if (Z80Ops::is48)
-                    FileZ80::loader48();
-                else
-                    FileZ80::loader128();
-
-                // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                // https://skoolkid.github.io/rom/asm/5C78.html
-                MemESP::writebyte(0x5C78,rand() % 256);
-                MemESP::writebyte(0x5C79,rand() % 256);            
-
-                if (Config::ram_file != NO_RAM_FILE) {
-                    Config::ram_file = NO_RAM_FILE;
-                }
-                Config::last_ram_file = NO_RAM_FILE;
-
-                if (OSDprev) {
-                    VIDEO::OSD = OSDprev;
-                    if (Config::aspect_16_9)
-                        VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                    if (Z80Ops::is48)
+                        FileZ80::loader48();
                     else
-                        VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
-                    ESPectrum::TapeNameScroller = 0;
-                }    
+                        FileZ80::loader128();
 
+                    // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
+                    // https://skoolkid.github.io/rom/asm/5C78.html
+                    MemESP::writebyte(0x5C78,rand() % 256);
+                    MemESP::writebyte(0x5C79,rand() % 256);            
+
+                    if (Config::ram_file != NO_RAM_FILE) {
+                        Config::ram_file = NO_RAM_FILE;
+                    }
+                    Config::last_ram_file = NO_RAM_FILE;
+
+                    if (OSDprev) {
+                        VIDEO::OSD = OSDprev;
+                        if (Config::aspect_16_9)
+                            VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                        else
+                            VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
+                        ESPectrum::TapeNameScroller = 0;
+                    }    
+
+            }
         }
 
         Tape::Stop();
@@ -473,6 +474,7 @@ void Tape::TAP_Open(string name) {
 }
 
 uint32_t Tape::CalcTapBlockPos(int block) {
+    if ( TapeListing.empty()) return 0;
 
     int TapeBlockRest = block & (TAPE_LISTING_DIV -1);
     int CurrentPos = TapeListing[block / TAPE_LISTING_DIV].StartPosition;
@@ -580,6 +582,8 @@ void Tape::Play() {
         return;
     }
 
+    if ( TapeListing.empty()) return;
+
     if (VIDEO::OSD) VIDEO::OSD = 1;
 
     // Prepare current block to play
@@ -605,12 +609,15 @@ void Tape::Play() {
 
     // Get block data
     tapeCurByte = readByteFile(tape);
-    GetBlock();
+    if ( tapeCurByte > 0 ) { // check for empty tap
+        GetBlock();
 
-    // Start loading
-    Tape::tapeStatus=TAPE_LOADING;
-    tapeStart=CPU::global_tstates + CPU::tstates;
-
+        // Start loading
+        Tape::tapeStatus=TAPE_LOADING;
+        tapeStart=CPU::global_tstates + CPU::tstates;
+    } else {
+        Tape::tapeStatus=TAPE_STOPPED;
+    }
 }
 
 void Tape::TAP_GetBlock() {

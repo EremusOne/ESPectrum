@@ -453,17 +453,21 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             menu_level = 0;
             menu_curopt = 1;
 
-            // Persist Load
-            string menuload = MENU_PERSIST_LOAD[Config::lang];
-            for(int i=1; i <= 100; i++) {
-                menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-            }
-            uint8_t opt2 = menuRun(menuload);
-            if (opt2) {
-                FileUtils::remountSDCardIfNeeded();
+            FileUtils::remountSDCardIfNeeded();
 
-                if ( FileUtils::SDReady ) persistLoad(opt2);
-                menu_curopt = opt2;
+            if ( FileUtils::SDReady ) {
+                // Persist Load
+                string menuload = MENU_PERSIST_LOAD[Config::lang];
+                for(int i=1; i <= 100; i++) {
+                    menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                }
+                uint8_t opt2 = menuRun(menuload);
+                if (opt2) {
+                    FileUtils::remountSDCardIfNeeded();
+
+                    if ( FileUtils::SDReady ) persistLoad(opt2);
+                    menu_curopt = opt2;
+                }
             }
         }
         else if (KeytoESP == fabgl::VK_F4) {
@@ -471,16 +475,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             menu_level = 0;
             menu_curopt = 1;
             
-            string menusave = MENU_PERSIST_SAVE[Config::lang];
-            for(int i=1; i <= 100; i++) {
-                menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-            }
-            uint8_t opt2 = menuRun(menusave);
-            if (opt2) {
-                FileUtils::remountSDCardIfNeeded();
+            FileUtils::remountSDCardIfNeeded();
 
-                if ( FileUtils::SDReady ) if (persistSave(opt2)) return;
-                menu_curopt = opt2;
+            if ( FileUtils::SDReady ) {
+                string menusave = MENU_PERSIST_SAVE[Config::lang];
+                for(int i=1; i <= 100; i++) {
+                    menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                }
+                uint8_t opt2 = menuRun(menusave);
+                if (opt2) {
+                    FileUtils::remountSDCardIfNeeded();
+
+                    if ( FileUtils::SDReady ) if (persistSave(opt2)) return;
+                    menu_curopt = opt2;
+                }
             }
         }
         else if (KeytoESP == fabgl::VK_F5) {
@@ -511,20 +519,24 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     Tape::tapeSaveName = tapFile;
 
                     Tape::LoadTape(mFile);
+                    return;
                 }
             }
             if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
         else if (KeytoESP == fabgl::VK_F6) {
             // Start / Stop .tap reproduction
-            if (Tape::tapeStatus == TAPE_STOPPED)
-                Tape::Play();
-            else
-                Tape::Stop();
+            if (Tape::tapeFileName=="none") {
+                OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
+            } else {
+                if (Tape::tapeStatus == TAPE_STOPPED)
+                    Tape::Play();
+                else
+                    Tape::Stop();
+            }
             click();
         }
         else if (KeytoESP == fabgl::VK_F7) {
-
             // Tape Browser
             if (Tape::tapeFileName=="none") {
                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
@@ -702,7 +714,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (sna_mnu == 1) {
-
                             FileUtils::remountSDCardIfNeeded();
 
                             if ( FileUtils::SDReady ) {
@@ -723,36 +734,44 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         }
                         else if (sna_mnu == 2) {
                             // Persist Load
-                            menu_curopt = 1;
-                            menu_saverect = true;
-                            while (1) {
-                                string menuload = MENU_PERSIST_LOAD[Config::lang];
-                                for(int i=1; i <= 100; i++) {
-                                    menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                            FileUtils::remountSDCardIfNeeded();
+
+                            if ( FileUtils::SDReady ) {
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string menuload = MENU_PERSIST_LOAD[Config::lang];
+                                    for(int i=1; i <= 100; i++) {
+                                        menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                                    }
+                                    uint8_t opt2 = menuRun(menuload);
+                                    if (opt2) {
+                                        if (persistLoad(opt2)) return;
+                                        menu_saverect = false;
+                                        menu_curopt = opt2;
+                                    } else break;
                                 }
-                                uint8_t opt2 = menuRun(menuload);
-                                if (opt2) {
-                                    if (persistLoad(opt2)) return;
-                                    menu_saverect = false;
-                                    menu_curopt = opt2;
-                                } else break;
                             }
                         }
                         else if (sna_mnu == 3) {
                             // Persist Save
-                            menu_curopt = 1;
-                            menu_saverect = true;
-                            while (1) {
-                                string menusave = MENU_PERSIST_SAVE[Config::lang];
-                                for(int i=1; i <= 100; i++) {
-                                    menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                            FileUtils::remountSDCardIfNeeded();
+
+                            if ( FileUtils::SDReady ) {
+                                menu_curopt = 1;
+                                menu_saverect = true;
+                                while (1) {
+                                    string menusave = MENU_PERSIST_SAVE[Config::lang];
+                                    for(int i=1; i <= 100; i++) {
+                                        menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+                                    }
+                                    uint8_t opt2 = menuRun(menusave);
+                                    if (opt2) {
+                                        if (persistSave(opt2)) return;
+                                        menu_saverect = false;
+                                        menu_curopt = opt2;
+                                    } else break;
                                 }
-                                uint8_t opt2 = menuRun(menusave);
-                                if (opt2) {
-                                    if (persistSave(opt2)) return;
-                                    menu_saverect = false;
-                                    menu_curopt = opt2;
-                                } else break;
                             }
                         }
                         menu_curopt = sna_mnu;
@@ -776,52 +795,75 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (tap_num == 1) {
-
                             FileUtils::remountSDCardIfNeeded();
 
                             if ( FileUtils::SDReady ) {
                                 // menu_curopt = 1;
                                 // Select TAP File
-                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 10);
-                                if (mFile != "") {
+                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 15);
+
+                                FileUtils::remountSDCardIfNeeded();
+
+                                if (mFile != "" && FileUtils::SDReady ) {
+                                    string tapFile = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile.substr(1);
+
+                                    struct stat stat_buf;
+                                    int status = stat(tapFile.c_str(), &stat_buf);
+                                    if (status == -1) {
+                                        if ( errno != ENOENT ) return;
+                                        // Create empty tap
+                                        int fd = open(tapFile.c_str(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+                                        if (!fd) return;
+                                        close(fd);
+
+                                    }
+
+                                    Tape::tapeSaveName = tapFile;
+
                                     Tape::LoadTape(mFile);
                                     return;
                                 }
                             } else {
                                 menu_saverect = false;
-                                menu_curopt = tap_num;
                             }
+                            menu_curopt = tap_num;
                         }
                         else if (tap_num == 2) {
                             // Start / Stop .tap reproduction
-                            if (Tape::tapeStatus == TAPE_STOPPED)
-                                Tape::Play();
-                            else
-                                Tape::Stop();
-                            return;                        
-                        }
-                        else if (tap_num == 3) {
-
-                            // Tape Browser
                             if (Tape::tapeFileName=="none") {
                                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
                                 menu_curopt = 2;
                                 menu_saverect = false;
                             } else {
-                                menu_level = 0;
+                                if (Tape::tapeStatus == TAPE_STOPPED)
+                                    Tape::Play();
+                                else
+                                    Tape::Stop();
+                                return;
+                            }
+                        }
+                        else if (tap_num == 3) {
+                            // Tape Browser
+                            if (Tape::tapeFileName=="none") {
+                                OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
+                                menu_curopt = 3;
                                 menu_saverect = false;
+                            } else {
+//                                menu_level = 0;
+                                menu_saverect = true;
                                 menu_curopt = 1;
                                 // int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
                                 int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
                                 if (tBlock >= 0) {
                                     Tape::tapeCurBlock = tBlock;
                                     Tape::Stop();
+                                    return;
                                 }
-                                return;
+                                menu_curopt = 3;
+                                menu_saverect = false;
                             }
                         }
                         else if (tap_num == 4) {
-
                             menu_level = 2;
                             menu_curopt = 1;                    
                             menu_saverect = true;
@@ -830,11 +872,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 Mnustr += MENU_YESNO[Config::lang];
                                 bool prev_opt = Config::tape_player;
                                 if (prev_opt) {
+                                    menu_curopt = 1;
                                     Mnustr.replace(Mnustr.find("[Y",0),2,"[*");
-                                    Mnustr.replace(Mnustr.find("[N",0),2,"[ ");                        
+                                    Mnustr.replace(Mnustr.find("[N",0),2,"[ ");
                                 } else {
+                                    menu_curopt = 2;
                                     Mnustr.replace(Mnustr.find("[Y",0),2,"[ ");
-                                    Mnustr.replace(Mnustr.find("[N",0),2,"[*");                        
+                                    Mnustr.replace(Mnustr.find("[N",0),2,"[*");
                                 }
 
                                 uint8_t opt2 = menuRun(Mnustr);
@@ -1134,9 +1178,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         flash_menu += MENU_YESNO[Config::lang];
                                         bool prev_flashload = Config::flashload;
                                         if (prev_flashload) {
+                                            menu_curopt = 1;
                                             flash_menu.replace(flash_menu.find("[Y",0),2,"[*");
                                             flash_menu.replace(flash_menu.find("[N",0),2,"[ ");                        
                                         } else {
+                                            menu_curopt = 2;
                                             flash_menu.replace(flash_menu.find("[Y",0),2,"[ ");
                                             flash_menu.replace(flash_menu.find("[N",0),2,"[*");                        
                                         }
@@ -1168,9 +1214,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         mnu_str += MENU_YESNO[Config::lang];
                                         bool prev_opt = Config::tape_timing_rg;
                                         if (prev_opt) {
+                                            menu_curopt = 1;
                                             mnu_str.replace(mnu_str.find("[Y",0),2,"[*");
                                             mnu_str.replace(mnu_str.find("[N",0),2,"[ ");                        
                                         } else {
+                                            menu_curopt = 2;
                                             mnu_str.replace(mnu_str.find("[Y",0),2,"[ ");
                                             mnu_str.replace(mnu_str.find("[N",0),2,"[*");                        
                                         }
@@ -1209,21 +1257,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             string archprefmenu = MENU_ARCH_PREF[Config::lang];
                             string prev_archpref = Config::pref_arch;
                             if (Config::pref_arch == "48K") {
+                                menu_curopt = 1;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[*");
                                 archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");                        
                                 archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");                        
                                 archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");                                                        
                             } else if (Config::pref_arch == "128K") {
+                                menu_curopt = 2;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[1",0),2,"[*");                        
                                 archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");                        
                                 archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");                                                        
                             } else if (Config::pref_arch == "Pentagon") {
+                                menu_curopt = 3;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[P",0),2,"[*");                        
                                 archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");                                                        
                             } else {
+                                menu_curopt = 4;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
@@ -1403,9 +1455,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         string opt_menu = MENU_RENDER[Config::lang];
                                         uint8_t prev_opt = Config::render;
                                         if (prev_opt) {
+                                            menu_curopt = 2;
                                             opt_menu.replace(opt_menu.find("[S",0),2,"[ ");
                                             opt_menu.replace(opt_menu.find("[A",0),2,"[*");
                                         } else {
+                                            menu_curopt = 1;
                                             opt_menu.replace(opt_menu.find("[S",0),2,"[*");
                                             opt_menu.replace(opt_menu.find("[A",0),2,"[ ");
                                         }
@@ -1449,9 +1503,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         string asp_menu = MENU_ASPECT[Config::lang];
                                         bool prev_asp = Config::aspect_16_9;
                                         if (prev_asp) {
+                                            menu_curopt = 2;
                                             asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
                                             asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
                                         } else {
+                                            menu_curopt = 1;
                                             asp_menu.replace(asp_menu.find("[4",0),2,"[*");
                                             asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
                                         }
@@ -1488,9 +1544,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         opt_menu += MENU_YESNO[Config::lang];
                                         uint8_t prev_opt = Config::scanlines;
                                         if (prev_opt) {
+                                            menu_curopt = 1;
                                             opt_menu.replace(opt_menu.find("[Y",0),2,"[*");
                                             opt_menu.replace(opt_menu.find("[N",0),2,"[ ");                        
                                         } else {
+                                            menu_curopt = 2;
                                             opt_menu.replace(opt_menu.find("[Y",0),2,"[ ");
                                             opt_menu.replace(opt_menu.find("[N",0),2,"[*");                        
                                         }
@@ -1544,6 +1602,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     while (pos != string::npos) {
                                         if (nfind == (opt2 == 1 ? Config::joystick1 : Config::joystick2)) {
                                             joy_menu.replace(pos,2,"[*");
+                                            menu_curopt = nfind + 1;
                                             break;
                                         }
                                         pos = joy_menu.find("[",pos + 1);
@@ -1567,7 +1626,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         return;
                                     } else {
                                         menu_curopt = opt2;
-                                        menu_level = 2;                                       
+                                        menu_level = 2;
                                         break;
                                     }
                                 }
@@ -1597,6 +1656,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     while (pos != string::npos) {
                                         if (nfind == Config::joyPS2) {
                                             joy_menu.replace(pos,2,"[*");
+                                            menu_curopt = nfind + 1;
                                             break;
                                         }
                                         pos = joy_menu.find("[",pos + 1);
@@ -1625,9 +1685,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     string csasjoy_menu = MENU_CURSORJOY[Config::lang];
                                     csasjoy_menu += MENU_YESNO[Config::lang];
                                     if (Config::CursorAsJoy) {
+                                        menu_curopt = 1;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
                                         csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
                                     } else {
+                                        menu_curopt = 2;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
                                         csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
                                     }
@@ -1661,9 +1723,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     csasjoy_menu += MENU_YESNO[Config::lang];
                                     bool prev_opt = Config::TABasfire1;
                                     if (prev_opt) {
+                                        menu_curopt = 1;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
                                         csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
                                     } else {
+                                        menu_curopt = 2;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
                                         csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
                                     }
@@ -1718,6 +1782,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             while (pos != string::npos) {
                                 if (nfind == Config::lang) {
                                     Mnustr.replace(pos,2,"[*");
+                                    menu_curopt = nfind + 1;
                                     break;
                                 }
                                 pos = Mnustr.find("[",pos + 1);
@@ -1755,9 +1820,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         ay_menu += MENU_YESNO[Config::lang];
                                         bool prev_ay48 = Config::AY48;
                                         if (prev_ay48) {
+                                            menu_curopt = 1;
                                             ay_menu.replace(ay_menu.find("[Y",0),2,"[*");
                                             ay_menu.replace(ay_menu.find("[N",0),2,"[ ");                        
                                         } else {
+                                            menu_curopt = 2;
                                             ay_menu.replace(ay_menu.find("[Y",0),2,"[ ");
                                             ay_menu.replace(ay_menu.find("[N",0),2,"[*");                        
                                         }
@@ -1788,9 +1855,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         string alu_menu = MENU_ALUTIMING[Config::lang];
                                         uint8_t prev_AluTiming = Config::AluTiming;
                                         if (prev_AluTiming == 0) {
+                                            menu_curopt = 1;
                                             alu_menu.replace(alu_menu.find("[E",0),2,"[*");
                                             alu_menu.replace(alu_menu.find("[L",0),2,"[ ");                        
                                         } else {
+                                            menu_curopt = 2;
                                             alu_menu.replace(alu_menu.find("[E",0),2,"[ ");
                                             alu_menu.replace(alu_menu.find("[L",0),2,"[*");                        
                                         }
@@ -1823,9 +1892,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         iss_menu += MENU_YESNO[Config::lang];
                                         bool prev_iss = Config::Issue2;
                                         if (prev_iss) {
+                                            menu_curopt = 1;
                                             iss_menu.replace(iss_menu.find("[Y",0),2,"[*");
                                             iss_menu.replace(iss_menu.find("[N",0),2,"[ ");                        
                                         } else {
+                                            menu_curopt = 2;
                                             iss_menu.replace(iss_menu.find("[Y",0),2,"[ ");
                                             iss_menu.replace(iss_menu.find("[N",0),2,"[*");                        
                                         }
@@ -1856,9 +1927,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         string ps2_menu = MENU_KBD2NDPS2[Config::lang];
                                         uint8_t prev_ps2 = Config::ps2_dev2;
                                         if (prev_ps2) {
+                                            menu_curopt = 2;
                                             ps2_menu.replace(ps2_menu.find("[N",0),2,"[ ");                        
                                             ps2_menu.replace(ps2_menu.find("[K",0),2,"[*");
                                         } else {
+                                            menu_curopt = 1;
                                             ps2_menu.replace(ps2_menu.find("[N",0),2,"[*");
                                             ps2_menu.replace(ps2_menu.find("[K",0),2,"[ ");
                                         }
@@ -2241,18 +2314,8 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
     }
 
     if (millispause > 0) {
-        
         // Save backbuffer data
-        j = SaveRectpos;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-                SaveRectpos++;
-            }
-        }
-        // printf("Saverectpos: %04X\n",SaveRectpos << 2);
-
+        OSD::saveBackbufferData(x,y,w,h,true);
     }
 
     VIDEO::vga.fillRect(x, y, w, h, paper);
@@ -2266,15 +2329,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
 
         vTaskDelay(millispause/portTICK_PERIOD_MS); // Pause if needed
 
-        SaveRectpos = j;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                backbuffer32[n] = VIDEO::SaveRect[j];
-                j++;
-            }
-        }
-
+        OSD::restoreBackbufferData(true);
     }
 }
 
@@ -2912,6 +2967,8 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
     static unsigned short progress_y;        
     static unsigned int j;
 
+    bool curr_menu_saverect = menu_saverect;
+
     if (action == 0 ) { // SHOW
 
         h = (OSD_FONT_H * 6) + 2;
@@ -2924,15 +2981,8 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
         x = scrAlignCenterX(w);
 
         // Save backbuffer data
-        j = SaveRectpos;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-                SaveRectpos++;
-            }
-        }
-        
+        OSD::saveBackbufferData(x,y,w,h,true);
+
         // printf("SaveRectPos: %04X\n",SaveRectpos << 2);        
 
         // Set font
@@ -2987,14 +3037,8 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
     } else if (action == 2) { // CLOSE
 
         // Restore backbuffer data
-        SaveRectpos = j;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                backbuffer32[n] = VIDEO::SaveRect[j];
-                j++;
-            }
-        }
+        OSD::restoreBackbufferData(true);
+        menu_saverect = curr_menu_saverect;
     }
 }
 
@@ -3011,14 +3055,8 @@ uint8_t OSD::msgDialog(string title, string msg) {
     const unsigned short x = scrAlignCenterX(w);
 
     // Save backbuffer data
-    unsigned int j = SaveRectpos;
-    for (int  m = y; m < y + h; m++) {
-        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-        for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-            VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-            SaveRectpos++;
-        }
-    }
+    OSD::saveBackbufferData(x,y,w,h,true);
+
     // printf("SaveRectPos: %04X\n",SaveRectpos << 2);    
 
     // Set font
@@ -3118,14 +3156,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
     click();
 
     // Restore backbuffer data
-    SaveRectpos = j;
-    for (int  m = y; m < y + h; m++) {
-        uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-        for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-            backbuffer32[n] = VIDEO::SaveRect[j];
-            j++;
-        }
-    }
+    OSD::restoreBackbufferData(true);
 
     return res;
 
@@ -3183,11 +3214,11 @@ static const char *MENU_JOYSELKEY[2] = { MENU_JOYSELKEY_EN, MENU_JOYSELKEY_ES };
     "2\n"\
     "3\n"\
     "4\n"\
-    "5\n"\				
+    "5\n"\
     "6\n"\
     "7\n"\
-	"8\n"\			
-	"9\n"
+    "8\n"\
+    "9\n"
 
 #define MENU_JOY_SPECIAL "Enter\n"\
     "Caps\n"\

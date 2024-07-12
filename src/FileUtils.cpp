@@ -104,6 +104,14 @@ string FileUtils::getLCaseExt(const string& filename) {
 
 }
 
+size_t FileUtils::fileSize(const char * mFile) {
+    struct stat stat_buf;
+    if ( !mFile ) return -1;
+    int status = stat(mFile, &stat_buf);
+    if ( status == -1 || ! ( stat_buf.st_mode & S_IFREG ) ) return -1;
+    return stat_buf.st_size;
+}
+
 void FileUtils::initFileSystem() {
 
     // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
@@ -428,29 +436,23 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     string tempDir = MountPoint + "/.tmp";
 
     // Verificar si el directorio ya existía
-    // struct stat info;
-    // bool dirExisted = (stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
+    struct stat info;
 
-    // rmdir(tempDir.c_str());
-
-    // // Crear el directorio si no existe
-    // if (!dirExisted) {
-        // if (mkdir(tempDir.c_str(), 0755) != 0) {
-        //     printf( "TMP directory creation failed\n" );
-        //     closedir(dir);
-        //     // Close progress dialog
-        //     OSD::progressDialog("","",0,2);
-        //     return;
-        // }
-    // }
-
-    // Borrar y crear el directorio temporal (si lo dejo se genera pico de consumo y minimum free ever baja muchisimo)
-    rmdir(tempDir.c_str());
-    mkdir(tempDir.c_str(), 0755);
-
+    // Crear el directorio si no existe
+    if (!(stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR))) {
+        if (mkdir(tempDir.c_str(), 0755) != 0) {
+            printf( "TMP directory creation failed\n" );
+            closedir(dir);
+            // Close progress dialog
+            OSD::progressDialog("","",0,2);
+            return;
+        }
+    }
+  
     printf("\nAfter checking tempdir");
     ESPectrum::showMemInfo();
     printf("\n");
+
 
     int bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort
     std::vector<std::string> buffer;
@@ -659,15 +661,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_3[Config::lang],0,1);
         remove((/*fpath*/ tempDir + "/" + fileTypes[ftype].indexFilename + ".tmp." + std::to_string((n-1)&1)).c_str());
 
-        // OSD::progressDialog("","",(float) 100 / ((float) ( !dirExisted ? 2 : 1 ) / (float) 1),1);
-
-        OSD::progressDialog("","",(float) 100 / ((float) 1 / (float) 1),1);
-
-        // // Si el directorio no existía previamente, eliminarlo
-        // if (!dirExisted ) {
-            // rmdir(tempDir.c_str());
-            OSD::progressDialog("","",(float) 100 / ((float) 2 / (float) 2),1);
-        // }
+        OSD::progressDialog("","",(float) 100, 1);
     }
 
     // Close progress dialog

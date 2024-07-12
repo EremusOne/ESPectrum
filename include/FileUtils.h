@@ -68,6 +68,8 @@ class FileUtils
 public:
     static string getLCaseExt(const string& filename);
 
+    static size_t fileSize(const char * mFile);
+
     static void initFileSystem();
     static bool mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS);
     static void unmountSDCard();
