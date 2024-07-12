@@ -542,13 +542,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 menu_level = 0;      
                 menu_curopt = 1;
                 // int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
-                int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
-                if (tBlock >= 0) {
-                    Tape::tapeCurBlock = tBlock;
-                    Tape::Stop();
+                while ( 1 ) {
+                    menu_saverect = true;
+                    int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
+                    if (tBlock >= 0) {
+                        Tape::tapeCurBlock = tBlock;
+                        Tape::Stop();
+                    }
+                    if ( tBlock == -2 ) {
+                        OSD::restoreBackbufferData();
+                    } else
+                        break;
                 }
             }
-
         }
         else if (KeytoESP == fabgl::VK_F8) {
             // Show / hide OnScreen Stats
@@ -851,11 +857,17 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 menu_saverect = true;
                                 menu_curopt = 1;
                                 // int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
-                                int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
-                                if (tBlock >= 0) {
-                                    Tape::tapeCurBlock = tBlock;
-                                    Tape::Stop();
-                                    return;
+                                while ( 1 ) {
+                                    menu_saverect = true;
+                                    int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
+                                    if (tBlock >= 0) {
+                                        Tape::tapeCurBlock = tBlock;
+                                        Tape::Stop();
+                                    }
+                                    if ( tBlock == -2 ) {
+                                        OSD::restoreBackbufferData();
+                                    } else
+                                        break;
                                 }
                                 menu_curopt = 3;
                                 menu_saverect = false;

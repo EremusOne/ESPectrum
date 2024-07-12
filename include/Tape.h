@@ -180,6 +180,12 @@ public:
     static string tapeBlockReadData(int Blocknum);
     static string tzxBlockReadData(int Blocknum);    
 
+    static std::vector<int> selectedBlocks;
+
+    static void selectBlockToggle(int block);
+    static bool isSelectedBlock(int block);
+    static void removeSelectedBlocks();
+
 private:
 
     static void (*GetBlock)();

@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -67,6 +67,7 @@ int Tape::tapeNumBlocks;
 uint32_t Tape::tapebufByteCount;
 uint32_t Tape::tapePlayOffset;
 size_t Tape::tapeFileSize;
+std::vector<int> Tape::selectedBlocks;
 
 // Tape timing values
 uint16_t Tape::tapeSyncLen;
@@ -76,7 +77,7 @@ uint16_t Tape::tapeBit0PulseLen; // lenght of pulse for bit 0
 uint16_t Tape::tapeBit1PulseLen; // lenght of pulse for bit 1
 uint16_t Tape::tapeHdrLong;  // Header sync lenght in pulses
 uint16_t Tape::tapeHdrShort; // Data sync lenght in pulses
-uint32_t Tape::tapeBlkPauseLen; 
+uint32_t Tape::tapeBlkPauseLen;
 uint32_t Tape::tapeNext;
 uint8_t Tape::tapeLastByteUsedBits = 8;
 uint8_t Tape::tapeEndBitMask;
@@ -158,7 +159,7 @@ int Tape::inflateCSW(int blocknumber, long startPos, long data_length) {
 
     memcpy(VIDEO::SaveRect,speccyram,0x8000);
     memset(MemESP::ram[1],0,0x8000);
-    
+
     if (inflateInit(&stream, MemESP::ram[1])) {
         printf("inflateInit() failed!\n");
         return EXIT_FAILURE;
@@ -230,7 +231,7 @@ void (*Tape::GetBlock)() = &Tape::TAP_GetBlock;
 
 // Load tape file (.tap, .tzx)
 void Tape::LoadTape(string mFile) {
-
+printf("LoadTape %s\n", mFile.c_str());
     if (FileUtils::hasTAPextension(mFile)) {
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
@@ -251,7 +252,7 @@ void Tape::LoadTape(string mFile) {
                     // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
                     // https://skoolkid.github.io/rom/asm/5C78.html
                     MemESP::writebyte(0x5C78,rand() % 256);
-                    MemESP::writebyte(0x5C79,rand() % 256);            
+                    MemESP::writebyte(0x5C79,rand() % 256);
 
                     if (Config::ram_file != NO_RAM_FILE) {
                         Config::ram_file = NO_RAM_FILE;
@@ -265,7 +266,7 @@ void Tape::LoadTape(string mFile) {
                         else
                             VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
                         ESPectrum::TapeNameScroller = 0;
-                    }    
+                    }
 
             }
         }
@@ -303,7 +304,7 @@ void Tape::Init() {
 }
 
 void Tape::TAP_Open(string name) {
-   
+
     if (tape != NULL) {
         fclose(tape);
         tape = NULL;
@@ -339,7 +340,7 @@ void Tape::TAP_Open(string name) {
             tapeBlkLen=(readByteFile(tape) | (readByteFile(tape) << 8));
 
             // printf("Analyzing block %d\n",tapeListIndex);
-            // printf("    Block Len: %d\n",tapeBlockLen - 2);        
+            // printf("    Block Len: %d\n",tapeBlockLen - 2);
 
             // Read the flag byte from the block.
             // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
@@ -387,7 +388,7 @@ void Tape::TAP_Open(string name) {
 
                 // Get the checksum.
                 uint8_t checksum = readByteFile(tape);
-            
+
                 if ((tapeListIndex & (TAPE_LISTING_DIV - 1)) == 0) {
                     block.StartPosition = tapeContentIndex;
                     TapeListing.push_back(block);
@@ -424,7 +425,7 @@ void Tape::TAP_Open(string name) {
             }
 
             tapeListIndex++;
-            
+
             tapeContentIndex += tapeBlkLen + 2;
 
         } while(tapeContentIndex < tapeFileSize);
@@ -447,7 +448,7 @@ void Tape::TAP_Open(string name) {
         tapeBit1PulseLen = TAPE_BIT1_PULSELEN_RG;
         tapeHdrLong = TAPE_HDR_LONG_RG;
         tapeHdrShort = TAPE_HDR_SHORT_RG;
-        tapeBlkPauseLen = TAPE_BLK_PAUSELEN_RG; 
+        tapeBlkPauseLen = TAPE_BLK_PAUSELEN_RG;
 
     } else {
 
@@ -458,17 +459,17 @@ void Tape::TAP_Open(string name) {
         tapeBit1PulseLen = TAPE_BIT1_PULSELEN;
         tapeHdrLong = TAPE_HDR_LONG;
         tapeHdrShort = TAPE_HDR_SHORT;
-        tapeBlkPauseLen = TAPE_BLK_PAUSELEN; 
+        tapeBlkPauseLen = TAPE_BLK_PAUSELEN;
 
     }
 
     if (Z80Ops::is128) { // Apply pulse length compensation for 128K
         tapeSyncLen *= FACTOR128K;
         tapeSync1Len *= FACTOR128K;
-        tapeSync2Len *= FACTOR128K;                                        
+        tapeSync2Len *= FACTOR128K;
         tapeBit0PulseLen *= FACTOR128K;
         tapeBit1PulseLen *= FACTOR128K;
-        tapeBlkPauseLen *= FACTOR128K;                                        
+        tapeBlkPauseLen *= FACTOR128K;
     }
 
 }
@@ -526,25 +527,25 @@ string Tape::tapeBlockReadData(int Blocknum) {
         uint8_t blocktype = readByteFile(Tape::tape);
 
         switch (blocktype) {
-        case 0: 
+        case 0:
             blktype = "Program      ";
             break;
-        case 1: 
+        case 1:
             blktype = "Number array ";
             break;
-        case 2: 
+        case 2:
             blktype = "Char array   ";
             break;
-        case 3: 
+        case 3:
             blktype = "Code         ";
             break;
-        case 4: 
+        case 4:
             blktype = "Data block   ";
             break;
-        case 5: 
+        case 5:
             blktype = "Info         ";
             break;
-        case 6: 
+        case 6:
             blktype = "Unassigned   ";
             break;
         default:
@@ -660,7 +661,7 @@ IRAM_ATTR void Tape::Read() {
                 tapeEarBit ^= 1;
                 if (CSW_CompressionType == 1) { // RLE
                     CSW_PulseLenght = readByteFile(tape);
-                    tapebufByteCount++;                
+                    tapebufByteCount++;
                     if (tapebufByteCount == tapeBlockLen) {
                         tapeCurByte = CSW_PulseLenght;
                         if (tapeBlkPauseLen == 0) {
@@ -675,7 +676,7 @@ IRAM_ATTR void Tape::Read() {
                     if (CSW_PulseLenght == 0) {
                         CSW_PulseLenght = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
                         tapebufByteCount += 4;
-                    }                
+                    }
                     tapeNext = CSW_SampleRate * CSW_PulseLenght;
                 } else { // Z-RLE
                     CSW_PulseLenght = readByteFile(cswBlock);
@@ -693,8 +694,8 @@ IRAM_ATTR void Tape::Read() {
                         break;
                     }
                     if (CSW_PulseLenght == 0) {
-                        CSW_PulseLenght = readByteFile(cswBlock) | (readByteFile(cswBlock) << 8) | (readByteFile(cswBlock) << 16) | (readByteFile(cswBlock) << 24);                        
-                    }                
+                        CSW_PulseLenght = readByteFile(cswBlock) | (readByteFile(cswBlock) << 8) | (readByteFile(cswBlock) << 16) | (readByteFile(cswBlock) << 24);
+                    }
                     tapeNext = CSW_SampleRate * CSW_PulseLenght;
                 }
                 break;
@@ -710,7 +711,7 @@ IRAM_ATTR void Tape::Read() {
 
                     // Next repetition
                     if (--tapeHdrPulses == 0) {
-                        
+
                         // Get next symbol in PRLE
                         curGDBSymbol++;
 
@@ -725,7 +726,7 @@ IRAM_ATTR void Tape::Read() {
                                     tapeEarBit ^= 1;
                                     break;
                                 case 1:
-                                    break;                                    
+                                    break;
                                 case 2:
                                     tapeEarBit = TAPELOW;
                                     break;
@@ -739,13 +740,13 @@ IRAM_ATTR void Tape::Read() {
 
                             // Get number of repetitions from PRLE[0]
                             tapeHdrPulses = readByteFile(tape) | (readByteFile(tape) << 8); // Number of repetitions of symbol
-                            
+
                             curGDBPulse = 0;
 
                             tapebufByteCount += 3;
 
                         } else {
-                            
+
                             // End of PRLE
 
                             // Free SymDefTable
@@ -812,14 +813,14 @@ IRAM_ATTR void Tape::Read() {
                                     } else
                                         curBit--;
                                 }
-                                
+
                                 // Get symbol flags
                                 switch (SymDefTable[GDBsymbol].SymbolFlags) {
                                 case 0:
                                     tapeEarBit ^= 1;
                                     break;
                                 case 1:
-                                    break;                                    
+                                    break;
                                 case 2:
                                     tapeEarBit = TAPELOW;
                                     break;
@@ -856,7 +857,7 @@ IRAM_ATTR void Tape::Read() {
                                 tapeEarBit ^= 1;
                                 break;
                             case 1:
-                                break;                                    
+                                break;
                             case 2:
                                 tapeEarBit = TAPELOW;
                                 break;
@@ -878,7 +879,7 @@ IRAM_ATTR void Tape::Read() {
                 }
 
                 break;
-            
+
             case TAPE_PHASE_GDB_DATA:
 
                 // Get next pulse lenght from current symbol
@@ -912,7 +913,7 @@ IRAM_ATTR void Tape::Read() {
                                 tapeEarBit ^= 1;
                                 break;
                             case 1:
-                                break;                                    
+                                break;
                             case 2:
                                 tapeEarBit = TAPELOW;
                                 break;
@@ -932,7 +933,7 @@ IRAM_ATTR void Tape::Read() {
                         tapebufByteCount--;
 
                         // printf("END DATA GDB -> tapeCurByte: %d, Tape pos: %d, Tapebbc: %d, TapeBlockLen: %d\n", tapeCurByte,(int)(ftell(tape)),tapebufByteCount, tapeBlockLen);
-                        
+
                         // Free SymDefTable
                         for (int i = 0; i < asd; i++)
                             delete[] SymDefTable[i].PulseLenghts;
@@ -993,7 +994,7 @@ IRAM_ATTR void Tape::Read() {
                         if (tapeLastByteUsedBits < 8 )
                             tapeEndBitMask >>= tapeLastByteUsedBits;
                         else
-                            tapeEndBitMask = 0x80;                        
+                            tapeEndBitMask = 0x80;
                     } else {
                         tapeEndBitMask = 0x80;
                     }
@@ -1021,7 +1022,7 @@ IRAM_ATTR void Tape::Read() {
                         GetBlock();
                     } else {
                         tapePhase=TAPE_PHASE_TAIL;
-                        tapeNext=TAPE_PHASE_TAIL_LEN;                        
+                        tapeNext=TAPE_PHASE_TAIL_LEN;
                     }
                     break;
                 }
@@ -1037,7 +1038,7 @@ IRAM_ATTR void Tape::Read() {
                 tapeEarBit ^= 1;
                 tapeBitMask = tapeBitMask >>1 | tapeBitMask <<7;
                 if (tapeBitMask == tapeEndBitMask) {
-                    tapeCurByte = readByteFile(tape);                    
+                    tapeCurByte = readByteFile(tape);
                     tapebufByteCount++;
                     if (tapebufByteCount == tapeBlockLen) {
                         if (tapeBlkPauseLen == 0) {
@@ -1052,7 +1053,7 @@ IRAM_ATTR void Tape::Read() {
                         if (tapeLastByteUsedBits < 8 )
                             tapeEndBitMask >>= tapeLastByteUsedBits;
                         else
-                            tapeEndBitMask = 0x80;                        
+                            tapeEndBitMask = 0x80;
                     } else {
                         tapeEndBitMask = 0x80;
                     }
@@ -1095,7 +1096,7 @@ IRAM_ATTR void Tape::Read() {
                 tapeEarBit = TAPEHIGH;
                 tapeCurBlock++;
                 GetBlock();
-            } 
+            }
         } while (tapeCurrent >= tapeNext);
 
         // More precision just for DRB and CSW. Makes some loaders work but bigger TAIL_LEN also does and seems better solution.
@@ -1122,10 +1123,10 @@ void Tape::Save() {
     }
 
 	xxor=0;
-	
+
 	longitud=(int)(Z80::getRegDE());
 	longitud+=2;
-	
+
 	dato=(uint8_t)(longitud%256);
 	fprintf(fichero,"%c",dato);
 	dato=(uint8_t)(longitud/256);
@@ -1159,7 +1160,7 @@ bool Tape::FlashLoad() {
 
     if (tape == NULL) {
 
-        string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;        
+        string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
 
         tape = fopen(fname.c_str(), "rb");
         if (tape == NULL) {
@@ -1170,7 +1171,7 @@ bool Tape::FlashLoad() {
 
     }
 
-    // printf("--< BLOCK: %d >--------------------------------\n",(int)tapeCurBlock);    
+    // printf("--< BLOCK: %d >--------------------------------\n",(int)tapeCurBlock);
 
     uint16_t blockLen=(readByteFile(tape) | (readByteFile(tape) <<8));
     uint8_t tapeFlag = readByteFile(tape);
@@ -1216,7 +1217,7 @@ bool Tape::FlashLoad() {
         }
 
         while ((count < nBytes) && (count < blockLen - 1)) {
-            Z80::Xor(MemESP::readbyte(addr));        
+            Z80::Xor(MemESP::readbyte(addr));
             addr = (addr + 1) & 0xffff;
             count++;
         }
@@ -1269,7 +1270,7 @@ bool Tape::FlashLoad() {
         Z80::Cp(0x01);
     }
 
-    if (tapeCurBlock < (tapeNumBlocks - 1)) {        
+    if (tapeCurBlock < (tapeNumBlocks - 1)) {
         tapeCurBlock++;
         if (nBytes != (blockLen -2)) CalcTapBlockPos(tapeCurBlock);
     } else {
@@ -1282,4 +1283,105 @@ bool Tape::FlashLoad() {
 
     return true;
 
+}
+
+void Tape::selectBlockToggle(int block) {
+    auto it = std::find(Tape::selectedBlocks.begin(), Tape::selectedBlocks.end(), block);
+
+    if (it != Tape::selectedBlocks.end()) {
+        // Eliminar el bloque si está presente
+        Tape::selectedBlocks.erase(it);
+    } else {
+        // Agregar el bloque si no está presente
+        Tape::selectedBlocks.push_back(block);
+    }
+}
+
+bool Tape::isSelectedBlock(int block) {
+    return std::find(Tape::selectedBlocks.begin(), Tape::selectedBlocks.end(), block) != Tape::selectedBlocks.end();
+}
+
+void Tape::removeSelectedBlocks() {
+
+    string tempDir = FileUtils::createTmpDir();
+    if ( tempDir == "" ) {
+        return;
+    }
+
+    char buffer[2048];
+
+    string filenameTemp = tempDir + "/temp.tap";
+
+    FILE* tempFile = fopen(filenameTemp.c_str(), "wb");
+    if (!tempFile) {
+        printf("Error al crear el archivo temporal.\n");
+        return;
+    }
+
+    string filename = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+
+    rewind(tape);
+
+    int blockIndex = 0;
+    int tapeBlkLen = 0;
+    long off = 0;
+    while (true) {
+        fseek(tape, off, SEEK_SET);
+
+        uint16_t encodedlen;
+
+        // Leer la longitud del bloque
+        size_t bytesRead = fread(&encodedlen, sizeof(encodedlen), 1, tape);
+        if ( bytesRead != 1 ) break;
+
+        uint8_t l = (( uint8_t * ) &encodedlen)[0];
+        uint8_t h = (( uint8_t * ) &encodedlen)[1];
+
+        // Analyze .tap file
+        tapeBlkLen = (l | (h << 8));
+
+        // Verificar si el bloque actual está en el vector selected
+        if (std::find(selectedBlocks.begin(), selectedBlocks.end(), blockIndex) == selectedBlocks.end()) {
+            // Escribir la longitud del bloque
+            fwrite(&encodedlen, sizeof(encodedlen), 1, tempFile);
+
+            // Leer la data del bloque, limitando a sizeof(buffer)
+            size_t totalBytesRead = 0;
+            while (totalBytesRead < tapeBlkLen) {
+                size_t bytesToRead = std::min(sizeof(buffer), tapeBlkLen - totalBytesRead);
+                size_t bytesRead = fread(buffer, 1, bytesToRead, tape);
+                if (bytesRead != bytesToRead) {
+                    printf("Error al leer el bloque del archivo.\n");
+                    break; // Salir del bucle interno si hay un error de lectura
+                }
+
+                // Escribir los datos leídos en el archivo temporal
+                fwrite(buffer, 1, bytesRead, tempFile);
+                totalBytesRead += bytesRead;
+            }
+
+        }
+
+        off += tapeBlkLen + 2;
+
+        blockIndex++;
+    }
+
+    fclose(tempFile);
+
+    Tape::Stop();
+
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+        tapeFileType = TAPE_FTYPE_EMPTY;
+    }
+
+    // Reemplazar el archivo original con el archivo temporal
+    std::remove(filename.c_str());
+    std::rename(filenameTemp.c_str(), filename.c_str());
+
+    Tape::LoadTape(("R"+tapeFileName).c_str());
+
+    selectedBlocks.clear();
 }

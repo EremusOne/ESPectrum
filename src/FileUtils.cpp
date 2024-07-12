@@ -374,6 +374,22 @@ int FileUtils::getDirStats(const string& filedir, const vector<string>& filexts,
     return -1;
 }
 
+string FileUtils::createTmpDir() {
+    string tempDir = MountPoint + "/.tmp";
+
+    // Verificar si el directorio ya existía
+    struct stat info;
+
+    // Crear el directorio si no existe
+    if (!(stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR))) {
+        if (mkdir(tempDir.c_str(), 0755) != 0) {
+            printf( "TMP directory creation failed\n" );
+            return "";
+        }
+    }
+
+    return tempDir;
+}
 
 void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsigned int item_count) {
     FILE* fin = nullptr;
@@ -425,20 +441,12 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         eof1 = false;
     }
 
-    string tempDir = MountPoint + "/.tmp";
-
-    // Verificar si el directorio ya existía
-    struct stat info;
-
-    // Crear el directorio si no existe
-    if (!(stat(tempDir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR))) {
-        if (mkdir(tempDir.c_str(), 0755) != 0) {
-            printf( "TMP directory creation failed\n" );
-            closedir(dir);
-            // Close progress dialog
-            OSD::progressDialog("","",0,2);
-            return;
-        }
+    string tempDir = FileUtils::createTmpDir();
+    if ( tempDir == "" ) {
+        closedir(dir);
+        // Close progress dialog
+        OSD::progressDialog("","",0,2);
+        return;
     }
 
     int bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort

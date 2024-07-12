@@ -211,6 +211,14 @@ static const char *MENU_TAP_TITLE[2] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES };
 #define MENU_DSK_TITLE_ES "Elija disco"
 static const char *MENU_DSK_TITLE[2] = { MENU_DSK_TITLE_EN,MENU_DSK_TITLE_ES };
 
+#define MENU_DELETE_TAP_BLOCKS_EN "The selected blocks will be deleted"
+#define MENU_DELETE_TAP_BLOCKS_ES "Se borrar\xA0n los bloques seleccionados"
+static const char *MENU_DELETE_TAP_BLOCKS[2] = { MENU_DELETE_TAP_BLOCKS_EN,MENU_DELETE_TAP_BLOCKS_ES };
+
+#define MENU_DELETE_CURRENT_TAP_BLOCK_EN "The current block will be deleted"
+#define MENU_DELETE_CURRENT_TAP_BLOCK_ES "Se borrar\xA0 el bloque actual"
+static const char *MENU_DELETE_CURRENT_TAP_BLOCK[2] = { MENU_DELETE_CURRENT_TAP_BLOCK_EN,MENU_DELETE_CURRENT_TAP_BLOCK_ES };
+
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
     "Load (SNA,Z80,P)\t(F2) >\n"\
@@ -381,7 +389,7 @@ static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_L
     "Flash tape load\t>\n"\
     "R.G. ROM timings\t>\n"	
 #define MENU_STORAGE_ES "Almacenamiento\n"\
-    "Carga rapida cinta\t>\n"\
+    "Carga r\xA0pida cinta\t>\n"\
     "Timings ROM R.G.\t>\n"	
 static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
@@ -391,7 +399,7 @@ static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
     "No\t[N]\n"
 static const char *MENU_YESNO[2] = { MENU_YESNO_EN, MENU_YESNO_ES};
 
-static const char *MENU_FLASHLOAD[2] = { "Flash load\n" , "Carga rapida\n"};
+static const char *MENU_FLASHLOAD[2] = { "Flash load\n" , "Carga r\xA0pida\n"};
 
 static const char *MENU_RGTIMINGS[2] = { "R.G. Timings\n" , "Timings R.G.\n"};
 
@@ -516,7 +524,7 @@ static const char *MENU_ROM_PREF_128[2] = { MENU_ROMS128_PREF_EN, MENU_ROMS128_P
     "Spanish\t[ ]\n"
 #define MENU_INTERFACE_LANG_ES "Idioma\n"\
     "Ingles\t[ ]\n"\
-    "Espanol\t[ ]\n"
+    "Espa\xA4ol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
 
 #define MENU_JOY_EN "Joystick menu\n"
