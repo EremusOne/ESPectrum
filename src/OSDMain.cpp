@@ -348,16 +348,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F10) { // NMI
             Z80::triggerNMI();
         } else 
-        // if (KeytoESP == fabgl::VK_F3) { 
-        //     // Test variable decrease
-        //     ESPectrum::ESPtestvar -= 1;
-        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        // } else 
-        // if (KeytoESP == fabgl::VK_F4) {
-        //     // Test variable increase
-        //     ESPectrum::ESPtestvar += 1;
-        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        // } else 
+        if (KeytoESP == fabgl::VK_F3) { 
+            // Test variable decrease
+            ESPectrum::ESPtestvar -= 1;
+            printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        } else 
+        if (KeytoESP == fabgl::VK_F4) {
+            // Test variable increase
+            ESPectrum::ESPtestvar += 1;
+            printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        } else 
         // if (KeytoESP == fabgl::VK_F5) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar1 -= 1;
@@ -436,7 +436,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             FileUtils::remountSDCardIfNeeded();
 
             if ( FileUtils::SDReady ) {
+                ESPectrum::showMemInfo("Before F2 file dialog");
                 string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
+                ESPectrum::showMemInfo("After F2 file dialog");
                 if (mFile != "") {
                     mFile.erase(0, 1);
                     string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
@@ -2410,8 +2412,8 @@ void OSD::HWInfo() {
         case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302 :
             textout += "ESP32-PICO-V3-02";
             break;            
-        case /*EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3*/ 7 : // Not defined in ESP-IDF version we're using
-             textout += "ESP32-D0WDR2-V3";
+        case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3 :
+            textout += "ESP32-D0WDR2-V3";
             break;             
         default:
             textout += "Unknown";
@@ -2491,7 +2493,7 @@ void OSD::HWInfo() {
 
 }
 
-#define FWBUFFSIZE 4096
+#define FWBUFFSIZE 512 /* 4096 */
 
 esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
@@ -2738,9 +2740,9 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         progressDialog("","",50,1);
 
         // Inject new 48K custom ROM
-        for (int i=0; i < 0x4000; i += 0x1000) {
-            bytesread = fread(data, 1, 0x1000 , customrom);
-            result = esp_partition_write(target, rom_off + i, data, 0x1000);
+        for (int i=0; i < 0x4000; i += FWBUFFSIZE ) {
+            bytesread = fread(data, 1, FWBUFFSIZE , customrom);
+            result = esp_partition_write(target, rom_off + i, data, FWBUFFSIZE);
             if (result != ESP_OK) {
                 printf("esp_partition_write failed, err=0x%x.\n", result);
                 progressDialog("","",0,2); 
@@ -2751,10 +2753,10 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         progressDialog("","",75,1);
 
         // Copy previous 128K custom ROM
-        for (int i=0; i < 0x8000; i += 0x1000) {
-            esp_err_t result = esp_partition_read(partition, rom_off_128 + i, data, 0x1000);
+        for (int i=0; i < 0x8000; i += FWBUFFSIZE) {
+            esp_err_t result = esp_partition_read(partition, rom_off_128 + i, data, FWBUFFSIZE);
             if (result == ESP_OK) {    
-                result = esp_partition_write(target, rom_off_128 + i, data, 0x1000);
+                result = esp_partition_write(target, rom_off_128 + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
                     progressDialog("","",0,2); 
@@ -2772,9 +2774,9 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     } else if (arch == 2) {
 
         // Inject new 128K custom ROM part 1
-        for (int i=0; i < 0x4000; i += 0x1000) {
-            bytesread = fread(data, 1, 0x1000 , customrom);
-            result = esp_partition_write(target, rom_off_128 + i, data, 0x1000);
+        for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
+            bytesread = fread(data, 1, FWBUFFSIZE , customrom);
+            result = esp_partition_write(target, rom_off_128 + i, data, FWBUFFSIZE);
             if (result != ESP_OK) {
                 printf("esp_partition_write failed, err=0x%x.\n", result);
                 progressDialog("","",0,2); 
@@ -2785,16 +2787,16 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         progressDialog("","",50,1);
 
         // Inject new 128K custom ROM part 2
-        for (int i=0; i < 0x4000; i += 0x1000) {
+        for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
             
             if (bytesfirmware == 0x4000) {
-                for (int n=0;n<0x1000;n++)
+                for (int n=0;n<FWBUFFSIZE;n++)
                     data[n] = gb_rom_1_sinclair_128k[i + n];
             } else {
-                bytesread = fread(data, 1, 0x1000 , customrom);
+                bytesread = fread(data, 1, FWBUFFSIZE , customrom);
             }
             
-            result = esp_partition_write(target, rom_off_128 + i + 0x4000, data, 0x1000);
+            result = esp_partition_write(target, rom_off_128 + i + 0x4000, data, FWBUFFSIZE);
             if (result != ESP_OK) {
                 printf("esp_partition_write failed, err=0x%x.\n", result);
                 progressDialog("","",0,2); 
@@ -2806,10 +2808,10 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         progressDialog("","",75,1);
 
         // Copy previous 48K custom ROM
-        for (int i=0; i < 0x4000; i += 0x1000) {
-            esp_err_t result = esp_partition_read(partition, rom_off + i, data, 0x1000);
+        for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
+            esp_err_t result = esp_partition_read(partition, rom_off + i, data, FWBUFFSIZE);
             if (result == ESP_OK) {    
-                result = esp_partition_write(target, rom_off + i, data, 0x1000);
+                result = esp_partition_write(target, rom_off + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
                     progressDialog("","",0,2); 
@@ -2853,12 +2855,12 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     delay(1000);
 
     // Firmware written: reboot
-    // OSD::esp_hard_reset();
+    OSD::esp_hard_reset();
 
-    // Close progress dialog
-    progressDialog("","",0,2);
+    // // Close progress dialog
+    // progressDialog("","",0,2);
 
-    return result;
+    // return result;
 
 }
 
@@ -2914,7 +2916,7 @@ esp_err_t OSD::updateFirmware(FILE *firmware) {
     rewind(firmware);
 
     while (1) {
-        bytesread = fread(ota_write_data, 1, 0x1000 , firmware);
+        bytesread = fread(ota_write_data, 1, FWBUFFSIZE , firmware);
         result = esp_ota_write(ota_handle,(const void *) ota_write_data, bytesread);
         if (result != ESP_OK) {
             progressDialog("","",0,2);
