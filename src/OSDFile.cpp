@@ -584,7 +584,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
                             // menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
                             // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            // VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
+                            // VIDEO::vga.print(Config::lang ? "B\xA3sq: " : "Find: ");
                             // VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
                             // VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
                             // VIDEO::vga.print("K");
@@ -757,7 +757,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 if ((++fdCursorFlash & 0xf) == 0) {
                     menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                    VIDEO::vga.print(Config::lang ? "Busq: " : "Find: ");
+                    VIDEO::vga.print(Config::lang ? "B\xA3sq: " : "Find: ");
                     VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
                     if (fdCursorFlash > 63) {
                         VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
@@ -817,7 +817,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                 if ( ftype == DISK_TAPFILE ) { // Dirty hack
                     VIDEO::vga.print(Config::lang ? "F2: Nuevo | " : "F2: New | " );
                 }
-                VIDEO::vga.print(Config::lang ? "F3: Busq" : "F3: Find" );
+                VIDEO::vga.print(Config::lang ? "F3: B\xA3sq" : "F3: Find" );
             }
 
             vTaskDelay(5 / portTICK_PERIOD_MS);

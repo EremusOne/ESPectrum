@@ -3093,7 +3093,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
     // Yes
     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
 
     // // Ruler
     // VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
@@ -3133,7 +3133,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
                     // Yes
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+                    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
                     // No
                     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
@@ -3144,7 +3144,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
                     // Yes
                     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+                    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
                     // No
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));

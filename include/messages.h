@@ -84,11 +84,11 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_BETADISK_LOAD_ERR "ERROR Loading Disk file"
 
 #define POKE_ERR_ADDR1_EN "Address should be between 16384 and 65535"
-#define POKE_ERR_ADDR1_ES "Direccion debe estar entre 16384 y 65535"
+#define POKE_ERR_ADDR1_ES "Direcci\xA2n debe estar entre 16384 y 65535"
 static const char *POKE_ERR_ADDR1[2] = { POKE_ERR_ADDR1_EN, POKE_ERR_ADDR1_ES };
 
 #define POKE_ERR_ADDR2_EN "Address should be lower than 16384"
-#define POKE_ERR_ADDR2_ES "Direccion debe ser menor que 16384"
+#define POKE_ERR_ADDR2_ES "Direcci\xA2n debe ser menor que 16384"
 static const char *POKE_ERR_ADDR2[2] = { POKE_ERR_ADDR2_EN, POKE_ERR_ADDR2_ES };
 
 #define POKE_ERR_VALUE_EN "Value should be lower than 256"
@@ -100,7 +100,7 @@ static const char *POKE_ERR_VALUE[2] = { POKE_ERR_VALUE_EN, POKE_ERR_VALUE_ES };
 static const char *OSD_TAPE_SAVE[2] = { OSD_TAPE_SAVE_EN, OSD_TAPE_SAVE_ES };
 
 #define OSD_TAPE_SAVE_EXIST_EN "File exists. Overwrite?"
-#define OSD_TAPE_SAVE_EXIST_ES "El fichero ya existe " "\xA8" "Sobreescribir?"
+#define OSD_TAPE_SAVE_EXIST_ES "El fichero ya existe \xA8Sobreescribir?"
 static const char *OSD_TAPE_SAVE_EXIST[2] = { OSD_TAPE_SAVE_EXIST_EN, OSD_TAPE_SAVE_EXIST_ES };
 
 #define OSD_PSNA_SAVE_EN "Save snapshot"
@@ -108,7 +108,7 @@ static const char *OSD_TAPE_SAVE_EXIST[2] = { OSD_TAPE_SAVE_EXIST_EN, OSD_TAPE_S
 static const char *OSD_PSNA_SAVE[2] = { OSD_PSNA_SAVE_EN, OSD_PSNA_SAVE_ES };
 
 #define OSD_PSNA_EXISTS_EN "Overwrite slot?"
-#define OSD_PSNA_EXISTS_ES "\xA8" "Sobreescribir ranura?"
+#define OSD_PSNA_EXISTS_ES "\xA8Sobreescribir ranura?"
 static const char *OSD_PSNA_EXISTS[2] = { OSD_PSNA_EXISTS_EN, OSD_PSNA_EXISTS_ES };
 
 #define OSD_TAPE_SELECT_ERR_EN "No tape file selected"
@@ -124,7 +124,7 @@ static const char *OSD_FILE_INDEXING[2] = { OSD_FILE_INDEXING_EN, OSD_FILE_INDEX
 static const char *OSD_FILE_INDEXING_1[2] = { OSD_FILE_INDEXING_EN_1, OSD_FILE_INDEXING_ES_1 };
 
 #define OSD_FILE_INDEXING_EN_2 "Saving index"
-#define OSD_FILE_INDEXING_ES_2 "Grabando indice"
+#define OSD_FILE_INDEXING_ES_2 "Grabando \xA1ndice"
 static const char *OSD_FILE_INDEXING_2[2] = { OSD_FILE_INDEXING_EN_2, OSD_FILE_INDEXING_ES_2 };
 
 #define OSD_FILE_INDEXING_EN_3 "  Cleaning  "
@@ -140,7 +140,7 @@ static const char *OSD_FIRMW_UPDATE[2] = { OSD_FIRMW_UPDATE_EN,OSD_FIRMW_UPDATE_
 static const char *OSD_DLG_SURE[2] = { OSD_DLG_SURE_EN, OSD_DLG_SURE_ES};
 
 #define OSD_DLG_JOYSAVE_EN "Save changes?"
-#define OSD_DLG_JOYSAVE_ES "\xA8" "Guardar cambios?"
+#define OSD_DLG_JOYSAVE_ES "\xA8Guardar cambios?"
 static const char *OSD_DLG_JOYSAVE[2] = { OSD_DLG_JOYSAVE_EN, OSD_DLG_JOYSAVE_ES};
 
 #define OSD_DLG_JOYDISCARD_EN "Discard changes?"
@@ -156,7 +156,7 @@ static const char *OSD_DLG_SETJOYMAPDEFAULTS[2] = { OSD_DLG_SETJOYMAPDEFAULTS_EN
 static const char *OSD_FIRMW[2] = { OSD_FIRMW_EN,OSD_FIRMW_ES};
 
 #define OSD_FIRMW_BEGIN_EN "Erasing destination partition."
-#define OSD_FIRMW_BEGIN_ES "Borrando particion de destino."
+#define OSD_FIRMW_BEGIN_ES "Borrando partici\xA2n de destino."
 static const char *OSD_FIRMW_BEGIN[2] = { OSD_FIRMW_BEGIN_EN,OSD_FIRMW_BEGIN_ES};
 
 #define OSD_FIRMW_WRITE_EN "    Flashing new firmware.    "
@@ -225,7 +225,7 @@ static const char *MENU_DELETE_CURRENT_TAP_BLOCK[2] = { MENU_DELETE_CURRENT_TAP_
     "Load snapshot\t(F3) >\n"\
     "Save snapshot\t(F4) >\n"
 #define MENU_SNA_ES \
-    "Menu snapshots\n"\
+    "Men\xA3 snapshots\n"\
     "Cargar (SNA,Z80,P)\t(F2) >\n"\
     "Cargar snapshot\t(F3) >\n"\
     "Guardar snapshot\t(F4) >\n"
@@ -295,7 +295,7 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Options menu\n"\
     "Storage\t>\n"\
     "Preferred Machine\t>\n"\
-    "Preferred ROM\t>\n"\	
+    "Preferred ROM\t>\n"\
     "Joystick\t>\n"\
     "Joystick emulation\t>\n"\
     "Video\t>\n"\
@@ -303,12 +303,12 @@ static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
     "Language\t>\n"\
 	"Update\t>\n"
 #define MENU_OPTIONS_ES \
-    "Menu opciones\n"\
+    "Men\xA3 opciones\n"\
     "Almacenamiento\t>\n"\
     "Modelo preferido\t>\n"\
-    "ROM preferida\t>\n"\	
+    "ROM preferida\t>\n"\
     "Joystick\t>\n"\
-    "Emulaci" "\xA2" "n joystick\t>\n"\
+    "Emulaci\xA2n joystick\t>\n"\
     "Video\t>\n"\
     "Otros\t>\n"\
     "Idioma\t>\n"\
@@ -335,7 +335,7 @@ static const char *MENU_UPDATE_FW[2] = { MENU_UPDATE_EN,MENU_UPDATE_ES };
 #define MENU_VIDEO_ES \
     "Video\n"\
     "Tipo render\t>\n"\
-	"Relaci" "\xA2" "n de aspecto\t>\n"\
+	"Relaci\xA2n de aspecto\t>\n"\
     "Scanlines\t>\n"
 static const char *MENU_VIDEO[2] = { MENU_VIDEO_EN, MENU_VIDEO_ES };
 
@@ -345,7 +345,7 @@ static const char *MENU_VIDEO[2] = { MENU_VIDEO_EN, MENU_VIDEO_ES };
     "Snow effect\t[A]\n"
 #define MENU_RENDER_ES \
     "Tipo render\n"\
-    "Estandar\t[S]\n"\
+    "Est\xA0ndar\t[S]\n"\
     "Efecto nieve\t[A]\n"
 static const char *MENU_RENDER[2] = { MENU_RENDER_EN, MENU_RENDER_ES };
 
@@ -395,7 +395,7 @@ static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
 
 #define MENU_YESNO_EN "Yes\t[Y]\n"\
     "No\t[N]\n"
-#define MENU_YESNO_ES "Si\t[Y]\n"\
+#define MENU_YESNO_ES "S\xA1\t[Y]\n"\
     "No\t[N]\n"
 static const char *MENU_YESNO[2] = { MENU_YESNO_EN, MENU_YESNO_ES};
 
@@ -460,14 +460,14 @@ static const char *MENU_ARCH[2] = { MENU_ARCH_EN MENU_ARCHS, MENU_ARCH_ES MENU_A
 
 #define MENU_ROMS48_ES "Elija ROM\n"\
 	"48K\n"\
-    "48K Espa" "\xA4" "ol\n"\
+    "48K Espa\xA4ol\n"\
     "Custom\n"
 
 #define MENU_ROMS128_ES "Elija ROM\n"\
 	"128K\n"\
-    "128K Espa" "\xA4" "ol\n"\
+    "128K Espa\xA4ol\n"\
 	"+2\n"\
-    "+2 Espa" "\xA4" "ol\n"\
+    "+2 Espa\xA4ol\n"\
     "ZX81+\n"\
     "Custom\n"\
 
@@ -502,15 +502,15 @@ static const char *MENU_ROM_PREF[2] = { "Preferred ROM\n" MENU_ROMS_PREF, "ROM p
 
 #define MENU_ROMS48_PREF_ES "Elija ROM\n"\
 	"48K\t[48K  ]\n"\
-    "48K Espa" "\xA4" "ol\t[48Kes]\n"\
+    "48K Espa\xA4ol\t[48Kes]\n"\
     "Custom\t[48Kcs]\n"\
 	"Ultima usada\t[Last ]\n"
 
 #define MENU_ROMS128_PREF_ES "Elija ROM\n"\
 	"128K\t[128K  ]\n"\
-    "128K Espa" "\xA4" "ol\t[128Kes]\n"\
+    "128K Espa\xA4ol\t[128Kes]\n"\
 	"+2\t[+2    ]\n"\
-    "+2 Espa" "\xA4" "ol\t[+2es  ]\n"\
+    "+2 Espa\xA4ol\t[+2es  ]\n"\
     "ZX81+\t[ZX81+ ]\n"\
     "Custom\t[128Kcs]\n"\
 	"Ultima usada\t[Last  ]\n"
@@ -523,7 +523,7 @@ static const char *MENU_ROM_PREF_128[2] = { MENU_ROMS128_PREF_EN, MENU_ROMS128_P
     "English\t[ ]\n"\
     "Spanish\t[ ]\n"
 #define MENU_INTERFACE_LANG_ES "Idioma\n"\
-    "Ingles\t[ ]\n"\
+    "Ingl\x82s\t[ ]\n"\
     "Espa\xA4ol\t[ ]\n"
 static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
 
@@ -552,7 +552,7 @@ static const char *MENU_DEFJOY[2] = { MENU_DEFJOY_TITLE MENU_DEFJOYS MENU_DEFJOY
 
 #define MENU_JOYPS2_EN "Joystick emulation\n" "Joy type\t>\n" "Cursor Keys as Joy\t>\n" "TAB as fire 1\t>\n"
 
-#define MENU_JOYPS2_ES "Emulaci" "\xA2" "n Joystick\n" "Tipo joystick\t>\n" "Joy en teclas de cursor\t>\n" "TAB como disparo 1\t>\n"
+#define MENU_JOYPS2_ES "Emulaci\xA2n Joystick\n" "Tipo joystick\t>\n" "Joy en teclas de cursor\t>\n" "TAB como disparo 1\t>\n"
 
 static const char *MENU_JOYPS2[2] = { MENU_JOYPS2_EN, MENU_JOYPS2_ES };
 
@@ -579,47 +579,47 @@ static const char *MENU_TABASFIRE[2] = { "TAB as fire 1\n" , "TAB disparo 1\n" }
 #define PATREONS "\r"\
 	"\nA1The Mega Trees:\r"\
 	"\r"\
-	"\nB1Victor Llamazares \nC1Antonio Villena\r"\
+	"\nB1V\xA1" "ctor Llamazares \nC1Antonio Villena\r"\
 	"\r"\
 	"\nA1The Jet Set Willys:\r"\
 	"\r"\
-	"\nB1DopierRex \nC1German Filera \nD1Juan C. Galea\r"\
-	"\nE1Juanje \nB1Raul Jimenez \nC1Juanma Martin\r"\
-	"\nD1Serafin Moraton \nE1Eduard Ruiz\r"\
-	"\nB1Igor Peruchi \nC1Inacio Santos\r"\
+	"\nB1DopierRex \nC1Germ\xA0n Filera \nD1Juan C. Galea\r"\
+	"\nE1Juanje \nB1Ra\xA3l Jim\x82nez \nC1Juanma Mart\xA1n\r"\
+	"\nD1Seraf\xA1n Moraton \nE1Eduard Ruiz\r"\
+	"\nB1Igor Peruchi \nC1In\xA0" "cio Santos\r"\
 	"\r"
 
 #define PATREONS2 "\r"\
 	"\nA1The Manic Miners:\r"\
 	"\r"\
 	"\nB1Lencio Asimov \nC1Fernando Bonilla\r"\
-	"\nD1Juan Conde Luque \nE1Fidel Fernandez\r"\
-	"\nB1Alberto Garcia \nC1Francisco Garcia\r"\
-	"\nD1Jorge Garcia \nE1Jose Luis Garcia\r"\
-	"\nB1Nacho Izquierdo \nC1kounch \nD1Victor Lorenzo\r"\
+	"\nD1Juan Conde Luque \nE1Fidel Fern\xA0ndez\r"\
+	"\nB1Alberto Garc\xA1" "a \nC1Francisco Garc\xA1" "a\r"\
+	"\nD1Jorge Garc\xA1" "a \nE1Jos\x82 Luis Garc\xA1" "a\r"\
+	"\nB1Nacho Izquierdo \nC1kounch \nD1V\xA1" "ctor Lorenzo\r"\
 	"\nE1Luis Maldonado \nB1Mananuk \nC1Ignacio Monge\r"\
-	"\nD1Vicente Morales \nE1Pablo Mu" "\xA4" "oz\r"\
-	"\nB1Javi Ortiz \nC1Miguel Angel Perez\r"\
-	"\nD1Pascual Perez \nE1Juan Jose Piernas\r"\
+	"\nD1Vicente Morales \nE1Pablo Mu\xA4oz\r"\
+	"\nB1Javi Ortiz \nC1Miguel Angel P\x82rez\r"\
+	"\nD1Pascual P\x82rez \nE1Juan Jos\x82 Piernas\r"\
 
 #define PATREONS3 "\r"\
 	"\nA1The Manic Miners:\r"\
 	"\r"\
 	"\nB1Radastan \nC1Jordi Ramos \nD1Gustavo Reynaga\r"\
-	"\nE1Jose M. Rodriguez \nB1Marco A. Rodriguez\r"\
+	"\nE1Jos\x82 M. Rodr\xA1guez \nB1Marco A. Rodr\xA1guez\r"\
 	"\nC1Santiago Romero \nD1Julia Salvador\r"\
-	"\nE1Juan Diego Sanchez \nB1Marta Sicilia\r"\
-	"\nC1Fco. Jose Soldado \nD1Vida Extra Retro\r"\
-	"\nE1Radek Wojciechowski \nB1Jesus Mu" "\xA4" "oz\r"\
-	"\nC1Antonio Jesus Sanchez \nD1Gregorio Perez\r"\
-	"\nE1Leonardo Coca" "\xA4" "a \nB1Manuel Cuenca\r"\
-	"\nC1Ovi P. \nD1Jose Medina \nE1Miguel A. Montejo\r"
+	"\nE1Juan Diego S\xA0nchez \nB1Marta Sicilia\r"\
+	"\nC1Fco. Jos\x82 Soldado \nD1Vida Extra Retro\r"\
+	"\nE1Radek Wojciechowski \nB1Jes\xA3s Mu\xA4oz\r"\
+	"\nC1Antonio Jes\xA3s S\xA0nchez \nD1Gregorio P\x82rez\r"\
+	"\nE1Leonardo Coca\xA4" "a \nB1Manuel Cuenca\r"\
+	"\nC1Ovi P. \nD1Jos\x82 Medina \nE1Miguel A. Montejo\r"
 
 #define PATREONS4 "\r"\
 	"\nA1The Manic Miners:\r"\
 	"\r"\
-	"\nB1Jakub Rzepecki \nC1Seb \nD1Simon Gomez\r"\
-	"\nE1Victor Salado \nB1Miguel A. Gonzalez\r"\
+	"\nB1Jakub Rzepecki \nC1Seb \nD1Sim\xA2n G\xA2mez\r"\
+	"\nE1V\xA1" "ctor Salado \nB1Miguel A. Gonz\xA0lez\r"\
 	"\r"\
 	"\r"\
 	"\r"\
@@ -630,7 +630,7 @@ static const char *MENU_TABASFIRE[2] = { "TAB as fire 1\n" , "TAB disparo 1\n" }
 
 static const char *AboutMsg[2][9] = {
 	{
-	"\nF1(C)2023-24 Victor Iborra \"Eremus\"\r"\
+	"\nF1(C)2023-24 V\xA1" "ctor Iborra \"Eremus\"\r"\
 	"   2023 David Crespo  \"dcrespo3d\"\r"\
 	"\r"\
 	"\nA1Based on ZX-ESPectrum-Wiimote\r"\
@@ -639,7 +639,7 @@ static const char *AboutMsg[2][9] = {
 	"\nB1Inspired by previous projects\r"\
 	"from Pete Todd and Rampa & Queru\r"\
 	"\r"\
-	"\nC1Z80 emulation by J.L. Sanchez\r"\
+	"\nC1Z80 emulation by J.L. S\xA0nchez\r"\
 	"\nD1VGA driver by BitLuni\r"\
 	"\nE1AY-3-8912 library by A. Sashnov\r"\
 	"\nF1PS2 driver by Fabrizio di Vittorio\r"
@@ -649,11 +649,11 @@ static const char *AboutMsg[2][9] = {
 	"\nA1ackerman        \nF1Code & ideas\r"\
 	"\nB1Armand          \nF1Testing & broadcasting\r"\
 	"\nC1azesmbog        \nF1Testing & ideas\r"\
-	"\nD1David Carrion   \nF1H/W code, ZX kbd\r"\
-	"\nE1Ramon Martinez  \nF1AY emul. improvements\r"\
+	"\nD1David Carri\xA2n   \nF1H/W code, ZX kbd\r"\
+	"\nE1Ram\xA2n Mart\xA1nez  \nF1AY emul. improvements\r"\
 	"\nA1J.J. Ponteprino \nF1Code & improvements\r"\
 	"\nB1Ron             \nF1Testing & broadcasting\r"\
-	"\nC1J.L. Sanchez    \nF1Z80 core improvements\r"\
+	"\nC1J.L. S\xA0nchez    \nF1Z80 core improvements\r"\
 	"\nD1Antonio Villena \nF1Hardware support\r"\
 	"\nE1ZjoyKiLer       \nF1Testing & ideas\r"\
 	"\r"		
@@ -689,8 +689,8 @@ static const char *AboutMsg[2][9] = {
 	"\nA1Retrowiki.es \nF1and its great community\r"\
 	"\nB1Ron \nF1for his cool RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
-	"\nE1J.C. Gonzalez Amestoy \nF1for RVM\r"\
-	"\nA1VidaExtraRetro, \nB1Cesar Nicolas-Gonzalez\r"\
+	"\nE1J.C. Gonz\xA0lez Amestoy \nF1for RVM\r"\
+	"\nA1VidaExtraRetro, \nB1C\x82sar Nicol\xA0s-Gonz\xA0lez\r"\
 	"\nC1Rodolfo Guerra, \nD1All creators in\r"\
 	"ZX Spectrum server at Discord\r"\
 	"\r"\
@@ -701,7 +701,7 @@ static const char *AboutMsg[2][9] = {
 	DEDICATORIA
 	},
 	{
-	"\nF1(C)2023-24 Victor Iborra \"Eremus\"\r"\
+	"\nF1(C)2023-24 V\xA1" "ctor Iborra \"Eremus\"\r"\
 	"   2023 David Crespo  \"dcrespo3d\"\r"\
 	"\r"\
 	"\nA1Basado en ZX-ESPectrum-Wiimote\r"\
@@ -710,21 +710,21 @@ static const char *AboutMsg[2][9] = {
 	"\nB1Inspirado en proyectos anteriores\r"\
 	"de Pete Todd y Rampa & Queru\r"\
 	"\r"\
-	"\nC1Emulacion Z80 por J.L. Sanchez\r"\
+	"\nC1Emulaci\xA2n Z80 por J.L. S\xA0nchez\r"\
 	"\nD1Driver VGA por BitLuni\r"\
-	"\nE1Libreria AY-3-8912 por A. Sashnov\r"\
+	"\nE1Librer\xA1" "a AY-3-8912 por A. Sashnov\r"\
 	"\nF1Driver PS2 por Fabrizio di Vittorio\r"
 	,
 	"\nF1Colaboradores:\r"\
 	"\r"\
-	"\nA1ackerman        \nF1Codigo e ideas\r"\
-	"\nB1Armand          \nF1Testing y difusion\r"\
+	"\nA1ackerman        \nF1C\xA2" "digo e ideas\r"\
+	"\nB1Armand          \nF1Testing y difusi\xA2n\r"\
 	"\nC1azesmbog        \nF1Testing e ideas\r"\
-	"\nD1David Carrion   \nF1Codigo h/w, teclado ZX\r"\
-	"\nE1Ramon Martinez  \nF1Mejoras emulacion AY\r"\
-	"\nA1J.J. Ponteprino \nF1Codigo y mejoras\r"\
-	"\nB1Ron             \nF1Testing y difusion\r"\
-	"\nC1J.L. Sanchez    \nF1Mejoras core Z80\r"\
+	"\nD1David Carri\xA2n   \nF1C\xA2" "digo h/w, teclado ZX\r"\
+	"\nE1Ramon Mart\xA1nez  \nF1Mejoras emulaci\xA2n AY\r"\
+	"\nA1J.J. Ponteprino \nF1C\xA2" "digo y mejoras\r"\
+	"\nB1Ron             \nF1Testing y difusi\xA2n\r"\
+	"\nC1J.L. S\xA0nchez    \nF1Mejoras core Z80\r"\
 	"\nD1Antonio Villena \nF1Soporte hardware\r"\
 	"\nE1ZjoyKiLer       \nF1Testing e ideas\r"\
 	"\r"		
@@ -748,20 +748,20 @@ static const char *AboutMsg[2][9] = {
 	"\nC1Jordi Ramos Montes\r"
 	"\nD1Tsvetan Usunov \nF1Olimex Ltd.\r"\
 	"\r"\
-	"\nF1ZX81+ ROM incluida por cortesia de:\r"\
+	"\nF1ZX81+ ROM incluida por cortes\xA1" "a de:\r"\
 	"\r"\
 	"\nA1Paul Farrow\r"\
 	"\r"\
 	"\r"\
 	"\r"
 	,
-	"\nF1Gracias tambien a:\r"\
+	"\nF1Gracias tambi\x82n a:\r"\
 	"\r"\
-	"\nA1Retrowiki.es \nF1y su magnifica comunidad\r"\
+	"\nA1Retrowiki.es \nF1y su magn\xA1" "fica comunidad\r"\
 	"\nB1Ron \nF1por su genial RetroCrypta\r"\
 	"\nC1Viejoven FX\nF1, \nD1J.Ortiz \"El Spectrumero\"\r"
-	"\nE1J.C. Gonzalez Amestoy \nF1por RVM\r"\
-	"\nA1VidaExtraRetro, \nB1Cesar Nicolas-Gonzalez\r"\
+	"\nE1J.C. Gonz\xA0lez Amestoy \nF1por RVM\r"\
+	"\nA1VidaExtraRetro, \nB1C\x82sar Nicol\xA0s-Gonz\xA0lez\r"\
 	"\nC1Rodolfo Guerra, \nD1Todos los creadores en\r"\
 	"el servidor ZXSpectrum en Discord\r"\
 	"\r"\	
@@ -803,7 +803,7 @@ static const char *AboutMsg[2][9] = {
     // "            FND: FPS sin delay\n"\
 
 #define OSD_HELP_ES \
-    " [F1]         Menu principal\n"\
+    " [F1]         Men\xA3 principal\n"\
     " [F2]         Cargar (SNA,Z80,P)\n"\
     " [F3-F4]      Cargar / Guardar snapshot\n"\
     " [F5]         Elegir archivo de cinta\n"\
@@ -843,7 +843,7 @@ static const char *AboutMsg[2][9] = {
 
 #define OSD_HELP_ES_ZX \
     " Presione CAPS SHIFT + SYMBOL SHIFT y:\n"\
-    " [1]       Menu principal\n"\
+    " [1]       Men\xA3 principal\n"\
     " [2]       Cargar (SNA,Z80,P)\n"\
     " [3-4]     Cargar / Guardar snapshot\n"\
     " [5]       Elegir archivo de cinta\n"\
@@ -862,9 +862,9 @@ static const char *AboutMsg[2][9] = {
     " [S]       Captura BMP (Carpeta /.c)\n"
 
 static const char *StartMsg[2] = {
-	"\xAD" "Hola! " "\xAD" "Gracias por elegir    ectrum!\n"\
+	"\xAD" "Hola! \xADGracias por elegir    ectrum!\n"\
 	"\n"\
-	"   ectrum es software de c" "\xA2" "digo abier-\n"\
+	"   ectrum es software de c\xA2" "digo abier-\n"\
 	"to bajo licencia GPL v3, puedes usarlo\n"\
 	"modificarlo y compartirlo gratis.\n"\
 	"\n"\
