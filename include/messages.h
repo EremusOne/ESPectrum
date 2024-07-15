@@ -585,7 +585,7 @@ static const char *MENU_TABASFIRE[2] = { "TAB as fire 1\n" , "TAB disparo 1\n" }
 	"\r"\
 	"\nB1DopierRex \nC1Germ\xA0n Filera \nD1Juan C. Galea\r"\
 	"\nE1Juanje \nB1Ra\xA3l Jim\x82nez \nC1Juanma Mart\xA1n\r"\
-	"\nD1Seraf\xA1n Moraton \nE1Eduard Ruiz\r"\
+	"\nD1Seraf\xA1n Morat\xA2n \nE1Eduard Ruiz\r"\
 	"\nB1Igor Peruchi \nC1In\xA0" "cio Santos\r"\
 	"\r"
 
