@@ -236,7 +236,7 @@ unsigned short OSD::menuRun(string new_menu) {
                     menuRedraw();
                     click();
                 } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
-                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                    if (real_rows - begin_row - virtual_rows > virtual_rows) {
                         focus = 1;
                         begin_row += virtual_rows - 1;
                     } else {
@@ -372,7 +372,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
                     menuRedraw();
                     click();
                 } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
-                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                    if (real_rows - begin_row - virtual_rows > virtual_rows) {
                         focus = 1;
                         begin_row += virtual_rows - 1;
                     } else {
@@ -550,19 +550,20 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type, bool is_menu) {
 }
 
 // Redraw inside rows
-void OSD::tapemenuRedraw(string title) {
+void OSD::tapemenuRedraw(string title, bool force) {
 
-    if ((focus != last_focus) || (begin_row != last_begin_row)) {
+    if ( force || focus != last_focus || begin_row != last_begin_row ) {
         // Read bunch of rows
         menu = title + "\n";
         if ( Tape::tapeNumBlocks ) {
             for (int i = begin_row - 1; i < virtual_rows - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 ) + begin_row - 2; i++) {
-                if (i > Tape::tapeNumBlocks) break;
+                if (i >= Tape::tapeNumBlocks) break;
                 if (Tape::tapeFileType == TAPE_FTYPE_TAP)
                     menu += Tape::tapeBlockReadData(i);
                 else
                     menu += Tape::tzxBlockReadData(i);
             }
+            if ( Tape::tapeFileType == TAPE_FTYPE_TAP && begin_row - 1 + virtual_rows >= real_rows ) menu += "\n";
         } else {
             menu += ( Config::lang ? "<Vacio>\n" : "<Empty>\n" );
         }
@@ -575,7 +576,7 @@ void OSD::tapemenuRedraw(string title) {
             }
         }
 
-        if ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 ) {
+        if ( Tape::tapeFileType == TAPE_FTYPE_TAP ) {
             string options = Config::lang ? " ESP: Selec. | F6: Mover | F8: Borrar" : 
                                             " SPC: Select | F6: Move | F8: Delete";
             menuAt(-1, 0);
@@ -685,7 +686,7 @@ int OSD::menuTape(string title) {
                     }
                 } else if (Menukey.vk == fabgl::VK_DOWN || Menukey.vk == fabgl::VK_JOY1DOWN || Menukey.vk == fabgl::VK_JOY2DOWN) {
                     if (focus == virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 ) ) {
-                        if ((begin_row + virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 )) < real_rows) {
+                        if ((begin_row + virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 2 : 0 )) < real_rows) {
                             last_begin_row = begin_row;
                             begin_row++;
                             tapemenuRedraw(title);
@@ -716,7 +717,7 @@ int OSD::menuTape(string title) {
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
-                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                    if (real_rows - begin_row - virtual_rows > virtual_rows) {
                         last_focus = focus;
                         last_begin_row = begin_row;
                         focus = 1;
@@ -727,7 +728,7 @@ int OSD::menuTape(string title) {
                         last_focus = focus;
                         last_begin_row = begin_row;
                         focus = virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
-                        begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
+                        begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 2 : 0 );
                         tapemenuRedraw(title);
                         click();
                     }
@@ -742,14 +743,14 @@ int OSD::menuTape(string title) {
                     last_focus = focus;
                     last_begin_row = begin_row;
                     focus = virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
-                    begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
+                    begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 2 : 0 );
                     tapemenuRedraw(title);
                     click();
                 } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_SPACE) {
-                    Tape::selectBlockToggle(begin_row - 2 + focus);
+                    if ( begin_row - 1 + focus < real_rows ) Tape::selectBlockToggle(begin_row - 2 + focus);
 
                     if (focus == virtual_rows - 1 - 1 ) {
-                        if ((begin_row + virtual_rows - 1 - 1) < real_rows) {
+                        if ((begin_row + virtual_rows - 1 - 2) < real_rows) {
                             last_begin_row = begin_row;
                             begin_row++;
                             tapemenuRedraw(title);
@@ -766,21 +767,30 @@ int OSD::menuTape(string title) {
                     }
                 } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F6) {
                     click();
-
+                    if ( Tape::selectedBlocks.empty() ) {
+                        osdCenteredMsg(OSD_BLOCK_SELECT_ERR[Config::lang], LEVEL_WARN, 1000);
+                    } else {
+                        Tape::moveSelectedBlocks(begin_row - 2 + focus);
+                        tapemenuRedraw(title, true);
+                    }
                 } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F8) {
                     click();
 
-                    string title = Tape::selectedBlocks.empty() ? MENU_DELETE_CURRENT_TAP_BLOCK[Config::lang] : MENU_DELETE_TAP_BLOCKS[Config::lang];
-                    string msg = OSD_DLG_SURE[Config::lang];
-                    uint8_t res = msgDialog(title,msg);
+                    if ( Tape::selectedBlocks.empty() && begin_row - 1 + focus == real_rows ) {
+                        osdCenteredMsg(OSD_BLOCK_SELECT_ERR[Config::lang], LEVEL_WARN, 1000);
+                    } else {
+                        string title = Tape::selectedBlocks.empty() ? MENU_DELETE_CURRENT_TAP_BLOCK[Config::lang] : MENU_DELETE_TAP_BLOCKS[Config::lang];
+                        string msg = OSD_DLG_SURE[Config::lang];
+                        uint8_t res = msgDialog(title,msg);
 
-                    if (res == DLG_YES) {
-                        if ( Tape::selectedBlocks.empty() ) Tape::selectBlockToggle(begin_row - 2 + focus);
-                        Tape::removeSelectedBlocks();
-                        menu_saverect = true;
-                        return -2;
+                        if (res == DLG_YES) {
+                            if ( Tape::selectedBlocks.empty() ) Tape::selectBlockToggle(begin_row - 2 + focus);
+                            Tape::removeSelectedBlocks();
+                            menu_saverect = true;
+                            return -2;
+                        }
                     }
-
+                    
                 } else if (Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
                     click();
                     if (Tape::tapeFileType == TAPE_FTYPE_TAP)

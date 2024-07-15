@@ -113,7 +113,7 @@ public:
     static void menuScroll(bool up);
     static void fd_Redraw(string title, string fdir, uint8_t ftype);
     static void fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type);
-    static void tapemenuRedraw(string title);
+    static void tapemenuRedraw(string title, bool force = true);
     static void PrintRow(uint8_t virtual_row_num, uint8_t line_type, bool is_menu = false);
     static void menuAt(short int row, short int col);
     static void menuScrollBar(unsigned short br);

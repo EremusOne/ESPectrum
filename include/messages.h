@@ -219,6 +219,10 @@ static const char *MENU_DELETE_TAP_BLOCKS[2] = { MENU_DELETE_TAP_BLOCKS_EN,MENU_
 #define MENU_DELETE_CURRENT_TAP_BLOCK_ES "Se borrar\xA0 el bloque actual"
 static const char *MENU_DELETE_CURRENT_TAP_BLOCK[2] = { MENU_DELETE_CURRENT_TAP_BLOCK_EN,MENU_DELETE_CURRENT_TAP_BLOCK_ES };
 
+#define OSD_BLOCK_SELECT_ERR_EN "No blocks selected"
+#define OSD_BLOCK_SELECT_ERR_ES "No hay ning\xA3n bloque seleccionado"
+static const char *OSD_BLOCK_SELECT_ERR[2] = { OSD_BLOCK_SELECT_ERR_EN,OSD_BLOCK_SELECT_ERR_ES };
+
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
     "Load (SNA,Z80,P)\t(F2) >\n"\

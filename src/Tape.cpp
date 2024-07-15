@@ -231,7 +231,6 @@ void (*Tape::GetBlock)() = &Tape::TAP_GetBlock;
 
 // Load tape file (.tap, .tzx)
 void Tape::LoadTape(string mFile) {
-printf("LoadTape %s\n", mFile.c_str());
     if (FileUtils::hasTAPextension(mFile)) {
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
@@ -1320,8 +1319,6 @@ void Tape::removeSelectedBlocks() {
 
     string filename = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
 
-    rewind(tape);
-
     int blockIndex = 0;
     int tapeBlkLen = 0;
     long off = 0;
@@ -1362,7 +1359,7 @@ void Tape::removeSelectedBlocks() {
 
         }
 
-        off += tapeBlkLen + 2;
+        off += tapeBlkLen + sizeof(encodedlen);
 
         blockIndex++;
     }
@@ -1381,7 +1378,103 @@ void Tape::removeSelectedBlocks() {
     std::remove(filename.c_str());
     std::rename(filenameTemp.c_str(), filename.c_str());
 
-    Tape::LoadTape(("R"+tapeFileName).c_str());
+    Tape::LoadTape((" "+tapeFileName).c_str());
+
+    selectedBlocks.clear();
+}
+
+void Tape::moveSelectedBlocks(int targetPosition) {
+    char buffer[2048];
+
+    // Crear un archivo temporal para la salida
+    string tempDir = FileUtils::createTmpDir();
+    if (tempDir == "") {
+        return;
+    }
+
+    string outputFilename = tempDir + "/temp.tap";
+
+    FILE* outputFile = fopen(outputFilename.c_str(), "wb");
+    if (!outputFile) {
+        printf("Error al crear el archivo de salida temporal.\n");
+        return;
+    }
+
+    string filename = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+
+    int blockIndex = 0;
+    int tapeBlkLen = 0;
+    long off = 0;
+
+    uint16_t encodedlen;
+
+    for ( int state = 0; state < 3; state++ ) {
+        int nextStateBlock = -1;
+        long nextStateBlockPos = 0;
+
+        while (true) {
+            fseek(tape, off, SEEK_SET);
+
+            bool block_is_selected = ( std::find(selectedBlocks.begin(), selectedBlocks.end(), blockIndex) != selectedBlocks.end() );
+
+            if ( state == 0 && blockIndex == targetPosition ) break;
+
+            size_t bytesRead = fread(&encodedlen, sizeof(encodedlen), 1, tape);
+            if (bytesRead != 1) break;
+
+            uint8_t l = ((uint8_t*)&encodedlen)[0];
+            uint8_t h = ((uint8_t*)&encodedlen)[1];
+            tapeBlkLen = (l | (h << 8));
+
+            if ( ( state == 0 && !block_is_selected ) ||
+                 ( state == 1 && block_is_selected ) || 
+                 ( state == 2 && !block_is_selected && blockIndex >= targetPosition ) )
+            {
+                fwrite(&encodedlen, sizeof(encodedlen), 1, outputFile);
+                size_t totalBytesRead = 0;
+                while (totalBytesRead < tapeBlkLen) {
+                    size_t bytesToRead = std::min(sizeof(buffer), static_cast<size_t>(tapeBlkLen - totalBytesRead));
+                    size_t bytesRead = fread(buffer, 1, bytesToRead, tape);
+                    if (bytesRead != bytesToRead) {
+                        printf("Error al leer el bloque del archivo.\n");
+                        break;
+                    }
+                    fwrite(buffer, 1, bytesRead, outputFile);
+                    totalBytesRead += bytesRead;
+                }
+            } else {
+                if ( nextStateBlock == -1 ) {
+                    nextStateBlock = blockIndex;
+                    nextStateBlockPos = off;
+                }
+            }
+
+            off += tapeBlkLen + sizeof(encodedlen);
+            blockIndex++;
+        }
+
+        // move selecteds
+        if ( nextStateBlock != -1 ) {
+            blockIndex = nextStateBlock;
+            off = nextStateBlockPos;
+        } else
+        if ( state == 1 ) break;
+    }
+
+    fclose(outputFile);
+
+    Tape::Stop();
+
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+        tapeFileType = TAPE_FTYPE_EMPTY;
+    }
+
+    std::remove(filename.c_str());
+    std::rename(outputFilename.c_str(), filename.c_str());
+
+    Tape::LoadTape((" " + tapeFileName).c_str());
 
     selectedBlocks.clear();
 }

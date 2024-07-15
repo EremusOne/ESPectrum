@@ -185,6 +185,7 @@ public:
     static void selectBlockToggle(int block);
     static bool isSelectedBlock(int block);
     static void removeSelectedBlocks();
+    static void moveSelectedBlocks(int targetPosition);
 
 private:
 
