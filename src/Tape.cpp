@@ -1408,57 +1408,64 @@ void Tape::moveSelectedBlocks(int targetPosition) {
 
     uint16_t encodedlen;
 
-    for ( int state = 0; state < 3; state++ ) {
-        int nextStateBlock = -1;
-        long nextStateBlockPos = 0;
-
-        while (true) {
-            fseek(tape, off, SEEK_SET);
-
-            bool block_is_selected = ( std::find(selectedBlocks.begin(), selectedBlocks.end(), blockIndex) != selectedBlocks.end() );
-
-            if ( state == 0 && blockIndex == targetPosition ) break;
-
-            size_t bytesRead = fread(&encodedlen, sizeof(encodedlen), 1, tape);
-            if (bytesRead != 1) break;
-
-            uint8_t l = ((uint8_t*)&encodedlen)[0];
-            uint8_t h = ((uint8_t*)&encodedlen)[1];
-            tapeBlkLen = (l | (h << 8));
-
-            if ( ( state == 0 && !block_is_selected ) ||
-                 ( state == 1 && block_is_selected ) || 
-                 ( state == 2 && !block_is_selected && blockIndex >= targetPosition ) )
-            {
-                fwrite(&encodedlen, sizeof(encodedlen), 1, outputFile);
-                size_t totalBytesRead = 0;
-                while (totalBytesRead < tapeBlkLen) {
-                    size_t bytesToRead = std::min(sizeof(buffer), static_cast<size_t>(tapeBlkLen - totalBytesRead));
-                    size_t bytesRead = fread(buffer, 1, bytesToRead, tape);
-                    if (bytesRead != bytesToRead) {
-                        printf("Error al leer el bloque del archivo.\n");
-                        break;
-                    }
-                    fwrite(buffer, 1, bytesRead, outputFile);
-                    totalBytesRead += bytesRead;
-                }
-            } else {
-                if ( nextStateBlock == -1 ) {
-                    nextStateBlock = blockIndex;
-                    nextStateBlockPos = off;
-                }
+    // Definir la lambda writeBlock
+    auto writeBlock = [&](uint16_t encodedlen, FILE* inputFile, FILE* outputFile) {
+        fwrite(&encodedlen, sizeof(encodedlen), 1, outputFile);
+        size_t totalBytesRead = 0;
+        while (totalBytesRead < tapeBlkLen) {
+            size_t bytesToRead = std::min(sizeof(buffer), static_cast<size_t>(tapeBlkLen - totalBytesRead));
+            size_t bytesRead = fread(buffer, 1, bytesToRead, inputFile);
+            if (bytesRead != bytesToRead) {
+                printf("Error al leer el bloque del archivo.\n");
+                break;
             }
+            fwrite(buffer, 1, bytesRead, outputFile);
+            totalBytesRead += bytesRead;
+        }
+    };
 
-            off += tapeBlkLen + sizeof(encodedlen);
-            blockIndex++;
+    std::vector<long> selectedBlocksOffsets;
+    std::vector<long> remainsBlocksOffsets;
+
+    rewind(tape);
+
+    while (true) {
+        fseek(tape, off, SEEK_SET);
+
+        bool block_is_selected = ( std::find(selectedBlocks.begin(), selectedBlocks.end(), blockIndex) != selectedBlocks.end() );
+
+        size_t bytesRead = fread(&encodedlen, sizeof(encodedlen), 1, tape);
+        if (bytesRead != 1) break;
+
+        uint8_t l = ((uint8_t*)&encodedlen)[0];
+        uint8_t h = ((uint8_t*)&encodedlen)[1];
+        tapeBlkLen = (l | (h << 8));
+
+        if ( !block_is_selected && blockIndex < targetPosition ) {
+            writeBlock(encodedlen, tape, outputFile);
+        } else if ( block_is_selected ) {
+            selectedBlocksOffsets.push_back(off);
+        } else {
+            remainsBlocksOffsets.push_back(off);
         }
 
-        // move selecteds
-        if ( nextStateBlock != -1 ) {
-            blockIndex = nextStateBlock;
-            off = nextStateBlockPos;
-        } else
-        if ( state == 1 ) break;
+        off += tapeBlkLen + sizeof(encodedlen);
+        blockIndex++;
+    }
+
+    selectedBlocksOffsets.insert(selectedBlocksOffsets.end(), remainsBlocksOffsets.begin(), remainsBlocksOffsets.end());
+
+    for (int off : selectedBlocksOffsets) {
+        fseek(tape, off, SEEK_SET);
+
+        size_t bytesRead = fread(&encodedlen, sizeof(encodedlen), 1, tape);
+        if (bytesRead != 1) break;
+
+        uint8_t l = ((uint8_t*)&encodedlen)[0];
+        uint8_t h = ((uint8_t*)&encodedlen)[1];
+        tapeBlkLen = (l | (h << 8));
+
+        writeBlock(encodedlen, tape, outputFile);
     }
 
     fclose(outputFile);
