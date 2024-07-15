@@ -175,6 +175,8 @@ public:
     static bool FlashLoad();
     static void Save();
 
+    static void tapeEject();
+
     static uint32_t CalcTapBlockPos(int block);
     static uint32_t CalcTZXBlockPos(int block);    
     static string tapeBlockReadData(int Blocknum);

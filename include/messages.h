@@ -227,6 +227,14 @@ static const char *OSD_BLOCK_SELECT_ERR[2] = { OSD_BLOCK_SELECT_ERR_EN,OSD_BLOCK
 #define OSD_BLOCK_TYPE_ERR_ES "Tipo de bloque inv\xA0lido"
 static const char *OSD_BLOCK_TYPE_ERR[2] = { OSD_BLOCK_TYPE_ERR_EN,OSD_BLOCK_TYPE_ERR_ES };
 
+#define MENU_DELETE_CURRENT_FILE_EN "The current file will be deleted"
+#define MENU_DELETE_CURRENT_FILE_ES "Se borrar\xA0 el archivo actual"
+static const char *MENU_DELETE_CURRENT_FILE[2] = { MENU_DELETE_CURRENT_FILE_EN,MENU_DELETE_CURRENT_FILE_ES };
+
+#define OSD_TAPE_EJECT_EN "Tape ejected"
+#define OSD_TAPE_EJECT_ES "Cinta expulsada"
+static const char *OSD_TAPE_EJECT[2] = { OSD_TAPE_EJECT_EN,OSD_TAPE_EJECT_ES };
+
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
     "Load (SNA,Z80,P)\t(F2) >\n"\
@@ -243,12 +251,14 @@ static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
     "Tape menu\n"\
     "Select (TAP,TZX)\t(F5) >\n"\
     "Play/Stop\t(F6)  \n"\
+    "Eject Tape\t  \n"\
     "Tape browser\t(F7)  \n"\
 	"Player mode\t>\n"
 #define MENU_TAPE_ES \
     "Casete\n"\
     "Elegir (TAP,TZX)\t(F5) >\n"\
     "Play/Stop\t(F6)  \n"\
+    "Expulsar cinta\t  \n"\
     "Navegador cinta\t(F7)  \n"\
 	"Modo reproductor\t>\n"
 static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };

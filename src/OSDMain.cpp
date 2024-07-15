@@ -723,7 +723,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             FileUtils::remountSDCardIfNeeded();
 
                             if ( FileUtils::SDReady ) {
-                                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 36, 15);
+                                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 36, 22);
                                 if (mFile != "") {
                                     mFile.erase(0, 1);
                                     string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
@@ -806,7 +806,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             if ( FileUtils::SDReady ) {
                                 // menu_curopt = 1;
                                 // Select TAP File
-                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 15);
+                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 22);
 
                                 FileUtils::remountSDCardIfNeeded();
 
@@ -849,10 +849,22 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             }
                         }
                         else if (tap_num == 3) {
+                            // Eject Tape
+                            click();
+                            if (Tape::tapeFileName=="none") {
+                                OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
+                                menu_saverect = false;
+                            } else {
+                                Tape::tapeEject();
+                                osdCenteredMsg(OSD_TAPE_EJECT[Config::lang], LEVEL_INFO, 1000);
+                            }
+                            menu_curopt = 3;
+                        }
+                        else if (tap_num == 4) {
                             // Tape Browser
                             if (Tape::tapeFileName=="none") {
                                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
-                                menu_curopt = 3;
+                                menu_curopt = 4;
                                 menu_saverect = false;
                             } else {
 //                                menu_level = 0;
@@ -871,11 +883,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     } else
                                         break;
                                 }
-                                menu_curopt = 3;
+                                menu_curopt = 4;
                                 menu_saverect = false;
                             }
                         }
-                        else if (tap_num == 4) {
+                        else if (tap_num == 5) {
                             menu_level = 2;
                             menu_curopt = 1;                    
                             menu_saverect = true;
@@ -910,13 +922,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     menu_curopt = opt2;
                                     menu_saverect = false;
                                 } else {
-                                    menu_curopt = 4;
+                                    menu_curopt = 5;
                                     menu_level = 1;                                       
                                     break;
                                 }
-
                             }
-
                         }
 
                     } else {
