@@ -556,7 +556,7 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
                     } else if (Menukey.vk == fabgl::VK_F2 && 
                                 ftype == DISK_TAPFILE // Dirty hack
                               ) {
-                        string new_tap = OSD::input( 1, mfrows + (Config::aspect_16_9 ? 0 : 1), Config::lang ? "Nomb: " : "Name: ", 30 );
+                        string new_tap = OSD::input( 1, mfrows + (Config::aspect_16_9 ? 0 : 1), Config::lang ? "Nomb: " : "Name: ", 30, zxColor(7,1), zxColor(5,0) );
 
                         if ( new_tap != "" ) {
                             fclose(dirfile);

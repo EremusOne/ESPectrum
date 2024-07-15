@@ -182,10 +182,12 @@ public:
 
     static std::vector<int> selectedBlocks;
 
+    static TapeBlock::BlockType getBlockType(int Blocknum);
     static void selectBlockToggle(int block);
     static bool isSelectedBlock(int block);
     static void removeSelectedBlocks();
     static void moveSelectedBlocks(int targetPosition);
+    static void renameBlock(int block, string new_name);
 
 private:
 

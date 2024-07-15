@@ -577,8 +577,8 @@ void OSD::tapemenuRedraw(string title, bool force) {
         }
 
         if ( Tape::tapeFileType == TAPE_FTYPE_TAP ) {
-            string options = Config::lang ? " ESP: Selec. | F6: Mover | F8: Borrar" : 
-                                            " SPC: Select | F6: Move | F8: Delete";
+            string options = Config::lang ? " ESP: Selec. | F2: Ren. | F6: Mover | F8: Borrar" : 
+                                            " SPC: Select | F2: Ren. | F6: Move | F8: Delete";
             menuAt(-1, 0);
             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
             VIDEO::vga.print((options + std::string(cols - options.size(), ' ')).c_str());
@@ -641,7 +641,8 @@ int OSD::menuTape(string title) {
 //    }
 
     // Columns
-    cols = 39; // 36 for block info + 2 pre and post space + 1 for scrollbar
+//    cols = 39; // 36 for block info + 2 pre and post space + 1 for scrollbar
+    cols = 50; // 47 for block info + 2 pre and post space + 1 for scrollbar
 
     // Size
     w = (cols * OSD_FONT_W) + 2;
@@ -765,6 +766,30 @@ int OSD::menuTape(string title) {
                         PrintRow(focus - 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus - 1) ) ? IS_SELECTED : IS_NORMAL);
                         click();
                     }
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F2) {
+
+                    long current_pos = ftell( Tape::tape );
+
+                    TapeBlock::BlockType blocktype = Tape::getBlockType(begin_row - 2 + focus);
+                    switch( blocktype ) {
+                        case TapeBlock::Program_header:
+                        case TapeBlock::Number_array_header:
+                        case TapeBlock::Character_array_header:
+                        case TapeBlock::Code_header: {
+                            string new_name = input(21, focus, "", 10, zxColor(0,0), zxColor(7,0));
+                            if ( new_name != "" ) {
+                                Tape::renameBlock( begin_row - 2 + focus, new_name );
+                            }
+                            tapemenuRedraw(title, true);
+                            break;
+                        }
+                        default:
+                            osdCenteredMsg(OSD_BLOCK_TYPE_ERR[Config::lang], LEVEL_WARN, 1000);
+                            break;
+                    }
+                            
+                    fseek( Tape::tape, current_pos, SEEK_SET );
+
                 } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F6) {
                     click();
                     if ( Tape::selectedBlocks.empty() ) {

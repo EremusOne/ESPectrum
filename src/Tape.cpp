@@ -312,7 +312,7 @@ void Tape::TAP_Open(string name) {
 
     string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
 
-    tape = fopen(fname.c_str(), "rb");
+    tape = fopen(fname.c_str(), "rb+");
     if (tape == NULL) {
         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
         return;
@@ -499,7 +499,7 @@ string Tape::tapeBlockReadData(int Blocknum) {
     int tapeContentIndex=0;
     int tapeBlkLen=0;
     string blktype;
-    char buf[48];
+    char buf[52];
     char fname[10];
 
     tapeContentIndex = Tape::CalcTapBlockPos(Blocknum);
@@ -569,9 +569,46 @@ string Tape::tapeBlockReadData(int Blocknum) {
 
     }
 
-    snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);
+    snprintf(buf, sizeof(buf), "%04d %s  %10s           % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);
 
     return buf;
+
+}
+
+TapeBlock::BlockType Tape::getBlockType(int Blocknum) {
+
+    int tapeContentIndex = 0;
+    int tapeBlkLen = 0;
+
+    tapeContentIndex = Tape::CalcTapBlockPos(Blocknum);
+
+    // Analyze .tap file
+    tapeBlkLen = (readByteFile(Tape::tape) | (readByteFile(Tape::tape) << 8));
+
+    // Read the flag byte from the block.
+    // If the last block is a fragmented data block, there is no flag byte, so set the flag to 255
+    // to indicate a data block.
+    uint8_t flagByte = 255;
+    if (tapeContentIndex + 2 < Tape::tapeFileSize) {
+        flagByte = readByteFile(Tape::tape);
+    }
+
+    // Process the block depending on if it is a header or a data block.
+    // Block type 0 should be a header block, but it happens that headerless blocks also
+    // have block type 0, so we need to check the block length as well.
+    if (flagByte == 0 && tapeBlkLen == 19) { // This is a header.
+        // Get the block type.
+        uint8_t blocktype = readByteFile(Tape::tape);
+        switch (blocktype) {
+            case 0: return TapeBlock::Program_header;
+            case 1: return TapeBlock::Number_array_header;
+            case 2: return TapeBlock::Character_array_header;
+            case 3: return TapeBlock::Code_header;
+        }
+        return TapeBlock::Unassigned;
+    }
+
+    return TapeBlock::Data_block;
 
 }
 
@@ -1484,4 +1521,37 @@ void Tape::moveSelectedBlocks(int targetPosition) {
     Tape::LoadTape((" " + tapeFileName).c_str());
 
     selectedBlocks.clear();
+}
+
+void Tape::renameBlock(int block, string new_name) {
+    char fname[11];
+    uint8_t header[18]; // header + checksum (without encoded block len and flag)
+
+    TapeBlock::BlockType blocktype = getBlockType(block);
+    switch( blocktype ) {
+        case TapeBlock::Program_header:
+        case TapeBlock::Number_array_header:
+        case TapeBlock::Character_array_header:
+        case TapeBlock::Code_header: {
+            long blockNameOff = CalcTapBlockPos(block) + 3; // size + flag
+            
+            // Read header
+            fseek( tape, blockNameOff, SEEK_SET );
+            fread( header, 1, sizeof( header ), tape );
+
+            // Replace name
+            sprintf(fname, "%-10.10s", new_name.c_str());
+            memmove(&header[1], fname, sizeof(fname)-1);
+
+            // Calculate checksum
+            uint8_t checksum = 0;
+            for(int i = 0; i < sizeof( header ) - 1; checksum ^= header[i++] );
+            header[17] = checksum;
+
+            // write header
+            fseek( tape, blockNameOff, SEEK_SET );
+            fwrite(header, 1, sizeof(header), tape);
+            break;
+        }
+    }
 }

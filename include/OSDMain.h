@@ -135,7 +135,7 @@ public:
     static void joyDialog(uint8_t joynum);
     static void pokeDialog();
 
-    static string input(int x, int y, string inputLabel, int maxSize );
+    static string input(int x, int y, string inputLabel, int maxSize, uint16_t ink_color, uint16_t paper_color);
 
     // Rows
     static unsigned short rowCount(string menu);

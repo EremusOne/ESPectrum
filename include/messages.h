@@ -223,6 +223,10 @@ static const char *MENU_DELETE_CURRENT_TAP_BLOCK[2] = { MENU_DELETE_CURRENT_TAP_
 #define OSD_BLOCK_SELECT_ERR_ES "No hay ning\xA3n bloque seleccionado"
 static const char *OSD_BLOCK_SELECT_ERR[2] = { OSD_BLOCK_SELECT_ERR_EN,OSD_BLOCK_SELECT_ERR_ES };
 
+#define OSD_BLOCK_TYPE_ERR_EN "Invalid block type"
+#define OSD_BLOCK_TYPE_ERR_ES "Tipo de bloque inv\xA0lido"
+static const char *OSD_BLOCK_TYPE_ERR[2] = { OSD_BLOCK_TYPE_ERR_EN,OSD_BLOCK_TYPE_ERR_ES };
+
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
     "Load (SNA,Z80,P)\t(F2) >\n"\

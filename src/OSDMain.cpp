@@ -4449,7 +4449,7 @@ void OSD::pokeDialog() {
 
 }
 
-string OSD::input(int x, int y, string inputLabel, int maxSize) {
+string OSD::input(int x, int y, string inputLabel, int maxSize, uint16_t ink_color, uint16_t paper_color) {
 
     int curObject = 0;
 
@@ -4613,16 +4613,16 @@ string OSD::input(int x, int y, string inputLabel, int maxSize) {
 
         if ((++CursorFlash & 0xF) == 0) {
             menuAt(y, x);
-            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            VIDEO::vga.setTextColor(ink_color/*zxColor(7, 1)*/, paper_color/*zxColor(5, 0)*/);
             VIDEO::vga.print((inputLabel + inputValue).c_str());
 
             if (CursorFlash > 63) {
-                VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
+                VIDEO::vga.setTextColor(paper_color/*zxColor(5, 0)*/, ink_color/*zxColor(7, 1)*/);
                 if (CursorFlash == 128) CursorFlash = 0;
             }
             VIDEO::vga.print(mode_E?"E":"L");
 
-            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            VIDEO::vga.setTextColor(ink_color/*zxColor(7, 1)*/, paper_color/*zxColor(5, 0)*/);
             VIDEO::vga.print(std::string(maxSize - inputValue.size(), ' ').c_str());
         }
 
