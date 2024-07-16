@@ -182,7 +182,6 @@ unsigned long getLong(char *buffer) {
     return result;
 }
 
-
 // Run a new file menu
 string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows) {
 
@@ -193,13 +192,14 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     // Position
     if (menu_level == 0) {
         x = (Config::aspect_16_9 ? 24 : 4);
-        y = (Config::aspect_16_9 ? 4 : 4);
+        y = (Config::aspect_16_9 ? 4 : 8);
     } else {
         x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
         y = 8 + (16 * menu_level);
     }
 
-    if ( x + mfcols * OSD_FONT_W > 52 * OSD_FONT_W ) x = ( 52 - mfcols ) * OSD_FONT_W;
+    if ( x + mfcols * OSD_FONT_W > (Config::aspect_16_9 ? 24 : 4) + 52 * OSD_FONT_W ) x = (Config::aspect_16_9 ? 24 : 4) + ( 51 - mfcols ) * OSD_FONT_W;
+    if ( y + mfrows > (Config::aspect_16_9 ? 200 : 240) - 2 * OSD_FONT_H ) y = (Config::aspect_16_9 ? 200 : 240) - ( mfrows + 2 ) * OSD_FONT_H;
 
     // Columns and Rows
     cols = mfcols;
