@@ -175,10 +175,21 @@ public:
     static bool FlashLoad();
     static void Save();
 
+    static void tapeEject();
+
     static uint32_t CalcTapBlockPos(int block);
     static uint32_t CalcTZXBlockPos(int block);    
     static string tapeBlockReadData(int Blocknum);
     static string tzxBlockReadData(int Blocknum);    
+
+    static std::vector<int> selectedBlocks;
+
+    static TapeBlock::BlockType getBlockType(int Blocknum);
+    static void selectBlockToggle(int block);
+    static bool isSelectedBlock(int block);
+    static void removeSelectedBlocks();
+    static void moveSelectedBlocks(int targetPosition);
+    static void renameBlock(int block, string new_name);
 
 private:
 

@@ -95,6 +95,8 @@ public:
 
     static void deleteFilesWithExtension(const char *folder_path, const char *extension);
 
+    static string createTmpDir();
+
     static string MountPoint;
     static bool SDReady;
 

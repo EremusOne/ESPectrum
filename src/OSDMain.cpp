@@ -437,7 +437,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if ( FileUtils::SDReady ) {
                 ESPectrum::showMemInfo("Before F2 file dialog");
-                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
+                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,17);
                 ESPectrum::showMemInfo("After F2 file dialog");
                 if (mFile != "") {
                     mFile.erase(0, 1);
@@ -498,7 +498,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             FileUtils::remountSDCardIfNeeded();
 
             if ( FileUtils::SDReady ) {
-                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
+                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,17);
 
                 FileUtils::remountSDCardIfNeeded();
 
@@ -544,13 +544,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 menu_level = 0;      
                 menu_curopt = 1;
                 // int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
-                int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
-                if (tBlock >= 0) {
-                    Tape::tapeCurBlock = tBlock;
-                    Tape::Stop();
+                while ( 1 ) {
+                    menu_saverect = true;
+                    int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
+                    if (tBlock >= 0) {
+                        Tape::tapeCurBlock = tBlock;
+                        Tape::Stop();
+                    }
+                    if ( tBlock == -2 ) {
+                        OSD::restoreBackbufferData();
+                    } else
+                        break;
                 }
             }
-
         }
         else if (KeytoESP == fabgl::VK_F8) {
             // Show / hide OnScreen Stats
@@ -717,7 +723,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             FileUtils::remountSDCardIfNeeded();
 
                             if ( FileUtils::SDReady ) {
-                                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 36, 15);
+                                string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 36, 17);
                                 if (mFile != "") {
                                     mFile.erase(0, 1);
                                     string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
@@ -800,7 +806,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             if ( FileUtils::SDReady ) {
                                 // menu_curopt = 1;
                                 // Select TAP File
-                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 15);
+                                string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 46, 17);
 
                                 FileUtils::remountSDCardIfNeeded();
 
@@ -843,27 +849,45 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             }
                         }
                         else if (tap_num == 3) {
+                            // Eject Tape
+                            click();
+                            if (Tape::tapeFileName=="none") {
+                                OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
+                                menu_saverect = false;
+                            } else {
+                                Tape::tapeEject();
+                                osdCenteredMsg(OSD_TAPE_EJECT[Config::lang], LEVEL_INFO, 1000);
+                            }
+                            menu_curopt = 3;
+                        }
+                        else if (tap_num == 4) {
                             // Tape Browser
                             if (Tape::tapeFileName=="none") {
                                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
-                                menu_curopt = 3;
+                                menu_curopt = 4;
                                 menu_saverect = false;
                             } else {
 //                                menu_level = 0;
                                 menu_saverect = true;
                                 menu_curopt = 1;
                                 // int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
-                                int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
-                                if (tBlock >= 0) {
-                                    Tape::tapeCurBlock = tBlock;
-                                    Tape::Stop();
-                                    return;
+                                while ( 1 ) {
+                                    menu_saverect = true;
+                                    int tBlock = menuTape(Tape::tapeFileName.substr(0,22));
+                                    if (tBlock >= 0) {
+                                        Tape::tapeCurBlock = tBlock;
+                                        Tape::Stop();
+                                    }
+                                    if ( tBlock == -2 ) {
+                                        OSD::restoreBackbufferData();
+                                    } else
+                                        break;
                                 }
-                                menu_curopt = 3;
+                                menu_curopt = 4;
                                 menu_saverect = false;
                             }
                         }
-                        else if (tap_num == 4) {
+                        else if (tap_num == 5) {
                             menu_level = 2;
                             menu_curopt = 1;                    
                             menu_saverect = true;
@@ -898,13 +922,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     menu_curopt = opt2;
                                     menu_saverect = false;
                                 } else {
-                                    menu_curopt = 4;
+                                    menu_curopt = 5;
                                     menu_level = 1;                                       
                                     break;
                                 }
-
                             }
-
                         }
 
                     } else {
@@ -937,7 +959,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                     if ( FileUtils::SDReady ) {
                                         menu_saverect = true;
-                                        string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang], DISK_DSKFILE, 36, 15);
+                                        string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang], DISK_DSKFILE, 46, 12);
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + "/" + FileUtils::DSK_Path + "/" + mFile;
@@ -2005,7 +2027,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         string tt = MENU_ROM_TITLE[Config::lang];
                                         tt += " (48K)";
-                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 36, 8);
+                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 46, 12);
 
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
@@ -2049,7 +2071,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         string tt = MENU_ROM_TITLE[Config::lang];
                                         tt += " (128K)";
-                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 36, 8);
+                                        string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 46, 12);
 
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
@@ -3081,7 +3103,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
     // Yes
     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
 
     // // Ruler
     // VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
@@ -3121,7 +3143,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
                     // Yes
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+                    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
                     // No
                     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
@@ -3132,7 +3154,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
                     // Yes
                     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print(Config::lang ? "  Si  " : " Yes  ");
+                    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
                     // No
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
@@ -4437,7 +4459,7 @@ void OSD::pokeDialog() {
 
 }
 
-string OSD::input(int x, int y, string inputLabel, int maxSize) {
+string OSD::input(int x, int y, string inputLabel, int maxSize, uint16_t ink_color, uint16_t paper_color) {
 
     int curObject = 0;
 
@@ -4601,16 +4623,16 @@ string OSD::input(int x, int y, string inputLabel, int maxSize) {
 
         if ((++CursorFlash & 0xF) == 0) {
             menuAt(y, x);
-            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            VIDEO::vga.setTextColor(ink_color/*zxColor(7, 1)*/, paper_color/*zxColor(5, 0)*/);
             VIDEO::vga.print((inputLabel + inputValue).c_str());
 
             if (CursorFlash > 63) {
-                VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
+                VIDEO::vga.setTextColor(paper_color/*zxColor(5, 0)*/, ink_color/*zxColor(7, 1)*/);
                 if (CursorFlash == 128) CursorFlash = 0;
             }
             VIDEO::vga.print(mode_E?"E":"L");
 
-            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            VIDEO::vga.setTextColor(ink_color/*zxColor(7, 1)*/, paper_color/*zxColor(5, 0)*/);
             VIDEO::vga.print(std::string(maxSize - inputValue.size(), ' ').c_str());
         }
 
