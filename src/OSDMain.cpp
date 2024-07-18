@@ -516,9 +516,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                     }
 
-                    Tape::tapeSaveName = tapFile;
-
                     Tape::LoadTape(mFile);
+
                     return;
                 }
             }
@@ -824,9 +823,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                     }
 
-                                    Tape::tapeSaveName = tapFile;
-
                                     Tape::LoadTape(mFile);
+
                                     return;
                                 }
                             } else {
