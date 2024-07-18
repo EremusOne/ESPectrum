@@ -235,7 +235,7 @@ void Tape::LoadTape(string mFile) {
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
 
-        if ( FileUtils::fileSize( ( FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile ).c_str() ) > 0 ) {
+        if ( FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0 ) {
             // Flashload .tap if needed
             if ((keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs")) {
 
@@ -319,9 +319,14 @@ void Tape::tapeEject() {
 
 void Tape::TAP_Open(string name) {
 
-    Tape::tapeEject();
+    Tape::Stop();
 
-    string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+    }   
+
+    string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
 
     tape = fopen(fname.c_str(), "rb+");
     if (tape == NULL) {
@@ -334,6 +339,7 @@ void Tape::TAP_Open(string name) {
     rewind(tape);
 //    if (tapeFileSize == 0) return;
 
+    tapeSaveName = fname;
     tapeFileName = name;
 
     Tape::TapeListing.clear(); // Clear TapeListing vector
@@ -1207,7 +1213,7 @@ bool Tape::FlashLoad() {
 
     if (tape == NULL) {
 
-        string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+        string fname = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
 
         tape = fopen(fname.c_str(), "rb");
         if (tape == NULL) {
@@ -1365,7 +1371,7 @@ void Tape::removeSelectedBlocks() {
         return;
     }
 
-    string filename = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+    string filename = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
 
     int blockIndex = 0;
     int tapeBlkLen = 0;
@@ -1414,15 +1420,18 @@ void Tape::removeSelectedBlocks() {
 
     fclose(tempFile);
 
-    string currentTapeName = tapeFileName;
+    Tape::Stop();
 
-    Tape::tapeEject();
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+    }   
 
     // Reemplazar el archivo original con el archivo temporal
     std::remove(filename.c_str());
     std::rename(filenameTemp.c_str(), filename.c_str());
 
-    Tape::LoadTape((" "+currentTapeName).c_str());
+    Tape::LoadTape((" "+tapeFileName).c_str());
 
     selectedBlocks.clear();
 }
@@ -1444,7 +1453,7 @@ void Tape::moveSelectedBlocks(int targetPosition) {
         return;
     }
 
-    string filename = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+    string filename = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
 
     int blockIndex = 0;
     int tapeBlkLen = 0;
@@ -1514,14 +1523,17 @@ void Tape::moveSelectedBlocks(int targetPosition) {
 
     fclose(outputFile);
 
-    string currentTapeName = tapeFileName;
+    Tape::Stop();
 
-    Tape::tapeEject();
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+    }   
 
     std::remove(filename.c_str());
     std::rename(outputFilename.c_str(), filename.c_str());
 
-    Tape::LoadTape((" " + currentTapeName).c_str());
+    Tape::LoadTape((" " + tapeFileName).c_str());
 
     selectedBlocks.clear();
 }
