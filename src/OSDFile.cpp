@@ -625,6 +625,7 @@ reset:
                             uint8_t res = msgDialog(title,msg);
 
                             if (res == DLG_YES) {
+                                if ( FileUtils::getResolvedPath( FileUtils::MountPoint + fdir + filedir ) == FileUtils::getResolvedPath( Tape::tapeSaveName ) ) Tape::tapeEject();
                                 remove(( FileUtils::MountPoint + fdir + filedir ).c_str());
                                 fd_Redraw(title, fdir, ftype);
                                 menu_saverect = true;

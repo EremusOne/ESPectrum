@@ -235,7 +235,7 @@ void Tape::LoadTape(string mFile) {
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
 
-        if ( FileUtils::fileSize( ( FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile ).c_str() ) > 0 ) {
+        if ( FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0 ) {
             // Flashload .tap if needed
             if ((keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs")) {
 
@@ -326,7 +326,7 @@ void Tape::TAP_Open(string name) {
         tape = NULL;
     }   
 
-    string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+    string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
 
     tape = fopen(fname.c_str(), "rb+");
     if (tape == NULL) {
@@ -1213,7 +1213,7 @@ bool Tape::FlashLoad() {
 
     if (tape == NULL) {
 
-        string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+        string fname = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
 
         tape = fopen(fname.c_str(), "rb");
         if (tape == NULL) {
@@ -1371,7 +1371,7 @@ void Tape::removeSelectedBlocks() {
         return;
     }
 
-    string filename = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+    string filename = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
 
     int blockIndex = 0;
     int tapeBlkLen = 0;
@@ -1453,7 +1453,7 @@ void Tape::moveSelectedBlocks(int targetPosition) {
         return;
     }
 
-    string filename = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + tapeFileName;
+    string filename = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
 
     int blockIndex = 0;
     int tapeBlkLen = 0;

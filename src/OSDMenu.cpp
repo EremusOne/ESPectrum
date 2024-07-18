@@ -757,16 +757,16 @@ int OSD::menuTape(string title) {
                             tapemenuRedraw(title);
                             click();
                         } else {
-                            PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                            PrintRow(focus, Tape::isSelectedBlock(begin_row - 2 + focus) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
                         }
                     } else if (focus < virtual_rows - 1 - 1) {
                         last_focus = focus;
                         focus++;
-                        PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
-                        PrintRow(focus - 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus - 1) ) ? IS_SELECTED : IS_NORMAL);
+                        PrintRow(focus, Tape::isSelectedBlock(begin_row - 2 + focus) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                        PrintRow(focus - 1, Tape::isSelectedBlock(begin_row - 2 + focus - 1) ? IS_SELECTED : IS_NORMAL);
                         click();
                     }
-                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F2) {
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F2 && begin_row - 1 + focus < real_rows) {
 
                     long current_pos = ftell( Tape::tape );
 
@@ -816,14 +816,19 @@ int OSD::menuTape(string title) {
                         }
                     }
                     
-                } else if (Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
+                } else if ( Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C ) {
                     click();
-                    if (Tape::tapeFileType == TAPE_FTYPE_TAP)
-                        Tape::CalcTapBlockPos(begin_row + focus - 2);
-                    else
+                    if (Tape::tapeFileType == TAPE_FTYPE_TAP) {
+                        if ( begin_row - 1 + focus < real_rows ) {
+                            Tape::CalcTapBlockPos(begin_row + focus - 2);
+                            // printf("Ret value: %d\n", begin_row + focus - 2);
+                            return (begin_row + focus - 2);
+                        }
+                    } else {
                         Tape::CalcTZXBlockPos(begin_row + focus - 2);
-                    // printf("Ret value: %d\n", begin_row + focus - 2);
-                    return (begin_row + focus - 2);
+                        // printf("Ret value: %d\n", begin_row + focus - 2);
+                        return (begin_row + focus - 2);
+                    }
                 } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
 
                     // if (Tape::tapeStatus==TAPE_LOADING) {
