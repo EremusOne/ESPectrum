@@ -412,7 +412,7 @@ void Tape::TZX_Open(string name) {
 
     FileUtils::deleteFilesWithExtension(FileUtils::MountPoint.c_str(),".tmp");
 
-    string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+    string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
 
     tape = fopen(fname.c_str(), "rb");
     if (tape == NULL) {

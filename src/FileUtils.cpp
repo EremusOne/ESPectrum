@@ -374,6 +374,17 @@ int FileUtils::getDirStats(const string& filedir, const vector<string>& filexts,
     return -1;
 }
 
+string FileUtils::getResolvedPath(const string& path) {
+    char *resolved_path = NULL;
+    if ((resolved_path = realpath(path.c_str(), resolved_path)) == NULL) {
+        printf("Error resolving path\n");
+        return "";
+    }
+    string ret = string(resolved_path);
+    free(resolved_path);
+    return ret;
+}
+
 string FileUtils::createTmpDir() {
     string tempDir = MountPoint + "/.tmp";
 

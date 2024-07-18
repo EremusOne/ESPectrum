@@ -314,6 +314,73 @@ static bool persistLoad(uint8_t slotnumber)
 
 }
 
+#ifdef PERSIST_RENAME // WIP
+static string getStringPersistCatalog()
+{
+    char buffer[33] = {0};  // Buffer to store each line, extra char for null-terminator
+
+    string catalog = "";
+
+    const std::string catalogPath = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + "catalog";
+    FILE *catalogFile = fopen(catalogPath.c_str(), "rb+");
+
+    if (!catalogFile) {
+        catalogFile = fopen(catalogPath.c_str(), "wb+");
+    }
+
+    fseek(catalogFile, 0, SEEK_END);
+    long catalogSize = ftell( catalogFile );
+
+    for(int i=1; i <= 100; i++) {
+        // Move to the correct position in the catalog file
+        if (fseek(catalogFile, (i - 1) * 32, SEEK_SET) == 0) {
+            size_t bytesRead = fread(buffer, 1, 32, catalogFile);
+
+            if ( feof( catalogFile ) || ferror( catalogFile ) ) bytesRead = 0;
+
+            buffer[bytesRead] = '\0';  // Ensure null-terminated string
+
+            int readed = bytesRead > 0;
+
+            while( bytesRead-- ) {
+                if ( buffer[ bytesRead ] != ' '  &&
+                     buffer[ bytesRead ] != '\t' &&
+                     buffer[ bytesRead ] != '\n' ) break;
+                buffer[ bytesRead ] = '\0';
+            }
+
+            if ( buffer[0] ) {
+                catalog += std::string(buffer) + "\n";
+            } else {
+                string item = (Config::lang ? "<Ranura " : "<Slot ") + to_string(i) + ">";
+                if ( !readed ) {
+                    memset( buffer, '\0', sizeof( buffer ));
+                    fwrite(buffer, 1, 32, catalogFile);
+                }
+                catalog += item + "\n";
+            }
+        }
+    }
+/*
+        std::string persistPath = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + "persist" + to_string(i);
+        struct stat buffer;
+        if (!stat((persistPath + ".sna").c_str(), &buffer)) {
+*/
+    fclose(catalogFile);
+
+    return catalog;
+}
+#else
+static string getStringPersistCatalog()
+{
+    string catalog = "";
+    for(int i=1; i <= 100; i++) {
+        catalog += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
+    }
+    return catalog;
+}
+#endif
+
 // OSD Main Loop
 void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
@@ -441,7 +508,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 ESPectrum::showMemInfo("After F2 file dialog");
                 if (mFile != "") {
                     mFile.erase(0, 1);
-                    string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
+                    string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
                     LoadSnapshot(fname,"","");
                     Config::ram_file = fname;
                     Config::last_ram_file = fname;
@@ -457,10 +524,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
             if ( FileUtils::SDReady ) {
                 // Persist Load
-                string menuload = MENU_PERSIST_LOAD[Config::lang];
-                for(int i=1; i <= 100; i++) {
-                    menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-                }
+                string menuload = MENU_PERSIST_LOAD[Config::lang] + getStringPersistCatalog();
+
                 uint8_t opt2 = menuRun(menuload);
                 if (opt2) {
                     FileUtils::remountSDCardIfNeeded();
@@ -478,10 +543,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             FileUtils::remountSDCardIfNeeded();
 
             if ( FileUtils::SDReady ) {
-                string menusave = MENU_PERSIST_SAVE[Config::lang];
-                for(int i=1; i <= 100; i++) {
-                    menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-                }
+                string menusave = MENU_PERSIST_SAVE[Config::lang] + getStringPersistCatalog();
+
                 uint8_t opt2 = menuRun(menusave);
                 if (opt2) {
                     FileUtils::remountSDCardIfNeeded();
@@ -503,7 +566,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 FileUtils::remountSDCardIfNeeded();
 
                 if (mFile != "" && FileUtils::SDReady ) {
-                    string tapFile = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile.substr(1);
+                    string tapFile = FileUtils::MountPoint + FileUtils::TAP_Path + "/" + mFile.substr(1);
 
                     struct stat stat_buf;
                     int status = stat(tapFile.c_str(), &stat_buf);
@@ -517,6 +580,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     }
 
                     Tape::LoadTape(mFile);
+
                     return;
                 }
             }
@@ -724,7 +788,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 36, 17);
                                 if (mFile != "") {
                                     mFile.erase(0, 1);
-                                    string fname = FileUtils::MountPoint + "/" + FileUtils::SNA_Path + "/" + mFile;
+                                    string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
                                     LoadSnapshot(fname,"","");
                                     Config::ram_file = fname;
                                     Config::last_ram_file = fname;
@@ -744,10 +808,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 menu_curopt = 1;
                                 menu_saverect = true;
                                 while (1) {
-                                    string menuload = MENU_PERSIST_LOAD[Config::lang];
-                                    for(int i=1; i <= 100; i++) {
-                                        menuload += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-                                    }
+                                    string menuload = MENU_PERSIST_LOAD[Config::lang] + getStringPersistCatalog();
+
                                     uint8_t opt2 = menuRun(menuload);
                                     if (opt2) {
                                         if (persistLoad(opt2)) return;
@@ -765,10 +827,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 menu_curopt = 1;
                                 menu_saverect = true;
                                 while (1) {
-                                    string menusave = MENU_PERSIST_SAVE[Config::lang];
-                                    for(int i=1; i <= 100; i++) {
-                                        menusave += (Config::lang ? "Ranura " : "Slot ") + to_string(i) + "\n";
-                                    }
+                                    string menusave = MENU_PERSIST_SAVE[Config::lang] + getStringPersistCatalog();
+
                                     uint8_t opt2 = menuRun(menusave);
                                     if (opt2) {
                                         if (persistSave(opt2)) return;
@@ -809,7 +869,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 FileUtils::remountSDCardIfNeeded();
 
                                 if (mFile != "" && FileUtils::SDReady ) {
-                                    string tapFile = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + mFile.substr(1);
+                                    string tapFile = FileUtils::MountPoint + FileUtils::TAP_Path + mFile.substr(1);
 
                                     struct stat stat_buf;
                                     int status = stat(tapFile.c_str(), &stat_buf);
@@ -823,6 +883,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     }
 
                                     Tape::LoadTape(mFile);
+
                                     return;
                                 }
                             } else {
@@ -958,7 +1019,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang], DISK_DSKFILE, 46, 12);
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
-                                            string fname = FileUtils::MountPoint + "/" + FileUtils::DSK_Path + "/" + mFile;
+                                            string fname = FileUtils::MountPoint + FileUtils::DSK_Path + mFile;
                                             ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
                                             ESPectrum::Betadisk.InsertDisk(dsk_num - 1,fname);
                                             return;
@@ -2027,7 +2088,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
-                                            string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
+                                            string fname = FileUtils::MountPoint + FileUtils::ROM_Path + mFile;
 
                                             menu_saverect = false;
 
@@ -2071,7 +2132,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                                         if (mFile != "") {
                                             mFile.erase(0, 1);
-                                            string fname = FileUtils::MountPoint + "/" + FileUtils::ROM_Path + "/" + mFile;
+                                            string fname = FileUtils::MountPoint + FileUtils::ROM_Path + mFile;
 
                                             menu_saverect = false;
 
