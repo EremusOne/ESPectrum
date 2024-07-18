@@ -13,5 +13,4 @@ downloaded_fs*.bin
 /doc/**
 /releases
 /releases/**
-
 dependencies.lock

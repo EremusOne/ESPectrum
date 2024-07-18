@@ -4601,6 +4601,7 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
 
                     struct stat stat_buf;
 
+                    printf("Tapesavename: %s\n",Tape::tapeSaveName.c_str());
                     if ( Tape::tapeSaveName == "" || Tape::tapeSaveName == "none" || !FileUtils::hasTAPextension(Tape::tapeSaveName) || stat(Tape::tapeSaveName.c_str(), &stat_buf) ) {
                         OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
                         SaveRes = DLG_NO;
