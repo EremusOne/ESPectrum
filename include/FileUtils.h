@@ -114,10 +114,6 @@ private:
 };
 
 #define MOUNT_POINT_SD "/sd"
-// #define DISK_ROM_DIR "/r"
-// #define DISK_SNA_DIR "/s"
-// #define DISK_TAP_DIR "/t"
-// #define DISK_DSK_DIR "/d"
 #define DISK_SCR_DIR "/.c"
 #define DISK_PSNA_DIR "/.p"
 #define DISK_PSNA_FILE "persist"

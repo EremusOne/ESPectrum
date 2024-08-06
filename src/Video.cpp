@@ -291,7 +291,7 @@ void VIDEO::vgataskinit(void *unused) {
 
     if (Config::videomode == 1) {
 
-        Mode = 4 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 4 : 8)) + (Config::aspect_16_9 ? 2 : 0);
+        Mode = 4 + (Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95" ? 0 : (Config::arch == "128K" ? 4 : 8)) + (Config::aspect_16_9 ? 2 : 0);
 
         Mode += Config::scanlines;
 
@@ -300,7 +300,7 @@ void VIDEO::vgataskinit(void *unused) {
 
     } else {
 
-        Mode = 16 + (Config::arch == "48K" ? 0 : (Config::arch == "128K" ? 2 : 4)) + (Config::aspect_16_9 ? 1 : 0);
+        Mode = 16 + (Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95" ? 0 : (Config::arch == "128K" ? 2 : 4)) + (Config::aspect_16_9 ? 1 : 0);
         
         OSD::scrW = vidmodes[Mode][vmodeproperties::hRes];
         OSD::scrH = vidmodes[Mode][vmodeproperties::vRes] / vidmodes[Mode][vmodeproperties::vDiv];
@@ -400,7 +400,39 @@ void VIDEO::Reset() {
         Draw_OSD43 = BottomBorder;
         DrawBorder = TopBorder_Blank;        
 
+    } else if (Config::arch == "TK90X" || Config::arch == "TK95" ) {
+
+        switch (Config::ALUTK) {
+        case 0: // Ferranti
+            tStatesPerLine = TSTATES_PER_LINE;
+            tStatesScreen = TS_SCREEN_48;
+            tStatesBorder = is169 ? TS_BORDER_360x200 : TS_BORDER_320x240;
+            break;
+        case 1: // Microdigital 50hz
+            tStatesPerLine = TSTATES_PER_LINE_TK_50;
+            tStatesScreen = TS_SCREEN_TK_50;
+            tStatesBorder = is169 ? TS_BORDER_360x200_TK_50 : TS_BORDER_320x240_TK_50;        
+            break;
+        case 2: // Microdigital 60hz
+            tStatesPerLine = TSTATES_PER_LINE_TK_60;
+            tStatesScreen = TS_SCREEN_TK_60;
+            tStatesBorder = is169 ? TS_BORDER_360x200_TK_60 : TS_BORDER_320x240_TK_60;        
+        }
+
+        if (Config::videomode == 1) {
+            VsyncFinetune[0] = is169 ? -1 : 0;
+            VsyncFinetune[1] = is169 ? 152 : 0;
+        } else {
+            VsyncFinetune[0] = is169 ? 0 : 0;
+            VsyncFinetune[1] = is169 ? 0 : 0;
+        }
+
+        Draw_OSD169 = MainScreen;
+        Draw_OSD43 = BottomBorder;
+        DrawBorder = TopBorder_Blank;        
+
     } else if (Config::arch == "128K") {
+
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = TS_SCREEN_128;
         tStatesBorder = is169 ? TS_BORDER_360x200_128 : TS_BORDER_320x240_128;        
@@ -934,7 +966,7 @@ IRAM_ATTR void VIDEO::EndFrame() {
 
     linedraw_cnt = is169 ? 4 : 24;
 
-    tstateDraw = tStatesScreen;
+    tstateDraw = tStatesScreen;/* + ESPectrum::ESPtestvar*/;
 
     if (VIDEO::snow_toggle) {
         Draw = &MainScreen_Blank_Snow;
@@ -956,7 +988,7 @@ IRAM_ATTR void VIDEO::EndFrame() {
 
     // Restart border drawing
     DrawBorder = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
-    lastBrdTstate = tStatesBorder;
+    lastBrdTstate = tStatesBorder /*+ ESPectrum::ESPtestvar*/;
     brdChange = false;
 
     framecnt++;
@@ -1010,7 +1042,7 @@ IRAM_ATTR void VIDEO::TopBorder() {
         *brdptr32++ = brd;
         *brdptr32++ = brd;
 
-        lastBrdTstate+=4;
+        lastBrdTstate += 4;
 
         brdcol_cnt++;
 
@@ -1018,7 +1050,8 @@ IRAM_ATTR void VIDEO::TopBorder() {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
             brdcol_cnt = 0;
-            lastBrdTstate += Z80Ops::is128 ? 68 : 64;
+            // lastBrdTstate += Z80Ops::is128 ? 68 : 64;
+            lastBrdTstate += Config::arch == "48K" ? 64 : 68;
             if (brdlin_cnt == (is169 ? 4 : 24)) {                                
                 DrawBorder = &MiddleBorder;
                 MiddleBorder();
@@ -1049,7 +1082,8 @@ IRAM_ATTR void VIDEO::MiddleBorder() {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);  
             brdcol_cnt = 0;          
-            lastBrdTstate += Z80Ops::is128 ? 68 : 64;            
+            // lastBrdTstate += Z80Ops::is128 ? 68 : 64;  
+            lastBrdTstate += Config::arch == "48K" ? 64 : 68;
             if (brdlin_cnt == (is169 ? 196 : 216)) {                                
                 DrawBorder = Draw_OSD43;
                 DrawBorder();
@@ -1076,7 +1110,8 @@ IRAM_ATTR void VIDEO::BottomBorder() {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
             brdcol_cnt = 0;
-            lastBrdTstate += Z80Ops::is128 ? 68 : 64;                        
+            // lastBrdTstate += Z80Ops::is128 ? 68 : 64;   
+            lastBrdTstate += Config::arch == "48K" ? 64 : 68;                                                     
             if (brdlin_cnt == (is169 ? 200 : 240)) {                
                 DrawBorder = &Border_Blank;
                 return;
@@ -1109,7 +1144,8 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD() {
             brdlin_cnt++;
             brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (is169 ? 5 : 0);
             brdcol_cnt = 0;
-            lastBrdTstate += Z80Ops::is128 ? 68 : 64;                                    
+            // lastBrdTstate += Z80Ops::is128 ? 68 : 64;  
+            lastBrdTstate += Config::arch == "48K" ? 64 : 68;                                              
             if (brdlin_cnt == 240) {
                 DrawBorder = &Border_Blank;
                 return;

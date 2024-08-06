@@ -64,6 +64,30 @@ using namespace std;
 
 extern Font Font6x8;
 
+int OSD::prepare_checkbox_menu(string &menu, string curopt) {
+
+    int mpos = -1;
+    int rpos;
+    int itempos = 0;
+    int m_curopt = 0;
+    while(1) {
+        mpos = menu.find("[",mpos + 1);
+        if (mpos == string::npos) break;
+        rpos = menu.find("]",mpos + 1) - mpos - 1;
+        itempos++;
+        string rmenu = menu.substr(mpos + 1, rpos );
+        trim(rmenu);
+        if (rmenu == curopt) { 
+            menu.replace(mpos + 1, rpos,"*");
+            m_curopt = itempos;
+        } else
+            menu.replace(mpos + 1, rpos," ");
+    }
+
+    return m_curopt;
+
+}
+
 // Get real row number for a virtual one
 unsigned short OSD::menuRealRowFor(uint8_t virtual_row_num) { return begin_row + virtual_row_num - 1; }
 
@@ -577,8 +601,8 @@ void OSD::tapemenuRedraw(string title, bool force) {
         }
 
         if ( Tape::tapeFileType == TAPE_FTYPE_TAP ) {
-            string options = Config::lang ? " ESP: Selec. | F2: Ren. | F6: Mover | F8: Borrar" : 
-                                            " SPC: Select | F2: Ren. | F6: Move | F8: Delete";
+            string options = Config::lang ? " ESP Selec. | F2 Renombrar | F6 Mover | F8 Borrar" : 
+                                            " SPC Select | F2 Rename | F6 Move | F8 Delete";
             menuAt(-1, 0);
             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
             VIDEO::vga.print((options + std::string(cols - options.size(), ' ')).c_str());

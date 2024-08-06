@@ -64,7 +64,7 @@ void CPU::reset() {
     
     CPU::latetiming = Config::AluTiming;
 
-    if (Config::arch == "48K") {
+    if (Config::arch == "48K" /*|| Config::arch == "TK90X" || Config::arch == "TK95"*/) {
         Ports::getFloatBusData = &Ports::getFloatBusData48;
         Z80Ops::is48 = true;
         Z80Ops::is128 = false;
@@ -74,6 +74,32 @@ void CPU::reset() {
         IntEnd = INT_END48 + CPU::latetiming;
         // Set emulation loop sync target
         ESPectrum::target = MICROS_PER_FRAME_48;
+    } else if (Config::arch == "TK90X" || Config::arch == "TK95") {
+
+        Z80Ops::is48 = true;
+        Z80Ops::is128 = false;
+        Z80Ops::isPentagon = false;
+
+        switch (Config::ALUTK) {
+        case 0:
+            Ports::getFloatBusData = &Ports::getFloatBusData48;
+            statesInFrame = TSTATES_PER_FRAME_48;
+            ESPectrum::target = MICROS_PER_FRAME_48;
+            break;
+        case 1:
+            Ports::getFloatBusData = &Ports::getFloatBusDataTK;
+            statesInFrame = TSTATES_PER_FRAME_TK_50;
+            ESPectrum::target = MICROS_PER_FRAME_TK_50;
+            break;
+        case 2:
+            Ports::getFloatBusData = &Ports::getFloatBusDataTK;
+            statesInFrame = TSTATES_PER_FRAME_TK_60;
+            ESPectrum::target = MICROS_PER_FRAME_TK_60;
+        }
+
+        IntStart = INT_STARTTK;
+        IntEnd = INT_ENDTK + CPU::latetiming;
+
     } else if (Config::arch == "128K") {
         Ports::getFloatBusData = &Ports::getFloatBusData128;
         Z80Ops::is48 = false;

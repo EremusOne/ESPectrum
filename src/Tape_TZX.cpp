@@ -413,6 +413,9 @@ void Tape::TZX_Open(string name) {
     FileUtils::deleteFilesWithExtension(FileUtils::MountPoint.c_str(),".tmp");
 
     string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
+    // string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+
+    // printf("Fname: %s\n",fname.c_str());
 
     tape = fopen(fname.c_str(), "rb");
     if (tape == NULL) {
@@ -431,11 +434,31 @@ void Tape::TZX_Open(string name) {
         tapeFileType = TAPE_FTYPE_EMPTY;
         return;
     }
-    
+
     // Check TZX header signature
+
+    // ERRONEA -> tzxheader[8] puede no contener \0 y eso provocar que el strcmp falle
+    // char tzxheader[8];
+    // fread(&tzxheader, 8, 1, tape);    
+    // if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+
+    // VALIDA -> strncmp se limita a comparar los caracteres indicados. Ademas el orden de los parametros en fread es mas correcto (lee 8 elementos de 1 byte).
     char tzxheader[8];
-    fread(&tzxheader, 8, 1, tape);    
-    if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+    fread(&tzxheader, 1, 8, tape);
+    if (strncmp(tzxheader,"ZXTape!\x1a", 8) != 0) {
+
+    // VALIDA -> Declarando asi tzxheader nos aseguramos que tzxheader[8] sea \0. Ademas el orden de los parametros en fread es mas correcto (lee 8 elementos de 1 byte).
+    // char tzxheader[9] = { 0 };
+    // fread(&tzxheader, 1, 8, tape);
+    // if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+
+    // // VALIDA -> fgets lee n -1 caracteres y añade un \0 a tzxheader[8].
+    // char tzxheader[9];
+    // // printf("8 -> %d\n",tzxheader[8]);
+    // fgets(tzxheader,9,tape);
+    // // printf("8 -> %d\n",tzxheader[8]);
+    // if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+
         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
         fclose(tape);
         tape = NULL;

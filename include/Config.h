@@ -73,9 +73,13 @@ public:
     static string   romSet;
     static string   romSet48;
     static string   romSet128;
+    static string   romSetTK90X;    
+    static string   romSetTK95;        
     static string   pref_arch;
     static string   pref_romSet_48;
     static string   pref_romSet_128;
+    static string   pref_romSet_TK90X;
+    static string   pref_romSet_TK95;    
     static string   ram_file;
     static string   last_ram_file;
     static uint8_t  esp32rev;
@@ -121,7 +125,11 @@ public:
 
     static bool TABasfire1; 
 
-    static bool StartMsg;    
+    static bool StartMsg;  
+
+    static uint8_t port254default; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese      
+
+    static uint8_t ALUTK; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
 
 };
 

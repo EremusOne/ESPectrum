@@ -45,7 +45,7 @@ visit https://zxespectrum.speccy.org/contacto
 #ifdef ESPECTRUM_PSRAM
 #define EMU_VERSION "  v2.0 beta "
 #else
-#define EMU_VERSION "     v1.3pr "
+#define EMU_VERSION "    v1.3pr2 "
 #endif
 
 // Error
@@ -211,24 +211,24 @@ static const char *MENU_TAP_TITLE[2] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES };
 #define MENU_DSK_TITLE_ES "Elija disco"
 static const char *MENU_DSK_TITLE[2] = { MENU_DSK_TITLE_EN,MENU_DSK_TITLE_ES };
 
-#define MENU_DELETE_TAP_BLOCKS_EN "The selected blocks will be deleted"
-#define MENU_DELETE_TAP_BLOCKS_ES "Se borrar\xA0n los bloques seleccionados"
+#define MENU_DELETE_TAP_BLOCKS_EN "Delete selection"
+#define MENU_DELETE_TAP_BLOCKS_ES "Borrar selecci\xA2n"
 static const char *MENU_DELETE_TAP_BLOCKS[2] = { MENU_DELETE_TAP_BLOCKS_EN,MENU_DELETE_TAP_BLOCKS_ES };
 
-#define MENU_DELETE_CURRENT_TAP_BLOCK_EN "The current block will be deleted"
-#define MENU_DELETE_CURRENT_TAP_BLOCK_ES "Se borrar\xA0 el bloque actual"
+#define MENU_DELETE_CURRENT_TAP_BLOCK_EN "Delete block"
+#define MENU_DELETE_CURRENT_TAP_BLOCK_ES "Borrar bloque"
 static const char *MENU_DELETE_CURRENT_TAP_BLOCK[2] = { MENU_DELETE_CURRENT_TAP_BLOCK_EN,MENU_DELETE_CURRENT_TAP_BLOCK_ES };
 
 #define OSD_BLOCK_SELECT_ERR_EN "No blocks selected"
-#define OSD_BLOCK_SELECT_ERR_ES "No hay ning\xA3n bloque seleccionado"
+#define OSD_BLOCK_SELECT_ERR_ES "Ning\xA3n bloque seleccionado"
 static const char *OSD_BLOCK_SELECT_ERR[2] = { OSD_BLOCK_SELECT_ERR_EN,OSD_BLOCK_SELECT_ERR_ES };
 
 #define OSD_BLOCK_TYPE_ERR_EN "Invalid block type"
 #define OSD_BLOCK_TYPE_ERR_ES "Tipo de bloque inv\xA0lido"
 static const char *OSD_BLOCK_TYPE_ERR[2] = { OSD_BLOCK_TYPE_ERR_EN,OSD_BLOCK_TYPE_ERR_ES };
 
-#define MENU_DELETE_CURRENT_FILE_EN "The current file will be deleted"
-#define MENU_DELETE_CURRENT_FILE_ES "Se borrar\xA0 el archivo actual"
+#define MENU_DELETE_CURRENT_FILE_EN "Delete file"
+#define MENU_DELETE_CURRENT_FILE_ES "Borrar archivo"
 static const char *MENU_DELETE_CURRENT_FILE[2] = { MENU_DELETE_CURRENT_FILE_EN,MENU_DELETE_CURRENT_FILE_ES };
 
 #define OSD_TAPE_EJECT_EN "Tape ejected"
@@ -369,11 +369,11 @@ static const char *MENU_RENDER[2] = { MENU_RENDER_EN, MENU_RENDER_ES };
 
 #define MENU_ASPECT_EN \
     "Aspect Ratio\n"\
-    "4:3 (320x240)\t[4]\n"\
+    "4:3  (320x240)\t[4]\n"\
     "16:9 (360x200)\t[1]\n"
 #define MENU_ASPECT_ES \
     "Rel. aspecto\n"\
-    "4:3 (320x240)\t[4]\n"\
+    "4:3  (320x240)\t[4]\n"\
     "16:9 (360x200)\t[1]\n"
 static const char *MENU_ASPECT[2] = { MENU_ASPECT_EN, MENU_ASPECT_ES };
 
@@ -382,11 +382,13 @@ static const char *MENU_SCANLINES[2] = { "Scanlines\n", "Scanlines\n" };
 #define MENU_RESET_EN \
     "Reset Menu\n"\
     "Soft reset\n"\
+	"TR-DOS reset \t(CF11)\n"\
     "Hard reset\t(F11)\n"\
     "ESP32 reset\t(F12)\n"
 #define MENU_RESET_ES \
     "Resetear\n"\
     "Reset parcial\n"\
+	"Reset a TR-DOS \t(CF11)\n"\
     "Reset completo\t(F11)\n"\
     "Resetear ESP32\t(F12)\n"
 static const char *MENU_RESET[2] = { MENU_RESET_EN, MENU_RESET_ES };
@@ -425,15 +427,22 @@ static const char *MENU_RGTIMINGS[2] = { "R.G. Timings\n" , "Timings R.G.\n"};
     "AY on 48K\t>\n"\
     "ALU Timing\t>\n"\
     "48K Issue 2\t>\n"\
+	"TK ALU\t>\n"\
     "Second PS/2 device\t>\n"
 #define MENU_OTHER_ES "Otros\n"\
     "AY en 48K\t>\n"\
     "Timing ULA\t>\n"\
     "48K Issue 2\t>\n"\
+	"ULA TK\t>\n"\
     "Segundo disp. PS/2\t>\n"	
 static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
 
 static const char *MENU_AY48[2] = { "AY on 48K\n" , "AY en 48K\n"};
+
+#define MENU_ALUTK "Ferranti\t[F]\n"\
+    "Microdigital 50hz\t[5]\n"\
+	"Microdigital 60hz\t[6]\n"
+static const char *MENU_ALUTK_PREF[2] = { "TK ALU\n" MENU_ALUTK, "ULA TK\n" MENU_ALUTK};
 
 #define MENU_KBD2NDPS2_EN "Device\n"\
     "None\t[N]\n"\
@@ -459,7 +468,9 @@ static const char *MENU_ISSUE2[2] = { "48K Issue 2\n", "48K Issue 2\n"};
 
 #define MENU_ARCHS "Spectrum 48K\t>\n"\
     "Spectrum 128K\t>\n"\
-	"Pentagon 128K\n"
+	"Pentagon 128K\n"\
+	"TK90X\t>\n"\
+	"TK95\t>\n"
 
 static const char *MENU_ARCH[2] = { MENU_ARCH_EN MENU_ARCHS, MENU_ARCH_ES MENU_ARCHS };
 
@@ -476,6 +487,19 @@ static const char *MENU_ARCH[2] = { MENU_ARCH_EN MENU_ARCHS, MENU_ARCH_ES MENU_A
     "ZX81+\n"\
     "Custom\n"\
 
+#define MENU_ROMSTK_EN "Select ROM\n"\
+    "v1 Spanish\n"\
+    "v1 Portuguese\n"\
+    "v2 Spanish\n"\
+    "v2 Portuguese\n"\
+    "v3 Spanish\n"\
+    "v3 Portuguese\n"\
+    "v3 English\n"	
+
+#define MENU_ROMSTK95_EN "Select ROM\n"\
+    "Spanish\n"\
+    "Portuguese\n"
+
 #define MENU_ROMS48_ES "Elija ROM\n"\
 	"48K\n"\
     "48K Espa\xA4ol\n"\
@@ -489,53 +513,90 @@ static const char *MENU_ARCH[2] = { MENU_ARCH_EN MENU_ARCHS, MENU_ARCH_ES MENU_A
     "ZX81+\n"\
     "Custom\n"\
 
+#define MENU_ROMSTK_ES "Elija ROM\n"\
+    "v1 Espa\xA4ol\n"\
+    "v1 Portugu\x82s\n"\
+    "v2 Espa\xA4ol\n"\
+    "v2 Portugu\x82s\n"\
+    "v3 Espa\xA4ol\n"\
+    "v3 Portugu\x82s\n"\
+    "v3 Ingl\x82s\n"
+
+#define MENU_ROMSTK95_ES "Elija ROM\n"\
+    "Espa\xA4ol\n"\
+    "Portugu\x82s\n"
+
 static const char *MENU_ROMS48[2] = { MENU_ROMS48_EN, MENU_ROMS48_ES };
 static const char *MENU_ROMS128[2] = { MENU_ROMS128_EN, MENU_ROMS128_ES };
+static const char *MENU_ROMSTK[2] = { MENU_ROMSTK_EN, MENU_ROMSTK_ES };
+static const char *MENU_ROMSTK95[2] = { MENU_ROMSTK95_EN, MENU_ROMSTK95_ES };
 
 #define MENU_ARCHS_PREF "Spectrum 48K\t[4]\n"\
     "Spectrum 128K\t[1]\n"\
-	"Pentagon 128K\t[P]\n"
+	"Pentagon 128K\t[P]\n"\
+	"TK90X\t[T]\n"\
+	"TK95\t[9]\n"
 
 static const char *MENU_ARCH_PREF[2] = { "Preferred machine\n" MENU_ARCHS_PREF "Last used\t[L]\n", "Modelo preferido\n" MENU_ARCHS_PREF "Ultimo utilizado\t[L]\n"};
 
 #define MENU_ROMS_PREF "Spectrum 48K\t>\n"\
-    "Spectrum 128K\t>\n"
+    "Spectrum 128K\t>\n"\
+	"TK90X\t>\n"\
+	"TK95\t>\n"	
 
 static const char *MENU_ROM_PREF[2] = { "Preferred ROM\n" MENU_ROMS_PREF, "ROM preferida\n" MENU_ROMS_PREF};
 
-#define MENU_ROMS48_PREF_EN "Select ROM\n"\
-	"48K\t[48K  ]\n"\
+#define MENU_ROMS48_PREF_EN	"48K\t[48K]\n"\
     "48K Spanish\t[48Kes]\n"\
-    "Custom\t[48Kcs]\n"\
-	"Last used\t[Last ]\n"
+    "Custom\t[48Kcs]\n"
 
-#define MENU_ROMS128_PREF_EN "Select ROM\n"\
-	"128K\t[128K  ]\n"\
+#define MENU_ROMSTK90X_PREF_EN "v1 Spanish\t[v1es ]\n"\
+    "v1 Portuguese\t[v1pt ]\n"\
+	"v2 Spanish\t[v2es ]\n"\
+    "v2 Portuguese\t[v2pt ]\n"\
+	"v3 Spanish\t[v3es ]\n"\
+    "v3 Portuguese\t[v3pt ]\n"\
+    "v3 English\t[v3en ]\n"	
+
+#define MENU_ROMSTK95_PREF_EN "Spanish\t[95es ]\n"\
+    "Portuguese\t[95pt ]\n"
+
+#define MENU_ROMS128_PREF_EN "128K\t[128K]\n"\
     "128K Spanish\t[128Kes]\n"\
-	"+2\t[+2    ]\n"\
-    "+2 Spanish\t[+2es  ]\n"\
-    "ZX81+\t[ZX81+ ]\n"\
-    "Custom\t[128Kcs]\n"\
-	"Last used\t[Last  ]\n"	
+	"+2\t[+2]\n"\
+    "+2 Spanish\t[+2es]\n"\
+    "ZX81+\t[ZX81+]\n"\
+    "Custom\t[128Kcs]\n"
 
-#define MENU_ROMS48_PREF_ES "Elija ROM\n"\
-	"48K\t[48K  ]\n"\
+#define MENU_ROMS48_PREF_ES	"48K\t[48K]\n"\
     "48K Espa\xA4ol\t[48Kes]\n"\
-    "Custom\t[48Kcs]\n"\
-	"Ultima usada\t[Last ]\n"
+    "Custom\t[48Kcs]\n"
 
-#define MENU_ROMS128_PREF_ES "Elija ROM\n"\
-	"128K\t[128K  ]\n"\
+#define MENU_ROMSTK90X_PREF_ES "v1 Espa\xA4ol\t[v1es ]\n"\
+    "v1 Portugu\x82s\t[v1pt ]\n"\
+    "v2 Espa\xA4ol\t[v2es ]\n"\
+    "v2 Portugu\x82s\t[v2pt ]\n"\
+    "v3 Espa\xA4ol\t[v3es ]\n"\
+    "v3 Portugu\x82s\t[v3pt ]\n"\
+    "v3 Ingl\x82s\t[v3en ]\n"	
+
+#define MENU_ROMSTK95_PREF_ES "Espa\xA4ol\t[95es ]\n"\
+    "Portugu\x82s\t[95pt ]\n"
+
+#define MENU_ROMS128_PREF_ES "128K\t[128K]\n"\
     "128K Espa\xA4ol\t[128Kes]\n"\
-	"+2\t[+2    ]\n"\
-    "+2 Espa\xA4ol\t[+2es  ]\n"\
-    "ZX81+\t[ZX81+ ]\n"\
-    "Custom\t[128Kcs]\n"\
-	"Ultima usada\t[Last  ]\n"
+	"+2\t[+2]\n"\
+    "+2 Espa\xA4ol\t[+2es]\n"\
+    "ZX81+\t[ZX81+]\n"\
+    "Custom\t[128Kcs]\n"
 
-static const char *MENU_ROM_PREF_48[2] = { MENU_ROMS48_PREF_EN, MENU_ROMS48_PREF_ES };
+static const char *MENU_ROM_PREF_48[2] = {  "Select ROM\n" MENU_ROMS48_PREF_EN "Last used\t[Last]\n", "Elija ROM\n" MENU_ROMS48_PREF_ES "Ultima usada\t[Last]\n"};
 
-static const char *MENU_ROM_PREF_128[2] = { MENU_ROMS128_PREF_EN, MENU_ROMS128_PREF_ES };
+static const char *MENU_ROM_PREF_TK90X[2] = {  "Select ROM\n" MENU_ROMSTK90X_PREF_EN "Last used\t[Last ]\n", "Elija ROM\n" MENU_ROMSTK90X_PREF_ES "Ultima usada\t[Last ]\n"};
+
+static const char *MENU_ROM_PREF_128[2] = {  "Select ROM\n" MENU_ROMS128_PREF_EN "Last used\t[Last]\n", "Elija ROM\n" MENU_ROMS128_PREF_ES "Ultima usada\t[Last]\n" };
+
+static const char *MENU_ROM_PREF_TK95[2] = {  "Select ROM\n" MENU_ROMSTK95_PREF_EN"Last used\t[Last ]\n", "Elija ROM\n" MENU_ROMSTK95_PREF_ES "Ultima usada\t[Last ]\n" };
 
 #define MENU_INTERFACE_LANG_EN "Language\n"\
     "English\t[ ]\n"\
@@ -809,9 +870,10 @@ static const char *AboutMsg[2][9] = {
     " [F12]        Reset ESP32\n"\
     " [CTRL+F1]    Hardware info\n"\
     " [CTRL+F2]    Turbo mode\n"\
-    " [CTRL+F5-F7] Center CRT Screen\n"\
+    " [CTRL+F5-F8] Center CRT Screen\n"\
     " [CTRL+F9]    Input poke\n"\
     " [CTRL+F10]   NMI\n"\
+    " [CTRL+F11]   Reset to TR-DOS\n"\
     " [Pause]      Pause\n"\
     " [PrtScr]     BMP capture (folder /.c)\n"
 
@@ -833,9 +895,10 @@ static const char *AboutMsg[2][9] = {
     " [F12]        Resetear ESP32\n"\
     " [CTRL+F1]    Info hardware\n"\
     " [CTRL+F2]    Modo turbo\n"\
-    " [CTRL+F5-F7] Centrar pantalla CRT\n"\
+    " [CTRL+F5-F8] Centrar pantalla CRT\n"\
     " [CTRL+F9]    Introducir poke\n"\
     " [CTRL+F10]   NMI\n"\
+    " [CTRL+F11]   Reset a TR-DOS\n"\
     " [Pause]      Pausa\n"\
     " [ImpPant]    Captura BMP (Carpeta /.c)\n"
 
@@ -851,6 +914,7 @@ static const char *AboutMsg[2][9] = {
     " [9-0]     Volume down-up\n"\
     " [Q]       Hard reset\n"\
     " [W]       Reset ESP32\n"\
+    " [R]       Reset to TR-DOS\n"\
     " [I]       Hardware info\n"\
     " [T]       Turbo mode\n"\
     " [Z,X,C,V] Center CRT Screen\n"\
@@ -871,7 +935,8 @@ static const char *AboutMsg[2][9] = {
     " [9-0]     Bajar-Subir volumen\n"\
     " [Q]       Reset completo\n"\
     " [W]       Resetear ESP32\n"\
-    " [I]       Info hardware\n"\
+	" [R]       Reset a TR-DOS\n"\
+	" [I]       Info hardware\n"\
     " [T]       Modo turbo\n"\
     " [Z,X,C,V] Centrar pantalla CRT\n"\
     " [O]       Introducir poke\n"\

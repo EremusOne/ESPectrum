@@ -40,15 +40,21 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 
 #define TSTATES_PER_FRAME_48 69888
+#define TSTATES_PER_FRAME_TK_50 71136
+#define TSTATES_PER_FRAME_TK_60 59736
 #define TSTATES_PER_FRAME_128 70908
 #define TSTATES_PER_FRAME_PENTAGON 71680
 
 #define MICROS_PER_FRAME_48 19968
+#define MICROS_PER_FRAME_TK_50 19895
+#define MICROS_PER_FRAME_TK_60 16707
 #define MICROS_PER_FRAME_128 19992
 #define MICROS_PER_FRAME_PENTAGON 20480
 
 #define INT_START48 0
 #define INT_END48 32
+#define INT_STARTTK 0
+#define INT_ENDTK 32
 #define INT_START128 0
 #define INT_END128 36 // 35 in real +2 and Weiv's Spectramine. I'll have to check those numbers
 #define INT_START_PENTAGON 0

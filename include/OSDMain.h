@@ -65,6 +65,10 @@ using namespace std;
 #define DLG_YES 1
 #define DLG_NO 2
 
+// File dialog
+
+#define MAXSEARCHLEN 8
+
 // OSD Interface
 class OSD {
 
@@ -87,6 +91,8 @@ public:
     static void osdAt(uint8_t row, uint8_t col);
     static void drawOSD(bool bottom_info);
     static void drawStats();
+    static int  prepare_checkbox_menu(string &menu, string curopt);
+    static void pref_rom_menu();
     static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL);
     static void HWInfo();
 

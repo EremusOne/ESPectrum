@@ -38,6 +38,8 @@ visit https://zxespectrum.speccy.org/contacto
 #include <stddef.h>
 #include "esp_heap_caps.h"
 
+#include <cstring>
+
 using namespace std;
 
 uint8_t* MemESP::rom[5];
@@ -94,6 +96,10 @@ bool MemESP::Init() {
 
 void MemESP::Reset() {
 
+    // Set memory to 0
+    for (int i=0; i < 8; i++)
+        memset(MemESP::ram[i],0,0x4000);
+
     MemESP::romInUse = 0;
     MemESP::bankLatch = 0;
     MemESP::videoLatch = 0;
@@ -109,6 +115,6 @@ void MemESP::Reset() {
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
 
-    MemESP::pagingLock = Config::arch == "48K" ? 1 : 0;
+    MemESP::pagingLock = Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95" ? 1 : 0;
 
 }

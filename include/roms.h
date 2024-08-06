@@ -46,6 +46,13 @@ visit https://zxespectrum.speccy.org/contacto
 #include "roms/rom128Kcustom.h"
 #include "roms/S128_ZX81+_ROM.h"
 #include "roms/rompentagon128k.h"
+#include "roms/romTK90X_v1.h"
+#include "roms/romTK90X_v2.h"
+#include "roms/romTK90X_v3es.h"
+#include "roms/romTK90X_v3pt.h"
+#include "roms/romTK90X_v3en.h"
+#include "roms/romTK95ES.h"
 #include "roms/trdos.h"
+// #include "roms/romCBI95.h"
 
 #endif

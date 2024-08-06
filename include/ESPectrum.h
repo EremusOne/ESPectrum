@@ -43,20 +43,52 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
+// For reference / calcs
+// #define TSTATES_PER_FRAME_48 69888
+// #define TSTATES_PER_FRAME_TK_50 71136
+// #define TSTATES_PER_FRAME_TK_60 59736
+// #define TSTATES_PER_FRAME_128 70908
+// #define TSTATES_PER_FRAME_PENTAGON 71680
+// #define MICROS_PER_FRAME_48 19968
+// #define MICROS_PER_FRAME_TK_50 19895
+// #define MICROS_PER_FRAME_TK_60 16707
+// #define MICROS_PER_FRAME_128 19992
+// #define MICROS_PER_FRAME_PENTAGON 20480
+
 #define ESP_AUDIO_OVERSAMPLES_48 4368
 #define ESP_AUDIO_FREQ_48 31250 // In 48K calcs are perfect :) -> ESP_AUDIO_SAMPLES_48 * 50,0801282 frames per second = 31250 Hz
 #define ESP_AUDIO_SAMPLES_48  624
 #define ESP_AUDIO_SAMPLES_DIV_48  7
+#define ESP_AUDIO_AY_DIV_48  112
+#define ESP_AUDIO_OVERSAMPLES_DIV_48  16
+
+#define ESP_AUDIO_OVERSAMPLES_TK_50 3744
+#define ESP_AUDIO_FREQ_TK_50 31365 // ESP_AUDIO_SAMPLES_TK_50 * 50,2638854 frames per second = 31364,6645 Hz
+#define ESP_AUDIO_SAMPLES_TK_50  624
+#define ESP_AUDIO_SAMPLES_DIV_TK_50  6
+#define ESP_AUDIO_AY_DIV_TK_50  114
+#define ESP_AUDIO_OVERSAMPLES_DIV_TK_50 19
+
+#define ESP_AUDIO_OVERSAMPLES_TK_60 3144
+#define ESP_AUDIO_FREQ_TK_60 31365 // ESP_AUDIO_SAMPLES_TK_60 * 59,856887 frames per second = 31365,0088 Hz
+#define ESP_AUDIO_SAMPLES_TK_60  524
+#define ESP_AUDIO_SAMPLES_DIV_TK_60  6
+#define ESP_AUDIO_AY_DIV_TK_60  114
+#define ESP_AUDIO_OVERSAMPLES_DIV_TK_60 19
 
 #define ESP_AUDIO_OVERSAMPLES_128 3732
 #define ESP_AUDIO_FREQ_128 31112 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz. 
 #define ESP_AUDIO_SAMPLES_128 622
 #define ESP_AUDIO_SAMPLES_DIV_128  6
+#define ESP_AUDIO_AY_DIV_128  114
+#define ESP_AUDIO_OVERSAMPLES_DIV_128 19
 
 #define ESP_AUDIO_OVERSAMPLES_PENTAGON 4480
 #define ESP_AUDIO_FREQ_PENTAGON 31250 // ESP_AUDIO_SAMPLES_PENTAGON * 48,828125 frames per second = 31250 Hz
 #define ESP_AUDIO_SAMPLES_PENTAGON  640
 #define ESP_AUDIO_SAMPLES_DIV_PENTAGON  7
+#define ESP_AUDIO_AY_DIV_PENTAGON  112
+#define ESP_AUDIO_OVERSAMPLES_DIV_PENTAGON 19
 
 #define ESP_VOLUME_DEFAULT -8
 #define ESP_VOLUME_MAX 0
@@ -87,6 +119,8 @@ public:
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_PENTAGON];
     static uint32_t* overSamplebuf;
     static unsigned char audioSampleDivider;
+    static unsigned char audioAYDivider;    
+    static unsigned char audioOverSampleDivider;    
     static signed char aud_volume;
     static uint32_t audbufcnt;
     static uint32_t audbufcntover;    

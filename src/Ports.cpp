@@ -81,6 +81,24 @@ uint8_t Ports::getFloatBusData48() {
 
 }
 
+uint8_t Ports::getFloatBusDataTK() {
+
+    unsigned int currentTstates = CPU::tstates;
+
+	unsigned int line = (currentTstates / 228) - (Config::ALUTK == 1 ? 64 : 38);
+	if (line >= 192) return 0xFF;
+
+	unsigned char halfpix = (currentTstates % 228) - 99;
+	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
+
+    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
+    
+    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
+
+    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+
+}
+
 uint8_t Ports::getFloatBusData128() {
 
     unsigned int currentTstates = CPU::tstates - 1;
@@ -99,6 +117,45 @@ uint8_t Ports::getFloatBusData128() {
 
 }
 
+const uint8_t contention2[8] = {6, 6, 5, 4, 3, 2, 1, 0};
+const uint8_t contention3[129] = {
+    6,  6,  12, 12, 11, 10, 9,  8,  7,  6,  12, 12, 11, 10, 9,  8,  7,  6,  12,
+    12, 11, 10, 9,  8,  7,  6,  12, 12, 11, 10, 9,  8,  7,  6,  12, 12, 11, 10,
+    9,  8,  7,  6,  12, 12, 11, 10, 9,  8,  7,  6,  12, 12, 11, 10, 9,  8,  7,
+    6,  12, 12, 11, 10, 9,  8,  7,  6,  12, 12, 11, 10, 9,  8,  7,  6,  12, 12,
+    11, 10, 9,  8,  7,  6,  12, 12, 11, 10, 9,  8,  7,  6,  12, 12, 11, 10, 9,
+    8,  7,  6,  12, 12, 11, 10, 9,  8,  7,  6,  12, 12, 11, 10, 9,  8,  7,  6,
+    12, 12, 11, 10, 9,  8,  7,  6,  6,  6,  5,  4,  3,  2,  1};
+
+uint8_t tkIOcon(uint16_t a) {
+
+    uint32_t t = (CPU::tstates % 228) - 93;
+	uint32_t l = (CPU::tstates / 228) - (Config::ALUTK == 1 ? 64 : 38);
+
+    if (t >= 228) {
+        t -= 228;
+        l++;
+        if (l >= (Config::ALUTK == 1 ? 312 : 262)) l = 0;
+    }
+
+    if (l < 192) {
+        if ((a & 0xc000) == 0x4000) {
+            if (t < 129) {
+                return contention3[t];
+            }
+        } else {
+            if (a & 0x1)
+                return 0;
+            else if (t < 128) {
+                return contention2[t & 07];
+            }
+        }
+    }
+
+    return 0;
+
+}
+
 IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
     uint8_t data;
@@ -109,9 +166,13 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
     // ULA PORT    
     if ((address & 0x0001) == 0) {
 
-        VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
+        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+            VIDEO::Draw( 3 + tkIOcon(address), false);
+        } else {
+            VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
+        }
 
-        data = 0xbf; // default port value is 0xBF.
+        data = Config::port254default; // For TK90X spanish and rest of machines default port value is 0xBF. For TK90X portuguese is 0x3f.
 
         uint8_t portHigh = ~(address >> 8) & 0xff;
         for (int row = 0, mask = 0x01; row < 8; row++, mask <<= 1) {
@@ -140,7 +201,10 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
     } else {
 
-        ioContentionLate(MemESP::ramContended[rambank]);
+        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+            VIDEO::Draw( 3 + tkIOcon(address), false);
+        } else
+            ioContentionLate(MemESP::ramContended[rambank]);
 
         // The default port value is 0xFF.
         data = 0xff;
@@ -291,7 +355,11 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             
             VIDEO::brdChange = true;
             
-            if (!Z80Ops::isPentagon) VIDEO::Draw(0,true); // Seems not needed in Pentagon
+            if (!Z80Ops::isPentagon) 
+                if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0)
+                    VIDEO::Draw( tkIOcon(address), false);
+                else            
+                    VIDEO::Draw(0,true); // Seems not needed in Pentagon
 
             VIDEO::DrawBorder();
 
@@ -325,12 +393,18 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                 AySound::setRegisterData(data);
             }
 
+            if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+                VIDEO::Draw( 3 + tkIOcon(address), false);
+            } else
             VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
             
             return;
 
         }
 
+        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+            VIDEO::Draw( 3 + tkIOcon(address), false);
+        } else
         VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
 
     } else {
@@ -345,6 +419,9 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                 AySound::setRegisterData(data);
             }
 
+            if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+                VIDEO::Draw( 3 + tkIOcon(address), false);
+            } else
             ioContentionLate(MemESP::ramContended[rambank]);
 
             return;
@@ -381,8 +458,10 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         }
 
+        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+            VIDEO::Draw( 3 + tkIOcon(address), false);
+        } else
         ioContentionLate(MemESP::ramContended[rambank]);
-
 
     }
 

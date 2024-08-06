@@ -31,6 +31,7 @@
 #include "FileUtils.h"
 #include "OSDMain.h"
 #include "messages.h"
+// #include "Snapshot.h"
 
 // #pragma GCC optimize("O3")
 
@@ -929,13 +930,7 @@ IRAM_ATTR void Z80::check_trdos() {
 
         }
 
-    }
-
-}
-
-IRAM_ATTR void Z80::check_trdos_unpage() {
-
-    if (ESPectrum::trdos) {
+    } else {
 
         if (REG_PCh >= 0x40) {                
 
@@ -949,18 +944,38 @@ IRAM_ATTR void Z80::check_trdos_unpage() {
 
         }
 
-    } else if (REG_PCh == 0x3D) {
-
-            // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
-            if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
-                MemESP::romInUse = 4;
-                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-                ESPectrum::trdos = true;                        
-            }
-
     }
 
 }
+
+// IRAM_ATTR void Z80::check_trdos_unpage() {
+
+//     if (ESPectrum::trdos) {
+
+//         if (REG_PCh >= 0x40) {                
+
+//             if (Z80Ops::is48)
+//                 MemESP::romInUse = 0;
+//             else
+//                 MemESP::romInUse = MemESP::romLatch;
+            
+//             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+//             ESPectrum::trdos = false;
+
+//         }
+
+//     } else if (REG_PCh == 0x3D) {
+
+//             // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
+//             if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
+//                 MemESP::romInUse = 4;
+//                 MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+//                 ESPectrum::trdos = true;                        
+//             }
+
+//     }
+
+// }
 
 //Interrupción
 /* Desglose de la interrupción, según el modo:
@@ -994,8 +1009,8 @@ void Z80::interrupt(void) {
         
         REG_PC = Z80Ops::peek16((regI << 8) | 0xff); // +6 t-estados
 
-        check_trdos_unpage();
-
+        check_trdos();
+        // check_trdos_unpage();
 
     } else {
         REG_PC = 0x0038;
@@ -2322,7 +2337,8 @@ void Z80::decodeOpcodec0()
     if ((sz5h3pnFlags & ZERO_MASK) == 0) {
         REG_PC = REG_WZ = pop();
 
-        check_trdos_unpage();
+        check_trdos();
+        // check_trdos_unpage();
 
     }
     
@@ -2400,7 +2416,8 @@ void Z80::decodeOpcodec8()
     if ((sz5h3pnFlags & ZERO_MASK) != 0) {
         REG_PC = REG_WZ = pop();
 
-        check_trdos_unpage();
+        check_trdos();
+        // check_trdos_unpage();
 
     }
 
@@ -2410,7 +2427,8 @@ void Z80::decodeOpcodec9()
 { /* RET */
     REG_PC = REG_WZ = pop();
 
-    check_trdos_unpage();
+    check_trdos();
+    // check_trdos_unpage();
 
 }
 

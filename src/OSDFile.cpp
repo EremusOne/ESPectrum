@@ -205,10 +205,15 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     cols = mfcols;
     mf_rows = mfrows + (Config::aspect_16_9 ? 0 : 1);
 
+    // Adjust begin_row & focus in case of values doesn't fit in current dialog size 
     // printf("Focus: %d, Begin_row: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) mf_rows);
     if (FileUtils::fileTypes[ftype].focus > mf_rows - 1) {
         FileUtils::fileTypes[ftype].begin_row += FileUtils::fileTypes[ftype].focus - (mf_rows - 1);
         FileUtils::fileTypes[ftype].focus = mf_rows - 1;
+    } else
+    if (FileUtils::fileTypes[ftype].focus + (FileUtils::fileTypes[ftype].begin_row - 2) < mf_rows) {
+        FileUtils::fileTypes[ftype].focus += FileUtils::fileTypes[ftype].begin_row - 2;
+        FileUtils::fileTypes[ftype].begin_row = 2;
     }
 
     // Size
@@ -230,12 +235,28 @@ reset:
         VIDEO::vga.print(std::string(cols, ' ').c_str());
     }
 
+    // Draw shortcut help
+    string StatusBar = " ";
+    if ( ftype == DISK_TAPFILE ) // Dirty hack
+        StatusBar += Config::lang ? "F2 Nuevo | " : "F2 New | ";
+    StatusBar += Config::lang ? "F3 Buscar | F8 Borrar" : "F3 Find | F8 Delete";
+
+    if (cols > (StatusBar.length() + 11 + 2)) { // 11 from elements counter + 2 from borders
+        StatusBar += std::string(cols - StatusBar.length() - 12, ' ');
+    } else {
+        StatusBar = std::string(cols - 12, ' ');
+    }
+
     // Print status bar
     menuAt(row, 0);
     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-    VIDEO::vga.print(std::string(cols, ' ').c_str());    
 
-    // char fsessid[32];
+    if (FileUtils::fileTypes[ftype].fdMode)
+        VIDEO::vga.print(std::string(cols, ' ').c_str());
+    else {    
+        VIDEO::vga.print(StatusBar.c_str());
+        VIDEO::vga.print(std::string(12, ' ').c_str());        
+    }
 
     // fdSearchRefresh = true;
 
@@ -247,22 +268,6 @@ reset:
 
         reIndex = false;
         string filedir = FileUtils::MountPoint + fdir;
-
-        // // Get / Create sessid
-        // bool sessid_ok = false;
-        // if (stat((filedir + ".sessid").c_str(), &stat_buf) == 0) {
-        //     dirfile = fopen((filedir + ".sessid").c_str(), "r");
-        //     fgets(fsessid, sizeof(fsessid), dirfile);
-        //     printf("FSessId: %s Sessid: %u\n",fsessid,ESPectrum::sessid);
-        //     if (stoul(fsessid) == ESPectrum::sessid) sessid_ok = true;
-        // }
-
-        // if (!sessid_ok) {
-        //     dirfile = fopen((filedir + ".sessid").c_str(), "w");
-        //     fputs(to_string(ESPectrum::sessid).c_str(),dirfile);
-        // }
-
-        // fclose(dirfile);
 
         std::vector<std::string> filexts;
         size_t pos = 0;
@@ -322,7 +327,7 @@ reset:
         ESPectrum::showMemInfo("file dialog: after checking dir");
 
         // Force reindex (for testing)
-        reIndex = ESPectrum::ESPtestvar ? true : reIndex;
+        // reIndex = ESPectrum::ESPtestvar ? true : reIndex;
 
         // There was no index or hashes are different: reIndex
         if (reIndex) {
@@ -390,6 +395,11 @@ reset:
         }
 
         if (FileUtils::fileTypes[ftype].fdMode) {
+
+            // Clean Status Bar
+            menuAt(row, 0);
+            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            VIDEO::vga.print(std::string(StatusBar.length(), ' ').c_str());
 
             // Recalc items number
             long prevpos = ftell(dirfile);
@@ -477,15 +487,16 @@ reset:
 
                 unsigned int elem = FileUtils::fileTypes[ftype].fdMode ? fdSearchElements : elements;
                 if (elem) {
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
+                    // menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
+                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - 12);
                     char elements_txt[13];
                     int nitem = (FileUtils::fileTypes[ftype].begin_row + FileUtils::fileTypes[ftype].focus ) - (4 + ndirs) + (fdir.length() == 1);
                     snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elem);
                     VIDEO::vga.print(std::string(12 - strlen(elements_txt), ' ').c_str());
                     VIDEO::vga.print(elements_txt);
                 } else {
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - 13);
-                    VIDEO::vga.print("             ");
+                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - 12);
+                    VIDEO::vga.print(std::string(12,' ').c_str());
                 }
 
                 if (ESPectrum::readKbd(&Menukey)) {
@@ -496,7 +507,7 @@ reset:
                     if (((Menukey.vk >= fabgl::VK_a) && (Menukey.vk <= fabgl::VK_Z)) || Menukey.vk == fabgl::VK_SPACE || ((Menukey.vk >= fabgl::VK_0) && (Menukey.vk <= fabgl::VK_9))) {
 
                         int fsearch;
-                        if (Menukey.vk==fabgl::VK_SPACE)
+                        if (Menukey.vk==fabgl::VK_SPACE && FileUtils::fileTypes[ftype].fdMode)
                             fsearch = ASCII_SPC;
                         else if (Menukey.vk<=fabgl::VK_9)
                             fsearch = Menukey.vk + 46;
@@ -507,7 +518,7 @@ reset:
 
                         if (FileUtils::fileTypes[ftype].fdMode) {
 
-                            if (FileUtils::fileTypes[ftype].fileSearch.length()<16) {
+                            if (FileUtils::fileTypes[ftype].fileSearch.length() < MAXSEARCHLEN) {
                                 FileUtils::fileTypes[ftype].fileSearch += char(fsearch);
                                 fdSearchRefresh = true;
                                 click();
@@ -555,12 +566,12 @@ reset:
                             }
                         }
 
-                    } else if (Menukey.vk == fabgl::VK_F2 && 
-                                ftype == DISK_TAPFILE // Dirty hack
-                              ) {
+                    } else if (Menukey.vk == fabgl::VK_F2 && ftype == DISK_TAPFILE) {  // Dirty hack
+
                         string new_tap = OSD::input( 1, mfrows + (Config::aspect_16_9 ? 0 : 1), Config::lang ? "Nomb: " : "Name: ", 30, zxColor(7,1), zxColor(5,0) );
 
                         if ( new_tap != "" ) {
+
                             fclose(dirfile);
                             dirfile = NULL;
 
@@ -569,9 +580,11 @@ reset:
                             return "S" + new_tap + ".tap";
 
                         } else {
+
                             menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                             VIDEO::vga.print("      " "                               ");
+
                         }
 
 //                        fd_Redraw(title, fdir, ftype);
@@ -580,11 +593,15 @@ reset:
 
                         FileUtils::fileTypes[ftype].fdMode ^= 1;
                             
-                        menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
-                        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                        VIDEO::vga.print( ftype == DISK_TAPFILE ? "            " "                      " : "                      " );
-
                         if (FileUtils::fileTypes[ftype].fdMode) {
+
+                            // Clean status bar
+                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 0);
+                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            // VIDEO::vga.print( ftype == DISK_TAPFILE ? "            " "                      " : "                      " );
+                            // VIDEO::vga.print(std::string(cols, ' ').c_str());
+                            VIDEO::vga.print(std::string(StatusBar.length(), ' ').c_str());
+
                             fdCursorFlash = 63;
 
                             // menuAt(mfrows + (Config::aspect_letterbox ? 0 : 1), 1);
@@ -599,6 +616,13 @@ reset:
                             fdSearchRefresh = FileUtils::fileTypes[ftype].fileSearch != "";
 
                         } else {
+
+                            // Restore status bar
+                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 0);
+                            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            // VIDEO::vga.print( ftype == DISK_TAPFILE ? "            " "                      " : "                      " );
+                            VIDEO::vga.print(StatusBar.c_str());
+
                             if (FileUtils::fileTypes[ftype].fileSearch != "") {
                                 // FileUtils::fileTypes[ftype].fileSearch="";
                                 real_rows = (dirfilesize / FILENAMELEN) + 2; // Add 2 for title and status bar        
@@ -742,7 +766,14 @@ reset:
 
                             rtrim(filedir);
                             click();
-                            return (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B ? "R" : "S") + filedir;
+
+                            if ((Menukey.CTRL && Menukey.vk == fabgl::VK_RETURN) || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C)
+                                return "S" + filedir;
+                            else
+                                return "R" + filedir;
+                            
+                            // return (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B ? "R" : "S") + filedir;
+
                         }
 
                     } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
@@ -762,7 +793,7 @@ reset:
 
             }
 
-            // TO DO: SCROLL FOCUSED LINE IF SIGNALED
+            // Scroll focused line if signaled
             if (timeStartScroll == 200) {
                 timeScroll++;
                 if (timeScroll == 50) {  
@@ -783,9 +814,9 @@ reset:
                         VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
                         if (fdCursorFlash == 128) fdCursorFlash = 0;
                     }
-                    VIDEO::vga.print("K");
+                    VIDEO::vga.print("L");
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                    VIDEO::vga.print(std::string(16 - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+                    VIDEO::vga.print(std::string(MAXSEARCHLEN - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
                 }
 
                 if (fdSearchRefresh) {
@@ -831,14 +862,20 @@ reset:
                     fdSearchRefresh = false;
                 }
 
-            } else {
-                menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
-                VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                if ( ftype == DISK_TAPFILE ) { // Dirty hack
-                    VIDEO::vga.print(Config::lang ? "F2: Nuevo | " : "F2: New | " );
+            } /*else {
+
+                if (cols > (Config::lang ? 32 : 28) + 14) {
+
+                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                    if ( ftype == DISK_TAPFILE ) { // Dirty hack
+                        VIDEO::vga.print(Config::lang ? "F2 Nuevo | " : "F2 New | " );
+                    }
+                    VIDEO::vga.print(Config::lang ? "F3 Buscar | F8 Borrar" : "F3 Find | F8 Delete" );
+
                 }
-                VIDEO::vga.print(Config::lang ? "F3: B\xA3sq. | F8: Borrar" : "F3: Find | F8: Delete" );
-            }
+
+            }*/
 
             vTaskDelay(5 / portTICK_PERIOD_MS);
 
