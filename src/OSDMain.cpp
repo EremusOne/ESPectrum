@@ -168,6 +168,32 @@ void OSD::osdAt(uint8_t row, uint8_t col) {
     VIDEO::vga.setCursor(x, y);
 }
 
+void OSD::drawWindow(uint16_t width, uint16_t height, string top, string bottom, bool clear) {
+
+    unsigned short x = scrAlignCenterX(width);
+    unsigned short y = scrAlignCenterY(height);
+    if (clear) VIDEO::vga.fillRect(x, y, width, height, zxColor(0, 0));
+    VIDEO::vga.rect(x, y, width , height , zxColor(0, 0));
+    VIDEO::vga.rect(x + 1, y + 1, width - 2, height - 2, zxColor(7, 0));
+
+    if (top != "") {
+        VIDEO::vga.rect(x + 3, y + 3, width - 6, 9, zxColor(5, 0));
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+        VIDEO::vga.setFont(Font6x8);
+        VIDEO::vga.setCursor(x + 3, y + 4);
+        VIDEO::vga.print(top.c_str());
+    }
+
+    if (bottom != "") {
+        VIDEO::vga.rect(x + 3, y + height - 12, width - 6, 9, zxColor(5, 0));
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+        VIDEO::vga.setFont(Font6x8);
+        VIDEO::vga.setCursor(x + 3, y + height - 11);
+        VIDEO::vga.print(bottom.c_str());
+    }
+
+}
+
 void OSD::drawOSD(bool bottom_info) {
     unsigned short x = scrAlignCenterX(OSD_W);
     unsigned short y = scrAlignCenterY(OSD_H);
@@ -189,6 +215,110 @@ void OSD::drawOSD(bool bottom_info) {
         VIDEO::vga.print(bottom_line.append(EMU_VERSION).c_str());
     } else VIDEO::vga.print(OSD_BOTTOM);
     osdHome();
+}
+
+void OSD::drawKbdLayout(uint8_t layout) {
+
+    uint8_t *layoutdata;
+
+    const char bottom[4][44]={
+        // " T TK90X | P PS/2 | Z ZX Kbd | S Send keys ", // ZX Spectrum 48K layout
+        // " 4 48K | P PS/2 | Z ZX kbd | S Send keys   ", // TK 90x layout
+        " T TK90X | P PS/2 | Z ZX Kbd               ", // ZX Spectrum 48K layout
+        " 4 48K | P PS/2 | Z ZX kbd                 ", // TK 90x layout
+        " 4 48K | T TK90X | Z ZX kbd                ", // PS/2 kbd help          
+        " 4 48K | T TK90X | P PS/2                  "  // ZX kbd help      
+    };
+
+    fabgl::VirtualKeyItem Nextkey;
+
+    drawWindow(256 + 8, 176 + 18, "", bottom[layout], true);
+
+    while (1) {
+
+        // Decode Logo in EBF8 format
+        switch (layout) {
+        case 0:
+            layoutdata = (uint8_t *)Layout_ZX;
+            break;
+        case 1:
+            layoutdata = (uint8_t *)Layout_TK;
+            break;
+        case 2:
+            layoutdata = (uint8_t *)PS2_Kbd;
+            break;
+        case 3:
+            layoutdata = (uint8_t *)ZX_Kbd;
+        }
+        
+        int pos_x = Config::aspect_16_9 ? 52 : 32;
+        int pos_y = Config::aspect_16_9 ? 7 : 27;
+        int l_w = (layoutdata[5] << 8) + layoutdata[4]; // Get Width
+        int l_h = (layoutdata[7] << 8) + layoutdata[6]; // Get Height
+        layoutdata += 8; // Skip header
+        for (int i=0; i < l_h; i++)
+            for(int n=0; n<l_w; n++)
+                VIDEO::vga.dotFast(pos_x + n,pos_y + i,layoutdata[n+(i*l_w)]);
+
+        while (1) {
+
+            if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
+
+            ESPectrum::readKbdJoy();
+
+            if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+                if (ESPectrum::readKbd(&Nextkey)) {
+                    if(!Nextkey.down) continue;
+                    if (Nextkey.vk == fabgl::VK_F1 || 
+                        Nextkey.vk == fabgl::VK_ESCAPE || 
+                        Nextkey.vk == fabgl::VK_RETURN || 
+                        Nextkey.vk == fabgl::VK_JOY1A || 
+                        Nextkey.vk == fabgl::VK_JOY1B || 
+                        Nextkey.vk == fabgl::VK_JOY2A || 
+                        Nextkey.vk == fabgl::VK_JOY2B ||
+                        Nextkey.vk == fabgl::VK_4 ||
+                        Nextkey.vk == fabgl::VK_T ||
+                        Nextkey.vk == fabgl::VK_t ||
+                        Nextkey.vk == fabgl::VK_P ||
+                        Nextkey.vk == fabgl::VK_p ||
+                        Nextkey.vk == fabgl::VK_Z ||
+                        Nextkey.vk == fabgl::VK_z
+                    ) break;
+
+                }
+            }
+
+            vTaskDelay(5 / portTICK_PERIOD_MS);
+
+        }
+
+        if (Nextkey.vk == fabgl::VK_F1 || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY1B || Nextkey.vk == fabgl::VK_JOY2A || Nextkey.vk == fabgl::VK_JOY2B) break;
+
+        switch(Nextkey.vk) {
+            case fabgl::VK_4:
+                layout = 0;
+                break;
+            case fabgl::VK_T:
+            case fabgl::VK_t:
+                layout = 1;
+                break;
+            case fabgl::VK_P:
+            case fabgl::VK_p:
+                layout = 2;
+                break;
+            case fabgl::VK_Z:                        
+            case fabgl::VK_z:
+                layout = 3;
+        };
+
+        drawWindow(256 + 8, 176 + 18, "", bottom[layout], false);
+
+    }
+
+    click();
+
+    if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+
 }
 
 void OSD::drawStats() {
@@ -253,7 +383,7 @@ static bool persistSave(uint8_t slotnumber)
 
     } else {
 
-        fputs((Config::arch + "\n" + Config::romSet + "\n").c_str(),f);    // Put architecture and romset on info file
+        fputs((Config::arch + "\n" + Config::romSet + "\n" + std::to_string(Config::ALUTK) + "\n").c_str(),f);    // Put architecture, romset and ALUTK on info file
         fclose(f);    
 
         if (!FileSNA::save(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
@@ -292,16 +422,21 @@ static bool persistLoad(uint8_t slotnumber)
         fgets(buf, sizeof(buf),f);
         string persist_arch = buf;
         persist_arch.pop_back();
-        // printf("[%s]\n",persist_arch.c_str());
+        printf("[%s]\n",persist_arch.c_str());
 
         fgets(buf, sizeof(buf),f);
         string persist_romset = buf;
         persist_romset.pop_back();
-        // printf("[%s]\n",persist_romset.c_str());
+        printf("[%s]\n",persist_romset.c_str());
+
+        fgets(buf, sizeof(buf),f);
+        string persist_ALUTK = buf;
+        persist_ALUTK.pop_back();
+        printf("[%s]\n",persist_ALUTK.c_str());
 
         fclose(f);
 
-        if (!LoadSnapshot(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname, persist_arch, persist_romset)) {
+        if (!LoadSnapshot(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname, persist_arch, persist_romset, std::stoi(persist_ALUTK))) {
             OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
             return false;
         } else {
@@ -632,12 +767,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
         // } else
         if (KeytoESP == fabgl::VK_F1) { // Show mem info
-            OSD::HWInfo();
-            if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
+            OSD::drawKbdLayout(Config::arch.substr(0,2) == "TK" ? 1 : 0);
         } else
         if (KeytoESP == fabgl::VK_F2) { // Turbo mode
             ESPectrum::ESP_delay = !ESPectrum::ESP_delay;
         } else 
+        if (KeytoESP == fabgl::VK_F3) { // Show H/W info
+            OSD::HWInfo();
+        } else
         if (KeytoESP == fabgl::VK_F9) { // Input Poke
             pokeDialog();
         } else 
@@ -858,13 +995,15 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
             FileUtils::remountSDCardIfNeeded();
 
             if ( FileUtils::SDReady ) {
-                ESPectrum::showMemInfo("Before F2 file dialog");
+                // ESPectrum::showMemInfo("Before F2 file dialog");
                 string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
-                ESPectrum::showMemInfo("After F2 file dialog");
+                // ESPectrum::showMemInfo("After F2 file dialog");
                 if (mFile != "") {
+                    string fprefix = mFile.substr(0,1);
+                    if (fprefix == "S") FileZ80::keepArch = true;
                     mFile.erase(0, 1);
                     string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
-                    LoadSnapshot(fname,"","");
+                    LoadSnapshot(fname,"","",0xff);
                     Config::ram_file = fname;
                     Config::last_ram_file = fname;
                 }
@@ -1158,7 +1297,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                 if (mFile != "") {
                                     mFile.erase(0, 1);
                                     string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
-                                    LoadSnapshot(fname,"","");
+                                    LoadSnapshot(fname,"","",0xff);
                                     Config::ram_file = fname;
                                     Config::last_ram_file = fname;
                                     return;
@@ -1418,30 +1557,42 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                 // MACHINE MENU
                 // ***********************************************************************************
                 menu_saverect = true;
-                menu_curopt = 1;
+
+                // Set curopt to reflect current machine
+                if (Config::arch == "48K") menu_curopt = 1;
+                else if (Config::arch == "128K") menu_curopt = 2;
+                else if (Config::arch == "Pentagon") menu_curopt = 3;
+                else if (Config::arch == "TK90X") menu_curopt = 4;
+                else if (Config::arch == "TK95") menu_curopt = 5;
+
                 while (1) {
                     menu_level = 1;
+                    
+
                     uint8_t arch_num = menuRun(MENU_ARCH[Config::lang]);
                     if (arch_num) {
                         string arch = Config::arch;
                         string romset = Config::romSet;
                         uint8_t opt2 = 0;
                         if (arch_num == 1) { // 48K
+
                             menu_level = 2;
-                            menu_curopt = 1;                    
+
+                            // Set curopt to reflect current romset
+                            if (Config::romSet == "48K") menu_curopt = 1;
+                            else if (Config::romSet == "48Kes") menu_curopt = 2;
+                            else if (Config::romSet == "48Kcs") menu_curopt = 3;
+                            else menu_curopt = 1;
+
                             menu_saverect = true;
                             opt2 = menuRun(MENU_ROMS48[Config::lang]);
                             if (opt2) {
                                 arch = "48K";
-                                if (opt2 == 1) {
-                                    romset = "48K";
-                                } else 
-                                if (opt2 == 2) {
-                                    romset = "48Kes";
-                                } else 
-                                if (opt2 == 3) {
-                                    romset = "48Kcs";
-                                }
+
+                                if (opt2 == 1) romset = "48K";
+                                else if (opt2 == 2) romset = "48Kes";
+                                else if (opt2 == 3) romset = "48Kcs";
+
                                 menu_curopt = opt2;
                                 menu_saverect = false;
                             } else {
@@ -1450,31 +1601,32 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             }
                         } else if (arch_num == 2) { // 128K
                             menu_level = 2;
-                            menu_curopt = 1;                    
+
+                            // Set curopt to reflect current romset
+                            if (Config::romSet == "128K") menu_curopt = 1;
+                            else if (Config::romSet == "128Kes") menu_curopt = 2;
+                            else if (Config::romSet == "+2") menu_curopt = 3;
+                            else if (Config::romSet == "+2es") menu_curopt = 4;
+                            else if (Config::romSet == "ZX81+") menu_curopt = 5;
+                            else if (Config::romSet == "128Kcs") menu_curopt = 6;
+                            else menu_curopt = 1;
+
                             menu_saverect = true;
                             opt2 = menuRun(MENU_ROMS128[Config::lang]);
                             if (opt2) {
+
                                 arch = "128K";
-                                if (opt2 == 1) {
-                                    romset = "128K";
-                                } else 
-                                if (opt2 == 2) {
-                                    romset = "128Kes";
-                                } else 
-                                if (opt2 == 3) {
-                                    romset = "+2";
-                                } else
-                                if (opt2 == 4) {
-                                    romset = "+2es";
-                                } else
-                                if (opt2 == 5) {
-                                    romset = "ZX81+";
-                                } else
-                                if (opt2 == 6) {
-                                    romset = "128Kcs";
-                                }
+
+                                if (opt2 == 1) romset = "128K";
+                                else if (opt2 == 2) romset = "128Kes";
+                                else if (opt2 == 3) romset = "+2";
+                                else if (opt2 == 4) romset = "+2es";
+                                else if (opt2 == 5) romset = "ZX81+";
+                                else if (opt2 == 6) romset = "128Kcs";
+
                                 menu_curopt = opt2;
                                 menu_saverect = false;
+
                             } else {
                                 menu_curopt = 1;
                                 menu_level = 2;                                       
@@ -1485,32 +1637,32 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             opt2 = 1;
                         } else if (arch_num == 4) { // TK90X
                             menu_level = 2;
-                            menu_curopt = 1;                    
+
+                            // Set curopt to reflect current romset
+                            if (Config::romSet == "v1es") menu_curopt = 1;
+                            else if (Config::romSet == "v1pt") menu_curopt = 2;
+                            else if (Config::romSet == "v2es") menu_curopt = 3;
+                            else if (Config::romSet == "v2pt") menu_curopt = 4;
+                            else if (Config::romSet == "v3es") menu_curopt = 5;
+                            else if (Config::romSet == "v3pt") menu_curopt = 6;
+                            else if (Config::romSet == "v3en") menu_curopt = 7;
+                            else if (Config::romSet == "TK90Xcs") menu_curopt = 8;
+                            else menu_curopt = 1;
+
                             menu_saverect = true;
                             opt2 = menuRun(MENU_ROMSTK[Config::lang]);
                             if (opt2) {
                                 arch = "TK90X";
-                                if (opt2 == 1) {
-                                    romset = "v1es";
-                                } else 
-                                if (opt2 == 2) {
-                                    romset = "v1pt";
-                                } else 
-                                if (opt2 == 3) {
-                                    romset = "v2es";
-                                } else
-                                if (opt2 == 4) {
-                                    romset = "v2pt";
-                                } else
-                                if (opt2 == 5) {
-                                    romset = "v3es";
-                                } else
-                                if (opt2 == 6) {
-                                    romset = "v3pt";
-                                }
-                                if (opt2 == 7) {
-                                    romset = "v3en";
-                                }
+
+                                if (opt2 == 1) romset = "v1es";
+                                else if (opt2 == 2) romset = "v1pt";
+                                else if (opt2 == 3) romset = "v2es";
+                                else if (opt2 == 4) romset = "v2pt";
+                                else if (opt2 == 5) romset = "v3es";
+                                else if (opt2 == 6) romset = "v3pt";
+                                else if (opt2 == 7) romset = "v3en";
+                                else if (opt2 == 8) romset = "TK90Xcs";
+
                                 menu_curopt = opt2;
                                 menu_saverect = false;
                             } else {
@@ -1519,17 +1671,20 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                             }
                         } else if (arch_num == 5) { // TK95
                             menu_level = 2;
-                            menu_curopt = 1;                    
+
+                            // Set curopt to reflect current romset
+                            if (Config::romSet == "95es") menu_curopt = 1;
+                            else if (Config::romSet == "95pt") menu_curopt = 2;
+                            else menu_curopt = 1;
+
                             menu_saverect = true;
                             opt2 = menuRun(MENU_ROMSTK95[Config::lang]);
                             if (opt2) {
                                 arch = "TK95";
-                                if (opt2 == 1) {
-                                    romset = "95es";
-                                } else 
-                                if (opt2 == 2) {
-                                    romset = "95pt";
-                                }
+
+                                if (opt2 == 1) romset = "95es";
+                                else if (opt2 == 2) romset = "95pt";
+
                                 menu_curopt = opt2;
                                 menu_saverect = false;
                             } else {
@@ -1652,7 +1807,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     if (opt2 == 1) {
                         // Soft
                         if (Config::last_ram_file != NO_RAM_FILE) {
-                            LoadSnapshot(Config::last_ram_file,"","");
+                            LoadSnapshot(Config::last_ram_file,"","",0xff);
                             Config::ram_file = Config::last_ram_file;
                         } else ESPectrum::reset();
                         return;
@@ -2615,12 +2770,21 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                                 Config::save("ALUTK");
 
                                                 // ALU Changed, Reset ESPectrum
-                                                if (Config::ram_file != NO_RAM_FILE) {
+                                                
+                                                if (Config::videomode) {
+                                                    // ESP host reset
                                                     Config::ram_file = NO_RAM_FILE;
+                                                    Config::save("ram");
+                                                    esp_hard_reset();
+                                                } else {
+                                                    if (Config::ram_file != NO_RAM_FILE) {
+                                                        Config::ram_file = NO_RAM_FILE;
+                                                    }
+                                                    Config::last_ram_file = NO_RAM_FILE;
+                                                    ESPectrum::reset();
                                                 }
-                                                Config::last_ram_file = NO_RAM_FILE;
 
-                                                ESPectrum::reset();
+                                                return;
 
                                             }
                                             menu_curopt = opt2;
@@ -2811,36 +2975,38 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     }
                 }
             }
-            else if (opt == 7) {
-                // Help
-                drawOSD(true);
-                osdAt(2, 0);
-                VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
-                if (ZXKeyb::Exists)
-                    VIDEO::vga.print(Config::lang ? OSD_HELP_ES_ZX : OSD_HELP_EN_ZX);
-                else
-                    VIDEO::vga.print(Config::lang ? OSD_HELP_ES : OSD_HELP_EN);
+            else if (opt == 7) { // Help
 
-                while (1) {
+                OSD::drawKbdLayout(ZXKeyb::Exists ? 3 : 2);
 
-                    if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
+                // drawOSD(true);
+                // osdAt(2, 0);
+                // VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
+                // if (ZXKeyb::Exists)
+                //     VIDEO::vga.print(Config::lang ? OSD_HELP_ES_ZX : OSD_HELP_EN_ZX);
+                // else
+                //     VIDEO::vga.print(Config::lang ? OSD_HELP_ES : OSD_HELP_EN);
 
-                    ESPectrum::readKbdJoy();
+                // while (1) {
 
-                    if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
-                        if (ESPectrum::readKbd(&Nextkey)) {
-                            if(!Nextkey.down) continue;
-                            if (Nextkey.vk == fabgl::VK_F1 || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY1B || Nextkey.vk == fabgl::VK_JOY2A || Nextkey.vk == fabgl::VK_JOY2B) break;
-                        }
-                    }
+                //     if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
 
-                    vTaskDelay(5 / portTICK_PERIOD_MS);
+                //     ESPectrum::readKbdJoy();
 
-                }
+                //     if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+                //         if (ESPectrum::readKbd(&Nextkey)) {
+                //             if(!Nextkey.down) continue;
+                //             if (Nextkey.vk == fabgl::VK_F1 || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY1B || Nextkey.vk == fabgl::VK_JOY2A || Nextkey.vk == fabgl::VK_JOY2B) break;
+                //         }
+                //     }
 
-                click();
+                //     vTaskDelay(5 / portTICK_PERIOD_MS);
 
-                if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+                // }
+
+                // click();
+
+                // if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
 
                 return;
 
@@ -3203,6 +3369,8 @@ void OSD::HWInfo() {
         vTaskDelay(5 / portTICK_PERIOD_MS);
 
     }
+
+    if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
 
 }
 

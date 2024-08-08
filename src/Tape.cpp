@@ -81,6 +81,7 @@ uint32_t Tape::tapeBlkPauseLen;
 uint32_t Tape::tapeNext;
 uint8_t Tape::tapeLastByteUsedBits = 8;
 uint8_t Tape::tapeEndBitMask;
+double  Tape::tapeCompensation = 1;
 
 uint8_t Tape::tapePhase = TAPE_PHASE_STOPPED;
 
@@ -479,14 +480,12 @@ void Tape::TAP_Open(string name) {
 
     }
 
-    if (Z80Ops::is128) { // Apply pulse length compensation for 128K
-        tapeSyncLen *= FACTOR128K;
-        tapeSync1Len *= FACTOR128K;
-        tapeSync2Len *= FACTOR128K;
-        tapeBit0PulseLen *= FACTOR128K;
-        tapeBit1PulseLen *= FACTOR128K;
-        tapeBlkPauseLen *= FACTOR128K;
-    }
+    tapeSyncLen *= tapeCompensation;
+    tapeSync1Len *= tapeCompensation;
+    tapeSync2Len *= tapeCompensation;
+    tapeBit0PulseLen *= tapeCompensation;
+    tapeBit1PulseLen *= tapeCompensation;
+    tapeBlkPauseLen *= tapeCompensation;
 
 }
 
@@ -823,7 +822,7 @@ IRAM_ATTR void Tape::Read() {
                                     SymDefTable[i].PulseLenghts = new uint16_t[npd];
                                     for(int j = 0; j < npd; j++) {
                                         SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
-                                        if (Z80Ops::is128) SymDefTable[i].PulseLenghts[j] *= FACTOR128K; // Apply TZX compensation for 128K
+                                        SymDefTable[i].PulseLenghts[j] *= tapeCompensation; // Apply tape compensation if needed
                                         tapebufByteCount += 2;
                                     }
 

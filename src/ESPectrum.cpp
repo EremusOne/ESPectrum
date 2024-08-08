@@ -717,6 +717,13 @@ void ESPectrum::setup()
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 
+    if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+        Tape::tapeCompensation = FACTOR128K;
+    } else if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) { // Apply pulse length compensation for Microdigital ALU
+        Tape::tapeCompensation = FACTORALUTK;
+    } else
+        Tape::tapeCompensation = 1;
+
     // Init CPU
     Z80::create();
 
@@ -756,7 +763,7 @@ void ESPectrum::setup()
         FileUtils::fileTypes[DISK_DSKFILE].fdMode = Config::DSK_fdMode;
         FileUtils::fileTypes[DISK_DSKFILE].fileSearch = Config::DSK_fileSearch;
 
-        LoadSnapshot(Config::ram_file,"","");
+        LoadSnapshot(Config::ram_file,"","",0xff);
 
         Config::last_ram_file = Config::ram_file;
         Config::ram_file = NO_RAM_FILE;
@@ -813,6 +820,13 @@ void ESPectrum::reset()
     Tape::tapePhase = TAPE_PHASE_STOPPED;
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
+
+    if (Z80Ops::is128) { // Apply pulse length compensation for 128K
+        Tape::tapeCompensation = FACTOR128K;
+    } else if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) { // Apply pulse length compensation for Microdigital ALU
+        Tape::tapeCompensation = FACTORALUTK;
+    } else
+        Tape::tapeCompensation = 1;
 
     // Empty audio buffers
     for (int i=0;i<ESP_AUDIO_SAMPLES_PENTAGON;i++) {
@@ -1062,7 +1076,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                     // printf("Alt + backSpace!\n");
                     // Soft reset
                     if (Config::last_ram_file != NO_RAM_FILE) {
-                        LoadSnapshot(Config::last_ram_file,"","");
+                        LoadSnapshot(Config::last_ram_file,"","",0xff);
                         Config::ram_file = Config::last_ram_file;
                     } else ESPectrum::reset();
                     return;
@@ -1487,7 +1501,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 OSD::do_OSD(fabgl::VK_PAUSE,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
-                OSD::do_OSD(fabgl::VK_F1,true);
+                OSD::do_OSD(fabgl::VK_F3,true);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],3)) { // R -> Reset to TR-DOS
                 OSD::do_OSD(fabgl::VK_F11,true);
@@ -1503,6 +1517,9 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             } else
             if (!bitRead(ZXKeyb::ZXcols[7],3)) { // N -> NMI
                 Z80::triggerNMI();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[7],3)) { // K -> Help / Kbd layout
+                OSD::do_OSD(fabgl::VK_F1,true);
             } else
             if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
                 if (Config::CenterH > -16) Config::CenterH--;
@@ -1804,6 +1821,7 @@ for(;;) {
     }
 
     totalseconds += esp_timer_get_time() - ts_start;
+    // printf("Totalsecond: %f\n",double(esp_timer_get_time() - ts_start));
 
 }
 

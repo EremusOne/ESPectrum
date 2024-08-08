@@ -106,8 +106,8 @@ using namespace std;
 
 #define TAPE_LISTING_DIV 16
 
-#define FACTOR128K 1.013376779 // Pulse length compensation for Spectrum 128K
-// #define FACTOR128K 1 // Disable pulse length compensation for Spectrum 128K
+#define FACTOR128K  1.013376779 // Pulse length compensation for Spectrum 128K
+#define FACTORALUTK 1.021591929 // Pulse length compensation for Microdigital ULA
 
 #define TAPEHIGH 1
 #define TAPELOW 0
@@ -190,6 +190,8 @@ public:
     static void removeSelectedBlocks();
     static void moveSelectedBlocks(int targetPosition);
     static void renameBlock(int block, string new_name);
+    
+    static double tapeCompensation;
 
 private:
 
