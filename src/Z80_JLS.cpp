@@ -917,30 +917,34 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
 
 IRAM_ATTR void Z80::check_trdos() {
 
-    if (!ESPectrum::trdos) {
+    if (Config::DiskCtrl == 1 || ESPectrum::trdos == true || Z80Ops::isPentagon) {
 
-        if (REG_PCh == 0x3D) {
+        if (!ESPectrum::trdos) {
 
-            // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
-            if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
-                MemESP::romInUse = 4;
-                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-                ESPectrum::trdos = true;
+            if (REG_PCh == 0x3D) {
+
+                // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
+                if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
+                    MemESP::romInUse = 4;
+                    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                    ESPectrum::trdos = true;
+                }
+
             }
 
-        }
+        } else {
 
-    } else {
+            if (REG_PCh >= 0x40) {                
 
-        if (REG_PCh >= 0x40) {                
+                if (Z80Ops::is48)
+                    MemESP::romInUse = 0;
+                else
+                    MemESP::romInUse = MemESP::romLatch;
+                
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                ESPectrum::trdos = false;
 
-            if (Z80Ops::is48)
-                MemESP::romInUse = 0;
-            else
-                MemESP::romInUse = MemESP::romLatch;
-            
-            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-            ESPectrum::trdos = false;
+            }
 
         }
 

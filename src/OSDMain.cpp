@@ -221,14 +221,22 @@ void OSD::drawKbdLayout(uint8_t layout) {
 
     uint8_t *layoutdata;
 
-    const char bottom[4][44]={
-        // " T TK90X | P PS/2 | Z ZX Kbd | S Send keys ", // ZX Spectrum 48K layout
-        // " 4 48K | P PS/2 | Z ZX kbd | S Send keys   ", // TK 90x layout
-        " T TK90X | P PS/2 | Z ZX Kbd               ", // ZX Spectrum 48K layout
-        " 4 48K | P PS/2 | Z ZX kbd                 ", // TK 90x layout
-        " 4 48K | T TK90X | Z ZX kbd                ", // PS/2 kbd help          
-        " 4 48K | T TK90X | P PS/2                  "  // ZX kbd help      
+    string vmode;
+
+    string bottom[4]={
+        " T TK90X | P PS/2 | Z ZX Kbd    ", // ZX Spectrum 48K layout
+        " 4 48K | P PS/2 | Z ZX kbd      ", // TK 90x layout
+        " 4 48K | T TK90X | Z ZX kbd     ", // PS/2 kbd help          
+        " 4 48K | T TK90X | P PS/2       "  // ZX kbd help      
     };
+
+    switch(Config::videomode) {
+        case 0: vmode = "  Mode VGA "; break;
+        case 1: vmode = "Mode VGA50 "; break;
+        case 2: vmode = "  Mode CRT "; break;
+    }
+
+    for(int i=0; i<4; i++) bottom[i] += vmode;
 
     fabgl::VirtualKeyItem Nextkey;
 
@@ -787,6 +795,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
 
                 // if (Z80Ops::is48 || (Z80Ops::is128 && MemESP::romInUse == 1 && MemESP::pagingLock == 1)) {
 
+                if (Config::DiskCtrl || Z80Ops::isPentagon) {
+
                     if (Config::ram_file != NO_RAM_FILE) {
                         Config::ram_file = NO_RAM_FILE;
                     }
@@ -798,6 +808,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                     MemESP::romInUse = 4;
                     MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
                     ESPectrum::trdos = true;
+
+                } else {
+
+                    OSD::osdCenteredMsg(TRDOS_RESET_ERR[Config::lang], LEVEL_ERROR, 1500 );
+
+                }
 
                     // return;
 
@@ -1819,6 +1835,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                         esp_hard_reset();
                     }
                     else if (opt2 != 0) {
+
+                        if (opt2 == 2 && Config::DiskCtrl == 0 && !Z80Ops::isPentagon) {
+                            OSD::osdCenteredMsg(TRDOS_RESET_ERR[Config::lang], LEVEL_ERROR, 1500 );
+                            return;
+                        }
+
                         // Hard reset
                         if (Config::ram_file != NO_RAM_FILE) {
                             Config::ram_file = NO_RAM_FILE;
@@ -1865,6 +1887,42 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                     menu_curopt = 1;                    
                                     menu_saverect = true;
                                     while (1) {
+                                        string opt_menu = MENU_DISKCTRL[Config::lang];
+                                        opt_menu += MENU_YESNO[Config::lang];
+                                        bool prev_opt = Config::DiskCtrl;
+                                        if (prev_opt) {
+                                            menu_curopt = 1;
+                                            opt_menu.replace(opt_menu.find("[Y",0),2,"[*");
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[ ");                        
+                                        } else {
+                                            menu_curopt = 2;
+                                            opt_menu.replace(opt_menu.find("[Y",0),2,"[ ");
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[*");                        
+                                        }
+                                        uint8_t opt2 = menuRun(opt_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::DiskCtrl = 1;
+                                            else
+                                                Config::DiskCtrl = 0;
+
+                                            if (Config::DiskCtrl != prev_opt) {
+                                                Config::save("DiskCtrl");
+                                            }
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+                                        } else {
+                                            menu_curopt = 1;
+                                            menu_level = 2;                                       
+                                            break;
+                                        }
+                                    }
+                                }
+                                else if (opt2 == 2) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;                    
+                                    menu_saverect = true;
+                                    while (1) {
                                         string flash_menu = MENU_FLASHLOAD[Config::lang];
                                         flash_menu += MENU_YESNO[Config::lang];
                                         bool prev_flashload = Config::flashload;
@@ -1896,7 +1954,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
                                         }
                                     }
                                 }
-                                else if (opt2 == 2) {
+                                else if (opt2 == 3) {
                                     menu_level = 3;
                                     menu_curopt = 1;                    
                                     menu_saverect = true;
@@ -4500,8 +4558,11 @@ void OSD::joyDialog(uint8_t joynum) {
 
         ESPectrum::readKbdJoy();
 
-        if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+        while (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+        // if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+
             ESPectrum::PS2Controller.keyboard()->getNextVirtualKey(&Nextkey);
+
             if(!Nextkey.down) continue;
             
             if (Nextkey.vk == fabgl::VK_LEFT || Nextkey.vk == fabgl::VK_JOY1LEFT || Nextkey.vk == fabgl::VK_JOY2LEFT) {
@@ -4744,17 +4805,20 @@ void OSD::joyDialog(uint8_t joynum) {
                                 }
 
                                 click();
-                                break;
+                                return;
+                                // break;
 
                             } else
                             if (res == DLG_NO) {
                                 click();
-                                break;
+                                return;
+                                // break;
                             }
 
                         } else {
                             click();
-                            break;
+                            return;
+                            // break;
                         }
 
                     } else
@@ -4816,11 +4880,13 @@ void OSD::joyDialog(uint8_t joynum) {
                         uint8_t res = OSD::msgDialog(title,msg);
                         if (res == DLG_YES) {
                             click();
-                            break;
+                            return;
+                            // break;
                         }
                     } else {
                         click();
-                        break;
+                        return;
+                        // break;
                     }
 
                 }

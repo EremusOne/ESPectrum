@@ -700,8 +700,6 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
-    
     xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048 /* 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
@@ -773,18 +771,6 @@ void ESPectrum::setup()
 
     if (Config::slog_on) showMemInfo("Setup finished.");
 
-    // Create loop function as task: it doesn't seem better than calling from main.cpp and increases RAM consumption (4096 bytes for stack).
-    // xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
-
-    // if (Z80Ops::is128 || Z80Ops::isPentagon) MemESP::romLatch = 1;
-    // MemESP::romInUse = 4;
-    // MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-    // ESPectrum::trdos = true;
-
-    // Insert disk before emu start (for testing)
-    // ESPectrum::Betadisk.EjectDisk(0);
-    // ESPectrum::Betadisk.InsertDisk(0,"/sd/trd scl/unreal.trd");
-
 }
 
 //=======================================================================================
@@ -807,9 +793,11 @@ void ESPectrum::reset()
     VIDEO::Reset();
 
     // Reinit disk controller
-    // Betadisk.ShutDown();
-    // Betadisk.Init();
-    Betadisk.EnterIdle();
+    if (Config::DiskCtrl == 1 || Z80Ops::isPentagon) {
+        // Betadisk.ShutDown();
+        // Betadisk.Init();
+        Betadisk.EnterIdle();
+    }
 
     Tape::tapeFileName = "none";
     if (Tape::tape != NULL) {

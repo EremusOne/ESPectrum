@@ -136,13 +136,14 @@ string   Config::DSK_fileSearch = "";
 uint8_t Config::scanlines = 0;
 uint8_t Config::render = 0;
 
-bool     Config::TABasfire1 = false;
+bool Config::TABasfire1 = false;
 
-bool     Config::StartMsg = true;
+bool Config::StartMsg = true;
 
-uint8_t     Config::port254default = 0xbf; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese
+uint8_t Config::port254default = 0xbf; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese
 
-uint8_t     Config::ALUTK = 1; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
+uint8_t Config::ALUTK = 1; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
+uint8_t Config::DiskCtrl = 1; // 0 -> None, 1 -> Betadisk
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -591,6 +592,11 @@ void Config::load() {
             // printf("ALUTK:%u\n",Config::ALUTK);
         }
 
+        err = nvs_get_u8(handle, "DiskCtrl", &Config::DiskCtrl);
+        if (err == ESP_OK) {
+            // printf("DiskCtrl:%u\n",Config::DiskCtrl);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -784,6 +790,9 @@ void Config::save(string value) {
 
         if((value=="ALUTK") || (value=="all"))
             nvs_set_u8(handle,"ALUTK",Config::ALUTK);
+
+        if((value=="DiskCtrl") || (value=="all"))
+            nvs_set_u8(handle,"DiskCtrl",Config::DiskCtrl);
 
         // printf("Committing updates in NVS ... ");
 

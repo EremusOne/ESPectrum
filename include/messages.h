@@ -235,6 +235,10 @@ static const char *MENU_DELETE_CURRENT_FILE[2] = { MENU_DELETE_CURRENT_FILE_EN,M
 #define OSD_TAPE_EJECT_ES "Cinta expulsada"
 static const char *OSD_TAPE_EJECT[2] = { OSD_TAPE_EJECT_EN,OSD_TAPE_EJECT_ES };
 
+#define TRDOS_RESET_ERR_EN "Can't reset to TR-DOS. Enable Betadisk."
+#define TRDOS_RESET_ERR_ES "Error en reset a TR-DOS. Active Betadisk."
+static const char *TRDOS_RESET_ERR[2] = { TRDOS_RESET_ERR_EN , TRDOS_RESET_ERR_ES };
+
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
     "Load (SNA,Z80,P)\t(F2) >\n"\
@@ -307,7 +311,16 @@ static const char *MENU_BETADRIVE[2] = { MENU_BETADRIVE_EN,MENU_BETADRIVE_ES };
     "Opciones\t>\n"\
     "Ayuda\n"\
     "Acerca de\n"
-static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
+#define MENU_MAIN_PT \
+    "Snapshots\t>\n"\
+    "Fita\t>\n"\
+    "Betadisk\t>\n"\
+    "Modelo\t>\n"\
+    "Reiniciar\t>\n"\
+    "Op\x87\x94" "es\t>\n"\
+    "Ajuda\n"\
+    "Sobre\n"
+static const char *MENU_MAIN[3] = { MENU_MAIN_EN,MENU_MAIN_ES,MENU_MAIN_PT };
 
 #define MENU_OPTIONS_EN \
     "Options menu\n"\
@@ -406,9 +419,11 @@ static const char *MENU_PERSIST_SAVE[2] = { MENU_PERSIST_SAVE_EN, MENU_PERSIST_S
 static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_LOAD_ES };
 
 #define MENU_STORAGE_EN "Storage\n"\
+    "Betadisk\t>\n"\
     "Flash tape load\t>\n"\
     "R.G. ROM timings\t>\n"	
 #define MENU_STORAGE_ES "Almacenamiento\n"\
+    "Betadisk\t>\n"\
     "Carga r\xA0pida cinta\t>\n"\
     "Timings ROM R.G.\t>\n"	
 static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
@@ -419,15 +434,17 @@ static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
     "No\t[N]\n"
 static const char *MENU_YESNO[2] = { MENU_YESNO_EN, MENU_YESNO_ES};
 
+static const char *MENU_DISKCTRL[2] = { "Betadisk\n" , "Betadisk\n"};
+
 static const char *MENU_FLASHLOAD[2] = { "Flash load\n" , "Carga r\xA0pida\n"};
 
 static const char *MENU_RGTIMINGS[2] = { "R.G. Timings\n" , "Timings R.G.\n"};
 
 #define MENU_OTHER_EN "Other\n"\
     "AY on 48K\t>\n"\
-    "ALU Timing\t>\n"\
+    "ULA Timing\t>\n"\
     "48K Issue 2\t>\n"\
-	"TK ALU\t>\n"\
+	"TK ULA\t>\n"\
     "Second PS/2 device\t>\n"
 #define MENU_OTHER_ES "Otros\n"\
     "AY en 48K\t>\n"\
@@ -442,7 +459,7 @@ static const char *MENU_AY48[2] = { "AY on 48K\n" , "AY en 48K\n"};
 #define MENU_ALUTK "Ferranti\t[F]\n"\
     "Microdigital 50hz\t[5]\n"\
 	"Microdigital 60hz\t[6]\n"
-static const char *MENU_ALUTK_PREF[2] = { "TK ALU\n" MENU_ALUTK, "ULA TK\n" MENU_ALUTK};
+static const char *MENU_ALUTK_PREF[2] = { "TK ULA\n" MENU_ALUTK, "ULA TK\n" MENU_ALUTK};
 
 #define MENU_KBD2NDPS2_EN "Device\n"\
     "None\t[N]\n"\
@@ -452,7 +469,7 @@ static const char *MENU_ALUTK_PREF[2] = { "TK ALU\n" MENU_ALUTK, "ULA TK\n" MENU
     "Teclado\t[K]\n"
 static const char *MENU_KBD2NDPS2[2] = { MENU_KBD2NDPS2_EN, MENU_KBD2NDPS2_ES };
 
-#define MENU_ALUTIMING_EN "ALU Timing\n"\
+#define MENU_ALUTIMING_EN "ULA Timing\n"\
     "Early\t[E]\n"\
     "Late\t[L]\n"
 #define MENU_ALUTIMING_ES "Timing ULA\n"\
@@ -600,11 +617,24 @@ static const char *MENU_ROM_PREF_TK95[2] = {  "Select ROM\n" MENU_ROMSTK95_PREF_
 
 #define MENU_INTERFACE_LANG_EN "Language\n"\
     "English\t[ ]\n"\
-    "Spanish\t[ ]\n"
-#define MENU_INTERFACE_LANG_ES "Idioma\n"\
+    "Spanish\t[ ]\n"\
+    "Portuguese\t[ ]\n"	
+
+/* #define MENU_INTERFACE_LANG_ES "Idioma\n"\ */
+
+#define MENU_INTERFACE_LANG_PT "Idioma\n"\
     "Ingl\x82s\t[ ]\n"\
-    "Espa\xA4ol\t[ ]\n"
-static const char *MENU_INTERFACE_LANG[2] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES };
+    "Espa\xA4ol\t[ ]\n"\
+	"Portugu\x82s\t[ ]\n"
+
+/* #define MENU_INTERFACE_LANG_PT "Idioma\n"\ */
+
+#define MENU_INTERFACE_LANG_ES "Idioma\n"\
+    "Ingl\x88s\t[ ]\n"\
+    "Espanhol\t[ ]\n"\
+	"Portugu\x88s\t[ ]\n"
+
+static const char *MENU_INTERFACE_LANG[3] = { MENU_INTERFACE_LANG_EN, MENU_INTERFACE_LANG_ES, MENU_INTERFACE_LANG_PT };
 
 #define MENU_JOY_EN "Joystick menu\n"
 
