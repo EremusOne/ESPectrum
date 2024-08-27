@@ -133,6 +133,8 @@ public:
 
     static uint8_t DiskCtrl; // 0 -> None, 1 -> Betadisk
 
+    static bool TimeMachine; 
+
 };
 
 #endif // Config.h
