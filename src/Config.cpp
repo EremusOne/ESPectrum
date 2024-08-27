@@ -145,6 +145,8 @@ uint8_t Config::port254default = 0xbf; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3
 uint8_t Config::ALUTK = 1; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
 uint8_t Config::DiskCtrl = 1; // 0 -> None, 1 -> Betadisk
 
+bool Config::TimeMachine = false; 
+
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
     s.erase(std::remove_if(s.begin(), s.end(), 

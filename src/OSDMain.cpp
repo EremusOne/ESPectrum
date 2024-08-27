@@ -1251,24 +1251,26 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         }
         else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUMEDOWN) { 
 
-            uint8_t slottoload;
+            // EXPERIMENTAL: TIME MACHINE TEST
+            
+            // uint8_t slottoload;
 
-            if (MemESP::tm_framecnt >= 200) {
-                if (MemESP::cur_timemachine > 0)
-                    slottoload = MemESP::cur_timemachine - 1;
-                else
-                    slottoload = 7;
-            } else {
-                if (MemESP::cur_timemachine > 1)
-                    slottoload = MemESP::cur_timemachine - 2;
-                else
-                    slottoload = MemESP::cur_timemachine == 1 ? 7 : 6;
-            }
+            // if (MemESP::tm_framecnt >= 200) {
+            //     if (MemESP::cur_timemachine > 0)
+            //         slottoload = MemESP::cur_timemachine - 1;
+            //     else
+            //         slottoload = 7;
+            // } else {
+            //     if (MemESP::cur_timemachine > 1)
+            //         slottoload = MemESP::cur_timemachine - 2;
+            //     else
+            //         slottoload = MemESP::cur_timemachine == 1 ? 7 : 6;
+            // }
 
-            if (MemESP::tm_slotbanks[slottoload][2] != 0xff)
-                MemESP::Tm_Load(slottoload);
+            // if (MemESP::tm_slotbanks[slottoload][2] != 0xff)
+            //     MemESP::Tm_Load(slottoload);
 
-            return;
+            // return;
 
             if (VIDEO::OSD == 0) {
 

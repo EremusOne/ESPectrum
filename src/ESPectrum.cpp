@@ -1743,78 +1743,7 @@ for(;;) {
 
     #ifdef ESPECTRUM_PSRAM    
     // Time machine
-    if (MemESP::tm_framecnt++ == 250) { // One "snapshot" every 250 frames (~5 seconds on 50hz machines)
-
-        // printf("Time machine\n================\n");
-
-        for (int n=0; n < 8; n++) { // Save active RAM banks during slot period
-            
-            if (n == 2 || MemESP::tm_bank_chg[n]) { // Bank 2 is always copied because is always active
-
-                // printf("Copying bank %d\n",n);
-
-                // Copy bank
-                uint32_t* src32 = (uint32_t *)MemESP::ram[n];
-                for (int i=0; i < 0x1000; i++)
-                    MemESP::timemachine[MemESP::cur_timemachine][n][i] = src32[i];
-
-                // Mark as inactive if is not current bank latched or current videobank
-                if (n != MemESP::bankLatch && n != (MemESP::videoLatch ? 7 : 5))
-                    MemESP::tm_bank_chg[n]=false;
-                
-                // Register copied bank as current into slot bank list
-                MemESP::tm_slotbanks[MemESP::cur_timemachine][n] = MemESP::cur_timemachine;
-
-            }
-
-        }
-
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegI = Z80::getRegI();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegHLx = Z80::getRegHLx();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegDEx = Z80::getRegDEx();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegBCx = Z80::getRegBCx();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegAFx = Z80::getRegAFx();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegHL = Z80::getRegHL();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegDE = Z80::getRegDE();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegBC = Z80::getRegBC();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegIY = Z80::getRegIY();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegIX = Z80::getRegIX();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].inter = Z80::isIFF2() ? 0x04 : 0;
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegR = Z80::getRegR();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegAF = Z80::getRegAF();        
-
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegSP = Z80::getRegSP();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].IM = Z80::getIM();
-        MemESP::tm_slotdata[MemESP::cur_timemachine].borderColor = VIDEO::borderColor;
-        MemESP::tm_slotdata[MemESP::cur_timemachine].RegPC = Z80::getRegPC();
-
-        MemESP::tm_slotdata[MemESP::cur_timemachine].bankLatch = MemESP::bankLatch;
-        MemESP::tm_slotdata[MemESP::cur_timemachine].videoLatch = MemESP::videoLatch;
-        MemESP::tm_slotdata[MemESP::cur_timemachine].romLatch = MemESP::romLatch;
-        MemESP::tm_slotdata[MemESP::cur_timemachine].pagingLock = MemESP::pagingLock;
-        MemESP::tm_slotdata[MemESP::cur_timemachine].trdos = ESPectrum::trdos;
-
-        if (MemESP::cur_timemachine == 7) {
-            for (int n=0; n < 8; n++)
-                MemESP::tm_slotbanks[0][n] = MemESP::tm_slotbanks[7][n];
-        } else {
-            for (int n=0; n < 8; n++)
-                MemESP::tm_slotbanks[MemESP::cur_timemachine + 1][n] = MemESP::tm_slotbanks[MemESP::cur_timemachine][n];
-        }
-
-        // printf("Cur_tm: %d, Slot Banks: ",MemESP::cur_timemachine);
-        // for (int n=0; n<8; n++)
-        //     printf("%d ",MemESP::tm_slotbanks[MemESP::cur_timemachine][n]);
-        // printf("\n");
-
-        MemESP::cur_timemachine++;
-        MemESP::cur_timemachine &= 0x07;
-
-        // printf("================\n");
-
-        MemESP::tm_framecnt = 0;
-
-    }
+    if (Config::TimeMachine) MemESP::Tm_DoTimeMachine();
     #endif
 
     elapsed = esp_timer_get_time() - ts_start;

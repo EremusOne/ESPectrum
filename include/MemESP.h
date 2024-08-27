@@ -102,6 +102,7 @@ public:
     #ifdef ESPECTRUM_PSRAM
     static void Tm_Load(uint8_t slot);
     static void Tm_Init();
+    static void Tm_DoTimeMachine();
     #endif
 
     static uint8_t readbyte(uint16_t addr);
