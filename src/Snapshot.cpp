@@ -117,6 +117,8 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
         return false;
     }
 
+    printf("Force arch: %s, Force romset: %s, Force ALU: %d\n", force_arch.c_str(),force_romset.c_str(),force_ALU);
+
     fseek(file,0,SEEK_END);
     sna_size = ftell(file);
     rewind (file);
@@ -421,7 +423,7 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
 
         VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
-        if (Z80Ops::isPentagon) CPU::tstates = 22; // Pentagon SNA load fix... still dunno why this works but it works
+        // if (Z80Ops::isPentagon) CPU::tstates = 22; // Pentagon SNA load fix... still dunno why this works but it works
 
     }
     
@@ -574,7 +576,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     // write RAM pages in 48K address space (0x4000 - 0xFFFF)
     uint8_t pages[3] = {5, 2, 0};
     // if (Config::arch != "48K")
-    if (Z80Ops::is128)    
+    if (Z80Ops::is128 || Z80Ops::isPentagon)    
         pages[2] = MemESP::bankLatch;
 
     for (uint8_t ipage = 0; ipage < 3; ipage++) {
@@ -586,7 +588,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         }
     }
 
-    if (Z80Ops::is128) {
+    if (Z80Ops::is128 || Z80Ops::isPentagon) {
     // if (Config::arch != "48K") {
 
         // write pc

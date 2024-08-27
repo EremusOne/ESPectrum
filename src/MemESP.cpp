@@ -35,6 +35,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "MemESP.h"
 #include "Config.h"
+#include "Video.h"
+#include "Z80_JLS/z80.h"
 #include <stddef.h>
 #include "esp_heap_caps.h"
 
@@ -45,6 +47,17 @@ using namespace std;
 uint8_t* MemESP::rom[5];
 
 uint8_t* MemESP::ram[8] = { NULL };
+
+#ifdef ESPECTRUM_PSRAM
+uint32_t* MemESP::timemachine[TIME_MACHINE_SLOTS][8];
+uint8_t MemESP::tm_slotbanks[TIME_MACHINE_SLOTS][8];
+slotdata MemESP::tm_slotdata[TIME_MACHINE_SLOTS];
+bool MemESP::tm_bank_chg[8];
+uint8_t MemESP::cur_timemachine = 0;
+int MemESP::tm_framecnt = 0;
+bool MemESP::tm_loading_slot = false;
+#endif
+
 uint8_t* MemESP::ramCurrent[4];
 bool MemESP::ramContended[4];
 
@@ -69,6 +82,11 @@ bool MemESP::Init() {
     MemESP::ram[3] = ((unsigned char *) MemESP::ram[1]) + 0x4000;
     MemESP::ram[4] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     MemESP::ram[6] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+
+    // Allocate time machine RAM
+    for (int i=0;i < TIME_MACHINE_SLOTS; i++)
+        for (int n=0; n < 8; n++)
+            MemESP::timemachine[i][n] = (uint32_t *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
 
     #else
 
@@ -117,4 +135,110 @@ void MemESP::Reset() {
 
     MemESP::pagingLock = Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95" ? 1 : 0;
 
+    #ifdef ESPECTRUM_PSRAM
+    Tm_Init();
+    #endif
+
 }
+
+#ifdef ESPECTRUM_PSRAM
+
+void MemESP::Tm_Init() {
+    
+    if (tm_loading_slot) return;
+    
+    // Init time machine
+
+    for (int i=0; i < 8; i++) MemESP::tm_bank_chg[i] = !MemESP::pagingLock;
+    
+    if (MemESP::pagingLock) {
+        MemESP::tm_bank_chg[0] = true;
+        MemESP::tm_bank_chg[2] = true;
+        MemESP::tm_bank_chg[5] = true;        
+    }
+    
+    for (int i=0;i < TIME_MACHINE_SLOTS; i++)
+        for (int n=0; n < 8; n++)
+            MemESP::tm_slotbanks[i][n]=0xff;
+
+    cur_timemachine = 0;  
+    tm_framecnt = 0;      
+    
+}
+
+void MemESP::Tm_Load(uint8_t slot) {
+
+    tm_loading_slot = true;
+    
+    // TO DO:
+    // tstates, globaltstates, disk or tape status, whatever else i figure out
+
+    // Read in the registers
+    Z80::setRegI(tm_slotdata[slot].RegI);
+
+    Z80::setRegHLx(tm_slotdata[slot].RegHLx);
+    Z80::setRegDEx(tm_slotdata[slot].RegDEx);
+    Z80::setRegBCx(tm_slotdata[slot].RegBCx);
+    Z80::setRegAFx(tm_slotdata[slot].RegAFx);
+
+    Z80::setRegHL(tm_slotdata[slot].RegHL);
+    Z80::setRegDE(tm_slotdata[slot].RegDE);
+    Z80::setRegBC(tm_slotdata[slot].RegBC);
+
+    Z80::setRegIY(tm_slotdata[slot].RegIY);
+    Z80::setRegIX(tm_slotdata[slot].RegIX);
+
+    uint8_t inter = tm_slotdata[slot].inter;
+    Z80::setIFF2(inter & 0x04 ? true : false);
+    Z80::setIFF1(Z80::isIFF2());
+    Z80::setRegR(tm_slotdata[slot].RegR);
+
+    Z80::setRegAF(tm_slotdata[slot].RegAF);
+    Z80::setRegSP(tm_slotdata[slot].RegSP);
+
+    Z80::setIM((Z80::IntMode)tm_slotdata[slot].IM);
+
+    VIDEO::borderColor = tm_slotdata[slot].borderColor;
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+
+    Z80::setRegPC(tm_slotdata[slot].RegPC);
+
+    bool tr_dos = tm_slotdata[slot].trdos;  // Check if TR-DOS is paged
+
+    MemESP::videoLatch = tm_slotdata[slot].videoLatch;
+    MemESP::romLatch = tm_slotdata[slot].romLatch;
+    MemESP::pagingLock = tm_slotdata[slot].pagingLock;
+    MemESP::bankLatch = tm_slotdata[slot].bankLatch;
+    
+    if (tr_dos) {
+        MemESP::romInUse = 4;
+        ESPectrum::trdos = true;            
+    } else {
+        MemESP::romInUse = MemESP::romLatch;
+        ESPectrum::trdos = false;
+    }
+
+    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+    MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
+
+    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+
+    // Read memory banks
+    for (int n=0; n < 8; n++) {   
+        if (tm_slotbanks[slot][n] != 0xff) {
+            printf("Loaded slot %d\n",n);
+            uint32_t* dst32 = (uint32_t *)MemESP::ram[n];
+            for (int i=0; i < 0x1000; i++)
+                // dst32[i] = MemESP::timemachine[tm_slotbanks[slot][n]][n][i];
+                dst32[i] = MemESP::timemachine[slot][n][i];
+        }
+    }
+
+    tm_framecnt = 0;
+
+    tm_loading_slot = false;
+
+};
+
+#endif

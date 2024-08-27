@@ -892,7 +892,11 @@ void Config::requestMachine(string newArch, string newRomSet) {
             MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v3pt;
         } else if (romSetTK90X == "v3en") {
             MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v3en;
+        } else if (romSetTK90X == "TKcs") {
+            MemESP::rom[0] = (uint8_t *) rom_0_tk_custom;
+            MemESP::rom[0] += 8;
         }
+
 
     } else if (arch == "TK95") {
 

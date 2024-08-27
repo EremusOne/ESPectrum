@@ -166,7 +166,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
     // ULA PORT    
     if ((address & 0x0001) == 0) {
 
-        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+        if (Config::arch[0] == 'T' && Config::ALUTK > 0) {
             VIDEO::Draw( 3 + tkIOcon(address), false);
         } else {
             VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
@@ -201,9 +201,9 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
     } else {
 
-        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+        if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
-        } else
+        else
             ioContentionLate(MemESP::ramContended[rambank]);
 
         // The default port value is 0xFF.
@@ -268,59 +268,18 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
                 // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
                 if (!MemESP::pagingLock) {
+
                     MemESP::pagingLock = bitRead(data, 5);
 
                     if (MemESP::bankLatch != (data & 0x7)) {
-
-                        #ifdef DIRTY_LINES
-                        // printf("Bank latch IN! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
-                        #endif
-
                         MemESP::bankLatch = data & 0x7;
                         MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
                         MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
-
-                        #ifdef DIRTY_LINES
-
-                        if (MemESP::bankLatch == 5 || MemESP::bankLatch == 7) {
-                            uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
-                            for (int n=0; n < 24; n++) {
-                                *dr++ |= 0x01010101;
-                                *dr++ |= 0x01010101;
-                            }
-                        }
-
-                        #endif
                     }
 
                     if (MemESP::videoLatch != bitRead(data, 3)) {
-
-                        #ifdef DIRTY_LINES
-                        // printf("Video latch IN! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
-                        #endif
-
                         MemESP::videoLatch = bitRead(data, 3);
-
-                        // // This, if not using the ptime128 draw version, fixs ptime and ptime128
-                        // if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
-                        //     VIDEO::Draw(2, false);
-                        //     CPU::tstates -= 2;
-                        // }
-
                         VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
-
-                        #ifdef DIRTY_LINES
-                        uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
-                        uint32_t *gr = (uint32_t *)VIDEO::grmem + 6144;
-                        for (int i=0; i < 24; i++) {
-                            uint32_t dirty_data = 0x01010101;
-                            for (int n=0; n < 8; n++)
-                                if(*gr++ & 0x80808080) dirty_data = 0x81818181;
-                            *dr++ = dirty_data;
-                            *dr++ = dirty_data;                   
-                        }
-                        #endif
-
                     }
                     
                     MemESP::romLatch = bitRead(data, 4);
@@ -356,8 +315,8 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             VIDEO::brdChange = true;
             
             if (!Z80Ops::isPentagon) 
-                if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0)
-                    VIDEO::Draw( tkIOcon(address), false);
+                if (Config::arch[0] == 'T' && Config::ALUTK > 0)
+                    VIDEO::Draw(tkIOcon(address),false);
                 else            
                     VIDEO::Draw(0,true); // Seems not needed in Pentagon
 
@@ -393,19 +352,19 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                 AySound::setRegisterData(data);
             }
 
-            if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+            if (Config::arch[0] == 'T' && Config::ALUTK > 0)
                 VIDEO::Draw( 3 + tkIOcon(address), false);
-            } else
-            VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
+            else
+                VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
             
             return;
 
         }
 
-        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+        if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
-        } else
-        VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
+        else
+            VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
 
     } else {
 
@@ -419,10 +378,10 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                 AySound::setRegisterData(data);
             }
 
-            if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+            if (Config::arch[0] == 'T' && Config::ALUTK > 0)
                 VIDEO::Draw( 3 + tkIOcon(address), false);
-            } else
-            ioContentionLate(MemESP::ramContended[rambank]);
+            else
+                ioContentionLate(MemESP::ramContended[rambank]);
 
             return;
 
@@ -458,10 +417,10 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         }
 
-        if ((Config::arch=="TK90X" || Config::arch == "TK95") && Config::ALUTK > 0) {
+        if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
-        } else
-        ioContentionLate(MemESP::ramContended[rambank]);
+        else
+            ioContentionLate(MemESP::ramContended[rambank]);
 
     }
 
@@ -470,39 +429,13 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         if (!MemESP::pagingLock) {
 
-            // printf("OUT 128! %d\n",(int)data);
-            
             MemESP::pagingLock = bitRead(data, 5);
 
             if (MemESP::bankLatch != (data & 0x7)) {
-
-                #ifdef DIRTY_LINES
-                // printf("Bank latch OUT! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
-                #endif
-
                 MemESP::bankLatch = data & 0x7;
+                MemESP::tm_bank_chg[MemESP::bankLatch] = true; // Bank selected. Mark for time machine
                 MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
                 MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
-
-                #ifdef DIRTY_LINES
-
-                if (MemESP::bankLatch == 5 || MemESP::bankLatch == 7) {
-
-                    // printf("Curline: %d\n",VIDEO::curline);
-
-                    uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
-                    for (int n=0; n < 24; n++) {
-                        *dr++ |= 0x01010101;
-                        *dr++ |= 0x01010101;
-                    }
-
-                    // This is the line that keeps active in fusetest. Why??
-                    // VIDEO::dirty_lines[128] |= 0x01;
-
-                }
-
-                #endif
-
             }
 
             MemESP::romLatch = bitRead(data, 4);
@@ -510,36 +443,9 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
-
-                #ifdef DIRTY_LINES
-                // printf("Video latch OUT! Banklatch (prev. - new): %d - %d Videolatch (prev. new): %d - %d\n",(int)MemESP::bankLatch,(int)data & 0x7, (int)MemESP::videoLatch,(int)bitRead(data,3));
-                #endif
-
                 MemESP::videoLatch = bitRead(data, 3);
-                
-                // // Seems not needed in Pentagon
-                // // This, if not using the ptime128 draw version, fixs ptime and ptime128
-                // if (!Z80Ops::isPentagon) {
-                //     if (((address & 0x0001) != 0) && (MemESP::ramContended[rambank])) {
-                //         VIDEO::Draw(2, false);
-                //         CPU::tstates -= 2;
-                //     }
-                // }
-
+                MemESP::tm_bank_chg[MemESP::videoLatch ? 7 : 5] = true; // Bank selected. Mark for time machine
                 VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
-                
-                #ifdef DIRTY_LINES
-                uint32_t *dr = (uint32_t *)VIDEO::dirty_lines;
-                uint32_t *gr = (uint32_t *)VIDEO::grmem + 6144;
-                for (int i=0; i < 24; i++) {
-                    uint32_t dirty_data = 0x01010101;
-                    for (int n=0; n < 8; n++)
-                        if(*gr++ & 0x80808080) dirty_data = 0x81818181;
-                    *dr++ = dirty_data;
-                    *dr++ = dirty_data;                   
-                }
-                #endif
-
             }
 
         }

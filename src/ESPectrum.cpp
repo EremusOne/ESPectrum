@@ -63,7 +63,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include "esp_spi_flash.h"
 #include "esp_efuse.h"
 #include "soc/efuse_reg.h"
-// #include "bootloader_random.h"
 
 using namespace std;
 
@@ -78,10 +77,7 @@ bool ESPectrum::ps2kbd2 = false;
 //=======================================================================================
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_PENTAGON] = { 0 };
 uint32_t* ESPectrum::overSamplebuf;
-
 signed char ESPectrum::aud_volume = ESP_VOLUME_DEFAULT;
-// signed char ESPectrum::aud_volume = ESP_VOLUME_MAX; // For .tap player test
-
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::audbufcntover = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
@@ -164,6 +160,8 @@ int ESPectrum::ESPtestvar = 0;
 int ESPectrum::ESPtestvar1 = 0;
 int ESPectrum::ESPtestvar2 = 0;
 
+#define START_MSG_DURATION 20
+
 void ShowStartMsg() {
     
     fabgl::VirtualKeyItem Nextkey;
@@ -172,12 +170,25 @@ void ShowStartMsg() {
 
     OSD::drawOSD(false);
 
-    VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 12 : 32,240,50,zxColor(0, 0));            
+    int pos_x, pos_y;
+
+    if (Config::videomode == 2) {
+        pos_x = 82;
+        if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
+            VIDEO::vga.fillRect( 56, 24, 240,50,zxColor(0, 0));            
+            pos_y = 35;
+        } else {
+            VIDEO::vga.fillRect( 56, 48,240,50,zxColor(0, 0));            
+            pos_y = 59;
+        }
+    } else {
+        VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 12 : 32,240,50,zxColor(0, 0));            
+        pos_x = Config::aspect_16_9 ? 86 : 66;
+        pos_y = Config::aspect_16_9 ? 23 : 43;
+    }
 
     // Decode Logo in EBF8 format
     uint8_t *logo = (uint8_t *)ESPectrum_logo;
-    int pos_x = Config::aspect_16_9 ? 86 : 66;
-    int pos_y = Config::aspect_16_9 ? 23 : 43;
     int logo_w = (logo[5] << 8) + logo[4]; // Get Width
     int logo_h = (logo[7] << 8) + logo[6]; // Get Height
     logo+=8; // Skip header
@@ -187,25 +198,40 @@ void ShowStartMsg() {
 
     OSD::osdAt(7, 1);
     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(1, 0));
-    VIDEO::vga.print(Config::lang ? StartMsg[0] : StartMsg[1]);
+    VIDEO::vga.print(StartMsg[Config::lang]);
 
     VIDEO::vga.setTextColor(zxColor(16,0), zxColor(1, 0));
-    OSD::osdAt(7, Config::lang ? 28 : 25);          
-    VIDEO::vga.print("ESP");
     OSD::osdAt(9, 1);          
     VIDEO::vga.print("ESP");
-    OSD::osdAt(13, 13);          
-    VIDEO::vga.print("ESP");
 
-    OSD::osdAt(17, 4);          
+    switch (Config::lang) {
+        case 0: OSD::osdAt(7, 25);
+                VIDEO::vga.print("ESP");
+                OSD::osdAt(13, 13);          
+                VIDEO::vga.print("ESP");
+                OSD::osdAt(17, 4);          
+                break;
+        case 1: OSD::osdAt(7, 28);          
+                VIDEO::vga.print("ESP");
+                OSD::osdAt(13, 13);          
+                VIDEO::vga.print("ESP");
+                OSD::osdAt(17, 4);          
+                break;
+        case 2: OSD::osdAt(7, 27);
+                VIDEO::vga.print("ESP");
+                OSD::osdAt(13, 18);          
+                VIDEO::vga.print("ESP");
+                OSD::osdAt(17, 15);          
+    }
+
     VIDEO::vga.setTextColor(zxColor(3, 1), zxColor(1, 0));
-    VIDEO::vga.print("https://patreon.com/ESPectrum");
+    VIDEO::vga.print("patreon.com/ESPectrum");
 
     char msg[38];
-    
-    for (int i=20; i >= 0; i--) {
+    for (int i=START_MSG_DURATION; i >= 0; i--) {
         OSD::osdAt(19, 1);          
-        sprintf(msg,Config::lang ? "Este mensaje se cerrar" "\xA0" " en %02d segundos" : "This message will close in %02d seconds",i);
+        // sprintf(msg,Config::lang ? "Este mensaje se cerrar" "\xA0" " en %02d segundos" : "This message will close in %02d seconds",i);
+        sprintf(msg,STARTMSG_CLOSE[Config::lang],i);
         VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
         VIDEO::vga.print(msg);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -216,23 +242,6 @@ void ShowStartMsg() {
     // Disable StartMsg
     Config::StartMsg = false;
     Config::save("StartMsg");
-
-    // while (1) {
-
-    //     if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
-
-    //     ESPectrum::readKbdJoy();
-
-    //     if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
-    //         if (ESPectrum::readKbd(&Nextkey)) {
-    //             if(!Nextkey.down) continue;
-    //             if (Nextkey.vk == fabgl::VK_F1 || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY1B || Nextkey.vk == fabgl::VK_JOY2A || Nextkey.vk == fabgl::VK_JOY2B) break;
-    //         }
-    //     }
-
-    //     vTaskDelay(5 / portTICK_PERIOD_MS);
-
-    // }
 
 }
 
@@ -416,9 +425,14 @@ void ESPectrum::bootKeyboard() {
 
     if (i < 200) {
         Config::videomode = (s[0] == '1') ? 0 : (s[0] == '2') ? 1 : 2;
-        Config::aspect_16_9 = (s[1] == 'Q') ? false : true;
+        if (Config::videomode == 2)
+            Config::aspect_16_9 = false;
+        else
+            Config::aspect_16_9 = (s[1] == 'Q') ? false : true;
         Config::ram_file="none";
-        Config::save();
+        Config::save("videomode");
+        Config::save("asp169");
+        Config::save("ram");
         // printf("%s\n", s.c_str());
     }
 
@@ -427,29 +441,15 @@ void ESPectrum::bootKeyboard() {
 //=======================================================================================
 // SETUP
 //=======================================================================================
-// TaskHandle_t ESPectrum::loopTaskHandle;
-
-// uint32_t ESPectrum::sessid;
 
 void ESPectrum::setup() 
 {
 
-    // //=======================================================================================
-    // // GENERATE SESSION ID
-    // //=======================================================================================
-    // bootloader_random_enable();
-    // sessid = esp_random();
-    // printf("SESSION ID: %08X\n",(unsigned int)sessid);
-    // bootloader_random_disable();    
-
     if (Config::slog_on) {
-
         printf("------------------------------------\n");
         printf("| ESPectrum: booting               |\n");        
         printf("------------------------------------\n");    
-
         showMemInfo();
-
     }
 
     //=======================================================================================
@@ -466,19 +466,19 @@ void ESPectrum::setup()
 
     if (Config::StartMsg) Config::save(); // Firmware updated or reflashed: save all config data
 
-    printf("---------------------------------\n");
-    printf("Ram file: %s\n",Config::ram_file.c_str());
-    printf("Arch: %s\n",Config::arch.c_str());
-    printf("pref Arch: %s\n",Config::pref_arch.c_str());
-    printf("romSet: %s\n",Config::romSet.c_str());
-    printf("romSet48: %s\n",Config::romSet48.c_str());
-    printf("romSet128: %s\n",Config::romSet128.c_str());        
-    printf("romSetTK90X: %s\n",Config::romSetTK90X.c_str());
-    printf("romSetTK95: %s\n",Config::romSetTK95.c_str());        
-    printf("pref_romSet_48: %s\n",Config::pref_romSet_48.c_str());
-    printf("pref_romSet_128: %s\n",Config::pref_romSet_128.c_str());        
-    printf("pref_romSet_TK90X: %s\n",Config::pref_romSet_TK90X.c_str());
-    printf("pref_romSet_TK95: %s\n",Config::pref_romSet_TK95.c_str());        
+    // printf("---------------------------------\n");
+    // printf("Ram file: %s\n",Config::ram_file.c_str());
+    // printf("Arch: %s\n",Config::arch.c_str());
+    // printf("pref Arch: %s\n",Config::pref_arch.c_str());
+    // printf("romSet: %s\n",Config::romSet.c_str());
+    // printf("romSet48: %s\n",Config::romSet48.c_str());
+    // printf("romSet128: %s\n",Config::romSet128.c_str());        
+    // printf("romSetTK90X: %s\n",Config::romSetTK90X.c_str());
+    // printf("romSetTK95: %s\n",Config::romSetTK95.c_str());        
+    // printf("pref_romSet_48: %s\n",Config::pref_romSet_48.c_str());
+    // printf("pref_romSet_128: %s\n",Config::pref_romSet_128.c_str());        
+    // printf("pref_romSet_TK90X: %s\n",Config::pref_romSet_TK90X.c_str());
+    // printf("pref_romSet_TK95: %s\n",Config::pref_romSet_TK95.c_str());        
     
     // Set arch if there's no snapshot to load
     if (Config::ram_file == NO_RAM_FILE) {
@@ -638,8 +638,13 @@ void ESPectrum::setup()
     overSamplebuf = (uint32_t *) heap_caps_malloc(ESP_AUDIO_SAMPLES_PENTAGON << 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT);  
     if (overSamplebuf == NULL) printf("Can't allocate oversamplebuffer\n");
 
+    // Create Audio task
+    audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
+    // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048 /* 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+
     // Set samples per frame and AY_emu flag depending on arch
-    if (Config::arch == "48K" /*|| Config::arch == "TK90X" || Config::arch == "TK95"*/) {
+    if (Config::arch == "48K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_48;
         audioAYDivider = ESP_AUDIO_AY_DIV_48;
@@ -696,11 +701,6 @@ void ESPectrum::setup()
         ESPectrum::aud_volume = ESP_VOLUME_DEFAULT;
 
     ESPoffset = 0;
-
-    // Create Audio task
-    audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
-    // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048 /* 1024 /* 1536 */, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
     AySound::init();
@@ -882,21 +882,12 @@ void ESPectrum::reset()
 
     // Readjust output pwmaudio frequency if needed
     if (prevAudio_freq != Audio_freq) {
-        
         // printf("Resetting pwmaudio to freq: %d\n",Audio_freq);
-
         esp_err_t res;
         res = pwm_audio_set_sample_rate(Audio_freq);
         if (res != ESP_OK) {
             printf("Can't set sample rate\n");
         }
-
-        // pwm_audio_stop();
-        // delay(100); // Maybe this fix random sound lost ?
-        // pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
-        // pwm_audio_start();
-        // pwm_audio_set_volume(aud_volume);
-
     }
     
     // Reset AY emulation
@@ -1027,10 +1018,6 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 // totalseconds = 0;
                 // totalsecondsnodelay = 0;
                 // VIDEO::framecnt = 0;
-
-                #ifdef DIRTY_LINES
-                for (int i=0; i < SPEC_H; i++) VIDEO::dirty_lines[i] |= 0x01;
-                #endif // DIRTY_LINES
 
                 // Refresh border
                 VIDEO::brdnextframe = true;
@@ -1506,7 +1493,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             if (!bitRead(ZXKeyb::ZXcols[7],3)) { // N -> NMI
                 Z80::triggerNMI();
             } else
-            if (!bitRead(ZXKeyb::ZXcols[7],3)) { // K -> Help / Kbd layout
+            if (!bitRead(ZXKeyb::ZXcols[6],2)) { // K -> Help / Kbd layout
                 OSD::do_OSD(fabgl::VK_F1,true);
             } else
             if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
@@ -1562,10 +1549,6 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
     }
 
 }
-
-// static int bmax = 0;
-
-// static int sndalive = 0;
 
 //=======================================================================================
 // AUDIO
@@ -1630,7 +1613,6 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
 IRAM_ATTR void ESPectrum::BeeperGetSample() {
 
     // Beeper audiobuffer generation (oversample)
-    // uint32_t audbufpos = Z80Ops::is128 ? CPU::tstates / 19 : CPU::tstates >> 4;
     uint32_t audbufpos = CPU::tstates / audioOverSampleDivider;    
     for (;audbufcnt < audbufpos; audbufcnt++) {
         audioBitBuf += lastaudioBit;
@@ -1645,7 +1627,6 @@ IRAM_ATTR void ESPectrum::BeeperGetSample() {
 
 IRAM_ATTR void ESPectrum::AYGetSample() {
     // AY audiobuffer generation (oversample)
-    // uint32_t audbufpos = CPU::tstates / (Z80Ops::is128 ? 114 : 112);
     uint32_t audbufpos = CPU::tstates / audioAYDivider;
     if (audbufpos > audbufcntAY) {
         AySound::gen_sound(audbufpos - audbufcntAY, audbufcntAY);
@@ -1657,10 +1638,11 @@ IRAM_ATTR void ESPectrum::AYGetSample() {
 // MAIN LOOP
 //=======================================================================================
 
-IRAM_ATTR void ESPectrum::loop() {    
+IRAM_ATTR void ESPectrum::loop() {   
 
 // // Video adjustment
 // VIDEO::vga.clear(zxColor(3,0)); // For overscan testing. Remove once adjusted
+
 // for(;;) {
 
 //     processKeyboard();
@@ -1758,7 +1740,83 @@ for(;;) {
 
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
-        
+
+    #ifdef ESPECTRUM_PSRAM    
+    // Time machine
+    if (MemESP::tm_framecnt++ == 250) { // One "snapshot" every 250 frames (~5 seconds on 50hz machines)
+
+        // printf("Time machine\n================\n");
+
+        for (int n=0; n < 8; n++) { // Save active RAM banks during slot period
+            
+            if (n == 2 || MemESP::tm_bank_chg[n]) { // Bank 2 is always copied because is always active
+
+                // printf("Copying bank %d\n",n);
+
+                // Copy bank
+                uint32_t* src32 = (uint32_t *)MemESP::ram[n];
+                for (int i=0; i < 0x1000; i++)
+                    MemESP::timemachine[MemESP::cur_timemachine][n][i] = src32[i];
+
+                // Mark as inactive if is not current bank latched or current videobank
+                if (n != MemESP::bankLatch && n != (MemESP::videoLatch ? 7 : 5))
+                    MemESP::tm_bank_chg[n]=false;
+                
+                // Register copied bank as current into slot bank list
+                MemESP::tm_slotbanks[MemESP::cur_timemachine][n] = MemESP::cur_timemachine;
+
+            }
+
+        }
+
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegI = Z80::getRegI();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegHLx = Z80::getRegHLx();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegDEx = Z80::getRegDEx();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegBCx = Z80::getRegBCx();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegAFx = Z80::getRegAFx();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegHL = Z80::getRegHL();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegDE = Z80::getRegDE();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegBC = Z80::getRegBC();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegIY = Z80::getRegIY();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegIX = Z80::getRegIX();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].inter = Z80::isIFF2() ? 0x04 : 0;
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegR = Z80::getRegR();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegAF = Z80::getRegAF();        
+
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegSP = Z80::getRegSP();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].IM = Z80::getIM();
+        MemESP::tm_slotdata[MemESP::cur_timemachine].borderColor = VIDEO::borderColor;
+        MemESP::tm_slotdata[MemESP::cur_timemachine].RegPC = Z80::getRegPC();
+
+        MemESP::tm_slotdata[MemESP::cur_timemachine].bankLatch = MemESP::bankLatch;
+        MemESP::tm_slotdata[MemESP::cur_timemachine].videoLatch = MemESP::videoLatch;
+        MemESP::tm_slotdata[MemESP::cur_timemachine].romLatch = MemESP::romLatch;
+        MemESP::tm_slotdata[MemESP::cur_timemachine].pagingLock = MemESP::pagingLock;
+        MemESP::tm_slotdata[MemESP::cur_timemachine].trdos = ESPectrum::trdos;
+
+        if (MemESP::cur_timemachine == 7) {
+            for (int n=0; n < 8; n++)
+                MemESP::tm_slotbanks[0][n] = MemESP::tm_slotbanks[7][n];
+        } else {
+            for (int n=0; n < 8; n++)
+                MemESP::tm_slotbanks[MemESP::cur_timemachine + 1][n] = MemESP::tm_slotbanks[MemESP::cur_timemachine][n];
+        }
+
+        // printf("Cur_tm: %d, Slot Banks: ",MemESP::cur_timemachine);
+        // for (int n=0; n<8; n++)
+        //     printf("%d ",MemESP::tm_slotbanks[MemESP::cur_timemachine][n]);
+        // printf("\n");
+
+        MemESP::cur_timemachine++;
+        MemESP::cur_timemachine &= 0x07;
+
+        // printf("================\n");
+
+        MemESP::tm_framecnt = 0;
+
+    }
+    #endif
+
     elapsed = esp_timer_get_time() - ts_start;
     idle = target - elapsed - ESPoffset;
 

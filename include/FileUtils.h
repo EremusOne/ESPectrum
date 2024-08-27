@@ -128,12 +128,14 @@ private:
 
 // Experimental values for PSRAM
 #define DIR_CACHE_SIZE 256
+#define DIR_CACHE_SIZE_OVERSCAN 256
 #define FILENAMELEN 128
 
 #else
 
 // Values for no PSRAM
 #define DIR_CACHE_SIZE 64
+#define DIR_CACHE_SIZE_OVERSCAN 32
 #define FILENAMELEN 128
 
 #endif

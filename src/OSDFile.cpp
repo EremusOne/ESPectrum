@@ -189,21 +189,57 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     long dirfilesize;    
     bool reIndex;
 
-    // Position
-    if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 4);
-        y = (Config::aspect_16_9 ? 4 : 8);
-    } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        y = 8 + (16 * menu_level);
-    }
-
-    if ( x + mfcols * OSD_FONT_W > (Config::aspect_16_9 ? 24 : 4) + 52 * OSD_FONT_W ) x = (Config::aspect_16_9 ? 24 : 4) + ( 51 - mfcols ) * OSD_FONT_W;
-    if ( y + mfrows > (Config::aspect_16_9 ? 200 : 240) - 2 * OSD_FONT_H ) y = (Config::aspect_16_9 ? 200 : 240) - ( mfrows + 2 ) * OSD_FONT_H;
-
     // Columns and Rows
     cols = mfcols;
     mf_rows = mfrows + (Config::aspect_16_9 ? 0 : 1);
+
+    // CRT Overscan compensation
+    if (Config::videomode == 2) {
+        x = 18;
+        if (menu_level == 0) {
+            if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
+                y = 4;
+            } else {
+                y = 12;
+            }
+        }
+    } else {
+        x = 0;
+        if (menu_level == 0) y = 0;
+    }
+
+    // Position
+    if (menu_level == 0) {
+        x += (Config::aspect_16_9 ? 24 : 4);
+        y += (Config::aspect_16_9 ? 4 : 8);
+    } else {
+        x += (Config::aspect_16_9 ? 24 : 4) + (60 * menu_level);
+        y += (Config::aspect_16_9 ? 4 : 8) + (8 * (menu_level - 1));
+    }
+
+    // Size
+    // w = (cols * OSD_FONT_W) + 2;
+    // h = ((mf_rows + 1) * OSD_FONT_H) + 2;
+    // // Check window boundaries
+    // if ( x + mfcols * OSD_FONT_W > (Config::aspect_16_9 ? 24 : 4) + 52 * OSD_FONT_W ) x = (Config::aspect_16_9 ? 24 : 4) + ( 51 - mfcols ) * OSD_FONT_W;
+    // if ( y + mfrows > (Config::aspect_16_9 ? 200 : 240) - 2 * OSD_FONT_H ) y = (Config::aspect_16_9 ? 200 : 240) - ( mfrows + 2 ) * OSD_FONT_H;
+
+    // Adjust dialog size if needed
+    w = (cols * OSD_FONT_W) + 2;
+    printf("X: %d w: %d Cols: %d scrW: %d\n",x,w,cols,scrW);
+    while ( x + w >= OSD::scrW - OSD_FONT_W) {
+        cols--;
+        w = (cols * OSD_FONT_W) + 2;
+        printf("X: %d w: %d Cols: %d scrW: %d\n",x,w,cols,scrW);
+    };
+
+    h = ((mf_rows + 1) * OSD_FONT_H) + 2;    
+    printf("Y: %d h: %d mf_rows: %d scrH: %d\n",y,h,mf_rows,scrH);
+    while ( y + h >= OSD::scrH - OSD_FONT_H) {
+        mf_rows--;
+        h = ((mf_rows + 1) * OSD_FONT_H) + 2;    
+        printf("Y: %d h: %d mf_rows: %d scrH: %d\n",y,h,mf_rows,scrH);
+    };
 
     // Adjust begin_row & focus in case of values doesn't fit in current dialog size 
     // printf("Focus: %d, Begin_row: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) mf_rows);
@@ -216,10 +252,6 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
         FileUtils::fileTypes[ftype].begin_row = 2;
     }
 
-    // Size
-    w = (cols * OSD_FONT_W) + 2;
-    h = ((mf_rows + 1) * OSD_FONT_H) + 2;
-    
     // menu = title + "\n" + fdir + "\n";
     menu = title + "\n" + ( fdir.length() == 1 ? fdir : fdir.substr(0,fdir.length()-1)) + "\n";
     WindowDraw(); // Draw menu outline
@@ -487,15 +519,15 @@ reset:
 
                 unsigned int elem = FileUtils::fileTypes[ftype].fdMode ? fdSearchElements : elements;
                 if (elem) {
-                    // menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - (real_rows > virtual_rows ? 13 : 12));
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - 12);
+                    // menuAt(mf_rows, cols - (real_rows > virtual_rows ? 13 : 12));
+                    menuAt(mf_rows, cols - 12);
                     char elements_txt[13];
                     int nitem = (FileUtils::fileTypes[ftype].begin_row + FileUtils::fileTypes[ftype].focus ) - (4 + ndirs) + (fdir.length() == 1);
                     snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elem);
                     VIDEO::vga.print(std::string(12 - strlen(elements_txt), ' ').c_str());
                     VIDEO::vga.print(elements_txt);
                 } else {
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), cols - 12);
+                    menuAt(mf_rows, cols - 12);
                     VIDEO::vga.print(std::string(12,' ').c_str());
                 }
 
@@ -568,7 +600,7 @@ reset:
 
                     } else if (Menukey.vk == fabgl::VK_F2 && ftype == DISK_TAPFILE) {  // Dirty hack
 
-                        string new_tap = OSD::input( 1, mfrows + (Config::aspect_16_9 ? 0 : 1), Config::lang ? "Nomb: " : "Name: ", 30, zxColor(7,1), zxColor(5,0) );
+                        string new_tap = OSD::input( 1, mf_rows, Config::lang ? "Nomb: " : "Name: ", 30, zxColor(7,1), zxColor(5,0) );
 
                         if ( new_tap != "" ) {
 
@@ -581,7 +613,7 @@ reset:
 
                         } else {
 
-                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                            menuAt(mf_rows, 1);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                             VIDEO::vga.print("      " "                               ");
 
@@ -596,7 +628,7 @@ reset:
                         if (FileUtils::fileTypes[ftype].fdMode) {
 
                             // Clean status bar
-                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 0);
+                            menuAt(mf_rows, 0);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                             // VIDEO::vga.print( ftype == DISK_TAPFILE ? "            " "                      " : "                      " );
                             // VIDEO::vga.print(std::string(cols, ' ').c_str());
@@ -618,7 +650,7 @@ reset:
                         } else {
 
                             // Restore status bar
-                            menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 0);
+                            menuAt(mf_rows, 0);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                             // VIDEO::vga.print( ftype == DISK_TAPFILE ? "            " "                      " : "                      " );
                             VIDEO::vga.print(StatusBar.c_str());
@@ -806,7 +838,7 @@ reset:
             if (FileUtils::fileTypes[ftype].fdMode) {
 
                 if ((++fdCursorFlash & 0xf) == 0) {
-                    menuAt(mfrows + (Config::aspect_16_9 ? 0 : 1), 1);
+                    menuAt(mf_rows, 1);
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                     VIDEO::vga.print(Config::lang ? "B\xA3sq: " : "Find: ");
                     VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());

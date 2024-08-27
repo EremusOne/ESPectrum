@@ -74,7 +74,7 @@ DISK_FTYPE FileUtils::fileTypes[4] = {
     {"sna,z80,p",".s",2,2,0,""},
     {"tap,tzx,",".t",2,2,0,""},
     {"trd,scl",".d",2,2,0,""},
-    {"rom,bin",".r",2,2,0,""}
+    {"rom",".r",2,2,0,""}
 };
 
 string toLower(const std::string& str) {
@@ -473,7 +473,12 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     printf("\n");
 
 
-    int bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort
+    int bufferSize;
+    if (Config::videomode < 2) {
+        bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort
+    } else {
+        bufferSize = item_count > DIR_CACHE_SIZE_OVERSCAN ? DIR_CACHE_SIZE_OVERSCAN : item_count;  // Size of buffer to read and sort
+    }
     std::vector<std::string> buffer;
 
     int iterations = 0;

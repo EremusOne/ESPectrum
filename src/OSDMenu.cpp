@@ -148,15 +148,30 @@ unsigned short OSD::menuRun(string new_menu) {
 
     menu = new_menu;
 
+    // CRT Overscan compensation
+    if (Config::videomode == 2) {
+        x = 18;
+        if (menu_level == 0) {
+            if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
+                y = 4;
+            } else {
+                y = 12;
+            }
+        }
+    } else {
+        x = 0;
+        if (menu_level == 0) y = 0;
+    }
+
     // Position
     if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
-        y = 8;
+        x += (Config::aspect_16_9 ? 24 : 8);
+        y += 8;
         prev_y[0] = 0;
     } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        x += (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
         if (menu_saverect && !prev_y[menu_level]) {
-            y += (8 + (8 * menu_prevopt));
+            y += (4 + (8 * menu_prevopt));
             prev_y[menu_level] = y;
         } else {
             y = prev_y[menu_level];
@@ -183,15 +198,17 @@ unsigned short OSD::menuRun(string new_menu) {
         }
         col_count++;
     }
-    // printf("Cols: %d\n",cols);
+    // printf("Cols previo: %d\n",cols);
     cols += 8;
-    cols = (cols > 28 ? 28 : cols);
+    cols = (cols > 32 ? 32 : cols);    
+    // printf("Cols final: %d\n",cols);
 
     // Size
     w = (cols * OSD_FONT_W) + 2;
     h = (virtual_rows * OSD_FONT_H) + 2;
 
-    if ( x + cols * OSD_FONT_W > 52 * OSD_FONT_W ) x = ( 52 - cols ) * OSD_FONT_W;
+    int rmax = scrW == 320 ? 52 : 55;
+    if ( x + cols * OSD_FONT_W > rmax * OSD_FONT_W ) x = ( rmax - cols ) * OSD_FONT_W;
 
     WindowDraw(); // Draw menu outline
 
@@ -545,7 +562,7 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type, bool is_menu) {
     }
 
     if (line.find(ASCII_TAB) != line.npos) {
-        line = line.substr(0,line.find(ASCII_TAB)) + string(cols - margin - line.length(),' ') + line.substr(line.find(ASCII_TAB)+1);
+        line = line.substr(0,line.find(ASCII_TAB)) + string(cols - margin - line.length(),' ') + line.substr(line.find(ASCII_TAB) + 1);
     }
 
     menuAt(virtual_row_num, 0);
@@ -657,8 +674,23 @@ int OSD::menuTape(string title) {
 
     // Position
 //    if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
-        y = 8;
+
+    // CRT Overscan compensation
+    if (Config::videomode == 2) {
+        x = 18;
+        if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
+            y = 4;
+        } else {
+            y = 12;
+        }
+    } else {
+        x = 0;
+        y = 0;
+    }
+
+    x += (Config::aspect_16_9 ? 24 : 8);
+    y += 8;
+
 //    } else {
 //        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
 //        y = 8 + (16 * menu_level);
