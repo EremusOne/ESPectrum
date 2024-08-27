@@ -1007,7 +1007,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
                 int64_t osd_start = esp_timer_get_time();
 
-                OSD::do_OSD(KeytoESP, Kbd->isVKDown(fabgl::VK_LCTRL) || Kbd->isVKDown(fabgl::VK_RCTRL));
+                OSD::do_OSD(KeytoESP, Kbd->isVKDown(fabgl::VK_LCTRL) || Kbd->isVKDown(fabgl::VK_RCTRL), Kbd->isVKDown(fabgl::VK_LSHIFT) || Kbd->isVKDown(fabgl::VK_RSHIFT));
 
                 Kbd->emptyVirtualKeyQueue();
                 
@@ -1437,52 +1437,52 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             int64_t osd_start = esp_timer_get_time();
 
             if (!bitRead(ZXKeyb::ZXcols[3],0)) {
-                OSD::do_OSD(fabgl::VK_F1,0);
+                OSD::do_OSD(fabgl::VK_F1,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],1)) {
-                OSD::do_OSD(fabgl::VK_F2,0);
+                OSD::do_OSD(fabgl::VK_F2,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],2)) {
-                OSD::do_OSD(fabgl::VK_F3,0);
+                OSD::do_OSD(fabgl::VK_F3,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],3)) {
-                OSD::do_OSD(fabgl::VK_F4,0);
+                OSD::do_OSD(fabgl::VK_F4,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[3],4)) {
-                OSD::do_OSD(fabgl::VK_F5,0);
+                OSD::do_OSD(fabgl::VK_F5,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],4)) {
-                OSD::do_OSD(fabgl::VK_F6,0);
+                OSD::do_OSD(fabgl::VK_F6,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],3)) {
-                OSD::do_OSD(fabgl::VK_F7,0);
+                OSD::do_OSD(fabgl::VK_F7,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],2)) {
-                OSD::do_OSD(fabgl::VK_F8,0);
+                OSD::do_OSD(fabgl::VK_F8,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],1)) {
-                OSD::do_OSD(fabgl::VK_F9,0);
+                OSD::do_OSD(fabgl::VK_F9,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[4],0)) {
-                OSD::do_OSD(fabgl::VK_F10,0);
+                OSD::do_OSD(fabgl::VK_F10,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],0)) {
-                OSD::do_OSD(fabgl::VK_F11,0);
+                OSD::do_OSD(fabgl::VK_F11,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],1)) {
-                OSD::do_OSD(fabgl::VK_F12,0);
+                OSD::do_OSD(fabgl::VK_F12,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[5],0)) { // P -> Pause
-                OSD::do_OSD(fabgl::VK_PAUSE,0);
+                OSD::do_OSD(fabgl::VK_PAUSE,0,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
-                OSD::do_OSD(fabgl::VK_F3,true);
+                OSD::do_OSD(fabgl::VK_F3,0,true);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],3)) { // R -> Reset to TR-DOS
-                OSD::do_OSD(fabgl::VK_F11,true);
+                OSD::do_OSD(fabgl::VK_F11,true,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[2],4)) { // T -> Turbo
-                OSD::do_OSD(fabgl::VK_F2,true);
+                OSD::do_OSD(fabgl::VK_F2,true,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[1],1)) { // S -> Screen capture
                 CaptureToBmp();
@@ -1494,7 +1494,7 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                 Z80::triggerNMI();
             } else
             if (!bitRead(ZXKeyb::ZXcols[6],2)) { // K -> Help / Kbd layout
-                OSD::do_OSD(fabgl::VK_F1,true);
+                OSD::do_OSD(fabgl::VK_F1,true,0);
             } else
             if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
                 if (Config::CenterH > -16) Config::CenterH--;

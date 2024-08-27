@@ -95,7 +95,7 @@ public:
     static void drawStats();
     static int  prepare_checkbox_menu(string &menu, string curopt);
     static void pref_rom_menu();
-    static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL);
+    static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT);
     static void HWInfo();
 
     // Error

@@ -796,12 +796,16 @@ void OSD::pref_rom_menu() {
 }
 
 // OSD Main Loop
-void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
+void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
     static uint8_t last_sna_row = 0;
     fabgl::VirtualKeyItem Nextkey;
 
-    if (CTRL) {
+    if (SHIFT && !CTRL) {
+        if (KeytoESP == fabgl::VK_F1) { // Show H/W info
+            OSD::HWInfo();
+        }
+    } else if (CTRL && !SHIFT) {
 
         // if (KeytoESP == fabgl::VK_F11) { // Toggle snow effect
 
@@ -832,9 +836,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL) {
         if (KeytoESP == fabgl::VK_F2) { // Turbo mode
             ESPectrum::ESP_delay = !ESPectrum::ESP_delay;
         } else 
-        if (KeytoESP == fabgl::VK_F3) { // Show H/W info
-            OSD::HWInfo();
-        } else
         if (KeytoESP == fabgl::VK_F9) { // Input Poke
             pokeDialog();
         } else 
