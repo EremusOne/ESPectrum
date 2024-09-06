@@ -44,6 +44,8 @@ visit https://zxespectrum.speccy.org/contacto
 #define POKE_ERR_ADDR2_EN "Address should be lower than 16384"
 #define POKE_ERR_VALUE_EN "Value should be lower than 256"
 
+#define OSD_FAT32_INVALIDCHAR_EN "FAT32 invalid character"
+
 #define OSD_TAPE_SAVE_EN "SAVE command"
 
 #define OSD_TAPE_SAVE_EXIST_EN "File exists. Overwrite?"
@@ -112,6 +114,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DELETE_CURRENT_FILE_EN "Delete file"
 
+#define OSD_TAPE_FLASHLOAD_EN "Flash loading tape file"
+#define OSD_TAPE_INSERT_EN "Tape inserted"
 #define OSD_TAPE_EJECT_EN "Tape ejected"
 
 #define TRDOS_RESET_ERR_EN "Can't reset to TR-DOS. Enable Betadisk."
@@ -126,7 +130,7 @@ visit https://zxespectrum.speccy.org/contacto
     "Tape menu\n"\
     "Select (TAP,TZX) \t(F5) >\n"\
     "Play/Stop\t(F6)  \n"\
-    "Eject Tape\n"\
+    "Eject Tape\t(SF6) \n"\
     "Tape browser\t(F7)  \n"\
 	"Player mode\t>\n"
 

@@ -803,7 +803,7 @@ int OSD::menuTape(string title) {
                     begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 2 : 0 );
                     tapemenuRedraw(title);
                     click();
-                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_SPACE) {
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && (Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C)) {
                     if ( begin_row - 1 + focus < real_rows ) Tape::selectBlockToggle(begin_row - 2 + focus);
 
                     if (focus == virtual_rows - 1 - 1 ) {
@@ -832,7 +832,7 @@ int OSD::menuTape(string title) {
                         case TapeBlock::Number_array_header:
                         case TapeBlock::Character_array_header:
                         case TapeBlock::Code_header: {
-                            string new_name = input(21, focus, "", 10, zxColor(0,0), zxColor(7,0));
+                            string new_name = input(21, focus, "", 10, 10, zxColor(0,0), zxColor(7,0), false);
                             if ( new_name != "" ) {
                                 Tape::renameBlock( begin_row - 2 + focus, new_name );
                             }
@@ -872,7 +872,7 @@ int OSD::menuTape(string title) {
                         }
                     }
                     
-                } else if ( Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C ) {
+                } else if ( Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B) {
                     click();
                     if (Tape::tapeFileType == TAPE_FTYPE_TAP) {
                         if ( begin_row - 1 + focus < real_rows ) {

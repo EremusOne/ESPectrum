@@ -147,6 +147,8 @@ uint8_t Config::DiskCtrl = 1; // 0 -> None, 1 -> Betadisk
 
 bool Config::TimeMachine = false; 
 
+int8_t Config::volume = ESP_VOLUME_DEFAULT;
+
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
     s.erase(std::remove_if(s.begin(), s.end(), 
@@ -599,6 +601,11 @@ void Config::load() {
             // printf("DiskCtrl:%u\n",Config::DiskCtrl);
         }
 
+        err = nvs_get_i8(handle, "volume", &Config::volume);
+        if (err == ESP_OK) {
+            // printf("volume:%d\n",Config::volume);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -795,6 +802,9 @@ void Config::save(string value) {
 
         if((value=="DiskCtrl") || (value=="all"))
             nvs_set_u8(handle,"DiskCtrl",Config::DiskCtrl);
+
+        if((value=="volume") || (value=="all"))
+            nvs_set_i8(handle,"volume",Config::volume);
 
         // printf("Committing updates in NVS ... ");
 

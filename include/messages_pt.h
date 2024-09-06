@@ -40,6 +40,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define OSD_PAUSE_PT "--=[PAUSADO]=--"
 
+#define OSD_FAT32_INVALIDCHAR_PT "Caractere inv\xA0lido em FAT32"
+
 #define POKE_ERR_ADDR1_PT "O endere\x87o deve estar entre 16384 e 65535"
 
 #define POKE_ERR_ADDR2_PT "O endere\x87o deve ser inferior a 16384"
@@ -100,7 +102,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_SNA_TITLE_PT "Escolha o snapshot"
 
-#define MENU_TAP_TITLE_PT "Escolha arquivo fita"
+#define MENU_TAP_TITLE_PT "Escolha o arq. de Fita"
 
 #define MENU_DSK_TITLE_PT "Escolha o disco"
 
@@ -114,6 +116,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DELETE_CURRENT_FILE_PT "Excluir arquivo"
 
+#define OSD_TAPE_FLASHLOAD_PT "Carregamento rapido de fita"
+#define OSD_TAPE_INSERT_PT "Fita inserida"
 #define OSD_TAPE_EJECT_PT "Fita ejetada"
 
 #define TRDOS_RESET_ERR_PT "TR-DOS n\x84o presente. Ative o Betadisk."
@@ -125,30 +129,30 @@ visit https://zxespectrum.speccy.org/contacto
     "Salvar snapshot\t(F4) >\n"
 
 #define MENU_TAPE_PT \
-    "Fita\n"\
+    "Fita K7\n"\
     "Escolher (TAP,TZX)\t(F5) >\n"\
     "Play/Stop\t(F6)  \n"\
-    "Ejetar fita\n"\
+    "Ejetar fita\t(SF6) \n"\
     "Navegador fita\t(F7)  \n"\
 	"Modo reprodutor\t>\n"
 
 #define MENU_BETADISK_PT \
-    "Unidades\n"\
-    "Unidade A\t>\n"\
-    "Unidade B\t>\n"\
-    "Unidade C\t>\n"\
-    "Unidade D\t>\n"
+    "Drive\n"\
+    "Drive A\t>\n"\
+    "Drive B\t>\n"\
+    "Drive C\t>\n"\
+    "Drive D\t>\n"
 
 #define MENU_BETADRIVE_PT \
-    "Unidade#\n"\
+    "Drive#\n"\
     "Inserir disco\t>\n"\
     "Ejetar disco\n"
 
 #define MENU_MAIN_PT \
     "Snapshots\t>\n"\
-    "Fita\t>\n"\
+    "Fita K7\t>\n"\
     "Betadisk\t>\n"\
-    "Modelo\t>\n"\
+    "Hardware\t>\n"\
     "Reiniciar\t>\n"\
     "Op\x87\x94" "es\t>\n"\
     "Ajuda\n"\
@@ -157,7 +161,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MENU_OPTIONS_PT \
     "Menu op\x87\x94" "es\n"\
     "Armazenamento\t>\n"\
-    "Modelo favorito\t>\n"\
+    "Hardware favorito\t>\n"\
     "ROM favorita\t>\n"\	
     "Joystick\t>\n"\
     "Emula\x87\x84o do joystick\t>\n"\
@@ -225,7 +229,7 @@ visit https://zxespectrum.speccy.org/contacto
     "Early\t[E]\n"\
     "Late\t[L]\n"
 
-#define MENU_ARCH_PT "Escolha modelo\n"
+#define MENU_ARCH_PT "Escolha hardware\n"
 
 #define MENU_ROMS48_PT "Escolha ROM\n"\
 	"48K\n"\

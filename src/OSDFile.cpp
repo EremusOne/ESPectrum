@@ -600,7 +600,7 @@ reset:
 
                     } else if (Menukey.vk == fabgl::VK_F2 && ftype == DISK_TAPFILE) {  // Dirty hack
 
-                        string new_tap = OSD::input( 1, mf_rows, Config::lang ? "Nomb: " : "Name: ", 30, zxColor(7,1), zxColor(5,0) );
+                        string new_tap = OSD::input( 1, mf_rows, Config::lang ? "Nomb: " : "Name: ", 10, 30, zxColor(7,1), zxColor(5,0), true );
 
                         if ( new_tap != "" ) {
 

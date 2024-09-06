@@ -63,18 +63,18 @@ string FileUtils::MountPoint = MOUNT_POINT_SD; // Start with SD
 bool FileUtils::SDReady = false;
 sdmmc_card_t *FileUtils::card;
 
-string FileUtils::SNA_Path = "/"; // DISK_SNA_DIR; // Current path on the SD (for future folder support)
-string FileUtils::TAP_Path = "/"; // DISK_TAP_DIR; // Current path on the SD (for future folder support)
-string FileUtils::DSK_Path = "/"; // DISK_DSK_DIR; // Current path on the SD (for future folder support)
-string FileUtils::ROM_Path = "/"; // DISK_ROM_DIR; // Current path on the SD (for future folder support)
-DISK_FTYPE FileUtils::fileTypes[4] = {
-//    {".sna,.SNA,.z80,.Z80,.p,.P",".s",2,2,0,""},
-//    {".tap,.TAP,.tzx,.TZX",".t",2,2,0,""},
-//    {".trd,.TRD,.scl,.SCL",".d",2,2,0,""}
+string FileUtils::SNA_Path = "/"; // Current path on the SD
+string FileUtils::TAP_Path = "/"; // Current path on the SD
+string FileUtils::DSK_Path = "/"; // Current path on the SD
+string FileUtils::ROM_Path = "/"; // Current path on the SD
+string FileUtils::ESP_Path = "/.p/"; // Current path on the SD
+
+DISK_FTYPE FileUtils::fileTypes[5] = {
     {"sna,z80,p",".s",2,2,0,""},
     {"tap,tzx,",".t",2,2,0,""},
     {"trd,scl",".d",2,2,0,""},
-    {"rom",".r",2,2,0,""}
+    {"rom",".r",2,2,0,""},
+    {"esp",".e",2,2,0,""}
 };
 
 string toLower(const std::string& str) {

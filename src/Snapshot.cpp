@@ -156,10 +156,15 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
     // Change arch if needed
     if (force_arch != "" && force_arch != Config::arch) {
         
+        bool vreset = Config::videomode;
+
+        // If switching between TK models there's no need to reset in vidmodes > 0
+        if (force_arch[0] == 'T' && Config::arch[0] == 'T') vreset = false;
+    
         Config::requestMachine(force_arch, force_romset);
     
         // Condition this to 50hz mode
-        if(Config::videomode) {
+        if (vreset) {
 
             Config::SNA_Path = FileUtils::SNA_Path;
             Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;

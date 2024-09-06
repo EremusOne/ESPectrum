@@ -135,6 +135,8 @@ public:
 
     static bool TimeMachine; 
 
+    static int8_t volume;
+
 };
 
 #endif // Config.h

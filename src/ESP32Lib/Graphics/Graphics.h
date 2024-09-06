@@ -105,7 +105,7 @@ class Graphics {
 		if (!font)
 			return;
 		// if (!font->valid(ch))
-		if (!(ch >= 32 && ch < 176))
+		if (!(ch >= 24 && ch < 176))
 			return;
 		if (codepage == 860 && ch >= 128 && ch <= 169) {
 			ch -= 128;
@@ -127,7 +127,7 @@ class Graphics {
 		if (!font)
 			return;
 		// if (font->valid(ch))
-		if (ch >= 32 && ch < 176)
+		if (ch >= 24 && ch < 176)
 			drawChar(cursorX, cursorY, ch);
 		else
 			drawChar(cursorX, cursorY, ' ');		

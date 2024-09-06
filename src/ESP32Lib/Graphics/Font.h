@@ -22,7 +22,7 @@ class Font {
 	const int charWidth;
 	const int charHeight;
 
-	Font(int charWidth, int charHeight, const unsigned char *pixels, const unsigned char *pixels2, int firstChar = 32, int charCount = 144 ) // 96
+	Font(int charWidth, int charHeight, const unsigned char *pixels, const unsigned char *pixels2, int firstChar = 24, int charCount = 152 )
 		:firstChar(firstChar),
 		charCount(charCount),
 		pixels(pixels),

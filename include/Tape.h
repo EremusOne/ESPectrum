@@ -168,6 +168,7 @@ public:
     static std::vector<TapeBlock> TapeListing;
 
     static void Init();
+    static void TAP_setBlockTimings();        
     static void LoadTape(string mFile);
     static void Play();
     static void Stop();
