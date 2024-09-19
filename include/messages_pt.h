@@ -38,6 +38,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define ERR_FS_EXT_FAIL_PT "\xAD" "Armazenamento externo n\x84o dispon\xA1vel!"
 
+#define OSD_MSGDIALOG_YES_PT " Sim  "
+#define OSD_MSGDIALOG_NO_PT " N\x84o  "
+
 #define OSD_PAUSE_PT "--=[PAUSADO]=--"
 
 #define OSD_FAT32_INVALIDCHAR_PT "Caractere inv\xA0lido em FAT32"
@@ -165,7 +168,7 @@ visit https://zxespectrum.speccy.org/contacto
     "ROM favorita\t>\n"\	
     "Joystick\t>\n"\
     "Emula\x87\x84o do joystick\t>\n"\
-    "Video\t>\n"\
+    "Tela\t>\n"\
 	"Atualizar\t>\n"\
     "Outros\t>\n"\
     "Idioma\t>\n"
@@ -178,9 +181,9 @@ visit https://zxespectrum.speccy.org/contacto
 	"ROM Custom TK\n"
 
 #define MENU_VIDEO_PT \
-    "Video\n"\
+    "Tela\n"\
     "Tipo de renderiza\x87\x84o\t>\n"\
-	"Propor\x87\x84o da tela\t>\n"\
+	"Resolu\x87\x84o\t>\n"\
     "Scanlines\t>\n"
 
 #define MENU_RENDER_PT \
@@ -189,9 +192,9 @@ visit https://zxespectrum.speccy.org/contacto
     "Efeito de neve\t[A]\n"
 
 #define MENU_ASPECT_PT \
-    "Propor\x87\x84o\n"\
-    "4:3  (320x240)\t[4]\n"\
-    "16:9 (360x200)\t[1]\n"
+    "Resolu\x87\x84o\n"\
+    "320x240 (4:3)\t[4]\n"\
+    "360x200 (16:9)\t[1]\n"
 
 #define MENU_RESET_PT \
     "Reiniciar\n"\
@@ -249,9 +252,9 @@ visit https://zxespectrum.speccy.org/contacto
     "v1 Portugu\x88s\n"\
     "v2 Espanhol\n"\
     "v2 Portugu\x88s\n"\
-    "v3 Espanhol\n"\
-    "v3 Portugu\x88s\n"\
-    "v3 Ingl\x88s\n"\
+    "v3 Espanhol (R.G.)\n"\
+    "v3 Portugu\x88s (R.G.)\n"\
+    "v3 Ingl\x88s (R.G.)\n"\
     "Custom\n"
 
 #define MENU_ROMSTK95_PT "Escolha ROM\n"\

@@ -38,6 +38,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define ERR_FS_EXT_FAIL_ES "\xAD" "Almacenamiento externo no disponible!"
 
+#define OSD_MSGDIALOG_YES_ES "  S\xA1  "
+#define OSD_MSGDIALOG_NO_ES "  No  "
+
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"
 
 #define POKE_ERR_ADDR1_ES "Direcci\xA2n debe estar entre 16384 y 65535"
@@ -160,7 +163,7 @@ visit https://zxespectrum.speccy.org/contacto
     "ROM preferida\t>\n"\
     "Joystick\t>\n"\
     "Emulaci\xA2n joystick\t>\n"\
-    "Video\t>\n"\
+    "Pantalla\t>\n"\
 	"Actualizar\t>\n"\
     "Otros\t>\n"\
     "Idioma\t>\n"
@@ -173,9 +176,9 @@ visit https://zxespectrum.speccy.org/contacto
 	"ROM Custom TK\n"		
 
 #define MENU_VIDEO_ES \
-    "Video\n"\
+    "Pantalla\n"\
     "Tipo render\t>\n"\
-	"Relaci\xA2n de aspecto\t>\n"\
+	"Resoluci\xA2n\t>\n"\
     "Scanlines\t>\n"
 
 #define MENU_RENDER_ES \
@@ -184,9 +187,9 @@ visit https://zxespectrum.speccy.org/contacto
     "Efecto nieve\t[A]\n"
 
 #define MENU_ASPECT_ES \
-    "Rel. aspecto\n"\
-    "4:3  (320x240)\t[4]\n"\
-    "16:9 (360x200)\t[1]\n"
+    "Resoluci\xA2n\n"\
+    "320x240 (4:3)\t[4]\n"\
+    "360x200 (16:9)\t[1]\n"
 
 #define MENU_RESET_ES \
     "Resetear\n"\
@@ -245,9 +248,9 @@ visit https://zxespectrum.speccy.org/contacto
     "v1 Portugu\x82s\n"\
     "v2 Espa\xA4ol\n"\
     "v2 Portugu\x82s\n"\
-    "v3 Espa\xA4ol\n"\
-    "v3 Portugu\x82s\n"\
-    "v3 Ingl\x82s\n"\
+    "v3 Espa\xA4ol (R.G.)\n"\
+    "v3 Portugu\x82s (R.G.)\n"\
+    "v3 Ingl\x82s (R.G.)\n"\
     "Custom\n"
 
 #define MENU_ROMSTK95_ES "Elija ROM\n"\

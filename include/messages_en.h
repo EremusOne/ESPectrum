@@ -38,6 +38,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define ERR_FS_EXT_FAIL_EN "Cannot mount external storage!"
 
+#define OSD_MSGDIALOG_YES_EN " Yes  "
+#define OSD_MSGDIALOG_NO_EN "  No  "
+
 #define OSD_PAUSE_EN "--=[ PAUSED ]=--"
 
 #define POKE_ERR_ADDR1_EN "Address should be between 16384 and 65535"
@@ -163,7 +166,7 @@ visit https://zxespectrum.speccy.org/contacto
     "Preferred ROM\t>\n"\
     "Joystick\t>\n"\
     "Joystick emulation\t>\n"\
-    "Video\t>\n"\
+    "Display\t>\n"\
 	"Update\t>\n"\
     "Other\t>\n"\
     "Language\t>\n"
@@ -176,9 +179,9 @@ visit https://zxespectrum.speccy.org/contacto
 	"Custom ROM TK\n"		    
 
 #define MENU_VIDEO_EN \
-    "Video\n"\
+    "Display\n"\
     "Render type\t>\n"\
-    "Aspect Ratio\t>\n"\
+    "Resolution\t>\n"\
     "Scanlines\t>\n"
 
 #define MENU_RENDER_EN \
@@ -187,9 +190,9 @@ visit https://zxespectrum.speccy.org/contacto
     "Snow effect\t[A]\n"
 
 #define MENU_ASPECT_EN \
-    "Aspect Ratio\n"\
-    "4:3  (320x240)\t[4]\n"\
-    "16:9 (360x200)\t[1]\n"
+    "Resolution\n"\
+    "320x240 (4:3)\t[4]\n"\
+    "360x200 (16:9)\t[1]\n"
 
 #define MENU_RESET_EN \
     "Reset Menu\n"\
@@ -247,9 +250,9 @@ visit https://zxespectrum.speccy.org/contacto
     "v1 Portuguese\n"\
     "v2 Spanish\n"\
     "v2 Portuguese\n"\
-    "v3 Spanish\n"\
-    "v3 Portuguese\n"\
-    "v3 English\n"\
+    "v3 Spanish (R.G.)\n"\
+    "v3 Portuguese (R.G.)\n"\
+    "v3 English (R.G.)\n"\
     "Custom\n"
 
 #define MENU_ROMSTK95_EN "Select ROM\n"\

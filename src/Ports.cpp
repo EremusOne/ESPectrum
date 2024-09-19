@@ -65,19 +65,29 @@ uint8_t (*Ports::getFloatBusData)() = &Ports::getFloatBusData48;
 
 uint8_t Ports::getFloatBusData48() {
 
-    unsigned int currentTstates = CPU::tstates;
+    // unsigned int currentTstates = CPU::tstates;
 
-	unsigned int line = (currentTstates / 224) - 64;
-	if (line >= 192) return 0xFF;
+	// unsigned int line = (currentTstates / 224) - 64;
+	// if (line >= 192) return 0xFF;
 
-	unsigned char halfpix = (currentTstates % 224) - 3;
-	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
+	unsigned int line = CPU::tstates / 224;
+    if (line < 64 || line >= 256) return 0xFF;
 
-    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
+	// unsigned char halfpix = (CPU::tstates % 224) - 3;
+    // if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
+
+	unsigned char halfpix = CPU::tstates % 224;
+    if (halfpix >= 128) return 0xFF;
+    if ((halfpix - 3) & 0x04) return 0xFF;
+
+    //int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
     
-    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
+    // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
 
-    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+    // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+
+    line -= 64;
+    return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
 
 }
 
@@ -91,11 +101,13 @@ uint8_t Ports::getFloatBusDataTK() {
 	unsigned char halfpix = (currentTstates % 228) - 99;
 	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
 
-    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
+    // int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
     
-    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
+    // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
 
-    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+    // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+
+    return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
 
 }
 
@@ -109,11 +121,13 @@ uint8_t Ports::getFloatBusData128() {
 	unsigned char halfpix = currentTstates % 228;
 	if ((halfpix >= 128) || (halfpix & 0x04)) return 0xFF;
 
-    int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);;
-    
-    if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
+    // int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
 
-    return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+    // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
+
+    // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+
+    return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
 
 }
 
@@ -180,24 +194,24 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 data &= port[row];
         }
 
-        // // ** ESPectrum **
-        // if (Tape::tapeStatus==TAPE_LOADING) {
-        //     Tape::Read();
-        //     bitWrite(data,6,Tape::tapeEarBit);
-        // } else {
-    	// 	if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
-		// 		if (port254 & 0x18) data |= 0x40;
-		// 	else
-		// 		if (port254 & 0x10) data |= 0x40;
-		// }
+        // ** ESPectrum **
+        if (Tape::tapeStatus==TAPE_LOADING) {
+            Tape::Read();
+            bitWrite(data,6,Tape::tapeEarBit);
+        } else {
+    		if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
+				if (port254 & 0x18) data |= 0x40;
+			else
+				if (port254 & 0x10) data |= 0x40;
+		}
 
         // ** RVM **
-        if (Tape::tapeStatus==TAPE_LOADING) Tape::Read();
-        if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
-            if (port254 & 0x18) data |= 0x40;
-        else
-            if (port254 & 0x10) data |= 0x40;
-        if (Tape::tapeEarBit) data ^= 0x40;
+        // if (Tape::tapeStatus==TAPE_LOADING) Tape::Read();
+        // if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
+        //     if (port254 & 0x18) data |= 0x40;
+        // else
+        //     if (port254 & 0x10) data |= 0x40;
+        // if (Tape::tapeEarBit) data ^= 0x40;
 
     } else {
 

@@ -1488,8 +1488,14 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
                     OSD::do_OSD(fabgl::VK_PAUSE,0,0);
                 } else
                 if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
-                    OSD::do_OSD(fabgl::VK_F3,0,true);
+                    OSD::do_OSD(fabgl::VK_F1,0,true);
                 } else
+                if (!bitRead(ZXKeyb::ZXcols[2],2)) { // E -> Eject tape
+                    OSD::do_OSD(fabgl::VK_F6,0,true);
+                } else
+                // if (!bitRead(ZXKeyb::ZXcols[5],3)) { // U -> Uart test
+                //     OSD::do_OSD(fabgl::VK_F5,0,true);
+                // } else
                 if (!bitRead(ZXKeyb::ZXcols[2],3)) { // R -> Reset to TR-DOS
                     OSD::do_OSD(fabgl::VK_F11,true,0);
                 } else

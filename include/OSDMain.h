@@ -97,6 +97,7 @@ public:
     static void pref_rom_menu();
     static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT);
     static void HWInfo();
+    // static void UART_test();
 
     // Error
     static void errorPanel(string errormsg);

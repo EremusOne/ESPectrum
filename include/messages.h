@@ -69,6 +69,9 @@ static const char *ERR_FS_EXT_FAIL[NLANGS] = { ERR_FS_EXT_FAIL_EN, ERR_FS_EXT_FA
 // #define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS              "
 #define OSD_BOTTOM " zxespectrum.speccy.org     " EMU_VERSION
 
+static const char *OSD_MSGDIALOG_YES[NLANGS] = { OSD_MSGDIALOG_YES_EN, OSD_MSGDIALOG_YES_ES, OSD_MSGDIALOG_YES_PT };
+static const char *OSD_MSGDIALOG_NO[NLANGS] = { OSD_MSGDIALOG_NO_EN, OSD_MSGDIALOG_NO_ES, OSD_MSGDIALOG_NO_PT };
+
 static const char *OSD_PAUSE[NLANGS] = { OSD_PAUSE_EN,OSD_PAUSE_ES,OSD_PAUSE_PT };
 
 #define OSD_PSNA_NOT_AVAIL "No Persist Snapshot Available"

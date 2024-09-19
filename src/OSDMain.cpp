@@ -62,6 +62,10 @@ visit https://zxespectrum.speccy.org/contacto
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+// #include "driver/uart.h"
+// #include "esp_log.h"
+// #include "esp_err.h"
+
 #include <string>
 
 using namespace std;
@@ -210,7 +214,7 @@ void OSD::drawOSD(bool bottom_info) {
         switch(Config::videomode) {
             case 0: bottom_line = " Video mode: Standard VGA   "; break;
             case 1: bottom_line = Config::arch[0] == 'T' && Config::ALUTK == 2 ? " Video mode: VGA 60hz       " : " Video mode: VGA 50hz       "; break;
-            case 2: bottom_line = Config::arch[0] == 'T' && Config::ALUTK == 2 ? " Video mode: CRT 60hz       " : " Video mode: CRT 60hz       "; break;
+            case 2: bottom_line = Config::arch[0] == 'T' && Config::ALUTK == 2 ? " Video mode: CRT 60hz       " : " Video mode: CRT 50hz       "; break;
         }
         VIDEO::vga.print(bottom_line.append(EMU_VERSION).c_str());
     } else VIDEO::vga.print(OSD_BOTTOM);
@@ -359,6 +363,104 @@ void OSD::drawKbdLayout(uint8_t layout) {
     if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
 
 }
+
+// void OSD::UART_test() {
+
+//     string bottom= " UART TEST                                 ";
+//     fabgl::VirtualKeyItem Nextkey;
+
+// 	FILE *fichero;
+
+//     string f_uart = FileUtils::MountPoint + "/uartest.tap";
+//     fichero = fopen(f_uart.c_str(), "wb");
+//     if (fichero == NULL)
+//     {
+//         return;
+//     }
+
+//     drawWindow(256 + 8, 176 + 18, "", bottom, true);
+
+//     #define UART_BUF_SIZE 1024
+    
+//     static const char *TAG = "UART TEST";    
+
+//     /* Configure parameters of an UART driver,
+//     * communication pins and install the driver */
+//     uart_config_t uart_config = {
+//         .baud_rate = 460800,
+//         .data_bits = UART_DATA_8_BITS,
+//         .parity    = UART_PARITY_DISABLE,
+//         .stop_bits = UART_STOP_BITS_1,
+//         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+//         .source_clk = UART_SCLK_APB,
+//     };
+//     int intr_alloc_flags = 0;
+
+//     #if CONFIG_UART_ISR_IN_IRAM
+//         intr_alloc_flags = ESP_INTR_FLAG_IRAM;
+//     #endif
+
+//     ESP_ERROR_CHECK(uart_driver_install(UART_NUM_0, UART_BUF_SIZE * 2, 0, 0, NULL, intr_alloc_flags));
+//     ESP_ERROR_CHECK(uart_param_config(UART_NUM_0, &uart_config));
+//     // ESP_ERROR_CHECK(uart_set_pin(UART_NUM_0, 4, 5, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+//     uint8_t *data;
+
+//     // Configure a temporary buffer for the incoming data
+//     data = (uint8_t *) malloc(UART_BUF_SIZE);
+
+//     while (1) {
+
+//         // Read data from the UART
+//         int len = uart_read_bytes(UART_NUM_0, data, (UART_BUF_SIZE - 1), 100 / portTICK_PERIOD_MS);
+
+//         // // Write data back to the UART
+//         // uart_write_bytes(UART_NUM_0, (const char *) data, len);
+
+//         if (len) {
+//             // Write data to file
+//             fwrite(data, 1, len, fichero);
+//             // data[len] = '\0';
+//             // ESP_LOGI(TAG, "Recv str: %s", (char *) data);
+//         }
+
+//         if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
+
+//         ESPectrum::readKbdJoy();
+
+//         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
+//             if (ESPectrum::readKbd(&Nextkey)) {
+//                 if(!Nextkey.down) continue;
+//                 if (Nextkey.vk == fabgl::VK_F1 || 
+//                     Nextkey.vk == fabgl::VK_ESCAPE || 
+//                     Nextkey.vk == fabgl::VK_RETURN || 
+//                     Nextkey.vk == fabgl::VK_JOY1A || 
+//                     Nextkey.vk == fabgl::VK_JOY1B || 
+//                     Nextkey.vk == fabgl::VK_JOY2A || 
+//                     Nextkey.vk == fabgl::VK_JOY2B
+//                 ) break;
+
+//             }
+
+//         }
+
+//         vTaskDelay(5 / portTICK_PERIOD_MS);
+
+//         if (Nextkey.vk == fabgl::VK_F1 || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY1B || Nextkey.vk == fabgl::VK_JOY2A || Nextkey.vk == fabgl::VK_JOY2B) break;
+
+//     }
+
+//     free(data);
+
+//     uart_driver_delete(UART_NUM_0);
+
+//     fclose(fichero);    
+
+//     click();
+
+//     if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+
+// }
 
 void OSD::drawStats() {
 
@@ -698,6 +800,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         if (KeytoESP == fabgl::VK_F1) { // Show H/W info
             OSD::HWInfo();
         } else
+        // if (KeytoESP == fabgl::VK_F5) { // UART test
+        //     OSD::UART_test();
+        // } else
         if (KeytoESP == fabgl::VK_F6) { // Eject tape
             // Eject Tape
             click();
@@ -3902,7 +4007,8 @@ uint8_t OSD::msgDialog(string title, string msg) {
     // Yes
     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
+    // VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
+    VIDEO::vga.print(OSD_MSGDIALOG_YES[Config::lang]);
 
     // // Ruler
     // VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
@@ -3912,7 +4018,8 @@ uint8_t OSD::msgDialog(string title, string msg) {
     // No
     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
-    VIDEO::vga.print("  No  ");
+    VIDEO::vga.print(OSD_MSGDIALOG_NO[Config::lang]);
+    // VIDEO::vga.print("  No  ");
 
     // Rainbow
     unsigned short rb_y = y + 8;
@@ -3942,22 +4049,26 @@ uint8_t OSD::msgDialog(string title, string msg) {
                     // Yes
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
+                    //VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
+                    VIDEO::vga.print(OSD_MSGDIALOG_YES[Config::lang]);                    
                     // No
                     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print("  No  ");
+                    VIDEO::vga.print(OSD_MSGDIALOG_NO[Config::lang]);
+                    // VIDEO::vga.print("  No  ");
                     click();
                     res = DLG_YES;
                 } else if (Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
                     // Yes
                     VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
+                    VIDEO::vga.print(OSD_MSGDIALOG_YES[Config::lang]);
+                    //VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
                     // No
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
-                    VIDEO::vga.print("  No  ");
+                    VIDEO::vga.print(OSD_MSGDIALOG_NO[Config::lang]);
+                    // VIDEO::vga.print("  No  ");
                     click();
                     res = DLG_NO;
                 } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
