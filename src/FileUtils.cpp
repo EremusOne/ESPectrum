@@ -212,7 +212,8 @@ bool FileUtils::isMountedSDCard() {
     return true;
 }
 
-void FileUtils::remountSDCardIfNeeded() {
+bool FileUtils::isSDReady() {
+
     if ( FileUtils::SDReady && !FileUtils::isMountedSDCard() ) {
         FileUtils::unmountSDCard();
     }
@@ -221,8 +222,12 @@ void FileUtils::remountSDCardIfNeeded() {
         FileUtils::initFileSystem();
         if ( !FileUtils::SDReady ) {
             OSD::osdCenteredMsg(ERR_FS_EXT_FAIL[Config::lang], LEVEL_ERROR);
+            return false;
         }
     }
+
+    return true;
+
 }
 
 // String FileUtils::getAllFilesFrom(const String path) {

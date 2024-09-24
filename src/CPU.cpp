@@ -72,7 +72,11 @@ void CPU::reset() {
         statesInFrame = TSTATES_PER_FRAME_48;
         IntStart = INT_START48;
         IntEnd = INT_END48 + CPU::latetiming;
-        ESPectrum::target = MICROS_PER_FRAME_48;
+        ESPectrum::target[0] = MICROS_PER_FRAME_48;
+        ESPectrum::target[1] = MICROS_PER_FRAME_48;
+        ESPectrum::target[2] = MICROS_PER_FRAME_48_125SPEED;
+        ESPectrum::target[3] = MICROS_PER_FRAME_48_150SPEED;                        
+
     } else if (Config::arch == "TK90X" || Config::arch == "TK95") {
 
         Z80Ops::is48 = true;
@@ -83,17 +87,26 @@ void CPU::reset() {
         case 0:
             Ports::getFloatBusData = &Ports::getFloatBusData48;
             statesInFrame = TSTATES_PER_FRAME_48;
-            ESPectrum::target = MICROS_PER_FRAME_48;
+            ESPectrum::target[0] = MICROS_PER_FRAME_48;
+            ESPectrum::target[1] = MICROS_PER_FRAME_48;
+            ESPectrum::target[2] = MICROS_PER_FRAME_48_125SPEED;
+            ESPectrum::target[3] = MICROS_PER_FRAME_48_150SPEED;                        
             break;
         case 1:
             Ports::getFloatBusData = &Ports::getFloatBusDataTK;
             statesInFrame = TSTATES_PER_FRAME_TK_50;
-            ESPectrum::target = MICROS_PER_FRAME_TK_50;
+            ESPectrum::target[0] = MICROS_PER_FRAME_TK_50;
+            ESPectrum::target[1] = MICROS_PER_FRAME_TK_50;
+            ESPectrum::target[2] = MICROS_PER_FRAME_TK_50_125SPEED;
+            ESPectrum::target[3] = MICROS_PER_FRAME_TK_50_150SPEED;                        
             break;
         case 2:
             Ports::getFloatBusData = &Ports::getFloatBusDataTK;
             statesInFrame = TSTATES_PER_FRAME_TK_60;
-            ESPectrum::target = MICROS_PER_FRAME_TK_60;
+            ESPectrum::target[0] = MICROS_PER_FRAME_TK_60;
+            ESPectrum::target[1] = MICROS_PER_FRAME_TK_60;
+            ESPectrum::target[2] = MICROS_PER_FRAME_TK_60_125SPEED;
+            ESPectrum::target[3] = MICROS_PER_FRAME_TK_60_150SPEED;
         }
 
         IntStart = INT_STARTTK;
@@ -107,7 +120,10 @@ void CPU::reset() {
         statesInFrame = TSTATES_PER_FRAME_128;
         IntStart = INT_START128;
         IntEnd = INT_END128 + CPU::latetiming;
-        ESPectrum::target = MICROS_PER_FRAME_128;
+        ESPectrum::target[0] = MICROS_PER_FRAME_128;
+        ESPectrum::target[1] = MICROS_PER_FRAME_128;
+        ESPectrum::target[2] = MICROS_PER_FRAME_128_125SPEED;
+        ESPectrum::target[3] = MICROS_PER_FRAME_128_150SPEED;                        
     } else if (Config::arch == "Pentagon") {
         Z80Ops::is48 = false;
         Z80Ops::is128 = false;
@@ -115,7 +131,10 @@ void CPU::reset() {
         statesInFrame = TSTATES_PER_FRAME_PENTAGON;
         IntStart = INT_START_PENTAGON;
         IntEnd = INT_END_PENTAGON + CPU::latetiming;
-        ESPectrum::target = MICROS_PER_FRAME_PENTAGON;
+        ESPectrum::target[0] = MICROS_PER_FRAME_PENTAGON;
+        ESPectrum::target[1] = MICROS_PER_FRAME_PENTAGON;
+        ESPectrum::target[2] = MICROS_PER_FRAME_PENTAGON_125SPEED;
+        ESPectrum::target[3] = MICROS_PER_FRAME_PENTAGON_150SPEED;
     }
 
     stFrame = statesInFrame - IntEnd;

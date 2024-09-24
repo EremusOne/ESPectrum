@@ -44,6 +44,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "MemESP.h"
 #include "Tape.h"
 #include "ZXKeyb.h"
+#include "AySound.h"
 #include "pwm_audio.h"
 #include "Z80_JLS/z80.h"
 #include "roms.h"
@@ -471,11 +472,10 @@ void OSD::drawStats() {
         y = 176;
     } else {
         x = 168;
-        // y = 220;
         y = VIDEO::brdlin_osdstart;
     }
 
-    VIDEO::vga.setTextColor(zxColor(7, 0), zxColor( ESPectrum::ESP_delay ? 1 : 2, 0));
+    VIDEO::vga.setTextColor(zxColor(7, 0), zxColor( ESPectrum::ESP_delay, 0));
     VIDEO::vga.setFont(Font6x8);
     VIDEO::vga.setCursor(x,y);
     VIDEO::vga.print(stats_lin1);
@@ -843,7 +843,36 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
         } else
         if (KeytoESP == fabgl::VK_F2) { // Turbo mode
-            ESPectrum::ESP_delay = !ESPectrum::ESP_delay;
+
+            ++ESPectrum::ESP_delay &= 0x03;
+
+            if (ESPectrum::ESP_delay) {
+
+                // Empty audio buffers
+                for (int i=0;i<ESP_AUDIO_SAMPLES_PENTAGON;i++) {
+                    ESPectrum::overSamplebuf[i]=0;
+                    ESPectrum::audioBuffer[i]=0;
+                    AySound::SamplebufAY[i]=0;
+                }
+                ESPectrum::lastaudioBit=0;
+
+                ESPectrum::ESPoffset = 0;
+
+                // printf("Resetting pwmaudio to freq: %d\n",Audio_freq);
+                esp_err_t res;
+                res = pwm_audio_set_sample_rate(ESPectrum::Audio_freq[ESPectrum::ESP_delay]);
+                if (res != ESP_OK) {
+                    printf("Can't set sample rate\n");
+                }
+                
+                // Reset AY emulation
+                AySound::init();
+                AySound::set_sound_format(ESPectrum::Audio_freq[ESPectrum::ESP_delay],1,8);
+                AySound::set_stereo(AYEMU_MONO,NULL);
+                AySound::reset();
+
+            }
+
         } else 
         if (KeytoESP == fabgl::VK_F9) { // Input Poke
             pokeDialog();
@@ -959,9 +988,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             menu_level = 0;
             menu_saverect = false;
 
-            FileUtils::remountSDCardIfNeeded();
-
-            if ( FileUtils::SDReady ) {
+            if (FileUtils::isSDReady()) {
                 // ESPectrum::showMemInfo("Before F2 file dialog");
                 string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang],DISK_SNAFILE,51,22);
                 // ESPectrum::showMemInfo("After F2 file dialog");
@@ -987,58 +1014,28 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             // if (MemESP::tm_slotbanks[MemESP::cur_timemachine][2] != 0xff)
             //     MemESP::Tm_Load(MemESP::cur_timemachine);
 
+            // Persist Load
+            string menuload = MENU_PERSIST_LOAD[Config::lang] + getStringPersistCatalog();
             menu_level = 0;
             menu_curopt = 1;
-
-            FileUtils::remountSDCardIfNeeded();
-
-            if ( FileUtils::SDReady ) {
-                // Persist Load
-                string menuload = MENU_PERSIST_LOAD[Config::lang] + getStringPersistCatalog();
-
-                uint8_t opt2 = menuRun(menuload);
-                if (opt2) {
-                    FileUtils::remountSDCardIfNeeded();
-
-                    if ( FileUtils::SDReady ) persistLoad(opt2);
-                    menu_curopt = opt2;
-                }
-            }
-
+            uint8_t opt2 = menuRun(menuload);
+            if (opt2 && FileUtils::isSDReady()) persistLoad(opt2);
         }
         else if (KeytoESP == fabgl::VK_F4) {
             // Persist Save
+            string menusave = MENU_PERSIST_SAVE[Config::lang] + getStringPersistCatalog();
             menu_level = 0;
             menu_curopt = 1;
-            
-            FileUtils::remountSDCardIfNeeded();
-
-            if ( FileUtils::SDReady ) {
-                string menusave = MENU_PERSIST_SAVE[Config::lang] + getStringPersistCatalog();
-
-                uint8_t opt2 = menuRun(menusave);
-                if (opt2) {
-                    FileUtils::remountSDCardIfNeeded();
-
-                    if ( FileUtils::SDReady ) if (persistSave(opt2)) return;
-                    menu_curopt = opt2;
-                }
-            }
+            uint8_t opt2 = menuRun(menusave);
+            if (opt2 && FileUtils::isSDReady()) persistSave(opt2);
         }
         else if (KeytoESP == fabgl::VK_F5) {
             menu_level = 0; 
             menu_saverect = false;  
-
-            FileUtils::remountSDCardIfNeeded();
-
-            if ( FileUtils::SDReady ) {
+            if (FileUtils::isSDReady()) {
                 string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
-
-                FileUtils::remountSDCardIfNeeded();
-
-                if (mFile != "" && FileUtils::SDReady ) {
+                if (mFile != "" && FileUtils::isSDReady()) {
                     string tapFile = FileUtils::MountPoint + FileUtils::TAP_Path + "/" + mFile.substr(1);
-
                     struct stat stat_buf;
                     int status = stat(tapFile.c_str(), &stat_buf);
                     if (status == -1) {
@@ -1047,11 +1044,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         int fd = open(tapFile.c_str(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
                         if (!fd) return;
                         close(fd);
-
                     }
-
                     Tape::LoadTape(mFile);
-
                     return;
                 }
             }
@@ -1288,11 +1282,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (sna_mnu == 1) {
-                            FileUtils::remountSDCardIfNeeded();
-
-                            if ( FileUtils::SDReady ) {
+                            if (FileUtils::isSDReady()) {
                                 string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 28, 16);
-                                if (mFile != "") {
+                                if (mFile != "" && FileUtils::isSDReady()) {
                                     mFile.erase(0, 1);
                                     string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
                                     LoadSnapshot(fname,"","",0xff);
@@ -1308,40 +1300,30 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         }
                         else if (sna_mnu == 2) {
                             // Persist Load
-                            FileUtils::remountSDCardIfNeeded();
-
-                            if ( FileUtils::SDReady ) {
-                                menu_curopt = 1;
-                                menu_saverect = true;
-                                while (1) {
-                                    string menuload = MENU_PERSIST_LOAD[Config::lang] + getStringPersistCatalog();
-
-                                    uint8_t opt2 = menuRun(menuload);
-                                    if (opt2) {
-                                        if (persistLoad(opt2)) return;
-                                        menu_saverect = false;
-                                        menu_curopt = opt2;
-                                    } else break;
-                                }
+                            menu_curopt = 1;
+                            menu_saverect = true;
+                            while (1) {
+                                string menuload = MENU_PERSIST_LOAD[Config::lang] + getStringPersistCatalog();
+                                uint8_t opt2 = menuRun(menuload);
+                                if (opt2 && FileUtils::isSDReady()) {
+                                    if (persistLoad(opt2)) return;
+                                    menu_saverect = false;
+                                    menu_curopt = opt2;
+                                } else break;
                             }
                         }
                         else if (sna_mnu == 3) {
                             // Persist Save
-                            FileUtils::remountSDCardIfNeeded();
-
-                            if ( FileUtils::SDReady ) {
-                                menu_curopt = 1;
-                                menu_saverect = true;
-                                while (1) {
-                                    string menusave = MENU_PERSIST_SAVE[Config::lang] + getStringPersistCatalog();
-
-                                    uint8_t opt2 = menuRun(menusave);
-                                    if (opt2) {
-                                        if (persistSave(opt2)) return;
-                                        menu_saverect = false;
-                                        menu_curopt = opt2;
-                                    } else break;
-                                }
+                            menu_curopt = 1;
+                            menu_saverect = true;
+                            while (1) {
+                                string menusave = MENU_PERSIST_SAVE[Config::lang] + getStringPersistCatalog();
+                                uint8_t opt2 = menuRun(menusave);
+                                if (opt2 && FileUtils::isSDReady()) {
+                                    if (persistSave(opt2)) return;
+                                    menu_saverect = false;
+                                    menu_curopt = opt2;
+                                } else break;
                             }
                         }
                         menu_curopt = sna_mnu;
@@ -1365,18 +1347,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         menu_level = 2;
                         menu_saverect = true;
                         if (tap_num == 1) {
-                            FileUtils::remountSDCardIfNeeded();
-
-                            if ( FileUtils::SDReady ) {
-                                // menu_curopt = 1;
+                            if (FileUtils::isSDReady()) {
                                 // Select TAP File
                                 string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 28, 16);
-
-                                FileUtils::remountSDCardIfNeeded();
-
-                                if (mFile != "" && FileUtils::SDReady ) {
+                                if (mFile != "" && FileUtils::isSDReady() ) {
                                     string tapFile = FileUtils::MountPoint + FileUtils::TAP_Path + mFile.substr(1);
-
                                     struct stat stat_buf;
                                     int status = stat(tapFile.c_str(), &stat_buf);
                                     if (status == -1) {
@@ -1385,11 +1360,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         int fd = open(tapFile.c_str(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
                                         if (!fd) return;
                                         close(fd);
-
                                     }
-
                                     Tape::LoadTape(mFile);
-
                                     return;
                                 }
                             } else {
@@ -1520,12 +1492,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             uint8_t opt2 = menuRun(drvmenu);
                             if (opt2 > 0) {
                                 if (opt2 == 1) {
-                                    FileUtils::remountSDCardIfNeeded();
-
-                                    if ( FileUtils::SDReady ) {
+                                    if (FileUtils::isSDReady()) {
                                         menu_saverect = true;
                                         string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang], DISK_DSKFILE, 26, 15);
-                                        if (mFile != "") {
+                                        if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + FileUtils::DSK_Path + mFile;
                                             ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
@@ -2715,9 +2685,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                                 } else if (opt2 == 2) {
 
-                                    FileUtils::remountSDCardIfNeeded();
-
-                                    if ( FileUtils::SDReady ) {
+                                    if (FileUtils::isSDReady()) {
 
                                         menu_saverect = true;
 
@@ -2725,7 +2693,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                                         string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " 48K   ", DISK_ROMFILE, 21, 15);
 
-                                        if (mFile != "") {
+                                        if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + FileUtils::ROM_Path + mFile;
 
@@ -2761,9 +2729,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                                 } else if (opt2 == 3) {                                    
 
-                                    FileUtils::remountSDCardIfNeeded();
-
-                                    if ( FileUtils::SDReady ) {
+                                    if (FileUtils::isSDReady()) {
 
                                         menu_saverect = true;
 
@@ -2774,7 +2740,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         // string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 30, 15);
                                         string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " 128K  ", DISK_ROMFILE, 21, 15);
 
-                                        if (mFile != "") {
+                                        if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + FileUtils::ROM_Path + mFile;
 
@@ -2810,9 +2776,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                                 } else if (opt2 == 4) {                                    
 
-                                    FileUtils::remountSDCardIfNeeded();
-
-                                    if ( FileUtils::SDReady ) {
+                                    if (FileUtils::isSDReady()) {
 
                                         menu_saverect = true;
 
@@ -2820,7 +2784,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                                         string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " TK    ", DISK_ROMFILE, 21, 15);
 
-                                        if (mFile != "") {
+                                        if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + FileUtils::ROM_Path + mFile;
 

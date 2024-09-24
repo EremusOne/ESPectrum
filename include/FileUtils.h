@@ -75,7 +75,7 @@ public:
     static void unmountSDCard();
 
     static bool isMountedSDCard();
-    static void remountSDCardIfNeeded();
+    static bool isSDReady();
 
     // static String         getAllFilesFrom(const String path);
     // static void           listAllFiles();

@@ -70,21 +70,20 @@ uint8_t Ports::getFloatBusData48() {
 	// unsigned int line = (currentTstates / 224) - 64;
 	// if (line >= 192) return 0xFF;
 
-	unsigned int line = CPU::tstates / 224;
-    if (line < 64 || line >= 256) return 0xFF;
-
 	// unsigned char halfpix = (CPU::tstates % 224) - 3;
     // if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
 
-	unsigned char halfpix = CPU::tstates % 224;
-    if (halfpix >= 128) return 0xFF;
-    if ((halfpix - 3) & 0x04) return 0xFF;
-
     //int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
-    
     // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
-
     // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
+
+	uint32_t line = CPU::tstates / 224;
+    if (line < 64 || line >= 256) return 0xFF;
+
+	uint8_t halfpix = CPU::tstates % 224;
+    if (halfpix & 0x80) return 0xFF;
+    halfpix -= 3;
+    if (halfpix & 0x04) return 0xFF;
 
     line -= 64;
     return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
@@ -102,9 +101,7 @@ uint8_t Ports::getFloatBusDataTK() {
 	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
 
     // int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
-    
     // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
-
     // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
 
     return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
@@ -113,20 +110,27 @@ uint8_t Ports::getFloatBusDataTK() {
 
 uint8_t Ports::getFloatBusData128() {
 
-    unsigned int currentTstates = CPU::tstates - 1;
+    // unsigned int currentTstates = CPU::tstates - 1;
 
-	unsigned int line = (currentTstates / 228) - 63;
-	if (line >= 192) return 0xFF;
+	// unsigned int line = (currentTstates / 228) - 63;
+	// if (line >= 192) return 0xFF;
 
-	unsigned char halfpix = currentTstates % 228;
-	if ((halfpix >= 128) || (halfpix & 0x04)) return 0xFF;
+	// unsigned char halfpix = currentTstates % 228;
+	// if ((halfpix >= 128) || (halfpix & 0x04)) return 0xFF;
 
     // int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
-
     // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
-
     // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
 
+    uint32_t currentTstates = CPU::tstates - 1;
+
+	uint32_t line = currentTstates / 228;
+    if (line < 63 || line >= 255) return 0xFF;
+
+	uint8_t halfpix = currentTstates % 228;
+	if (halfpix & 0x84) return 0xFF;
+
+    line -= 63;
     return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
 
 }

@@ -374,8 +374,11 @@ void Tape::TAP_Open(string name) {
 
     tape = fopen(fname.c_str(), "rb+");
     if (tape == NULL) {
-        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
-        return;
+        tape = fopen(fname.c_str(), "rb");
+        if (tape == NULL) {
+            OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+            return;
+        }
     }
 
     fseek(tape,0,SEEK_END);
@@ -394,6 +397,7 @@ void Tape::TAP_Open(string name) {
     int tapeBlkLen=0;
     TapeBlock block;
     if ( tapeFileSize > 0 ) {
+
         do {
 
             // Analyze .tap file
@@ -675,7 +679,9 @@ void Tape::Play() {
 
     // Get block data
     tapeCurByte = readByteFile(tape);
-    if ( tapeCurByte > 0 ) { // check for empty tap
+    if (!feof(tape) && !ferror(tape)) { // check for empty tap
+    // if ( tapeCurByte > 0 ) { // check for empty tap
+
         GetBlock();
 
         // Start loading
@@ -1181,8 +1187,7 @@ void Tape::Save() {
 	int longitud;
 
     fichero = fopen(tapeSaveName.c_str(), "ab");
-    if (fichero == NULL)
-    {
+    if (fichero == NULL) {
         OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
         return;
     }

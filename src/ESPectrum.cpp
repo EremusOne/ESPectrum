@@ -87,7 +87,7 @@ int ESPectrum::lastaudioBit = 0;
 int ESPectrum::faudioBit = 0;
 int ESPectrum::samplesPerFrame;
 bool ESPectrum::AY_emu = false;
-int ESPectrum::Audio_freq;
+int ESPectrum::Audio_freq[4];
 unsigned char ESPectrum::audioSampleDivider;
 unsigned char ESPectrum::audioAYDivider;
 unsigned char ESPectrum::audioOverSampleDivider;
@@ -143,13 +143,13 @@ IRAM_ATTR void delayMicroseconds(int64_t us)
 
 double ESPectrum::totalseconds = 0;
 double ESPectrum::totalsecondsnodelay = 0;
-int64_t ESPectrum::target;
+int64_t ESPectrum::target[4];
 int ESPectrum::sync_cnt = 0;
 volatile bool ESPectrum::vsync = false;
 int64_t ESPectrum::ts_start;
 int64_t ESPectrum::elapsed;
 int64_t ESPectrum::idle;
-bool ESPectrum::ESP_delay = true;
+uint8_t ESPectrum::ESP_delay = 1; // EMULATION SPEED: 0-> MAX. SPEED (NO SOUND), 1-> 100% SPEED, 2-> 125% SPEED, 3-> 150% SPEED
 int ESPectrum::ESPoffset = 0;
 
 //=======================================================================================
@@ -650,7 +650,10 @@ void ESPectrum::setup()
         audioAYDivider = ESP_AUDIO_AY_DIV_48;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
         AY_emu = Config::AY48;
-        Audio_freq = ESP_AUDIO_FREQ_48;
+        Audio_freq[0] = ESP_AUDIO_FREQ_48;
+        Audio_freq[1] = ESP_AUDIO_FREQ_48;
+        Audio_freq[2] = ESP_AUDIO_FREQ_48_125SPEED;
+        Audio_freq[3] = ESP_AUDIO_FREQ_48_150SPEED;                        
     } else if (Config::arch == "TK90X" || Config::arch == "TK95") {
 
         switch (Config::ALUTK) {
@@ -659,21 +662,30 @@ void ESPectrum::setup()
             audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_48;
             audioAYDivider = ESP_AUDIO_AY_DIV_48;
             audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
-            Audio_freq = ESP_AUDIO_FREQ_48;
+            Audio_freq[0] = ESP_AUDIO_FREQ_48;
+            Audio_freq[1] = ESP_AUDIO_FREQ_48;
+            Audio_freq[2] = ESP_AUDIO_FREQ_48_125SPEED;
+            Audio_freq[3] = ESP_AUDIO_FREQ_48_150SPEED;                        
             break;
         case 1:
             samplesPerFrame=ESP_AUDIO_SAMPLES_TK_50; 
             audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_TK_50;
             audioAYDivider = ESP_AUDIO_AY_DIV_TK_50;
             audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_TK_50;
-            Audio_freq = ESP_AUDIO_FREQ_TK_50;
+            Audio_freq[0] = ESP_AUDIO_FREQ_TK_50;
+            Audio_freq[1] = ESP_AUDIO_FREQ_TK_50;
+            Audio_freq[2] = ESP_AUDIO_FREQ_TK_50_125SPEED;
+            Audio_freq[3] = ESP_AUDIO_FREQ_TK_50_150SPEED;                                    
             break;
         case 2:
             samplesPerFrame=ESP_AUDIO_SAMPLES_TK_60; 
             audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_TK_60;
             audioAYDivider = ESP_AUDIO_AY_DIV_TK_60;
             audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_TK_60;
-            Audio_freq = ESP_AUDIO_FREQ_TK_60;
+            Audio_freq[0] = ESP_AUDIO_FREQ_TK_60;
+            Audio_freq[1] = ESP_AUDIO_FREQ_TK_60;
+            Audio_freq[2] = ESP_AUDIO_FREQ_TK_60_125SPEED;
+            Audio_freq[3] = ESP_AUDIO_FREQ_TK_60_150SPEED;                                    
         }
 
         AY_emu = Config::AY48;
@@ -684,14 +696,20 @@ void ESPectrum::setup()
         audioAYDivider = ESP_AUDIO_AY_DIV_128;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_128;
         AY_emu = true;        
-        Audio_freq = ESP_AUDIO_FREQ_128;
+        Audio_freq[0] = ESP_AUDIO_FREQ_128;
+        Audio_freq[1] = ESP_AUDIO_FREQ_128;        
+        Audio_freq[2] = ESP_AUDIO_FREQ_128_125SPEED;        
+        Audio_freq[3] = ESP_AUDIO_FREQ_128_150SPEED;                        
     } else if (Config::arch == "Pentagon") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_PENTAGON;
         audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_PENTAGON;
         audioAYDivider = ESP_AUDIO_AY_DIV_PENTAGON;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_PENTAGON;
         AY_emu = true;        
-        Audio_freq = ESP_AUDIO_FREQ_PENTAGON;
+        Audio_freq[0] = ESP_AUDIO_FREQ_PENTAGON;
+        Audio_freq[1] = ESP_AUDIO_FREQ_PENTAGON;
+        Audio_freq[2] = ESP_AUDIO_FREQ_PENTAGON_125SPEED;
+        Audio_freq[3] = ESP_AUDIO_FREQ_PENTAGON_150SPEED;
     }
 
     if (Config::tape_player) {
@@ -704,7 +722,7 @@ void ESPectrum::setup()
 
     // AY Sound
     AySound::init();
-    AySound::set_sound_format(Audio_freq,1,8);
+    AySound::set_sound_format(Audio_freq[ESP_delay],1,8);
     AySound::set_stereo(AYEMU_MONO,NULL);
     AySound::reset();
 
@@ -831,14 +849,17 @@ void ESPectrum::reset()
     lastaudioBit=0;
 
     // Set samples per frame and AY_emu flag depending on arch
-    int prevAudio_freq = Audio_freq;
-    if (Config::arch == "48K"/* || Config::arch == "TK90X" || Config::arch == "TK95"*/) {
+    int prevAudio_freq = Audio_freq[ESP_delay];    
+    if (Config::arch == "48K") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_48; 
         audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_48;
         audioAYDivider = ESP_AUDIO_AY_DIV_48;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
         AY_emu = Config::AY48;
-        Audio_freq = ESP_AUDIO_FREQ_48;
+        Audio_freq[0] = ESP_AUDIO_FREQ_48;
+        Audio_freq[1] = ESP_AUDIO_FREQ_48;
+        Audio_freq[2] = ESP_AUDIO_FREQ_48_125SPEED;
+        Audio_freq[3] = ESP_AUDIO_FREQ_48_150SPEED;                        
     } else if (Config::arch == "TK90X" || Config::arch == "TK95") {
 
         switch (Config::ALUTK) {
@@ -847,21 +868,30 @@ void ESPectrum::reset()
             audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_48;
             audioAYDivider = ESP_AUDIO_AY_DIV_48;
             audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_48;
-            Audio_freq = ESP_AUDIO_FREQ_48;
+            Audio_freq[0] = ESP_AUDIO_FREQ_48;
+            Audio_freq[1] = ESP_AUDIO_FREQ_48;
+            Audio_freq[2] = ESP_AUDIO_FREQ_48_125SPEED;
+            Audio_freq[3] = ESP_AUDIO_FREQ_48_150SPEED;                        
             break;
         case 1:
             samplesPerFrame=ESP_AUDIO_SAMPLES_TK_50; 
             audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_TK_50;
             audioAYDivider = ESP_AUDIO_AY_DIV_TK_50;
             audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_TK_50;
-            Audio_freq = ESP_AUDIO_FREQ_TK_50;
+            Audio_freq[0] = ESP_AUDIO_FREQ_TK_50;
+            Audio_freq[1] = ESP_AUDIO_FREQ_TK_50;
+            Audio_freq[2] = ESP_AUDIO_FREQ_TK_50_125SPEED;
+            Audio_freq[3] = ESP_AUDIO_FREQ_TK_50_150SPEED;                                    
             break;
         case 2:
             samplesPerFrame=ESP_AUDIO_SAMPLES_TK_60; 
             audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_TK_60;
             audioAYDivider = ESP_AUDIO_AY_DIV_TK_60;
             audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_TK_60;
-            Audio_freq = ESP_AUDIO_FREQ_TK_60;
+            Audio_freq[0] = ESP_AUDIO_FREQ_TK_60;
+            Audio_freq[1] = ESP_AUDIO_FREQ_TK_60;
+            Audio_freq[2] = ESP_AUDIO_FREQ_TK_60_125SPEED;
+            Audio_freq[3] = ESP_AUDIO_FREQ_TK_60_150SPEED;                                    
         }
 
         AY_emu = Config::AY48;
@@ -872,14 +902,20 @@ void ESPectrum::reset()
         audioAYDivider = ESP_AUDIO_AY_DIV_128;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_128;
         AY_emu = true;        
-        Audio_freq = ESP_AUDIO_FREQ_128;
+        Audio_freq[0] = ESP_AUDIO_FREQ_128;
+        Audio_freq[1] = ESP_AUDIO_FREQ_128;
+        Audio_freq[2] = ESP_AUDIO_FREQ_128_125SPEED;
+        Audio_freq[3] = ESP_AUDIO_FREQ_128_150SPEED;
     } else if (Config::arch == "Pentagon") {
         samplesPerFrame=ESP_AUDIO_SAMPLES_PENTAGON;
         audioOverSampleDivider = ESP_AUDIO_OVERSAMPLES_DIV_PENTAGON;
         audioAYDivider = ESP_AUDIO_AY_DIV_PENTAGON;
         audioSampleDivider = ESP_AUDIO_SAMPLES_DIV_PENTAGON;
         AY_emu = true;        
-        Audio_freq = ESP_AUDIO_FREQ_PENTAGON;
+        Audio_freq[0] = ESP_AUDIO_FREQ_PENTAGON;
+        Audio_freq[1] = ESP_AUDIO_FREQ_PENTAGON;
+        Audio_freq[2] = ESP_AUDIO_FREQ_PENTAGON_125SPEED;
+        Audio_freq[3] = ESP_AUDIO_FREQ_PENTAGON_150SPEED;
     }
 
     if (Config::tape_player) AY_emu = false; // Disable AY emulation if tape player mode is set
@@ -887,10 +923,10 @@ void ESPectrum::reset()
     ESPoffset = 0;
 
     // Readjust output pwmaudio frequency if needed
-    if (prevAudio_freq != Audio_freq) {
+    if (prevAudio_freq != Audio_freq[ESP_delay]) {
         // printf("Resetting pwmaudio to freq: %d\n",Audio_freq);
         esp_err_t res;
-        res = pwm_audio_set_sample_rate(Audio_freq);
+        res = pwm_audio_set_sample_rate(Audio_freq[ESP_delay]);
         if (res != ESP_OK) {
             printf("Can't set sample rate\n");
         }
@@ -898,7 +934,7 @@ void ESPectrum::reset()
     
     // Reset AY emulation
     AySound::init();
-    AySound::set_sound_format(Audio_freq,1,8);
+    AySound::set_sound_format(Audio_freq[ESP_delay],1,8);
     AySound::set_stereo(AYEMU_MONO,NULL);
     AySound::reset();
 
@@ -1602,7 +1638,7 @@ IRAM_ATTR void ESPectrum::audioTask(void *unused) {
     pac.ringbuf_len        = 3072; /* 4096; */
 
     pwm_audio_init(&pac);
-    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
+    pwm_audio_set_param(Audio_freq[ESP_delay],LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 
@@ -1785,16 +1821,19 @@ for(;;) {
     #endif
 
     elapsed = esp_timer_get_time() - ts_start;
-    idle = target - elapsed - ESPoffset;
+    idle = target[ESP_delay] - elapsed - ESPoffset; // 100% No turbo
+    // idle = 15974 - elapsed - ESPoffset; // +125% 48k
+    // idle = 13312 - elapsed - ESPoffset; // +150% 48K
+    // idle = 11138 - elapsed - ESPoffset; // +150% TK60
 
     totalsecondsnodelay += elapsed;
 
-    if (ESP_delay == false) {
+    if (!ESP_delay) {
         totalseconds += elapsed;
         continue;
     }
 
-    if(Config::videomode && !Config::tape_player) {
+    if(Config::videomode && !Config::tape_player && ESP_delay == 1) {
 
         if (sync_cnt++ == 0) {
 

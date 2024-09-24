@@ -130,7 +130,7 @@ IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
 
         elapsedmicros += currentmicros - prevmicros;
 
-        if (elapsedmicros >= ESPectrum::target) {
+        if (elapsedmicros >= ESPectrum::target[0]) {
 
             ESPectrum::vsync = true;
 
@@ -142,7 +142,7 @@ IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
                 }
             }
 
-            elapsedmicros -= ESPectrum::target;
+            elapsedmicros -= ESPectrum::target[0];
 
         } else ESPectrum::vsync = false;
     
