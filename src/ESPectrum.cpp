@@ -1472,119 +1472,99 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
 
         // Detect and process physical kbd menu key combinations
         // CS+SS+<1..0> -> F1..F10 Keys, CS+SS+Q -> F11, CS+SS+W -> F12, CS+SS+S -> Capture screen
-        if (/*(!bitRead(ZXKeyb::ZXcols[0],0)) && */(!bitRead(ZXKeyb::ZXcols[7],1))) {
+        if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
 
-            // zxDelay = 15;
+            zxDelay = 15;
 
-            int64_t osd_start;
+            int64_t osd_start = esp_timer_get_time();
 
-            if (!bitRead(ZXKeyb::ZXcols[0],0)) {
-
-                zxDelay = 15;
-
-                osd_start = esp_timer_get_time();
-
-                if (!bitRead(ZXKeyb::ZXcols[3],0)) {
-                    OSD::do_OSD(fabgl::VK_F1,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[3],1)) {
-                    OSD::do_OSD(fabgl::VK_F2,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[3],2)) {
-                    OSD::do_OSD(fabgl::VK_F3,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[3],3)) {
-                    OSD::do_OSD(fabgl::VK_F4,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[3],4)) {
-                    OSD::do_OSD(fabgl::VK_F5,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[4],4)) {
-                    OSD::do_OSD(fabgl::VK_F6,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[4],3)) {
-                    OSD::do_OSD(fabgl::VK_F7,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[4],2)) {
-                    OSD::do_OSD(fabgl::VK_F8,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[4],1)) {
-                    OSD::do_OSD(fabgl::VK_F9,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[4],0)) {
-                    OSD::do_OSD(fabgl::VK_F10,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[2],0)) {
-                    OSD::do_OSD(fabgl::VK_F11,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[2],1)) {
-                    OSD::do_OSD(fabgl::VK_F12,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[5],0)) { // P -> Pause
-                    OSD::do_OSD(fabgl::VK_PAUSE,0,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
-                    OSD::do_OSD(fabgl::VK_F1,0,true);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[2],2)) { // E -> Eject tape
-                    OSD::do_OSD(fabgl::VK_F6,0,true);
-                } else
-                // if (!bitRead(ZXKeyb::ZXcols[5],3)) { // U -> Uart test
-                //     OSD::do_OSD(fabgl::VK_F5,0,true);
-                // } else
-                if (!bitRead(ZXKeyb::ZXcols[2],3)) { // R -> Reset to TR-DOS
-                    OSD::do_OSD(fabgl::VK_F11,true,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[2],4)) { // T -> Turbo
-                    OSD::do_OSD(fabgl::VK_F2,true,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[7],4)) { // B -> BMP capture
-                    CaptureToBmp();
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[5],1)) { // O -> Poke
-                    OSD::pokeDialog();
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[7],3)) { // N -> NMI
-                    Z80::triggerNMI();
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[6],2)) { // K -> Help / Kbd layout
-                    OSD::do_OSD(fabgl::VK_F1,true,0);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
-                    if (Config::CenterH > -16) Config::CenterH--;
-                    Config::save("CenterH");
-                    OSD::osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[0],2)) { // X -> CenterH
-                    if (Config::CenterH < 16) Config::CenterH++;
-                    Config::save("CenterH");
-                    OSD::osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[0],3)) { // C -> CenterV
-                    if (Config::CenterV > -16) Config::CenterV--;
-                    Config::save("CenterV");
-                    OSD::osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
-                } else
-                if (!bitRead(ZXKeyb::ZXcols[0],4)) { // V -> CenterV
-                    if (Config::CenterV < 16) Config::CenterV++;
-                    Config::save("CenterV");
-                    OSD::osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
-                } else
-                    zxDelay = 0;
-
-            } /*else {
-
-                // zxDelay = 15;
-
-                // osd_start = esp_timer_get_time();
-
-                // Use SS + ENTER to bring up menu. Is it safe?
-                if (!bitRead(ZXKeyb::ZXcols[6],0)) {
-                    OSD::do_OSD(fabgl::VK_F1,0,0);
-                } else
-                    zxDelay = 0;
-
-            }*/
+            if (!bitRead(ZXKeyb::ZXcols[3],0)) {
+                OSD::do_OSD(fabgl::VK_F1,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],1)) {
+                OSD::do_OSD(fabgl::VK_F2,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],2)) {
+                OSD::do_OSD(fabgl::VK_F3,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],3)) {
+                OSD::do_OSD(fabgl::VK_F4,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[3],4)) {
+                OSD::do_OSD(fabgl::VK_F5,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],4)) {
+                OSD::do_OSD(fabgl::VK_F6,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],3)) {
+                OSD::do_OSD(fabgl::VK_F7,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],2)) {
+                OSD::do_OSD(fabgl::VK_F8,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],1)) {
+                OSD::do_OSD(fabgl::VK_F9,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[4],0)) {
+                OSD::do_OSD(fabgl::VK_F10,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],0)) {
+                OSD::do_OSD(fabgl::VK_F11,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],1)) {
+                OSD::do_OSD(fabgl::VK_F12,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[5],0)) { // P -> Pause
+                OSD::do_OSD(fabgl::VK_PAUSE,0,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[5],2)) { // I -> Info
+                OSD::do_OSD(fabgl::VK_F1,0,true);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],2)) { // E -> Eject tape
+                OSD::do_OSD(fabgl::VK_F6,0,true);
+            } else
+            // if (!bitRead(ZXKeyb::ZXcols[5],3)) { // U -> Uart test
+            //     OSD::do_OSD(fabgl::VK_F5,0,true);
+            // } else
+            if (!bitRead(ZXKeyb::ZXcols[2],3)) { // R -> Reset to TR-DOS
+                OSD::do_OSD(fabgl::VK_F11,true,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[2],4)) { // T -> Turbo
+                OSD::do_OSD(fabgl::VK_F2,true,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[7],4)) { // B -> BMP capture
+                CaptureToBmp();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[5],1)) { // O -> Poke
+                OSD::pokeDialog();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[7],3)) { // N -> NMI
+                Z80::triggerNMI();
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[6],2)) { // K -> Help / Kbd layout
+                OSD::do_OSD(fabgl::VK_F1,true,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
+                if (Config::CenterH > -16) Config::CenterH--;
+                Config::save("CenterH");
+                OSD::osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],2)) { // X -> CenterH
+                if (Config::CenterH < 16) Config::CenterH++;
+                Config::save("CenterH");
+                OSD::osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],3)) { // C -> CenterV
+                if (Config::CenterV > -16) Config::CenterV--;
+                Config::save("CenterV");
+                OSD::osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[0],4)) { // V -> CenterV
+                if (Config::CenterV < 16) Config::CenterV++;
+                Config::save("CenterV");
+                OSD::osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
+            } else
+                zxDelay = 0;
 
             if (zxDelay) {
 
