@@ -829,7 +829,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         //     }
 
         // } else
-        if (KeytoESP == fabgl::VK_F1) { // Show mem info
+        if (KeytoESP == fabgl::VK_F1) { // Show kbd layout
             
             uint8_t layout = 0;
 
@@ -1004,6 +1004,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             }
             if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
+        // else if (KeytoESP == fabgl::VK_F3) { 
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar -= 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // } 
+        // else if (KeytoESP == fabgl::VK_F4) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar += 1;
+        //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
+        // }
         else if (KeytoESP == fabgl::VK_F3) {
 
             // if (MemESP::cur_timemachine > 0)
@@ -1036,15 +1046,24 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
                 if (mFile != "" && FileUtils::isSDReady()) {
                     string tapFile = FileUtils::MountPoint + FileUtils::TAP_Path + "/" + mFile.substr(1);
-                    struct stat stat_buf;
-                    int status = stat(tapFile.c_str(), &stat_buf);
-                    if (status == -1) {
-                        if ( errno != ENOENT ) return;
+
+                    string fprefix = mFile.substr(0,1);
+                    if ( fprefix == "N") {
+                        struct stat stat_buf;
+                        if (stat(tapFile.c_str(), &stat_buf) == 0) {
+                            if (access(tapFile.c_str(), W_OK)) {
+                                OSD::osdCenteredMsg(OSD_READONLY_FILE_WARN[Config::lang], LEVEL_WARN);
+                                return;
+                            } else
+                                if (msgDialog(OSD_TAPE_SAVE_EXIST[Config::lang],OSD_DLG_SURE[Config::lang]) != DLG_YES) return;
+                        }
                         // Create empty tap
                         int fd = open(tapFile.c_str(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
                         if (!fd) return;
                         close(fd);
+                        mFile[0] = 'S';
                     }
+
                     Tape::LoadTape(mFile);
                     return;
                 }
@@ -1142,6 +1161,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             click();
 
         }
+        // else if (KeytoESP == fabgl::VK_F9) {
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar1 -= 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // }
+        // else if (KeytoESP == fabgl::VK_F10) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar1 += 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // }
         else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUMEDOWN) { 
 
             // EXPERIMENTAL: TIME MACHINE TEST
@@ -1352,14 +1381,21 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang], DISK_TAPFILE, 28, 16);
                                 if (mFile != "" && FileUtils::isSDReady() ) {
                                     string tapFile = FileUtils::MountPoint + FileUtils::TAP_Path + mFile.substr(1);
-                                    struct stat stat_buf;
-                                    int status = stat(tapFile.c_str(), &stat_buf);
-                                    if (status == -1) {
-                                        if ( errno != ENOENT ) return;
+                                    string fprefix = mFile.substr(0,1);
+                                    if ( fprefix == "N") {
+                                        struct stat stat_buf;
+                                        if (stat(tapFile.c_str(), &stat_buf) == 0) {
+                                            if (access(tapFile.c_str(), W_OK)) {
+                                                OSD::osdCenteredMsg(OSD_READONLY_FILE_WARN[Config::lang], LEVEL_WARN);
+                                                return;
+                                            } else
+                                                if (msgDialog(OSD_TAPE_SAVE_EXIST[Config::lang],OSD_DLG_SURE[Config::lang]) != DLG_YES) return;
+                                        }
                                         // Create empty tap
                                         int fd = open(tapFile.c_str(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
                                         if (!fd) return;
                                         close(fd);
+                                        mFile[0] = 'S';
                                     }
                                     Tape::LoadTape(mFile);
                                     return;
@@ -1493,8 +1529,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             if (opt2 > 0) {
                                 if (opt2 == 1) {
                                     if (FileUtils::isSDReady()) {
+                                        menu_level = 3;
                                         menu_saverect = true;
-                                        string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang], DISK_DSKFILE, 26, 15);
+                                        string mFile = fileDialog(FileUtils::DSK_Path, MENU_DSK_TITLE[Config::lang], DISK_DSKFILE, 28, 16);
                                         if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + FileUtils::DSK_Path + mFile;
@@ -2132,7 +2169,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         uint8_t opt2 = menuRun(asp_menu);
                                         if (opt2) {
 
-                                            if (Config::videomode == 2) opt2 = 1; // Can't change aspect ratio in CRT mode
+                                            if (Config::videomode == 2) opt2 = 1; // Force 4:3 aspect ratio in CRT mode
 
                                             if (opt2 == 1)
                                                 Config::aspect_16_9 = false;
@@ -2691,7 +2728,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                                         menu_level = 3;
 
-                                        string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " 48K   ", DISK_ROMFILE, 21, 15);
+                                        string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " 48K   ", DISK_ROMFILE, 28, 16);
 
                                         if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
@@ -2738,7 +2775,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         // string tt = MENU_ROM_TITLE[Config::lang];
                                         // tt += " (128K)";
                                         // string mFile = fileDialog( FileUtils::ROM_Path, tt, DISK_ROMFILE, 30, 15);
-                                        string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " 128K  ", DISK_ROMFILE, 21, 15);
+                                        string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " 128K  ", DISK_ROMFILE, 28, 16);
 
                                         if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
@@ -2782,7 +2819,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                                         menu_level = 3;
 
-                                        string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " TK    ", DISK_ROMFILE, 21, 15);
+                                        string mFile = fileDialog( FileUtils::ROM_Path, (string) MENU_ROM_TITLE[Config::lang] + " TK    ", DISK_ROMFILE, 28, 16);
 
                                         if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);

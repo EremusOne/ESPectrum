@@ -114,7 +114,7 @@ using namespace std;
 
 #define CHUNK_SIZE 1024
 struct TZXBlock {
-    uint8_t BlockType;   
+    uint8_t BlockType;
     char FileName[11];
     uint16_t PauseLenght;
     uint32_t BlockLenght;
@@ -160,15 +160,15 @@ public:
     static int tapeCurBlock;  
     static int tapeNumBlocks;  
     static uint32_t tapebufByteCount;
-    static uint32_t tapePlayOffset;    
+    static uint32_t tapePlayOffset;
     static size_t tapeFileSize;
- 
-    static uint8_t tapePhase;    
+    static bool tapeIsReadOnly;
+    static uint8_t tapePhase;
 
     static std::vector<TapeBlock> TapeListing;
 
     static void Init();
-    static void TAP_setBlockTimings();        
+    static void TAP_setBlockTimings();
     static void LoadTape(string mFile);
     static void Play();
     static void Stop();
@@ -179,9 +179,9 @@ public:
     static void tapeEject();
 
     static uint32_t CalcTapBlockPos(int block);
-    static uint32_t CalcTZXBlockPos(int block);    
+    static uint32_t CalcTZXBlockPos(int block);
     static string tapeBlockReadData(int Blocknum);
-    static string tzxBlockReadData(int Blocknum);    
+    static string tzxBlockReadData(int Blocknum);
 
     static std::vector<int> selectedBlocks;
 
@@ -200,9 +200,9 @@ private:
 
     static void TAP_Open(string name);
     static void TAP_ReOpen();
-    static void TAP_GetBlock();    
+    static void TAP_GetBlock();
     static void TZX_Open(string name);
-    static void TZX_GetBlock();    
+    static void TZX_GetBlock();
     static void TZX_BlockLen(TZXBlock &blockdata);
 
     static int inflateCSW(int blocknumber, long startPos, long data_length);
@@ -256,6 +256,5 @@ private:
     static Symdef* SymDefTable;
 
 };
-
 
 #endif

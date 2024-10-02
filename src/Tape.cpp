@@ -69,6 +69,8 @@ uint32_t Tape::tapePlayOffset;
 size_t Tape::tapeFileSize;
 std::vector<int> Tape::selectedBlocks;
 
+bool Tape::tapeIsReadOnly = false;
+
 // Tape timing values
 uint16_t Tape::tapeSyncLen;
 uint16_t Tape::tapeSync1Len;
@@ -236,10 +238,10 @@ void Tape::LoadTape(string mFile) {
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
 
-        if ( FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0 ) {
+        // if ( FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0 ) {
 
             // Flashload .tap if needed
-            if ((keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs") && (Config::romSet != "TKcs")) {
+            if ((FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0) && (keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs") && (Config::romSet != "TKcs")) {
 
                     OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD[Config::lang], LEVEL_INFO, 0);
 
@@ -275,7 +277,7 @@ void Tape::LoadTape(string mFile) {
 
             }
 
-        }
+        // }
 
         Tape::Stop();
 
@@ -372,19 +374,16 @@ void Tape::TAP_Open(string name) {
 
     string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
 
-    tape = fopen(fname.c_str(), "rb+");
+    tapeIsReadOnly = access(fname.c_str(), W_OK);   
+    tape = fopen(fname.c_str(), tapeIsReadOnly == 0 ? "rb+" : "rb");
     if (tape == NULL) {
-        tape = fopen(fname.c_str(), "rb");
-        if (tape == NULL) {
-            OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
-            return;
-        }
+        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+        return;
     }
 
     fseek(tape,0,SEEK_END);
     tapeFileSize = ftell(tape);
     rewind(tape);
-//    if (tapeFileSize == 0) return;
 
     tapeSaveName = fname;
     tapeFileName = name;
@@ -1186,6 +1185,12 @@ void Tape::Save() {
 	uint8_t dato;
 	int longitud;
 
+    Tape::Stop();
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+    }
+
     fichero = fopen(tapeSaveName.c_str(), "ab");
     if (fichero == NULL) {
         OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
@@ -1198,11 +1203,12 @@ void Tape::Save() {
 	longitud+=2;
 
 	dato=(uint8_t)(longitud%256);
-	fprintf(fichero,"%c",dato);
+    fwrite(&dato,sizeof(uint8_t),1,fichero);
 	dato=(uint8_t)(longitud/256);
-	fprintf(fichero,"%c",dato); // file length
+    fwrite(&dato,sizeof(uint8_t),1,fichero); // file length
 
-	fprintf(fichero,"%c",Z80::getRegA()); // flag
+    dato = Z80::getRegA(); // flag
+	fwrite(&dato,sizeof(uint8_t),1,fichero);
 
 	xxor^=Z80::getRegA();
 
@@ -1212,13 +1218,13 @@ void Tape::Save() {
 	 		salir_s = 2;
 	 	if (!salir_s) {
             dato = MemESP::readbyte(Z80::getRegIX());
-			fprintf(fichero,"%c",dato);
+            fwrite(&dato,sizeof(uint8_t),1,fichero);
 	 		xxor^=dato;
 	        Z80::setRegIX(Z80::getRegIX() + 1);
 	        Z80::setRegDE(Z80::getRegDE() - 1);
 	 	}
 	} while (!salir_s);
-	fprintf(fichero,"%c",xxor);
+    fwrite(&xxor,sizeof(unsigned char),1,fichero);
 	Z80::setRegIX(Z80::getRegIX() + 2);
 
     fclose(fichero);

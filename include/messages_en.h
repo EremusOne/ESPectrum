@@ -117,6 +117,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DELETE_CURRENT_FILE_EN "Delete file"
 
+#define OSD_READONLY_FILE_WARN_EN "Read only file"
+
 #define OSD_TAPE_FLASHLOAD_EN "Flash loading tape file"
 #define OSD_TAPE_INSERT_EN "Tape inserted"
 #define OSD_TAPE_EJECT_EN "Tape ejected"
@@ -267,9 +269,9 @@ visit https://zxespectrum.speccy.org/contacto
     "v1 Portuguese\t[v1pt ]\n"\
 	"v2 Spanish\t[v2es ]\n"\
     "v2 Portuguese\t[v2pt ]\n"\
-	"v3 Spanish\t[v3es ]\n"\
-    "v3 Portuguese\t[v3pt ]\n"\
-    "v3 English\t[v3en ]\n"\
+	"v3 Spanish (R.G.)\t[v3es ]\n"\
+    "v3 Portuguese (R.G.)\t[v3pt ]\n"\
+    "v3 English (R.G.)\t[v3en ]\n"\
     "Custom\t[TKcs ]\n"
 
 #define MENU_ROMSTK95_PREF_EN "Spanish\t[95es ]\n"\

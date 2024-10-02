@@ -213,8 +213,8 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
         x += (Config::aspect_16_9 ? 24 : 4);
         y += (Config::aspect_16_9 ? 4 : 8);
     } else {
-        x += (Config::aspect_16_9 ? 24 : 4) + (60 * menu_level);
-        y += (Config::aspect_16_9 ? 4 : 8) + (8 * (menu_level - 1));
+        x += (Config::aspect_16_9 ? 24 : 4) + (48 /*60*/ * menu_level);
+        y += (Config::aspect_16_9 ? 4 : 8) + (4 /*8*/ * (menu_level - 1));
     }
 
     // Size
@@ -609,7 +609,7 @@ reset:
 
                             FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
 
-                            return "S" + new_tap + ".tap";
+                            return "N" + new_tap + ".tap";
 
                         } else {
 
@@ -676,16 +676,21 @@ reset:
                         // printf("%s\n",filedir.c_str());
                         if (filedir[0] != ASCII_SPC) {
                             rtrim(filedir);
-                            string title = MENU_DELETE_CURRENT_FILE[Config::lang];
-                            string msg = OSD_DLG_SURE[Config::lang];
-                            uint8_t res = msgDialog(title,msg);
-
-                            if (res == DLG_YES) {
-                                if ( FileUtils::getResolvedPath( FileUtils::MountPoint + fdir + filedir ) == FileUtils::getResolvedPath( Tape::tapeSaveName ) ) Tape::tapeEject();
-                                remove(( FileUtils::MountPoint + fdir + filedir ).c_str());
-                                fd_Redraw(title, fdir, ftype);
+                            if ( !access(( FileUtils::MountPoint + fdir + filedir ).c_str(), W_OK) ) {
+                                string title = MENU_DELETE_CURRENT_FILE[Config::lang];
+                                string msg = OSD_DLG_SURE[Config::lang];
+                                uint8_t res = msgDialog(title,msg);
                                 menu_saverect = true;
-                                goto reset;
+
+                                if (res == DLG_YES) {
+                                    if ( FileUtils::getResolvedPath( FileUtils::MountPoint + fdir + filedir ) == FileUtils::getResolvedPath( Tape::tapeSaveName ) ) Tape::tapeEject();
+                                    remove(( FileUtils::MountPoint + fdir + filedir ).c_str());
+                                    fd_Redraw(title, fdir, ftype);
+                                    menu_saverect = true;
+                                    goto reset;
+                                }
+                            } else {
+                                OSD::osdCenteredMsg(OSD_READONLY_FILE_WARN[Config::lang], LEVEL_WARN);                                
                             }
                             click();
                         }
@@ -841,14 +846,28 @@ reset:
                     menuAt(mf_rows, 1);
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
                     VIDEO::vga.print(Config::lang ? "B\xA3sq: " : "Find: ");
-                    VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+
+                    // VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+
+                    int ss_siz = FileUtils::fileTypes[ftype].fileSearch.size();
+                    int max_siz = cols - 20;
+                    if (max_siz > MAXSEARCHLEN) max_siz = MAXSEARCHLEN;
+                    if (ss_siz < max_siz)
+                        VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.c_str());
+                    else
+                        VIDEO::vga.print(FileUtils::fileTypes[ftype].fileSearch.substr(ss_siz - max_siz).c_str());
+
+
                     if (fdCursorFlash > 63) {
                         VIDEO::vga.setTextColor(zxColor(5, 0), zxColor(7, 1));
                         if (fdCursorFlash == 128) fdCursorFlash = 0;
                     }
                     VIDEO::vga.print("L");
                     VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                    VIDEO::vga.print(std::string(MAXSEARCHLEN - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+                    // VIDEO::vga.print(std::string(MAXSEARCHLEN - FileUtils::fileTypes[ftype].fileSearch.size(), ' ').c_str());
+
+                    if (ss_siz < max_siz) VIDEO::vga.print(std::string(max_siz - ss_siz, ' ').c_str());
+
                 }
 
                 if (fdSearchRefresh) {

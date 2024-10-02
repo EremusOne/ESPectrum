@@ -77,7 +77,7 @@ int OSD::prepare_checkbox_menu(string &menu, string curopt) {
         itempos++;
         string rmenu = menu.substr(mpos + 1, rpos );
         trim(rmenu);
-        if (rmenu == curopt) { 
+        if (rmenu == curopt) {
             menu.replace(mpos + 1, rpos,"*");
             m_curopt = itempos;
         } else
@@ -169,7 +169,7 @@ unsigned short OSD::menuRun(string new_menu) {
         y += 8;
         prev_y[0] = 0;
     } else {
-        x += (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+        x += (Config::aspect_16_9 ? 24 : 8) + (54 /*60*/ * menu_level);
         if (menu_saverect && !prev_y[menu_level]) {
             y += (4 + (8 * menu_prevopt));
             prev_y[menu_level] = y;
@@ -597,29 +597,39 @@ void OSD::tapemenuRedraw(string title, bool force) {
         // Read bunch of rows
         menu = title + "\n";
         if ( Tape::tapeNumBlocks ) {
-            for (int i = begin_row - 1; i < virtual_rows - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 ) + begin_row - 2; i++) {
+            for (int i = begin_row - 1; i < virtual_rows - ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly ? 1 : 0 ) + begin_row - 2; i++) {
                 if (i >= Tape::tapeNumBlocks) break;
                 if (Tape::tapeFileType == TAPE_FTYPE_TAP)
                     menu += Tape::tapeBlockReadData(i);
                 else
                     menu += Tape::tzxBlockReadData(i);
             }
-            if ( Tape::tapeFileType == TAPE_FTYPE_TAP && begin_row - 1 + virtual_rows >= real_rows ) menu += "\n";
+            if ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && begin_row - 1 + virtual_rows >= real_rows ) menu += "\n";
         } else {
             menu += ( Config::lang ? "<Vacio>\n" : "<Empty>\n" );
         }
 
-        for (uint8_t row = 1; row < virtual_rows - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 ); row++) {
+        for (uint8_t row = 1; row < virtual_rows - ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly ? 1 : 0 ); row++) {
             if (row == focus) {
-                PrintRow(row, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + row) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                PrintRow(row, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + row) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
             } else {
-                PrintRow(row, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + row) ) ? IS_SELECTED : IS_NORMAL);
+                PrintRow(row, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + row) ) ? IS_SELECTED : IS_NORMAL);
             }
         }
 
         if ( Tape::tapeFileType == TAPE_FTYPE_TAP ) {
-            string options = Config::lang ? " ESP Selec. | F2 Renombrar | F6 Mover | F8 Borrar" : 
-                                            " SPC Select | F2 Rename | F6 Move | F8 Delete";
+
+            string options;
+            if ( !Tape::tapeIsReadOnly ) {
+                options = Config::lang == 0 ? " SPC Select | F2 Rename | F6 Move | F8 Delete" :
+                          Config::lang == 1 ? " ESP Selec. | F2 Renombrar | F6 Mover | F8 Borrar" :
+                                              " ESP Selec. | F2 Renomear | F6 Mover | F8 Excluir";
+            } else {
+                options = Config::lang == 0 ? " [Read-Only TAP]" :
+                          Config::lang == 1 ? " [TAP de solo lectura]" :
+                                              " [TAP somente leitura]";
+            }
+
             menuAt(-1, 0);
             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
             VIDEO::vga.print((options + std::string(cols - options.size(), ' ')).c_str());
@@ -737,13 +747,13 @@ int OSD::menuTape(string title) {
                     } else if (focus > 1) {
                         last_focus = focus;
                         focus--;
-                        PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
-                        PrintRow(focus + 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus + 1) ) ? IS_SELECTED : IS_NORMAL);
+                        PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                        PrintRow(focus + 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus + 1) ) ? IS_SELECTED : IS_NORMAL);
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_DOWN || Menukey.vk == fabgl::VK_JOY1DOWN || Menukey.vk == fabgl::VK_JOY2DOWN) {
                     if (focus == virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 ) ) {
-                        if ((begin_row + virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 2 : 0 )) < real_rows) {
+                        if ((begin_row + virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? (!Tape::tapeIsReadOnly ? 2 : 1) : 0 )) < real_rows) {
                             last_begin_row = begin_row;
                             begin_row++;
                             tapemenuRedraw(title);
@@ -752,8 +762,8 @@ int OSD::menuTape(string title) {
                     } else if (focus < virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 )) {
                         last_focus = focus;
                         focus++;
-                        PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
-                        PrintRow(focus - 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && Tape::isSelectedBlock(begin_row - 2 + focus - 1) ) ? IS_SELECTED : IS_NORMAL);
+                        PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                        PrintRow(focus - 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus - 1) ) ? IS_SELECTED : IS_NORMAL);
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_PAGEUP || Menukey.vk == fabgl::VK_LEFT || Menukey.vk == fabgl::VK_JOY1LEFT || Menukey.vk == fabgl::VK_JOY2LEFT) {
@@ -785,7 +795,7 @@ int OSD::menuTape(string title) {
                         last_focus = focus;
                         last_begin_row = begin_row;
                         focus = virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
-                        begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 2 : 0 );
+                        begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? (!Tape::tapeIsReadOnly ? 2 : 1) : 0 );
                         tapemenuRedraw(title);
                         click();
                     }
@@ -800,10 +810,10 @@ int OSD::menuTape(string title) {
                     last_focus = focus;
                     last_begin_row = begin_row;
                     focus = virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
-                    begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 2 : 0 );
+                    begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? (!Tape::tapeIsReadOnly ? 2 : 1) : 0 );
                     tapemenuRedraw(title);
                     click();
-                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && (Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C)) {
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && (Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C)) {
                     if ( begin_row - 1 + focus < real_rows ) Tape::selectBlockToggle(begin_row - 2 + focus);
 
                     if (focus == virtual_rows - 1 - 1 ) {
@@ -822,7 +832,7 @@ int OSD::menuTape(string title) {
                         PrintRow(focus - 1, Tape::isSelectedBlock(begin_row - 2 + focus - 1) ? IS_SELECTED : IS_NORMAL);
                         click();
                     }
-                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F2 && begin_row - 1 + focus < real_rows) {
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Menukey.vk == fabgl::VK_F2 && begin_row - 1 + focus < real_rows) {
 
                     long current_pos = ftell( Tape::tape );
 
@@ -846,7 +856,7 @@ int OSD::menuTape(string title) {
                             
                     fseek( Tape::tape, current_pos, SEEK_SET );
 
-                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F6) {
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Menukey.vk == fabgl::VK_F6) {
                     click();
                     if ( Tape::selectedBlocks.empty() ) {
                         osdCenteredMsg(OSD_BLOCK_SELECT_ERR[Config::lang], LEVEL_WARN, 1000);
@@ -854,7 +864,7 @@ int OSD::menuTape(string title) {
                         Tape::moveSelectedBlocks(begin_row - 2 + focus);
                         tapemenuRedraw(title, true);
                     }
-                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && Menukey.vk == fabgl::VK_F8) {
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Menukey.vk == fabgl::VK_F8) {
                     click();
 
                     if ( Tape::selectedBlocks.empty() && begin_row - 1 + focus == real_rows ) {

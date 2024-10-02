@@ -241,7 +241,8 @@ void ShowStartMsg() {
 
     // Disable StartMsg
     Config::StartMsg = false;
-    Config::save("StartMsg");
+    // Save all keys after new flash or update
+    Config::save();
 
 }
 
@@ -426,7 +427,7 @@ void ESPectrum::bootKeyboard() {
     if (i < 200) {
         Config::videomode = (s[0] == '1') ? 0 : (s[0] == '2') ? 1 : 2;
         if (Config::videomode == 2)
-            Config::aspect_16_9 = false;
+            Config::aspect_16_9 = false; // Force 4:3 mode for CRT
         else
             Config::aspect_16_9 = (s[1] == 'Q') ? false : true;
         Config::ram_file="none";

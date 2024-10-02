@@ -119,6 +119,8 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DELETE_CURRENT_FILE_PT "Excluir arquivo"
 
+#define OSD_READONLY_FILE_WARN_PT "Arquivo de somente leitura"
+
 #define OSD_TAPE_FLASHLOAD_PT "Carregamento rapido de fita"
 #define OSD_TAPE_INSERT_PT "Fita inserida"
 #define OSD_TAPE_EJECT_PT "Fita ejetada"
@@ -269,9 +271,9 @@ visit https://zxespectrum.speccy.org/contacto
     "v1 Portugu\x88s\t[v1pt ]\n"\
     "v2 Espanhol\t[v2es ]\n"\
     "v2 Portugu\x88s\t[v2pt ]\n"\
-    "v3 Espanhol\t[v3es ]\n"\
-    "v3 Portugu\x88s\t[v3pt ]\n"\
-    "v3 Ingl\x88s\t[v3en ]\n"\
+    "v3 Espanhol (R.G.)\t[v3es ]\n"\
+    "v3 Portugu\x88s (R.G.)\t[v3pt ]\n"\
+    "v3 Ingl\x88s (R.G.)\t[v3en ]\n"\
     "Custom\t[TKcs ]\n"    	
 
 #define MENU_ROMSTK95_PREF_PT "Espanhol\t[95es ]\n"\

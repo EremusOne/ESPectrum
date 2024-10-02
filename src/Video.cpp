@@ -321,7 +321,6 @@ void VIDEO::Reset() {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = TS_SCREEN_48;
         tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x272 : (is169 ? TS_BORDER_360x200 : TS_BORDER_320x240);  
-        // tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x264 : (is169 ? TS_BORDER_360x200 : TS_BORDER_320x240);
         if (Config::videomode == 1) {
             VsyncFinetune[0] = is169 ? -1 : 0;
             VsyncFinetune[1] = is169 ? 152 : 0;
@@ -347,7 +346,6 @@ void VIDEO::Reset() {
             tStatesPerLine = TSTATES_PER_LINE_TK_60;
             tStatesScreen = TS_SCREEN_TK_60;
             tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x224_TK_60 : (is169 ? TS_BORDER_360x200_TK_60 : TS_BORDER_320x240_TK_60);  
-            // tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x220_TK_60 : (is169 ? TS_BORDER_360x200_TK_60 : TS_BORDER_320x240_TK_60);              
         }
 
         if (Config::videomode == 1) {
@@ -390,43 +388,28 @@ void VIDEO::Reset() {
 
     }
 
-    brdnextline = tStatesPerLine - 160; // T-states to advance to next border line
+    brdnextline = tStatesPerLine - 160 ; // T-states to advance to next border line
 
     if (Config::videomode == 2) {
 
         brdnextline -= 16;
 
         if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
-
             lin_end = 16;
             lin_end2 = 208;
             brdlin_osdstart = 208;
             brdlin_osdend = 223;
-
-            // 352x220 TEST
-            // lin_end = 14;
-            // lin_end2 = 206;
-            // brdlin_osdstart = 210;
-            // brdlin_osdend = 225;
-
         } else {
-
             lin_end = 40;
             lin_end2 = 232;
             brdlin_osdstart = 236;
             brdlin_osdend = 251;
-
-            // 352x264 TEST
-            // lin_end = 36;
-            // lin_end2 = 228;
-            // brdlin_osdstart = 232;
-            // brdlin_osdend = 247;
-
         }
 
     } else {
 
         if (is169) {
+            brdnextline -= 16;
             lin_end = 4;
             lin_end2 = 196;
         } else {
@@ -860,11 +843,9 @@ IRAM_ATTR void VIDEO::Blank_Snow_Opcode(bool contended) { CPU::tstates += 4; }
 
 IRAM_ATTR void VIDEO::EndFrame() {
 
-    // linedraw_cnt = Config::videomode == 2 ? 40 : is169 ? 4 : 24;
-    
     linedraw_cnt = lin_end;
 
-    tstateDraw = tStatesScreen;/* + ESPectrum::ESPtestvar*/;
+    tstateDraw = tStatesScreen;
 
     if (VIDEO::snow_toggle) {
         Draw = &MainScreen_Blank_Snow;
@@ -874,19 +855,24 @@ IRAM_ATTR void VIDEO::EndFrame() {
         Draw_Opcode = &MainScreen_Blank_Opcode;
     }
 
-    if (brdChange) {
+    // if (brdChange) {
+    //     DrawBorder();
+    //     brdnextframe = true;
+    // } else {
+    //     if (brdnextframe) {
+    //         DrawBorder();
+    //         brdnextframe = false;
+    //     }
+    // }
+
+    if (brdChange || brdnextframe) {
         DrawBorder();
-        brdnextframe = true;
-    } else {
-        if (brdnextframe) {
-            DrawBorder();
-            brdnextframe = false;
-        }
+        brdnextframe = brdChange;
     }
 
     // Restart border drawing
     DrawBorder = Z80Ops::isPentagon ? &TopBorder_Blank_Pentagon : &TopBorder_Blank;
-    lastBrdTstate = tStatesBorder/* + ESPectrum::ESPtestvar*/;
+    lastBrdTstate = tStatesBorder;
     brdChange = false;
 
     framecnt++;
@@ -926,7 +912,7 @@ IRAM_ATTR void VIDEO::TopBorder_Blank() {
     if (CPU::tstates >= tStatesBorder) {
         brdcol_cnt = 0;
         brdlin_cnt = 0;
-        brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 5 : 0));
+        brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 1 : 0));
         DrawBorder = &TopBorder;
         DrawBorder();
     }
@@ -944,12 +930,11 @@ IRAM_ATTR void VIDEO::TopBorder() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == (Config::videomode == 2 ? 44 : 40)) {
+        if (brdcol_cnt == (Config::videomode == 2 || is169 ? 44 : 40)) {
             brdlin_cnt++;
-            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 5 : 0));
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 1 : 0));
             brdcol_cnt = 0;
             lastBrdTstate += brdnextline;
-            // if (brdlin_cnt == (Config::videomode == 2 ? 40 : (is169 ? 4 : 24))) {
             if (brdlin_cnt == lin_end) {
                 DrawBorder = &MiddleBorder;
                 MiddleBorder();
@@ -972,16 +957,15 @@ IRAM_ATTR void VIDEO::MiddleBorder() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == (Config::videomode == 2 ? 6 : 4)) {
+        if (brdcol_cnt == (Config::videomode == 2 || is169 ? 6 : 4)) {
             lastBrdTstate += 128;
             brdptr32 += 64;
             brdcol_cnt += 32;
-        } else if (brdcol_cnt == (Config::videomode == 2 ? 44 : 40)) {
+        } else if (brdcol_cnt == (Config::videomode == 2 || is169 ? 44 : 40)) {
             brdlin_cnt++;
-            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 5 : 0));  
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 1 : 0));
             brdcol_cnt = 0;          
             lastBrdTstate += brdnextline;
-            // if (brdlin_cnt == (is169 ? 196 : 216)) {                                
             if (brdlin_cnt == lin_end2) {                                            
                 DrawBorder = Draw_OSD43;
                 DrawBorder();
@@ -1004,12 +988,11 @@ IRAM_ATTR void VIDEO::BottomBorder() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == (Config::videomode == 2 ? 44 : 40)) {
+        if (brdcol_cnt == (Config::videomode == 2 || is169 ? 44 : 40)) {
             brdlin_cnt++;
-            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 5 : 0));
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 1 : 0));
             brdcol_cnt = 0;
             lastBrdTstate += brdnextline;
-            // if (brdlin_cnt == (is169 ? 200 : 240)) {
             if (brdlin_cnt == OSD::scrH) {
                 DrawBorder = &Border_Blank;
                 return;
@@ -1038,9 +1021,9 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD() {
 
         brdcol_cnt++;
 
-        if (brdcol_cnt == (Config::videomode == 2 ? 44 : 40)) {
+        if (brdcol_cnt == (Config::videomode == 2 || is169 ? 44 : 40)) {
             brdlin_cnt++;
-            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 5 : 0));
+            brdptr32 = (uint32_t *)(vga.frameBuffer[brdlin_cnt]) + (Config::videomode == 2 ? 0 : (is169 ? 1 : 0));
             brdcol_cnt = 0;
             lastBrdTstate += brdnextline;
             if (brdlin_cnt == OSD::scrH) {
@@ -1063,9 +1046,11 @@ static int brdcol_end1 = 0;
 IRAM_ATTR void VIDEO::TopBorder_Blank_Pentagon() {
 
     if (CPU::tstates >= tStatesBorder) {
-        brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 10 : 0);
-        brdcol_end = Config::videomode == 2 ? 176 : (is169 ? 170 : 160);
+
+        brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 2 : 0);
+        brdcol_end = Config::videomode == 2 ? 176 : (is169 ? 178 : 160);
         brdcol_end1 = Config::videomode == 2 ? 24 : (is169 ? 26 : 16);
+
         brdlin_cnt = 0;
         brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
         DrawBorder = &TopBorder_Pentagon;
@@ -1087,8 +1072,9 @@ IRAM_ATTR void VIDEO::TopBorder_Pentagon() {
         if (brdcol_cnt == brdcol_end) {
             brdlin_cnt++;
             brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);            
-            brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 10 : 0);
-            lastBrdTstate += Config::videomode == 2 ? 48 : 64;
+            brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 2 : 0);
+            // lastBrdTstate += Config::videomode == 2 ? 48 : (is169 ? 48 : 64);
+            lastBrdTstate += brdnextline;            
             if (brdlin_cnt == lin_end) {
                 DrawBorder = &MiddleBorder_Pentagon;
                 MiddleBorder_Pentagon();
@@ -1116,8 +1102,9 @@ IRAM_ATTR void VIDEO::MiddleBorder_Pentagon() {
         } else if (brdcol_cnt == brdcol_end) {
             brdlin_cnt++;
             brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);                        
-            brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 10 : 0);
-            lastBrdTstate += Config::videomode == 2 ? 48 : 64;            
+            brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 2 : 0);
+            // lastBrdTstate += Config::videomode == 2 ? 48 : (is169 ? 48 : 64);            
+            lastBrdTstate += brdnextline;
             if (brdlin_cnt == lin_end2) {
                 DrawBorder = Draw_OSD43;
                 DrawBorder();
@@ -1142,8 +1129,9 @@ IRAM_ATTR void VIDEO::BottomBorder_Pentagon() {
         if (brdcol_cnt == brdcol_end) {
             brdlin_cnt++;
             brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
-            brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 10 : 0);
-            lastBrdTstate += Config::videomode == 2 ? 48 : 64;            
+            brdcol_cnt = Config::videomode == 2 ? 0 : (is169 ? 2 : 0);
+            // lastBrdTstate += Config::videomode == 2 ? 48 : (is169 ? 48 : 64);
+            lastBrdTstate += brdnextline;
             if (brdlin_cnt == OSD::scrH) {            
                 DrawBorder = &Border_Blank;
                 return;
@@ -1171,7 +1159,8 @@ IRAM_ATTR void VIDEO::BottomBorder_OSD_Pentagon() {
             brdlin_cnt++;
             brdptr16 = (uint16_t *)(vga.frameBuffer[brdlin_cnt]);
             brdcol_cnt = 0;
-            lastBrdTstate += 64;
+            // lastBrdTstate += Config::videomode == 2 ? 48 : 64;
+            lastBrdTstate += brdnextline;
             if (brdlin_cnt == OSD::scrH) {
                 DrawBorder = &Border_Blank;
                 return;
