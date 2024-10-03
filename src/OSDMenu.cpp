@@ -836,23 +836,14 @@ int OSD::menuTape(string title) {
 
                     long current_pos = ftell( Tape::tape );
 
-                    TapeBlock::BlockType blocktype = Tape::getBlockType(begin_row - 2 + focus);
-                    switch( blocktype ) {
-                        case TapeBlock::Program_header:
-                        case TapeBlock::Number_array_header:
-                        case TapeBlock::Character_array_header:
-                        case TapeBlock::Code_header: {
-                            string new_name = input(21, focus, "", 10, 10, zxColor(0,0), zxColor(7,0), false);
-                            if ( new_name != "" ) {
-                                Tape::renameBlock( begin_row - 2 + focus, new_name );
-                            }
-                            tapemenuRedraw(title, true);
-                            break;
-                        }
-                        default:
-                            osdCenteredMsg(OSD_BLOCK_TYPE_ERR[Config::lang], LEVEL_WARN, 1000);
-                            break;
-                    }
+                    int blocknum = begin_row - 2 + focus;
+                    if (Tape::getBlockType(blocknum) <= TapeBlock::Code_header) {
+                        string new_name = input(21, focus, "", Tape::getBlockName(blocknum), 10, 10, zxColor(0,0), zxColor(7,0), false);
+                        if ( new_name != "" )
+                            Tape::renameBlock(blocknum, new_name);
+                        tapemenuRedraw(title, true);
+                    } else
+                        osdCenteredMsg(OSD_BLOCK_TYPE_ERR[Config::lang], LEVEL_WARN, 1000);
                             
                     fseek( Tape::tape, current_pos, SEEK_SET );
 

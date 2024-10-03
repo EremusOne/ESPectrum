@@ -532,7 +532,7 @@ string Tape::tapeBlockReadData(int Blocknum) {
     int tapeBlkLen=0;
     string blktype;
     char buf[52];
-    char fname[10];
+    char fname[11];
 
     tapeContentIndex = Tape::CalcTapBlockPos(Blocknum);
 
@@ -1561,7 +1561,27 @@ void Tape::moveSelectedBlocks(int targetPosition) {
     selectedBlocks.clear();
 }
 
+string Tape::getBlockName(int block) {
+
+    TapeBlock::BlockType blocktype = getBlockType(block);
+
+    if (blocktype <= TapeBlock::Code_header) {
+        // Read header name
+        char fname[11] = { 0 };
+        long blockNameOff = CalcTapBlockPos(block) + 4; // size + flag + blocktype
+        fseek( tape, blockNameOff, SEEK_SET );
+        fread( fname, 1, 10, tape );
+        string ret = (char *) fname;
+        rtrim(ret);
+        return ret;
+    }
+
+    return "";
+
+}
+
 void Tape::renameBlock(int block, string new_name) {
+
     char fname[11];
     uint8_t header[18]; // header + checksum (without encoded block len and flag)
 
@@ -1571,6 +1591,7 @@ void Tape::renameBlock(int block, string new_name) {
         case TapeBlock::Number_array_header:
         case TapeBlock::Character_array_header:
         case TapeBlock::Code_header: {
+
             long blockNameOff = CalcTapBlockPos(block) + 3; // size + flag
             
             // Read header

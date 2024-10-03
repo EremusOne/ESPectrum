@@ -70,7 +70,7 @@ string FileUtils::ROM_Path = "/"; // Current path on the SD
 string FileUtils::ESP_Path = "/.p/"; // Current path on the SD
 
 DISK_FTYPE FileUtils::fileTypes[5] = {
-    {"sna,z80,p",".s",2,2,0,""},
+    {"sna,z80,sp,p",".s",2,2,0,""},
     {"tap,tzx,",".t",2,2,0,""},
     {"trd,scl",".d",2,2,0,""},
     {"rom",".r",2,2,0,""},
@@ -700,34 +700,28 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
 
 }
 
-bool FileUtils::hasSNAextension(string filename)
-{
+bool FileUtils::hasExtension(string filename, string extension) {
+    return ( getLCaseExt(filename) == toLower(extension) );
+}
+
+bool FileUtils::hasSNAextension(string filename) {
     return ( getLCaseExt(filename) == "sna" );
-
 }
 
-bool FileUtils::hasZ80extension(string filename)
-{
+bool FileUtils::hasZ80extension(string filename) {
     return ( getLCaseExt(filename) == "z80" );
-
 }
 
-bool FileUtils::hasPextension(string filename)
-{
+bool FileUtils::hasPextension(string filename) {
     return ( getLCaseExt(filename) == "p" );
-
 }
 
-bool FileUtils::hasTAPextension(string filename)
-{
+bool FileUtils::hasTAPextension(string filename) {
     return ( getLCaseExt(filename) == "tap" );
-
 }
 
-bool FileUtils::hasTZXextension(string filename)
-{
+bool FileUtils::hasTZXextension(string filename) {
     return ( getLCaseExt(filename) == "tzx" );
-
 }
 
 void FileUtils::deleteFilesWithExtension(const char *folder_path, const char *extension) {

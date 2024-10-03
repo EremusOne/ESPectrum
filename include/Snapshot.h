@@ -65,6 +65,12 @@ private:
     static void loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage, uint16_t memlen);
 };
 
+class FileSP
+{
+public: 
+    static bool load(string sp_fn);
+};
+
 class FileP
 {
 public:

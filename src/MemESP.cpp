@@ -67,6 +67,8 @@ uint8_t MemESP::romLatch = 0;
 uint8_t MemESP::pagingLock = 0;
 uint8_t MemESP::romInUse = 0;
 
+bool MemESP::SPRom = false;
+
 bool MemESP::Init() {
 
     #ifdef ESPECTRUM_PSRAM
@@ -134,6 +136,8 @@ void MemESP::Reset() {
     MemESP::ramContended[3] = false;
 
     MemESP::pagingLock = Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95" ? 1 : 0;
+
+    MemESP::SPRom = false;
 
     #ifdef ESPECTRUM_PSRAM
     Tm_Init();

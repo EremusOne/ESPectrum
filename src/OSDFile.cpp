@@ -600,7 +600,12 @@ reset:
 
                     } else if (Menukey.vk == fabgl::VK_F2 && ftype == DISK_TAPFILE) {  // Dirty hack
 
-                        string new_tap = OSD::input( 1, mf_rows, Config::lang ? "Nomb: " : "Name: ", 10, 30, zxColor(7,1), zxColor(5,0), true );
+                        // Clean status bar
+                        menuAt(mf_rows, 0);
+                        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                        VIDEO::vga.print(std::string(StatusBar.length(), ' ').c_str());
+
+                        string new_tap = OSD::input( 1, mf_rows, Config::lang ? "Nomb: " : "Name: ", "", cols - 19 , 32, zxColor(7,1), zxColor(5,0), true );
 
                         if ( new_tap != "" ) {
 
@@ -613,9 +618,14 @@ reset:
 
                         } else {
 
-                            menuAt(mf_rows, 1);
+                            // Restore status bar
+                            menuAt(mf_rows, 0);
                             VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
-                            VIDEO::vga.print("      " "                               ");
+                            VIDEO::vga.print(StatusBar.c_str());
+
+                            // menuAt(mf_rows, 1);
+                            // VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+                            // VIDEO::vga.print("      " "                               ");
 
                         }
 

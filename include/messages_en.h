@@ -127,7 +127,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
-    "Load (SNA,Z80,P) \t(F2) >\n"\
+    "Load (SNA,Z80,SP,P) \t(F2) >\n"\
     "Load snapshot\t(F3) >\n"\
     "Save snapshot\t(F4) >\n"
 

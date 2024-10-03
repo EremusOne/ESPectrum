@@ -83,6 +83,10 @@ bool LoadSnapshot(string filename, string force_arch, string force_romset, uint8
 
         res = FileZ80::load(filename);
 
+    } else if (FileUtils::hasExtension(filename, "sp")) {
+        
+        res = FileSP::load(filename);
+
     } else if (FileUtils::hasPextension(filename)) {
 
         res = FileP::load(filename);
@@ -124,7 +128,7 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
     rewind (file);
 
     // Check snapshot arch
-    if (sna_size == SNA_48K_SIZE) {
+    if (sna_size == SNA_48K_SIZE || sna_size == SNA_48K_WITH_ROM_SIZE) {
 
         if (force_arch == "" && !Z80Ops::is48) {
             force_arch = "48K";
@@ -381,6 +385,13 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
 
     if (Z80Ops::is48) {
 
+        // Load ROM if present
+        if (sna_size == SNA_48K_WITH_ROM_SIZE) {
+            readBlockFile(file, MemESP::ram[1], 0x4000);
+            MemESP::ramCurrent[0] = MemESP::ram[1];
+            MemESP::SPRom = true;
+        }
+
         // in 48K mode, pop PC from stack
         uint16_t SP = Z80::getRegSP();
         Z80::setRegPC(MemESP::readword(SP));
@@ -580,7 +591,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
     // write RAM pages in 48K address space (0x4000 - 0xFFFF)
     uint8_t pages[3] = {5, 2, 0};
-    // if (Config::arch != "48K")
+
     if (Z80Ops::is128 || Z80Ops::isPentagon)    
         pages[2] = MemESP::bankLatch;
 
@@ -589,7 +600,13 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         if (!writeMemPage(page, file, blockMode)) {
             fclose(file);
             return false;
+        }
+    }
 
+    if (Z80Ops::is48 && MemESP::SPRom) {
+        if (!writeMemPage(1, file, blockMode)) {
+            fclose(file);
+            return false;
         }
     }
 
@@ -1480,6 +1497,177 @@ bool FileP::load(string p_fn) {
     uint16_t address = 16393;
     uint8_t page = address >> 14;
     fread(&MemESP::ramCurrent[page][address & 0x3fff], p_size, 1, file);
+
+    fclose(file);
+
+    return true;
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+/*
+      Ficheros *.SP:
+Offset    Longitud    Descripci¢n
+------   ----------  -------------------
+  0       2 bytes    "SP" (53h, 50h) Signatura.
+  2       1 palabra  Longitud del programa en bytes (el emulador actualmente
+                     s¢lo genera programas de 49152 bytes)
+  4       1 palabra  Posici¢n inicial del programa (el emulador actualmente
+                     s¢lo genera programas que comiencen en la pos. 16384)
+  6       1 palabra  Registro BC del Z80
+  8       1 palabra  Registro DE del Z80
+ 10       1 palabra  Registro HL del Z80
+ 12       1 palabra  Registro AF del Z80
+ 14       1 palabra  Registro IX del Z80
+ 16       1 palabra  Registro IY del Z80
+ 18       1 palabra  Registro BC' del Z80
+ 20       1 palabra  Registro DE' del Z80
+ 22       1 palabra  Registro HL' del Z80
+ 24       1 palabra  Registro AF' del Z80
+ 26       1 byte     Registro R (de refresco) del Z80
+ 27       1 byte     Registro I (de interrupciones) del Z80
+ 28       1 palabra  Registro SP del Z80
+ 30       1 palabra  Registro PC del Z80
+ 32       1 palabra  Reservada para uso futuro, siempre 0
+ 34       1 byte     Color del borde al comenzar
+ 35       1 byte     Reservado para uso futuro, siempre 0
+ 36       1 palabra  Palabra de estado codificada por bits. Formato:
+                     Bit     Descripci¢n
+                     ---     -----------
+                     15-8    Reservados para uso futuro
+                     7-6     Reservados para uso interno, siempre 0
+                     5       Estado del Flash: 0 - tinta INK, papel PAPER
+                                               1 - tinta PAPER, papel INK
+                     4       Interrupci¢n pendiente de ejecutarse
+                     3       Reservado para uso futuro
+                     2       Biestable IFF2 (uso interno)
+                     1       Modo de interrupci¢n: 0=IM1; 1=IM2
+                     0       Biestable IFF1 (estado de interrupci¢n):
+                                 0 - Interrupciones desactivadas (DI)
+                                 1 - Interrupciones activadas (EI)
+*/
+
+bool FileSP::load(string sp_fn) {
+
+    FILE *file;
+
+    file = fopen(sp_fn.c_str(), "rb");
+    if (file==NULL) {
+        printf("FileSP: Error opening %s\n",sp_fn.c_str());
+        return false;
+    }
+
+    uint8_t sign[2] = { 0, 0 };
+    sign[0] = readByteFile(file);
+    sign[1] = readByteFile(file);
+    if ( sign[0] != 'S' && sign[1] != 'P' ) {
+        printf("FileSP: invalid format %s\n",sp_fn.c_str());
+        fclose(file);
+        return false;
+    }
+
+    // data size
+    uint16_t dataSize = readWordFileLE(file);
+    // start address
+    uint16_t startAddress = readWordFileLE(file);
+    if ( ( dataSize != 0 && dataSize != 49152 ) || ( startAddress != 0 && startAddress != 16384 ) ) {
+        printf("FileSP: invalid format %s\n",sp_fn.c_str());
+        fclose(file);
+        return false;
+    }
+
+    // Change arch if needed
+    if ( !Z80Ops::is48) {
+
+        bool vreset = Config::videomode;
+
+        Config::requestMachine("48K", "");
+
+        // Condition this to 50hz mode
+        if(vreset) {
+            Config::SNA_Path = FileUtils::SNA_Path;
+            Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
+            Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+            Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
+            Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
+
+            Config::TAP_Path = FileUtils::TAP_Path;
+            Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
+            Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+            Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
+            Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
+
+            Config::DSK_Path = FileUtils::DSK_Path;
+            Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
+            Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+            Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
+            Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
+
+            Config::ram_file = sp_fn;
+            Config::save();
+            OSD::esp_hard_reset();
+        }
+
+    }
+
+    ESPectrum::reset();
+
+    // Read in the registers
+    Z80::setRegBC(readWordFileLE(file));
+    Z80::setRegDE(readWordFileLE(file));
+    Z80::setRegHL(readWordFileLE(file));
+
+    Z80::setRegA(readByteFile(file));
+    Z80::setFlags(readByteFile(file));
+
+    Z80::setRegIX(readWordFileLE(file));
+    Z80::setRegIY(readWordFileLE(file));
+
+    Z80::setRegBCx(readWordFileLE(file));
+    Z80::setRegDEx(readWordFileLE(file));
+    Z80::setRegHLx(readWordFileLE(file));
+
+    Z80::setRegAx(readByteFile(file));
+    Z80::setRegFx(readByteFile(file));
+
+    Z80::setRegR(readByteFile(file));
+
+    Z80::setRegI(readByteFile(file));
+
+    Z80::setRegSP(readWordFileLE(file));
+    Z80::setRegPC(readWordFileLE(file));
+
+    readWordFileLE(file);
+
+    VIDEO::borderColor = readByteFile(file);
+
+    readByteFile(file);
+
+    // flags
+    uint16_t flags = readWordFileLE(file);
+    Z80::setIFF2(flags & 0x04 ? true : false);
+    Z80::setIM(flags & 0x02 ? Z80::IM2 : Z80::IM1);
+    Z80::setIFF1(flags & 0x01 ? true : false);
+
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+
+    MemESP::romLatch = 0;
+    MemESP::romInUse = 0;
+    MemESP::bankLatch = 0;
+    MemESP::pagingLock = 1;
+    MemESP::videoLatch = 0;
+
+    // read ROM page if present
+    if (!startAddress && !dataSize) {
+        readBlockFile(file, MemESP::ram[1], 0x4000);
+        MemESP::ramCurrent[0] = MemESP::ram[1];
+        MemESP::SPRom = true;
+    }
+
+    // read 48K memory
+    readBlockFile(file, MemESP::ram[5], 0x4000);
+    readBlockFile(file, MemESP::ram[2], 0x4000);
+    readBlockFile(file, MemESP::ram[0], 0x4000);
 
     fclose(file);
 

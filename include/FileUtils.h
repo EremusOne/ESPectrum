@@ -87,6 +87,7 @@ public:
 //    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
     // static string getSortedFileList(string fileDir);
+    static bool hasExtension(string filename, string extension);
     static bool hasSNAextension(string filename);
     static bool hasZ80extension(string filename);
     static bool hasPextension(string filename);
@@ -122,6 +123,7 @@ private:
 #define NO_RAM_FILE "none"
 
 #define SNA_48K_SIZE 49179
+#define SNA_48K_WITH_ROM_SIZE 65563
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
 

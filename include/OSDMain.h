@@ -140,11 +140,10 @@ public:
 
     static uint8_t msgDialog(string title, string msg);
     static void progressDialog(string title, string msg, int percent, int action);
-    string inputBox(int x, int y, string text);
     static void joyDialog(uint8_t joynum);
     static void pokeDialog();
 
-    static string input(int x, int y, string inputLabel, int inputSize, int maxSize, uint16_t ink_color, uint16_t paper_color, bool fat32mode);
+    static string input(int x, int y, string inputLabel, string text, int inputSize, int maxSize, uint16_t ink_color, uint16_t paper_color, bool fat32mode);
 
     // Rows
     static unsigned short rowCount(string menu);

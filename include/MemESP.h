@@ -96,6 +96,8 @@ public:
 
     static uint8_t romInUse;
 
+    static bool SPRom;
+
     static bool Init();
     static void Reset();    
 

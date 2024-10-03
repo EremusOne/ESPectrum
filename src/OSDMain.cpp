@@ -4095,12 +4095,6 @@ uint8_t OSD::msgDialog(string title, string msg) {
 
 }
 
-string OSD::inputBox(int x, int y, string text) {
-
-return text;
-
-}
-
 #define MENU_JOYSELKEY_EN "Key      \n"\
     "A-Z      \n"\
     "1-0      \n"\
@@ -5381,12 +5375,12 @@ void OSD::pokeDialog() {
 
 }
 
-string OSD::input(int x, int y, string inputLabel, int inputSize, int maxSize, uint16_t ink_color, uint16_t paper_color, bool fat32mode) {
+string OSD::input(int x, int y, string inputLabel, string text, int inputSize, int maxSize, uint16_t ink_color, uint16_t paper_color, bool fat32mode) {
 
     fabgl::VirtualKeyItem Nextkey;
     const string fat32forbidden="\\/:*?\"<>|\x7F"; // Characters not valid for FAT32 filenames
     uint8_t CursorFlash = 0;
-    string inputValue = "";
+    string inputValue = text;
     bool mode_E = false;
 
     // Set font
@@ -5554,7 +5548,13 @@ string OSD::input(int x, int y, string inputLabel, int inputSize, int maxSize, u
 
             menuAt(y, x);
             VIDEO::vga.setTextColor(ink_color, paper_color);
-            VIDEO::vga.print((inputLabel + inputValue).c_str());
+            VIDEO::vga.print(inputLabel.c_str());
+
+            int ivsize = inputValue.size();
+            if (ivsize < inputSize)
+                VIDEO::vga.print(inputValue.c_str());
+            else
+                VIDEO::vga.print(inputValue.substr(ivsize - inputSize).c_str());
 
             if (CursorFlash > 63) {
                 VIDEO::vga.setTextColor(paper_color, ink_color);
@@ -5563,7 +5563,10 @@ string OSD::input(int x, int y, string inputLabel, int inputSize, int maxSize, u
             VIDEO::vga.print(mode_E?"E":"L");
 
             VIDEO::vga.setTextColor(ink_color, paper_color);
-            VIDEO::vga.print(std::string(maxSize - inputValue.size(), ' ').c_str());
+
+            if (ivsize < inputSize)            
+                VIDEO::vga.print(std::string(inputSize - ivsize, ' ').c_str());
+
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
