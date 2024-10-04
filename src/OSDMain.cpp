@@ -484,8 +484,8 @@ void OSD::drawStats() {
 
 }
 
-static bool persistSave(uint8_t slotnumber)
-{
+static bool persistSave(uint8_t slotnumber) {
+
     struct stat stat_buf;
     char persistfname[sizeof(DISK_PSNA_FILE) + 7];
     char persistfinfo[sizeof(DISK_PSNA_FILE) + 7];    
@@ -539,8 +539,7 @@ static bool persistSave(uint8_t slotnumber)
 
 }
 
-static bool persistLoad(uint8_t slotnumber)
-{
+static bool persistLoad(uint8_t slotnumber) {
     
     char persistfname[sizeof(DISK_PSNA_FILE) + 7];
     char persistfinfo[sizeof(DISK_PSNA_FILE) + 7];        
@@ -1032,6 +1031,24 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             if (opt2 && FileUtils::isSDReady()) persistLoad(opt2);
         }
         else if (KeytoESP == fabgl::VK_F4) {
+
+            // menu_level = 0;
+            // menu_saverect = false;
+
+            // if (FileUtils::isSDReady()) {
+            //     string mFile = fileDialog(FileUtils::ESP_Path, MENU_ESP_SAVE_TITLE[Config::lang],DISK_ESPFILE,51,22);
+            //     if (mFile != "") {
+            //         // string fprefix = mFile.substr(0,1);
+            //         // if (fprefix == "S") FileZ80::keepArch = true;
+            //         // mFile.erase(0, 1);
+            //         // string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
+            //         // LoadSnapshot(fname,"","",0xff);
+            //         // Config::ram_file = fname;
+            //         // Config::last_ram_file = fname;
+            //     }
+            // }
+            // // if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
+
             // Persist Save
             string menusave = MENU_PERSIST_SAVE[Config::lang] + getStringPersistCatalog();
             menu_level = 0;
@@ -2998,7 +3015,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             osdRow  = 0;
                             msgChar = 0;
                             msgIndex++;
-                            if (msgIndex==9) msgIndex = 0;
+                            if (msgIndex==11) msgIndex = 0;
                         }
                     }
 

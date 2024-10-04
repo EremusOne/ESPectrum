@@ -1563,13 +1563,11 @@ void Tape::moveSelectedBlocks(int targetPosition) {
 
 string Tape::getBlockName(int block) {
 
-    TapeBlock::BlockType blocktype = getBlockType(block);
-
-    if (blocktype <= TapeBlock::Code_header) {
-        // Read header name
-        char fname[11] = { 0 };
-        long blockNameOff = CalcTapBlockPos(block) + 4; // size + flag + blocktype
-        fseek( tape, blockNameOff, SEEK_SET );
+    // Read header name
+    char fname[11] = { 0 };
+    fseek( tape, CalcTapBlockPos(block) + 3, SEEK_SET );
+    uint8_t blocktype = readByteFile(Tape::tape);
+    if (blocktype <= TapeBlock::Code_header) {        
         fread( fname, 1, 10, tape );
         string ret = (char *) fname;
         rtrim(ret);

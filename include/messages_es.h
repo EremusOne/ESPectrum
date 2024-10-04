@@ -104,6 +104,10 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DSK_TITLE_ES "Elija disco"
 
+#define MENU_ESP_LOAD_TITLE_ES "Elija snapshot de ESPectrum"
+
+#define MENU_ESP_SAVE_TITLE_ES "Guardar snapshot de ESPectrum"
+
 #define MENU_DELETE_TAP_BLOCKS_ES "Borrar selecci\xA2n"
 
 #define MENU_DELETE_CURRENT_TAP_BLOCK_ES "Borrar bloque"

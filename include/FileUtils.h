@@ -53,6 +53,7 @@ using namespace std;
 #define DISK_TAPFILE 1
 #define DISK_DSKFILE 2
 #define DISK_ROMFILE 3
+#define DISK_ESPFILE 4
 
 struct DISK_FTYPE {
     string fileExts;

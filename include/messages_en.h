@@ -107,6 +107,10 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DSK_TITLE_EN "Select disk"
 
+#define MENU_ESP_LOAD_TITLE_EN "Load ESPectrum Snapshot"
+
+#define MENU_ESP_SAVE_TITLE_EN "Save ESPectrum Snapshot"
+
 #define MENU_DELETE_TAP_BLOCKS_EN "Delete selection"
 
 #define MENU_DELETE_CURRENT_TAP_BLOCK_EN "Delete block"

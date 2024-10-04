@@ -36,7 +36,7 @@ visit https://zxespectrum.speccy.org/contacto
 #ifndef ESPECTRUM_MESSAGES_h
 #define ESPECTRUM_MESSAGES_h
 
-#define EMU_VERSION "    v1.3pr9 "
+#define EMU_VERSION "       v1.3 "
 
 // Language files
 #include "messages_en.h"
@@ -156,6 +156,10 @@ static const char *MENU_SNA_TITLE[NLANGS] = { MENU_SNA_TITLE_EN,MENU_SNA_TITLE_E
 static const char *MENU_TAP_TITLE[NLANGS] = { MENU_TAP_TITLE_EN,MENU_TAP_TITLE_ES,MENU_TAP_TITLE_PT};
 
 static const char *MENU_DSK_TITLE[NLANGS] = { MENU_DSK_TITLE_EN,MENU_DSK_TITLE_ES,MENU_DSK_TITLE_PT};
+
+static const char *MENU_ESP_LOAD_TITLE[NLANGS] = { MENU_ESP_LOAD_TITLE_EN,MENU_ESP_LOAD_TITLE_ES,MENU_ESP_LOAD_TITLE_PT};
+
+static const char *MENU_ESP_SAVE_TITLE[NLANGS] = { MENU_ESP_SAVE_TITLE_EN,MENU_ESP_SAVE_TITLE_ES,MENU_ESP_SAVE_TITLE_PT};
 
 static const char *MENU_DELETE_TAP_BLOCKS[NLANGS] = { MENU_DELETE_TAP_BLOCKS_EN,MENU_DELETE_TAP_BLOCKS_ES,MENU_DELETE_TAP_BLOCKS_PT};
 
@@ -328,6 +332,7 @@ static const char *POKE_BANK_MENU[NLANGS] = { " Bank  \n" , " Banco \n" , " Banc
 	"\nF1  __/ |   \nE1| |  | | (_| | |  | || (_| |\r"\
 	"\nF1 |___/    \nE1|_|  |_|\\__,_|_|   \\__\\__,_|\r"
 
+// 38 characters wide for about text
 #define PATREONS "\r"\
 	"\nA1The Mega Trees:\r"\
 	"\r"\
@@ -339,7 +344,7 @@ static const char *POKE_BANK_MENU[NLANGS] = { " Bank  \n" , " Banco \n" , " Banc
 	"\nE1Juanje \nB1Ra\xA3l Jim\x82nez \nC1Juanma Mart\xA1n\r"\
 	"\nD1Seraf\xA1n Morat\xA2n \nE1Eduard Ruiz\r"\
 	"\nB1Igor Peruchi \nC1In\xA0" "cio Santos\r"\
-	"\r"
+	"\nD1Destroyer\r"
 
 #define PATREONS2 "\r"\
 	"\nA1The Manic Miners:\r"\
@@ -372,15 +377,28 @@ static const char *POKE_BANK_MENU[NLANGS] = { " Bank  \n" , " Banco \n" , " Banc
 	"\r"\
 	"\nB1Jakub Rzepecki \nC1Seb \nD1Sim\xA2n G\xA2mez\r"\
 	"\nE1V\xA1" "ctor Salado \nB1Miguel A. Gonz\xA0lez\r"\
+	"\nC1Alberto Navarro \nD1Alejandro Molina\r"\
+	"\nE1Alfonso D\xA1" "az \nB1Carlos Mart\xA1" "nez\r"\
+	"\nC1Clovis Friolani \nD1Daniel S\xA0" "ez\r"\
+	"\nE1Denis Estevez \nB1Fasih Rehman\r"\
+	"\nC1Fernando Mirones \nD1Ismael Salvador\r"\
+	"\nE1Jorge Plazas \nB1Juan A. Rubio\r"\
+	"\nC1Lucio Rial \nD1Mark Cohen\r"
+
+#define PATREONS5 "\r"\
+	"\nA1The Manic Miners:\r"\
 	"\r"\
+	"\nB1Mike van der Lee \nC1Monica Compa\xA4\r"\
+	"\nD1Roberto Paciello \nE1Ronny Verminck\r"\
+	"\nB1Trevor Boys \nC1Wayne Burton\r"\
 	"\r"\
 	"\r"\
 	"\r"\
 	"\r"\
 	"\r"\
 	"\r"
-
-static const char *AboutMsg[NLANGS][9] = {
+								
+static const char *AboutMsg[NLANGS][11] = {
 	{
 	"\nF1(C)2023-24 V\xA1" "ctor Iborra \"Eremus\"\r"\
 	"   2023 David Crespo  \"dcrespo3d\"\r"\
@@ -401,14 +419,28 @@ static const char *AboutMsg[NLANGS][9] = {
 	"\nA1ackerman        \nF1Code & ideas\r"\
 	"\nB1Armand          \nF1Testing & broadcasting\r"\
 	"\nC1azesmbog        \nF1Testing & ideas\r"\
-	"\nD1David Carri\xA2n   \nF1H/W code, ZX kbd\r"\
-	"\nE1Ram\xA2n Mart\xA1nez  \nF1AY emul. improvements\r"\
-	"\nA1J.J. Ponteprino \nF1Code & improvements\r"\
-	"\nB1Ron             \nF1Testing & broadcasting\r"\
-	"\nC1J.L. S\xA0nchez    \nF1Z80 core improvements\r"\
-	"\nD1Antonio Villena \nF1Hardware support\r"\
-	"\nE1ZjoyKiLer       \nF1Testing & ideas\r"\
-	"\r"		
+	"\nD1Carlo Brini     \nF1Our UK guy ;)\r"\
+	"\nE1David Carri\xA2n   \nF1H/W code, ZX kbd\r"\
+	"\nA1Rodolfo Guerra  \nF1Our LATAM guy ;)\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
+	,
+	"\nF1Collaborators:\r"\
+	"\r"\
+	"\nB1Ram\xA2n Mart\xA1nez  \nF1AY emul. improvements\r"\
+	"\nC1J.J. Ponteprino \nF1Code & improvements\r"\
+	"\nD1Ron             \nF1Testing & broadcasting\r"\
+	"\nE1J.L. S\xA0nchez    \nF1Z80 core improvements\r"\
+	"\nA1Antonio Villena \nF1Hardware support\r"\
+	"\nB1ZjoyKiLer       \nF1Testing & ideas\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
 	,
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS
@@ -421,6 +453,9 @@ static const char *AboutMsg[NLANGS][9] = {
 	,
 	"\nF1Big thanks to our Patreons:\r"\
 	PATREONS4
+	,
+	"\nF1Big thanks to our Patreons:\r"\
+	PATREONS5
 	,
 	"\nF1Thanks for help and donations to:\r"\
 	"\r"\
@@ -472,13 +507,28 @@ static const char *AboutMsg[NLANGS][9] = {
 	"\nA1ackerman        \nF1C\xA2" "digo e ideas\r"\
 	"\nB1Armand          \nF1Testing y difusi\xA2n\r"\
 	"\nC1azesmbog        \nF1Testing e ideas\r"\
-	"\nD1David Carri\xA2n   \nF1C\xA2" "digo h/w, teclado ZX\r"\
+	"\nD1Carlo Brini     \nF1ESPectrum en UK ;)\r"\
+	"\nE1David Carri\xA2n   \nF1C\xA2" "digo h/w, teclado ZX\r"\
+	"\nA1Rodolfo Guerra  \nF1ESPectrum en LATAM ;)\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
+	,
+	"\nF1Colaboradores:\r"\
+	"\r"\
 	"\nE1Ramon Mart\xA1nez  \nF1Mejoras emulaci\xA2n AY\r"\
 	"\nA1J.J. Ponteprino \nF1C\xA2" "digo y mejoras\r"\
 	"\nB1Ron             \nF1Testing y difusi\xA2n\r"\
 	"\nC1J.L. S\xA0nchez    \nF1Mejoras core Z80\r"\
 	"\nD1Antonio Villena \nF1Soporte hardware\r"\
 	"\nE1ZjoyKiLer       \nF1Testing e ideas\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
 	"\r"		
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
@@ -492,6 +542,9 @@ static const char *AboutMsg[NLANGS][9] = {
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS4
+	,
+	"\nF1Muchas gracias a nuestros Patreons:\r"\
+	PATREONS5
 	,
 	"\nF1Gracias por su ayuda y donaciones a:\r"\
 	"\r"\
@@ -543,13 +596,28 @@ static const char *AboutMsg[NLANGS][9] = {
 	"\nA1ackerman        \nF1C\xA2" "digo e ideas\r"\
 	"\nB1Armand          \nF1Testing y difusi\xA2n\r"\
 	"\nC1azesmbog        \nF1Testing e ideas\r"\
-	"\nD1David Carri\xA2n   \nF1C\xA2" "digo h/w, teclado ZX\r"\
+	"\nD1Carlo Brini     \nF1ESPectrum en UK ;)\r"\
+	"\nE1David Carri\xA2n   \nF1C\xA2" "digo h/w, teclado ZX\r"\
+	"\nA1Rodolfo Guerra  \nF1ESPectrum en LATAM ;)\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"
+	,
+	"\nF1Colaboradores:\r"\
+	"\r"\
 	"\nE1Ramon Mart\xA1nez  \nF1Mejoras emulaci\xA2n AY\r"\
 	"\nA1J.J. Ponteprino \nF1C\xA2" "digo y mejoras\r"\
 	"\nB1Ron             \nF1Testing y difusi\xA2n\r"\
 	"\nC1J.L. S\xA0nchez    \nF1Mejoras core Z80\r"\
 	"\nD1Antonio Villena \nF1Soporte hardware\r"\
 	"\nE1ZjoyKiLer       \nF1Testing e ideas\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
+	"\r"\
 	"\r"		
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
@@ -563,6 +631,9 @@ static const char *AboutMsg[NLANGS][9] = {
 	,
 	"\nF1Muchas gracias a nuestros Patreons:\r"\
 	PATREONS4
+	,
+	"\nF1Muchas gracias a nuestros Patreons:\r"\
+	PATREONS5
 	,
 	"\nF1Gracias por su ayuda y donaciones a:\r"\
 	"\r"\
