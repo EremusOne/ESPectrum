@@ -133,7 +133,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_SNA_PT \
     "Menu snapshots\n"\
-    "Carregar (SNA,Z80,SP,P) \t(F2) >\n"\
+    "Carregar (SNA,Z80,SP,P)\t(F2) >\n"\
     "Carregar snapshot\t(F3) >\n"\
     "Salvar snapshot\t(F4) >\n"
 
