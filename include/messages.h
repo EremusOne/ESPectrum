@@ -36,7 +36,7 @@ visit https://zxespectrum.speccy.org/contacto
 #ifndef ESPECTRUM_MESSAGES_h
 #define ESPECTRUM_MESSAGES_h
 
-#define EMU_VERSION "       v1.3 "
+#define EMU_VERSION "      v1.31 "
 
 // Language files
 #include "messages_en.h"
