@@ -378,19 +378,19 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
     VIDEO::borderColor = readByteFile(file);
     VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
 
+    if (Z80Ops::is48 && sna_size == SNA_48K_WITH_ROM_SIZE) {
+        // Load ROM if present
+        readBlockFile(file, MemESP::ram[1], 0x4000);
+        MemESP::ramCurrent[0] = MemESP::ram[1];
+        MemESP::SPRom = true;
+    }
+
     // read 48K memory
     readBlockFile(file, MemESP::ram[5], 0x4000);
     readBlockFile(file, MemESP::ram[2], 0x4000);
     readBlockFile(file, MemESP::ram[0], 0x4000);
 
     if (Z80Ops::is48) {
-
-        // Load ROM if present
-        if (sna_size == SNA_48K_WITH_ROM_SIZE) {
-            readBlockFile(file, MemESP::ram[1], 0x4000);
-            MemESP::ramCurrent[0] = MemESP::ram[1];
-            MemESP::SPRom = true;
-        }
 
         // in 48K mode, pop PC from stack
         uint16_t SP = Z80::getRegSP();
@@ -589,6 +589,15 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     uint8_t bordercol = VIDEO::borderColor;
     writeByteFile(bordercol, file);
 
+    // write 16K ROM page if we've loaded it previously
+
+    if (Z80Ops::is48 && MemESP::SPRom) {
+        if (!writeMemPage(1, file, blockMode)) {
+            fclose(file);
+            return false;
+        }
+    }
+
     // write RAM pages in 48K address space (0x4000 - 0xFFFF)
     uint8_t pages[3] = {5, 2, 0};
 
@@ -598,13 +607,6 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     for (uint8_t ipage = 0; ipage < 3; ipage++) {
         uint8_t page = pages[ipage];
         if (!writeMemPage(page, file, blockMode)) {
-            fclose(file);
-            return false;
-        }
-    }
-
-    if (Z80Ops::is48 && MemESP::SPRom) {
-        if (!writeMemPage(1, file, blockMode)) {
             fclose(file);
             return false;
         }
@@ -1617,8 +1619,8 @@ bool FileSP::load(string sp_fn) {
     Z80::setRegDE(readWordFileLE(file));
     Z80::setRegHL(readWordFileLE(file));
 
-    Z80::setRegA(readByteFile(file));
     Z80::setFlags(readByteFile(file));
+    Z80::setRegA(readByteFile(file));
 
     Z80::setRegIX(readWordFileLE(file));
     Z80::setRegIY(readWordFileLE(file));
@@ -1627,8 +1629,8 @@ bool FileSP::load(string sp_fn) {
     Z80::setRegDEx(readWordFileLE(file));
     Z80::setRegHLx(readWordFileLE(file));
 
-    Z80::setRegAx(readByteFile(file));
     Z80::setRegFx(readByteFile(file));
+    Z80::setRegAx(readByteFile(file));
 
     Z80::setRegR(readByteFile(file));
 
