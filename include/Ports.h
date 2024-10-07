@@ -49,6 +49,7 @@ public:
 
     static uint8_t (*getFloatBusData)();
     static uint8_t getFloatBusData48();
+    static uint8_t getFloatBusDataTK();    
     static uint8_t getFloatBusData128();    
 
 private:

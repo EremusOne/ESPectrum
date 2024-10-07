@@ -1094,7 +1094,7 @@ private:
     static void dcCBFF(void);                    
 
     static void check_trdos();                 
-    static void check_trdos_unpage();                 
+    // static void check_trdos_unpage();                 
 };
 
 #endif // Z80CPP_H

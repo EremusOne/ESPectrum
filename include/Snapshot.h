@@ -42,12 +42,12 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
-bool LoadSnapshot(string filename, string force_arch, string force_romset);
+bool LoadSnapshot(string filename, string force_arch, string force_romset, uint8_t force_ALU);
 
 class FileSNA
 {
 public:
-    static bool load(string sna_fn, string force_arch, string force_romset);
+    static bool load(string sna_fn, string force_arch, string force_romset, uint8_t force_ALU);
     static bool save(string sna_fn);
     static bool save(string sna_fn, bool blockMode);
     static bool isPersistAvailable(string filename);
@@ -58,10 +58,17 @@ class FileZ80
 public:
     static bool load(string z80_fn);
     static void loader48();    
-    static void loader128();        
+    static void loader128();  
+    static bool keepArch;      
 private:
     static void loadCompressedMemData(FILE *f, uint16_t dataLen, uint16_t memStart, uint16_t memlen);
     static void loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage, uint16_t memlen);
+};
+
+class FileSP
+{
+public: 
+    static bool load(string sp_fn);
 };
 
 class FileP

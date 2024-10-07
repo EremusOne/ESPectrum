@@ -44,20 +44,43 @@ visit https://zxespectrum.speccy.org/contacto
 #define SPEC_H 192
 
 #define TSTATES_PER_LINE 224
+#define TSTATES_PER_LINE_TK_50 228
+#define TSTATES_PER_LINE_TK_60 228
 #define TSTATES_PER_LINE_128 228
 #define TSTATES_PER_LINE_PENTAGON 224
 
 #define TS_SCREEN_48           14335  // START OF ULA DRAW PAPER 48K
+#define TS_SCREEN_TK_50        14687  // START OF ULA DRAW PAPER TK 50HZ
+#define TS_SCREEN_TK_60        8759   // START OF ULA DRAW PAPER TK 60HZ
 #define TS_SCREEN_128          14361  // START OF ULA DRAW PAPER 128K
 #define TS_SCREEN_PENTAGON     17983  // START OF ULA DRAW PAPER PENTAGON
 
 #define TS_BORDER_320x240 8948  // START OF BORDER 48
+#define TS_BORDER_320x240_TK_50  9201 // START OF BORDER TK 50HZ
+#define TS_BORDER_320x240_TK_60  3273 // START OF BORDER TK 60HZ
 #define TS_BORDER_320x240_128 8878  // START OF BORDER 128
 #define TS_BORDER_320x240_PENTAGON 12595  // START OF BORDER PENTAGON
 
-#define TS_BORDER_360x200 13428  // START OF BORDER 48
-#define TS_BORDER_360x200_128 13438  // START OF BORDER 128
-#define TS_BORDER_360x200_PENTAGON 17075  // START OF BORDER PENTAGON
+// // TS_BORDER_320X240 + (TSTATES_PER_LINE * 20)
+// #define TS_BORDER_360x200 13428  // START OF BORDER 48
+// #define TS_BORDER_360x200_TK_50 13761  // START OF BORDER TK 50HZ
+// #define TS_BORDER_360x200_TK_60 7833  // START OF BORDER TK 60HZ
+// #define TS_BORDER_360x200_128 13438  // START OF BORDER 128
+// #define TS_BORDER_360x200_PENTAGON 17075  // START OF BORDER PENTAGON
+
+// TS_BORDER_320X240 + (TSTATES_PER_LINE * 20)
+#define TS_BORDER_360x200 13420  // START OF BORDER 48
+#define TS_BORDER_360x200_TK_50 13753  // START OF BORDER TK 50HZ
+#define TS_BORDER_360x200_TK_60 7825  // START OF BORDER TK 60HZ
+#define TS_BORDER_360x200_128 13430  // START OF BORDER 128
+#define TS_BORDER_360x200_PENTAGON 17067  // START OF BORDER PENTAGON
+
+// TS_BORDER_320X240 - (TSTATES_PER_LINE * 16) - 8
+#define TS_BORDER_352x272 5356  // START OF BORDER 48
+#define TS_BORDER_352x272_TK_50  5545 // START OF BORDER TK 50HZ
+#define TS_BORDER_352x224_TK_60  5089 // START OF BORDER TK 60HZ TS_BORDER_320X240 + (TSTATES_PER_LINE * 8) - 8
+#define TS_BORDER_352x272_128 5222  // START OF BORDER 128
+#define TS_BORDER_352x272_PENTAGON 9003  // START OF BORDER PENTAGON
 
 // Colors for 6 bit mode
 //                  //  BBGGRR 
@@ -80,6 +103,12 @@ visit https://zxespectrum.speccy.org/contacto
 #define ORANGE      0b00000111 // used in ESPectrum logo text
 
 #define NUM_SPECTRUM_COLORS 17
+
+const int redPins[] = {RED_PINS_6B};
+const int grePins[] = {GRE_PINS_6B};
+const int bluPins[] = {BLU_PINS_6B};
+
+#define zxColor(color,bright) VIDEO::spectrum_colors[bright ? color + 8 : color]
 
 class VIDEO
 {
@@ -105,14 +134,11 @@ public:
   static void MainScreen(unsigned int statestoadd, bool contended);
   static void MainScreen_OSD(unsigned int statestoadd, bool contended);
   static void MainScreen_Opcode(bool contended);
-  static void MainScreen_OSD_Opcode(bool contended);
   static void MainScreen_Blank_Snow(unsigned int statestoadd, bool contended);
   static void MainScreen_Blank_Snow_Opcode(bool contended);
   static void MainScreen_Snow(unsigned int statestoadd, bool contended);
   static void MainScreen_Snow_Opcode(bool contended);
   
-  // static void DrawBorderFast();
-
   static void TopBorder_Blank();
   static void TopBorder();
   static void MiddleBorder();
@@ -150,6 +176,9 @@ public:
   static bool brdChange;
   static bool brdnextframe;
   static uint32_t lastBrdTstate;
+  static uint8_t brdnextline;
+  static uint8_t brdlin_osdstart;
+  static uint8_t brdlin_osdend;
 
   static uint8_t tStatesPerLine;
   static int tStatesScreen;
@@ -162,8 +191,7 @@ public:
   static uint8_t bmp1;
   static uint8_t att2;
   static uint8_t bmp2;
-  // static bool opCodeFetch;
-
+  
   static uint8_t dispUpdCycle;
   static bool snow_att;
   static bool dbl_att;
@@ -173,11 +201,6 @@ public:
   static uint8_t snowR;
   static bool snow_toggle;
   
-  #ifdef DIRTY_LINES
-  static uint8_t dirty_lines[SPEC_H];
-  // static uint8_t linecalc[SPEC_H];
-  #endif // DIRTY_LINES
- 
   static uint8_t OSD;
 
   static uint32_t* SaveRect;
@@ -189,7 +212,5 @@ public:
   static uint32_t framecnt; // Frames elapsed
 
 };
-
-#define zxColor(color,bright) VIDEO::spectrum_colors[bright ? color + 8 : color]
 
 #endif // VIDEO_h

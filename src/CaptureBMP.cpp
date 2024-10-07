@@ -45,6 +45,8 @@ visit https://zxespectrum.speccy.org/contacto
 void CaptureToBmp()
 {
 
+    if (!FileUtils::isSDReady()) return;
+
     char filename[] = "ESP00000.bmp";
 
     unsigned char bmp_header2[BMP_HEADER2_SIZE] = { 
@@ -76,6 +78,7 @@ void CaptureToBmp()
     struct stat stat_buf;
     if (stat(scrdir.c_str(), &stat_buf) != 0) {
         if (mkdir(scrdir.c_str(),0775) != 0) {
+            delete[] linebuf;
             printf("Capture BMP: problem creating capture dir\n");
             return;
         }
@@ -83,6 +86,7 @@ void CaptureToBmp()
     
     DIR* dir = opendir(scrdir.c_str());
     if (dir == NULL) {
+        delete[] linebuf;
         printf("Capture BMP: problem accessing capture dir\n");
         return;
     }

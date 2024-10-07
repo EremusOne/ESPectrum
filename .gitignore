@@ -1,16 +1,11 @@
 !.keep
 .pio
-.vscode
-.vscode/**
 .VSCodeCounter
 .VSCodeCounter/**
-data/s/**
-!data/s/sppong.sna
-!data/s/fantasy.sna
-!data/s/Snake.sna
-!data/s/Tetris.sna
-data/t/**
-!data/t/vccc2022.tap
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
 /unpacked_fs
 /unpacked_fs/**
 downloaded_fs*.bin
@@ -18,4 +13,5 @@ downloaded_fs*.bin
 /doc/**
 /releases
 /releases/**
-
+dependencies.lock
+build/*

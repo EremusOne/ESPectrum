@@ -54,13 +54,12 @@ void WD1793::Init() {
             fclose(Drive[i].DiskFile);
             Drive[i].DiskFile = NULL;
         }
-
         Drive[i].IsSCLFile = false;
         Drive[i].FName.clear();
-
-        sclConverted=false;
-
+        Drive[i].Available = false;
     }
+
+    sclConverted=false;
 
     EnterIdle();
 
@@ -105,7 +104,7 @@ void WD1793::ExecuteCommand(unsigned char wdCmd) {
 
     }
 
-    // if ((StatusReg & STATUS_BUSY) != 0) return;
+    if ((StatusReg & STATUS_BUSY) != 0) return; // This solves stuttering in UNREAL and boot menu in ENL96_3.SCL and ENL96_4.SCL but maybe brokes something somewhere. Needs more testing and study.
 
     // set drive ready status bit
     StatusReg = ~((unsigned char)DriveReady) << 7;

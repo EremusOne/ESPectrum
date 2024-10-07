@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -46,7 +46,7 @@ using namespace std;
 #include "FileUtils.h"
 #include "Config.h"
 #include "ESPectrum.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Video.h"
 #include "messages.h"
 #include "OSDMain.h"
@@ -64,11 +64,35 @@ using namespace std;
 
 extern Font Font6x8;
 
+int OSD::prepare_checkbox_menu(string &menu, string curopt) {
+
+    int mpos = -1;
+    int rpos;
+    int itempos = 0;
+    int m_curopt = 0;
+    while(1) {
+        mpos = menu.find("[",mpos + 1);
+        if (mpos == string::npos) break;
+        rpos = menu.find("]",mpos + 1) - mpos - 1;
+        itempos++;
+        string rmenu = menu.substr(mpos + 1, rpos );
+        trim(rmenu);
+        if (rmenu == curopt) {
+            menu.replace(mpos + 1, rpos,"*");
+            m_curopt = itempos;
+        } else
+            menu.replace(mpos + 1, rpos," ");
+    }
+
+    return m_curopt;
+
+}
+
 // Get real row number for a virtual one
 unsigned short OSD::menuRealRowFor(uint8_t virtual_row_num) { return begin_row + virtual_row_num - 1; }
 
 // // Get real row number for a virtual one
-// bool OSD::menuIsSub(uint8_t virtual_row_num) { 
+// bool OSD::menuIsSub(uint8_t virtual_row_num) {
 //     string line = rowGet(menu, menuRealRowFor(virtual_row_num));
 //     int n = line.find(ASCII_TAB);
 //     if (n == line.npos) return false;
@@ -84,54 +108,8 @@ void OSD::menuAt(short int row, short int col) {
     VIDEO::vga.setCursor(x + 1 + (col * OSD_FONT_W), y + 1 + (row * OSD_FONT_H));
 }
 
-// Print a virtual row
 void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
-    
-    uint8_t margin;
-
-    string line = rowGet(menu, menuRealRowFor(virtual_row_num));
-    
-    switch (line_type) {
-    case IS_TITLE:
-        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
-        margin = 2;
-        break;
-    case IS_FOCUSED:
-        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
-        margin = (real_rows > virtual_rows ? 3 : 2);
-        break;
-    default:
-        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
-        margin = (real_rows > virtual_rows ? 3 : 2);
-    }
-
-    if (line.find(ASCII_TAB) != line.npos) {
-        line = line.substr(0,line.find(ASCII_TAB)) + string(cols - margin - line.length(),' ') + line.substr(line.find(ASCII_TAB)+1);
-    }
-
-    menuAt(virtual_row_num, 0);
-
-    VIDEO::vga.print(" ");
-
-    if (line.substr(0,9) == "ESPectrum") {
-        VIDEO::vga.setTextColor(zxColor(16,0), zxColor(0, 0));
-        VIDEO::vga.print("ESP");        
-        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
-        VIDEO::vga.print(("ectrum " + Config::arch).c_str());
-        for (uint8_t i = line.length(); i < (cols - margin); i++)
-            VIDEO::vga.print(" ");
-    } else {
-        if (line.length() < cols - margin) {
-        VIDEO::vga.print(line.c_str());
-        for (uint8_t i = line.length(); i < (cols - margin); i++)
-            VIDEO::vga.print(" ");
-        } else {
-            VIDEO::vga.print(line.substr(0, cols - margin).c_str());
-        }
-    }
-
-    VIDEO::vga.print(" ");
-
+    PrintRow(virtual_row_num, line_type, true);
 }
 
 // Draw the complete menu
@@ -142,22 +120,7 @@ void OSD::WindowDraw() {
 
     if (menu_level == 0) SaveRectpos = 0;
 
-    if (menu_saverect) {
-        // Save backbuffer data
-        VIDEO::SaveRect[SaveRectpos] = x;
-        VIDEO::SaveRect[SaveRectpos + 1] = y;
-        VIDEO::SaveRect[SaveRectpos + 2] = w;
-        VIDEO::SaveRect[SaveRectpos + 3] = h;
-        SaveRectpos += 4;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-                SaveRectpos++;
-            }
-        }
-        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);
-    }
+    OSD::saveBackbufferData();
 
     // Menu border
     VIDEO::vga.rect(x, y, w, h, zxColor(0, 0));
@@ -181,23 +144,41 @@ void OSD::WindowDraw() {
 // Run a new menu
 unsigned short OSD::menuRun(string new_menu) {
 
-    fabgl::VirtualKeyItem Menukey;    
+    fabgl::VirtualKeyItem Menukey;
 
     menu = new_menu;
 
+    // CRT Overscan compensation
+    if (Config::videomode == 2) {
+        x = 18;
+        if (menu_level == 0) {
+            if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
+                y = 4;
+            } else {
+                y = 12;
+            }
+        }
+    } else {
+        x = 0;
+        if (menu_level == 0) y = 0;
+    }
+
     // Position
     if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
-        y = 8;
+        x += (Config::aspect_16_9 ? 24 : 8);
+        y += 8;
+        prev_y[0] = 0;
     } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        if (menu_saverect) {
-            y += (8 + (8 * menu_prevopt));
+        x += (Config::aspect_16_9 ? 24 : 8) + (54 /*60*/ * menu_level);
+        if (menu_saverect && !prev_y[menu_level]) {
+            y += (4 + (8 * menu_prevopt));
             prev_y[menu_level] = y;
         } else {
             y = prev_y[menu_level];
         }
     }
+
+    for ( int i = menu_level + 1; i < 5; i++ ) prev_y[i] = 0;
 
     // Rows
     real_rows = rowCount(menu);
@@ -217,24 +198,28 @@ unsigned short OSD::menuRun(string new_menu) {
         }
         col_count++;
     }
-    // printf("Cols: %d\n",cols);
+    // printf("Cols previo: %d\n",cols);
     cols += 8;
-    cols = (cols > 28 ? 28 : cols);
+    cols = (cols > 32 ? 32 : cols);    
+    // printf("Cols final: %d\n",cols);
 
     // Size
     w = (cols * OSD_FONT_W) + 2;
     h = (virtual_rows * OSD_FONT_H) + 2;
 
+    int rmax = scrW == 320 ? 52 : 55;
+    if ( x + cols * OSD_FONT_W > rmax * OSD_FONT_W ) x = ( rmax - cols ) * OSD_FONT_W;
+
     WindowDraw(); // Draw menu outline
 
     begin_row = 1;
-    focus = menu_curopt;        
+    focus = menu_curopt;
     last_begin_row = last_focus = 0;
 
     menuRedraw(); // Draw menu content
 
     while (1) {
-        
+
         if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
 
         ESPectrum::readKbdJoy();
@@ -263,7 +248,7 @@ unsigned short OSD::menuRun(string new_menu) {
                     }
                     click();
                 } else if (Menukey.vk == fabgl::VK_DOWN || Menukey.vk == fabgl::VK_JOY1DOWN || Menukey.vk == fabgl::VK_JOY2DOWN) {
-                    if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {                
+                    if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {
                         menuScroll(UP);
                     } else {
                         last_focus = focus;
@@ -277,7 +262,7 @@ unsigned short OSD::menuRun(string new_menu) {
                         }
                         else {
                             menuPrintRow(focus, IS_FOCUSED);
-                            menuPrintRow(last_focus, IS_NORMAL);                
+                            menuPrintRow(last_focus, IS_NORMAL);
                         }
                     }
                     click();
@@ -292,7 +277,7 @@ unsigned short OSD::menuRun(string new_menu) {
                     menuRedraw();
                     click();
                 } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
-                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                    if (real_rows - begin_row - virtual_rows > virtual_rows) {
                         focus = 1;
                         begin_row += virtual_rows - 1;
                     } else {
@@ -311,28 +296,12 @@ unsigned short OSD::menuRun(string new_menu) {
                     begin_row = real_rows - virtual_rows + 1;
                     menuRedraw();
                     click();
-                } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY2C) {
+                } else if (Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY2C) {
                     click();
                     menu_prevopt = menuRealRowFor(focus);
                     return menu_prevopt;
                 } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_F1 || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
-
-                    if (menu_level!=0) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        menu_saverect = false;                        
-                    }
-
+                    if (menu_level!=0) OSD::restoreBackbufferData(true);
                     click();
                     return 0;
                 }
@@ -340,7 +309,7 @@ unsigned short OSD::menuRun(string new_menu) {
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
-        
+
     }
 
 }
@@ -348,7 +317,7 @@ unsigned short OSD::menuRun(string new_menu) {
 // Run a new menu
 unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy, uint8_t max_rows, uint8_t max_cols) {
 
-    fabgl::VirtualKeyItem Menukey;    
+    fabgl::VirtualKeyItem Menukey;
 
     menu = new_menu;
 
@@ -369,25 +338,9 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
     // Set font
     VIDEO::vga.setFont(Font6x8);
 
-    if (menu_saverect) {
-        
-        if (menu_level == 0) SaveRectpos = 0;
-        
-        // Save backbuffer data
-        VIDEO::SaveRect[SaveRectpos] = x;
-        VIDEO::SaveRect[SaveRectpos + 1] = y;
-        VIDEO::SaveRect[SaveRectpos + 2] = w;
-        VIDEO::SaveRect[SaveRectpos + 3] = h;
-        SaveRectpos += 4;
-        for (int  m = y; m < y + h; m++) {
-            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                VIDEO::SaveRect[SaveRectpos] = backbuffer32[n];
-                SaveRectpos++;
-            }
-        }
-        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);
-    }
+    if (menu_saverect && menu_level == 0) SaveRectpos = 0;
+
+    OSD::saveBackbufferData();
 
     // Menu border
     VIDEO::vga.rect(x, y, w, h, zxColor(0, 0));
@@ -396,13 +349,13 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
     PrintRow(0, IS_TITLE);
 
     begin_row = 1;
-    focus = menu_curopt;        
+    focus = menu_curopt;
     last_begin_row = last_focus = 0;
 
     menuRedraw(); // Draw menu content
 
     while (1) {
-        
+
         if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
 
         ESPectrum::readKbdJoy();
@@ -431,7 +384,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
                     }
                     click();
                 } else if (Menukey.vk == fabgl::VK_DOWN || Menukey.vk == fabgl::VK_JOY1DOWN || Menukey.vk == fabgl::VK_JOY2DOWN) {
-                    if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {                
+                    if (focus == virtual_rows - 1 && virtual_rows + begin_row - 1 < real_rows) {
                         menuScroll(UP);
                     } else {
                         last_focus = focus;
@@ -445,7 +398,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
                         }
                         else {
                             menuPrintRow(focus, IS_FOCUSED);
-                            menuPrintRow(last_focus, IS_NORMAL);                
+                            menuPrintRow(last_focus, IS_NORMAL);
                         }
                     }
                     click();
@@ -460,7 +413,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
                     menuRedraw();
                     click();
                 } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
-                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                    if (real_rows - begin_row - virtual_rows > virtual_rows) {
                         focus = 1;
                         begin_row += virtual_rows - 1;
                     } else {
@@ -479,44 +432,13 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
                     begin_row = real_rows - virtual_rows + 1;
                     menuRedraw();
                     click();
-                } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY2C) {
-                    // if (menu_saverect) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        menu_saverect = false;                        
-                    // }
-
+                } else if (Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY2C) {
+                    OSD::restoreBackbufferData(true);
                     click();
                     menu_prevopt = menuRealRowFor(focus);
                     return menu_prevopt;
                 } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_F1 || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
-
-                    // if (menu_saverect) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        //printf("SaveRectpos: %d; J b4 restore: %d\n",SaveRectpos, j);
-                        menu_saverect = false;                        
-                    // }
-
+                    OSD::restoreBackbufferData(true);
                     click();
                     return 0;
                 }
@@ -524,7 +446,7 @@ unsigned short OSD::simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy,
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
-        
+
     }
 
 }
@@ -589,7 +511,7 @@ void OSD::menuScrollBar(unsigned short br) {
         unsigned long begin_pct = round(((float)(br - 1) / (float)real_rows) * 100.0);
         unsigned long bar_h = round(((float)holder_h / 100.0) * (float)shown_pct);
         unsigned long bar_y = round(((float)holder_h / 100.0) * (float)begin_pct);
-        
+
         while ((bar_y + bar_h) >= holder_h) {
             bar_h--;
         }
@@ -611,12 +533,12 @@ void OSD::menuScrollBar(unsigned short br) {
 }
 
 // Print a virtual row
-void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
-    
+void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type, bool is_menu) {
+
     uint8_t margin;
 
-    string line = rowGet(menu, virtual_row_num);
-    
+    string line = rowGet(menu, is_menu ? menuRealRowFor(virtual_row_num) : virtual_row_num);
+
     switch (line_type) {
     case IS_TITLE:
         VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
@@ -626,23 +548,31 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
         VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
         break;
+    case IS_SELECTED:
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(6, 1));
+        margin = (real_rows > virtual_rows ? 3 : 2);
+        break;
+    case IS_SELECTED_FOCUSED:
+        VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(4, 1));
+        margin = (real_rows > virtual_rows ? 3 : 2);
+        break;
     default:
         VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
         margin = (real_rows > virtual_rows ? 3 : 2);
     }
 
     if (line.find(ASCII_TAB) != line.npos) {
-        line = line.substr(0,line.find(ASCII_TAB)) + string(cols - margin - line.length(),' ') + line.substr(line.find(ASCII_TAB)+1);
+        line = line.substr(0,line.find(ASCII_TAB)) + string(cols - margin - line.length(),' ') + line.substr(line.find(ASCII_TAB) + 1);
     }
 
     menuAt(virtual_row_num, 0);
 
     VIDEO::vga.print(" ");
 
-    if ((virtual_row_num == 0) && (line.substr(0,9) == "ESPectrum")) {
+    if ((!is_menu || virtual_row_num == 0) && line.substr(0,9) == "ESPectrum") {
         VIDEO::vga.setTextColor(zxColor(16,0), zxColor(0, 0));
-        VIDEO::vga.print("ESP");        
-        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
+        VIDEO::vga.print("ESP");
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
         VIDEO::vga.print(("ectrum " + Config::arch).c_str());
         for (uint8_t i = line.length(); i < (cols - margin); i++)
             VIDEO::vga.print(" ");
@@ -661,30 +591,52 @@ void OSD::PrintRow(uint8_t virtual_row_num, uint8_t line_type) {
 }
 
 // Redraw inside rows
-void OSD::tapemenuRedraw(string title) {
+void OSD::tapemenuRedraw(string title, bool force) {
 
-    if ((focus != last_focus) || (begin_row != last_begin_row)) {
-
+    if ( force || focus != last_focus || begin_row != last_begin_row ) {
         // Read bunch of rows
         menu = title + "\n";
-        for (int i = begin_row - 1; i < virtual_rows + begin_row - 2; i++) {
-            if (i > Tape::tapeNumBlocks) break;
-            if (Tape::tapeFileType == TAPE_FTYPE_TAP)
-                menu += Tape::tapeBlockReadData(i);
-            else
-                menu += Tape::tzxBlockReadData(i);
+        if ( Tape::tapeNumBlocks ) {
+            for (int i = begin_row - 1; i < virtual_rows - ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly ? 1 : 0 ) + begin_row - 2; i++) {
+                if (i >= Tape::tapeNumBlocks) break;
+                if (Tape::tapeFileType == TAPE_FTYPE_TAP)
+                    menu += Tape::tapeBlockReadData(i);
+                else
+                    menu += Tape::tzxBlockReadData(i);
+            }
+            if ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && begin_row - 1 + virtual_rows >= real_rows ) menu += "\n";
+        } else {
+            menu += ( Config::lang ? "<Vacio>\n" : "<Empty>\n" );
         }
 
-        for (uint8_t row = 1; row < virtual_rows; row++) {
+        for (uint8_t row = 1; row < virtual_rows - ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly ? 1 : 0 ); row++) {
             if (row == focus) {
-                PrintRow(row, IS_FOCUSED);
+                PrintRow(row, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + row) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
             } else {
-                PrintRow(row, IS_NORMAL);
+                PrintRow(row, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + row) ) ? IS_SELECTED : IS_NORMAL);
             }
         }
-        
+
+        if ( Tape::tapeFileType == TAPE_FTYPE_TAP ) {
+
+            string options;
+            if ( !Tape::tapeIsReadOnly ) {
+                options = Config::lang == 0 ? " SPC Select | F2 Rename | F6 Move | F8 Delete" :
+                          Config::lang == 1 ? " ESP Selec. | F2 Renombrar | F6 Mover | F8 Borrar" :
+                                              " ESP Selec. | F2 Renomear | F6 Mover | F8 Excluir";
+            } else {
+                options = Config::lang == 0 ? " [Read-Only TAP]" :
+                          Config::lang == 1 ? " [TAP de solo lectura]" :
+                                              " [TAP somente leitura]";
+            }
+
+            menuAt(-1, 0);
+            VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(5, 0));
+            VIDEO::vga.print((options + std::string(cols - options.size(), ' ')).c_str());
+        }
+
         menuScrollBar(begin_row);
-        
+
         last_focus = focus;
         last_begin_row = begin_row;
 
@@ -694,21 +646,27 @@ void OSD::tapemenuRedraw(string title) {
 // Tape Browser Menu
 int OSD::menuTape(string title) {
 
+    if ( !Tape::tape ) return -1;
+
     fabgl::VirtualKeyItem Menukey;
 
     uint32_t tapeBckPos = ftell(Tape::tape);
 
     // Tape::TapeListing.erase(Tape::TapeListing.begin(),Tape::TapeListing.begin() + 2);
 
+    Tape::selectedBlocks.clear();
+
     real_rows = Tape::tapeNumBlocks + 1;
-    virtual_rows = (real_rows > 19 ? 19 : real_rows);
+    virtual_rows = (real_rows > 19 ? 19 : real_rows) + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
     // begin_row = last_begin_row = last_focus = focus = 1;
-    
+
+    if ( !Tape::tapeNumBlocks ) virtual_rows++;
+
     if (Tape::tapeCurBlock > 17) {
         begin_row = Tape::tapeCurBlock - 16;
         focus = 18;
     } else{
-        begin_row = 1;    
+        begin_row = 1;
         focus = Tape::tapeCurBlock + 1;
     }
     // last_focus = focus;
@@ -725,16 +683,32 @@ int OSD::menuTape(string title) {
     // printf(menu.c_str());
 
     // Position
-    if (menu_level == 0) {
-        x = (Config::aspect_16_9 ? 24 : 8);
-        y = 8;
+//    if (menu_level == 0) {
+
+    // CRT Overscan compensation
+    if (Config::videomode == 2) {
+        x = 18;
+        if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
+            y = 4;
+        } else {
+            y = 12;
+        }
     } else {
-        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
-        y = 8 + (16 * menu_level);
+        x = 0;
+        y = 0;
     }
 
+    x += (Config::aspect_16_9 ? 24 : 8);
+    y += 8;
+
+//    } else {
+//        x = (Config::aspect_16_9 ? 24 : 8) + (60 * menu_level);
+//        y = 8 + (16 * menu_level);
+//    }
+
     // Columns
-    cols = 39; // 36 for block info + 2 pre and post space + 1 for scrollbar
+//    cols = 39; // 36 for block info + 2 pre and post space + 1 for scrollbar
+    cols = 50; // 47 for block info + 2 pre and post space + 1 for scrollbar
 
     // Size
     w = (cols * OSD_FONT_W) + 2;
@@ -769,112 +743,163 @@ int OSD::menuTape(string title) {
                             begin_row--;
                         }
                         tapemenuRedraw(title);
-                        click();                        
+                        click();
                     } else if (focus > 1) {
                         last_focus = focus;
                         focus--;
-                        PrintRow(focus, IS_FOCUSED);
-                        PrintRow(focus + 1, IS_NORMAL);
+                        PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                        PrintRow(focus + 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus + 1) ) ? IS_SELECTED : IS_NORMAL);
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_DOWN || Menukey.vk == fabgl::VK_JOY1DOWN || Menukey.vk == fabgl::VK_JOY2DOWN) {
-                    if (focus == virtual_rows - 1) {
-                        if ((begin_row + virtual_rows - 1) < real_rows) {
+                    if (focus == virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 ) ) {
+                        if ((begin_row + virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? (!Tape::tapeIsReadOnly ? 2 : 1) : 0 )) < real_rows) {
                             last_begin_row = begin_row;
                             begin_row++;
                             tapemenuRedraw(title);
                             click();
                         }
-                    } else if (focus < virtual_rows - 1) {
+                    } else if (focus < virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 )) {
                         last_focus = focus;
                         focus++;
-                        PrintRow(focus, IS_FOCUSED);
-                        PrintRow(focus - 1, IS_NORMAL);
+                        PrintRow(focus, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus) ) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                        PrintRow(focus - 1, ( Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Tape::isSelectedBlock(begin_row - 2 + focus - 1) ) ? IS_SELECTED : IS_NORMAL);
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_PAGEUP || Menukey.vk == fabgl::VK_LEFT || Menukey.vk == fabgl::VK_JOY1LEFT || Menukey.vk == fabgl::VK_JOY2LEFT) {
                     // printf("%u\n",begin_row);
                     if (begin_row > virtual_rows) {
                         last_focus = focus;
-                        last_begin_row = begin_row;                    
+                        last_begin_row = begin_row;
                         focus = 1;
                         begin_row -= virtual_rows - 1;
                         tapemenuRedraw(title);
                         click();
                     } else {
                         last_focus = focus;
-                        last_begin_row = begin_row;                    
+                        last_begin_row = begin_row;
                         focus = 1;
                         begin_row = 1;
                         tapemenuRedraw(title);
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
-                    if (real_rows - begin_row  - virtual_rows > virtual_rows) {
+                    if (real_rows - begin_row - virtual_rows > virtual_rows) {
                         last_focus = focus;
-                        last_begin_row = begin_row;                    
+                        last_begin_row = begin_row;
                         focus = 1;
-                        begin_row += virtual_rows - 1;
+                        begin_row += virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
                         tapemenuRedraw(title);
                         click();
                     } else {
                         last_focus = focus;
-                        last_begin_row = begin_row;                    
-                        focus = virtual_rows - 1;
-                        begin_row = real_rows - virtual_rows + 1;
+                        last_begin_row = begin_row;
+                        focus = virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
+                        begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? (!Tape::tapeIsReadOnly ? 2 : 1) : 0 );
                         tapemenuRedraw(title);
                         click();
                     }
                 } else if (Menukey.vk == fabgl::VK_HOME) {
                     last_focus = focus;
-                    last_begin_row = begin_row;                    
+                    last_begin_row = begin_row;
                     focus = 1;
                     begin_row = 1;
                     tapemenuRedraw(title);
                     click();
                 } else if (Menukey.vk == fabgl::VK_END) {
                     last_focus = focus;
-                    last_begin_row = begin_row;                    
-                    focus = virtual_rows - 1;
-                    begin_row = real_rows - virtual_rows + 1;
+                    last_begin_row = begin_row;
+                    focus = virtual_rows - 1 - ( Tape::tapeFileType == TAPE_FTYPE_TAP ? 1 : 0 );
+                    begin_row = real_rows - virtual_rows + 1 + ( Tape::tapeFileType == TAPE_FTYPE_TAP ? (!Tape::tapeIsReadOnly ? 2 : 1) : 0 );
                     tapemenuRedraw(title);
                     click();
-                } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C) {
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && (Menukey.vk == fabgl::VK_SPACE || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2C)) {
+                    if ( begin_row - 1 + focus < real_rows ) Tape::selectBlockToggle(begin_row - 2 + focus);
+
+                    if (focus == virtual_rows - 1 - 1 ) {
+                        if ((begin_row + virtual_rows - 1 - 2) < real_rows) {
+                            last_begin_row = begin_row;
+                            begin_row++;
+                            tapemenuRedraw(title);
+                            click();
+                        } else {
+                            PrintRow(focus, Tape::isSelectedBlock(begin_row - 2 + focus) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                        }
+                    } else if (focus < virtual_rows - 1 - 1) {
+                        last_focus = focus;
+                        focus++;
+                        PrintRow(focus, Tape::isSelectedBlock(begin_row - 2 + focus) ? IS_SELECTED_FOCUSED : IS_FOCUSED);
+                        PrintRow(focus - 1, Tape::isSelectedBlock(begin_row - 2 + focus - 1) ? IS_SELECTED : IS_NORMAL);
+                        click();
+                    }
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Menukey.vk == fabgl::VK_F2 && begin_row - 1 + focus < real_rows) {
+
+                    long current_pos = ftell( Tape::tape );
+
+                    int blocknum = begin_row - 2 + focus;
+                    if (Tape::getBlockType(blocknum) <= TapeBlock::Code_header) {
+                        string new_name = input(21, focus, "", Tape::getBlockName(blocknum), 10, 10, zxColor(0,0), zxColor(7,0), false);
+                        if ( new_name != "" )
+                            Tape::renameBlock(blocknum, new_name);
+                        tapemenuRedraw(title, true);
+                    } else
+                        osdCenteredMsg(OSD_BLOCK_TYPE_ERR[Config::lang], LEVEL_WARN, 1000);
+                            
+                    fseek( Tape::tape, current_pos, SEEK_SET );
+
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Menukey.vk == fabgl::VK_F6) {
                     click();
-                    if (Tape::tapeFileType == TAPE_FTYPE_TAP)
-                        Tape::CalcTapBlockPos(begin_row + focus - 2);
-                    else
+                    if ( Tape::selectedBlocks.empty() ) {
+                        osdCenteredMsg(OSD_BLOCK_SELECT_ERR[Config::lang], LEVEL_WARN, 1000);
+                    } else {
+                        Tape::moveSelectedBlocks(begin_row - 2 + focus);
+                        tapemenuRedraw(title, true);
+                    }
+                } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Menukey.vk == fabgl::VK_F8) {
+                    click();
+
+                    if ( Tape::selectedBlocks.empty() && begin_row - 1 + focus == real_rows ) {
+                        osdCenteredMsg(OSD_BLOCK_SELECT_ERR[Config::lang], LEVEL_WARN, 1000);
+                    } else {
+                        string title = Tape::selectedBlocks.empty() ? MENU_DELETE_CURRENT_TAP_BLOCK[Config::lang] : MENU_DELETE_TAP_BLOCKS[Config::lang];
+                        string msg = OSD_DLG_SURE[Config::lang];
+                        uint8_t res = msgDialog(title,msg);
+
+                        if (res == DLG_YES) {
+                            if ( Tape::selectedBlocks.empty() ) Tape::selectBlockToggle(begin_row - 2 + focus);
+                            Tape::removeSelectedBlocks();
+                            menu_saverect = true;
+                            return -2;
+                        }
+                    }
+                    
+                } else if ( Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B) {
+                    click();
+                    if (Tape::tapeFileType == TAPE_FTYPE_TAP) {
+                        if ( begin_row - 1 + focus < real_rows ) {
+                            Tape::CalcTapBlockPos(begin_row + focus - 2);
+                            // printf("Ret value: %d\n", begin_row + focus - 2);
+                            return (begin_row + focus - 2);
+                        }
+                    } else {
                         Tape::CalcTZXBlockPos(begin_row + focus - 2);
-                    // printf("Ret value: %d\n", begin_row + focus - 2);
-                    return (begin_row + focus - 2);
+                        // printf("Ret value: %d\n", begin_row + focus - 2);
+                        return (begin_row + focus - 2);
+                    }
                 } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
 
                     // if (Tape::tapeStatus==TAPE_LOADING) {
                         fseek(Tape::tape, tapeBckPos, SEEK_SET);
                     // }
 
-                    if (menu_level!=0) {
-                        // Restore backbuffer data
-                        int j = SaveRectpos - (((w >> 2) + 1) * h);
-                        SaveRectpos = j - 4;
-                        for (int  m = y; m < y + h; m++) {
-                            uint32_t *backbuffer32 = (uint32_t *)(VIDEO::vga.frameBuffer[m]);
-                            for (int n = x >> 2; n < ((x + w) >> 2) + 1; n++) {
-                                backbuffer32[n] = VIDEO::SaveRect[j];
-                                j++;
-                            }
-                        }
-                        menu_saverect = false;
-                    }
-
+                    if (menu_level!=0) OSD::restoreBackbufferData(true);
                     click();
                     return -1;
                 }
             }
         }
 
-        vTaskDelay(5 / portTICK_PERIOD_MS);    
-
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 

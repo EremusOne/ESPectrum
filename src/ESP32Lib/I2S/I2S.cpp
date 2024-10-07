@@ -25,7 +25,7 @@ I2S::I2S(const int i2sIndex)
 	//enable I2S peripheral
 	periph_module_enable(deviceModule[i2sIndex]);
 	interruptHandle = 0;
-	dmaBufferDescriptorCount = 0;
+	// dmaBufferDescriptorCount = 0;
 	dmaBufferDescriptorActive = 0;
 	dmaBufferDescriptors = 0;
 	stopSignal = false;

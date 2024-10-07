@@ -38,6 +38,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include <inttypes.h>
 
+#define ZXKDBREAD_MODEINTERACTIVE 0
+#define ZXKDBREAD_MODEINPUT 1
+
 class ZXKeyb {
 
 public:
@@ -45,6 +48,7 @@ public:
     static void setup();    // setup pins for physical keyboard
     static void process();  // process physical keyboard
     static void ZXKbdRead();
+    static void ZXKbdRead(uint8_t mode);
 
     static uint8_t ZXcols[8];
     static bool Exists;

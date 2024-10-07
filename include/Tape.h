@@ -70,12 +70,11 @@ using namespace std;
 #define TAPE_PHASE_CSW 11
 #define TAPE_PHASE_GDB_PILOTSYNC 12
 #define TAPE_PHASE_GDB_DATA 13
-
 #define TAPE_PHASE_TAIL_GDB 14
 #define TAPE_PHASE_PAUSE_GDB 15
-#define TAPE_PHASE_TAIL_LEN_GDB 945
-
 #define TAPE_PHASE_END 16
+
+#define TAPE_PHASE_TAIL_LEN_GDB 945
 
 // Tape sync phases lenght in microseconds
 #define TAPE_SYNC_LEN 2168 // 620 microseconds for 2168 tStates (48K)
@@ -107,9 +106,15 @@ using namespace std;
 
 #define TAPE_LISTING_DIV 16
 
+#define FACTOR128K  1.013376779 // Pulse length compensation for Spectrum 128K
+#define FACTORALUTK 1.021591929 // Pulse length compensation for Microdigital ULA
+
+#define TAPEHIGH 1
+#define TAPELOW 0
+
 #define CHUNK_SIZE 1024
 struct TZXBlock {
-    uint8_t BlockType;   
+    uint8_t BlockType;
     char FileName[11];
     uint16_t PauseLenght;
     uint32_t BlockLenght;
@@ -155,14 +160,15 @@ public:
     static int tapeCurBlock;  
     static int tapeNumBlocks;  
     static uint32_t tapebufByteCount;
-    static uint32_t tapePlayOffset;    
+    static uint32_t tapePlayOffset;
     static size_t tapeFileSize;
- 
-    static uint8_t tapePhase;    
+    static bool tapeIsReadOnly;
+    static uint8_t tapePhase;
 
     static std::vector<TapeBlock> TapeListing;
 
     static void Init();
+    static void TAP_setBlockTimings();
     static void LoadTape(string mFile);
     static void Play();
     static void Stop();
@@ -170,19 +176,34 @@ public:
     static bool FlashLoad();
     static void Save();
 
+    static void tapeEject();
+
     static uint32_t CalcTapBlockPos(int block);
-    static uint32_t CalcTZXBlockPos(int block);    
+    static uint32_t CalcTZXBlockPos(int block);
     static string tapeBlockReadData(int Blocknum);
-    static string tzxBlockReadData(int Blocknum);    
+    static string tzxBlockReadData(int Blocknum);
+
+    static std::vector<int> selectedBlocks;
+
+    static TapeBlock::BlockType getBlockType(int Blocknum);
+    static void selectBlockToggle(int block);
+    static bool isSelectedBlock(int block);
+    static void removeSelectedBlocks();
+    static void moveSelectedBlocks(int targetPosition);
+    static string getBlockName(int block);
+    static void renameBlock(int block, string new_name);
+    
+    static double tapeCompensation;
 
 private:
 
     static void (*GetBlock)();
 
     static void TAP_Open(string name);
-    static void TAP_GetBlock();    
+    static void TAP_ReOpen();
+    static void TAP_GetBlock();
     static void TZX_Open(string name);
-    static void TZX_GetBlock();    
+    static void TZX_GetBlock();
     static void TZX_BlockLen(TZXBlock &blockdata);
 
     static int inflateCSW(int blocknumber, long startPos, long data_length);
@@ -236,6 +257,5 @@ private:
     static Symdef* SymDefTable;
 
 };
-
 
 #endif

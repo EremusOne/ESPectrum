@@ -40,6 +40,33 @@ visit https://zxespectrum.speccy.org/contacto
 #include <esp_attr.h>
 
 #define MEM_PG_SZ 0x4000
+
+#ifdef ESPECTRUM_PSRAM
+struct slotdata {
+    uint8_t RegI;
+    uint16_t RegHLx;
+    uint16_t RegDEx;
+    uint16_t RegBCx;
+    uint16_t RegAFx;
+    uint16_t RegHL;
+    uint16_t RegDE;
+    uint16_t RegBC;
+    uint16_t RegIY;
+    uint16_t RegIX;
+    uint8_t inter;
+    uint8_t RegR;
+    uint16_t RegAF;
+    uint16_t RegSP;
+    uint8_t IM;
+    uint8_t borderColor;
+    uint16_t RegPC;
+    uint8_t bankLatch;
+    uint8_t videoLatch;
+    uint8_t romLatch;
+    uint8_t pagingLock;
+    bool trdos;
+};
+#endif
 class MemESP
 {
 public:
@@ -47,6 +74,17 @@ public:
     static uint8_t* rom[5];
 
     static uint8_t* ram[8];
+
+    #ifdef ESPECTRUM_PSRAM
+    #define TIME_MACHINE_SLOTS 8
+    static uint32_t* timemachine[TIME_MACHINE_SLOTS][8];
+    static uint8_t tm_slotbanks[TIME_MACHINE_SLOTS][8];
+    static slotdata tm_slotdata[TIME_MACHINE_SLOTS];
+    static bool tm_bank_chg[8];
+    static uint8_t cur_timemachine;
+    static int tm_framecnt;  
+    static bool tm_loading_slot;
+    #endif
 
     static uint8_t* ramCurrent[4];    
     static bool ramContended[4];
@@ -57,6 +95,17 @@ public:
     static uint8_t pagingLock;
 
     static uint8_t romInUse;
+
+    static bool SPRom;
+
+    static bool Init();
+    static void Reset();    
+
+    #ifdef ESPECTRUM_PSRAM
+    static void Tm_Load(uint8_t slot);
+    static void Tm_Init();
+    static void Tm_DoTimeMachine();
+    #endif
 
     static uint8_t readbyte(uint16_t addr);
     static uint16_t readword(uint16_t addr);

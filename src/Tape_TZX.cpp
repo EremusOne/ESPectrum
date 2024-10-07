@@ -412,7 +412,10 @@ void Tape::TZX_Open(string name) {
 
     FileUtils::deleteFilesWithExtension(FileUtils::MountPoint.c_str(),".tmp");
 
-    string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+    string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
+    // string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
+
+    // printf("Fname: %s\n",fname.c_str());
 
     tape = fopen(fname.c_str(), "rb");
     if (tape == NULL) {
@@ -431,11 +434,31 @@ void Tape::TZX_Open(string name) {
         tapeFileType = TAPE_FTYPE_EMPTY;
         return;
     }
-    
+
     // Check TZX header signature
+
+    // ERRONEA -> tzxheader[8] puede no contener \0 y eso provocar que el strcmp falle
+    // char tzxheader[8];
+    // fread(&tzxheader, 8, 1, tape);    
+    // if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+
+    // VALIDA -> strncmp se limita a comparar los caracteres indicados. Ademas el orden de los parametros en fread es mas correcto (lee 8 elementos de 1 byte).
     char tzxheader[8];
-    fread(&tzxheader, 8, 1, tape);    
-    if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+    fread(&tzxheader, 1, 8, tape);
+    if (strncmp(tzxheader,"ZXTape!\x1a", 8) != 0) {
+
+    // VALIDA -> Declarando asi tzxheader nos aseguramos que tzxheader[8] sea \0. Ademas el orden de los parametros en fread es mas correcto (lee 8 elementos de 1 byte).
+    // char tzxheader[9] = { 0 };
+    // fread(&tzxheader, 1, 8, tape);
+    // if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+
+    // // VALIDA -> fgets lee n -1 caracteres y añade un \0 a tzxheader[8].
+    // char tzxheader[9];
+    // // printf("8 -> %d\n",tzxheader[8]);
+    // fgets(tzxheader,9,tape);
+    // // printf("8 -> %d\n",tzxheader[8]);
+    // if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
+
         OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
         fclose(tape);
         tape = NULL;
@@ -538,7 +561,8 @@ void Tape::TZX_GetBlock() {
             if (GDBEnd) {
                 tapeEarBit ^= 1;
                 tapePhase = TAPE_PHASE_END;
-                tapeNext = 7000;
+                // tapeNext = 7000;
+                tapeNext = TAPE_PHASE_TAIL_LEN;
             } else {
                 tapeCurBlock = 0;
                 Stop();
@@ -602,6 +626,13 @@ void Tape::TZX_GetBlock() {
                 tapeCurByte = readByteFile(tape);
                 if (tapeCurByte & 0x80) tapeHdrPulses=tapeHdrShort; else tapeHdrPulses=tapeHdrLong;                
 
+                tapeSyncLen *= tapeCompensation;
+                tapeSync1Len *= tapeCompensation;
+                tapeSync2Len *= tapeCompensation;                                        
+                tapeBit0PulseLen *= tapeCompensation;
+                tapeBit1PulseLen *= tapeCompensation;
+                tapeBlkPauseLen *= tapeCompensation;                                        
+
                 tapePhase = TAPE_PHASE_SYNC;
                 tapeNext = tapeSyncLen;
 
@@ -628,6 +659,13 @@ void Tape::TZX_GetBlock() {
 
                 tapeCurByte = readByteFile(tape);
 
+                tapeSyncLen *= tapeCompensation;
+                tapeSync1Len *= tapeCompensation;
+                tapeSync2Len *= tapeCompensation;                                        
+                tapeBit0PulseLen *= tapeCompensation;
+                tapeBit1PulseLen *= tapeCompensation;
+                tapeBlkPauseLen *= tapeCompensation;                                        
+
                 tapePhase=TAPE_PHASE_SYNC;
                 tapeNext = tapeSyncLen;
 
@@ -643,6 +681,8 @@ void Tape::TZX_GetBlock() {
                 tapeBlockLen += 0x4 + 1;
                 tapebufByteCount += 0x4 + 1;
 
+                tapeSyncLen *= tapeCompensation;
+
                 tapePhase = TAPE_PHASE_PURETONE;
                 tapeNext = tapeSyncLen;
 
@@ -657,6 +697,8 @@ void Tape::TZX_GetBlock() {
 
                 tapeBlockLen += (tapeHdrPulses << 1) + 1 + 1;
                 tapebufByteCount += 0x3 + 1;
+
+                tapeSyncLen *= tapeCompensation;
 
                 tapePhase = TAPE_PHASE_PULSESEQ;
                 tapeNext = tapeSyncLen;                
@@ -683,6 +725,10 @@ void Tape::TZX_GetBlock() {
 
                 tapeCurByte = readByteFile(tape);
 
+                tapeBit0PulseLen *= tapeCompensation;
+                tapeBit1PulseLen *= tapeCompensation;
+                tapeBlkPauseLen *= tapeCompensation;                                 
+
                 tapePhase=TAPE_PHASE_DATA1;
                 tapeNext = tapeCurByte & tapeBitMask ? tapeBit1PulseLen : tapeBit0PulseLen;
 
@@ -706,7 +752,10 @@ void Tape::TZX_GetBlock() {
                 if (((tapebufByteCount + 1) == tapeBlockLen) && (tapeLastByteUsedBits < 8)) tapeEndBitMask >>= tapeLastByteUsedBits;
 
                 tapeCurByte = readByteFile(tape);
-                tapeEarBit = tapeCurByte & tapeBitMask ? 1 : 0;
+                tapeEarBit = tapeCurByte & tapeBitMask ? TAPEHIGH : TAPELOW;
+
+                tapeSyncLen *= tapeCompensation;
+                tapeBlkPauseLen *= tapeCompensation;                                        
 
                 tapePhase=TAPE_PHASE_DRB;
                 tapeNext = tapeSyncLen;
@@ -725,6 +774,9 @@ void Tape::TZX_GetBlock() {
                 CSW_StoredPulses = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
                 
                 tapebufByteCount += 0x0e + 1;
+
+                CSW_SampleRate *= tapeCompensation;
+                tapeBlkPauseLen *= tapeCompensation;
 
                 if (CSW_CompressionType == 0x2) { // Z-RLE compression
 
@@ -788,6 +840,8 @@ void Tape::TZX_GetBlock() {
                 for (int i = asd; i > 0; i >>=1, nb++);
                 if ((asd & (asd - 1)) == 0) nb--;
 
+                tapeBlkPauseLen *= tapeCompensation; // Apply TZX compensation
+
                 // Populate Pilot and Sync definition table
                 if (totp > 0) {
 
@@ -802,6 +856,7 @@ void Tape::TZX_GetBlock() {
                         SymDefTable[i].PulseLenghts = new uint16_t[npp];
                         for(int j = 0; j < npp; j++) {
                             SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
+                            SymDefTable[i].PulseLenghts[j] *= tapeCompensation; // Apply TZX compensation
                             tapebufByteCount += 2;
                         }
 
@@ -832,10 +887,10 @@ void Tape::TZX_GetBlock() {
                         case 1:
                             break;
                         case 2:
-                            tapeEarBit = 0;
+                            tapeEarBit = TAPELOW;
                             break;
                         case 3:
-                            tapeEarBit = 1;
+                            tapeEarBit = TAPEHIGH;
                             break;
                     }
 
@@ -867,6 +922,7 @@ void Tape::TZX_GetBlock() {
                         SymDefTable[i].PulseLenghts = new uint16_t[npd];
                         for(int j = 0; j < npd; j++) {
                             SymDefTable[i].PulseLenghts[j] = readByteFile(tape) | (readByteFile(tape) << 8);
+                            SymDefTable[i].PulseLenghts[j] *= tapeCompensation; // Apply TZX compensation
                             tapebufByteCount += 2;
                         }
 
@@ -914,10 +970,10 @@ void Tape::TZX_GetBlock() {
                     case 1:
                         break;                                    
                     case 2:
-                        tapeEarBit = 0;
+                        tapeEarBit = TAPELOW;
                         break;
                     case 3:
-                        tapeEarBit = 1;
+                        tapeEarBit = TAPEHIGH;
                         break;
                     }
 
@@ -947,16 +1003,18 @@ void Tape::TZX_GetBlock() {
                         tapeCurBlock++;
                     } else {
                         tapeCurBlock = 0;
-                        tapeEarBit = 0;
+                        tapeEarBit = TAPELOW;
                         rewind(tape);
                     }
 
                 } else {
 
+                    tapeBlkPauseLen *= tapeCompensation; // Apply TZX compensation
+
                     tapeBlockLen += 2 + 1;
                     tapebufByteCount += 2 + 1;
 
-                    tapeEarBit = 0;
+                    tapeEarBit = TAPELOW;
                     tapePhase=TAPE_PHASE_PAUSE;
                     tapeNext=tapeBlkPauseLen;
 

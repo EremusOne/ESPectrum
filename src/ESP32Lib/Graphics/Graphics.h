@@ -21,6 +21,7 @@ class Graphics {
 	int cursorX, cursorY, cursorBaseX;
 	long frontColor, backColor;
 	Font *font;
+	int codepage;
 	Color **frameBuffer;
 	int xres;
 	int yres;
@@ -57,6 +58,7 @@ class Graphics {
 		this->xres = xres;
 		this->yres = yres;
 		font = 0;
+		codepage = 437;
 		cursorX = cursorY = cursorBaseX = 0;
 		frontColor = -1;
 		backColor = 0;
@@ -89,18 +91,28 @@ class Graphics {
 		this->font = &font;
 	}
 
+	void setCodepage(int cp) {
+		codepage = cp;
+	}
+
 	void setCursor(int x, int y) {
 		cursorX = cursorBaseX = x;
 		cursorY = y;
 	}
 
 	virtual void drawChar(int x, int y, int ch)	{
+		const unsigned char *pix;
 		if (!font)
 			return;
 		// if (!font->valid(ch))
-		if (!(ch >= 32 && ch < 176))
+		if (!(ch >= 24 && ch < 176))
 			return;
-		const unsigned char *pix = &font->pixels[font->charWidth * font->charHeight * (ch - font->firstChar)];
+		if (codepage == 860 && ch >= 128 && ch <= 169) {
+			ch -= 128;
+		 	pix = &font->pixels2[font->charWidth * font->charHeight * ch];
+		} else {
+			pix = &font->pixels[font->charWidth * font->charHeight * (ch - font->firstChar)];
+		}
 		for (int py = 0; py < font->charHeight; py++)
 			for (int px = 0; px < font->charWidth; px++)
 				if (*(pix++))
@@ -115,7 +127,7 @@ class Graphics {
 		if (!font)
 			return;
 		// if (font->valid(ch))
-		if (ch >= 32 && ch < 176)
+		if (ch >= 24 && ch < 176)
 			drawChar(cursorX, cursorY, ch);
 		else
 			drawChar(cursorX, cursorY, ' ');		

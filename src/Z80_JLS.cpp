@@ -25,12 +25,13 @@
 #include "Ports.h"
 #include "Video.h"
 #include "MemESP.h"
-#include "CPU.h"
+#include "cpuESP.h"
 #include "Tape.h"
 #include "Config.h"
 #include "FileUtils.h"
 #include "OSDMain.h"
 #include "messages.h"
+// #include "Snapshot.h"
 
 // #pragma GCC optimize("O3")
 
@@ -916,15 +917,33 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
 
 IRAM_ATTR void Z80::check_trdos() {
 
-    if (!ESPectrum::trdos) {
+    if (Config::DiskCtrl == 1 || ESPectrum::trdos == true || Z80Ops::isPentagon) {
 
-        if (REG_PCh == 0x3D) {
+        if (!ESPectrum::trdos) {
 
-            // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
-            if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
-                MemESP::romInUse = 4;
+            if (REG_PCh == 0x3D) {
+
+                // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
+                if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
+                    MemESP::romInUse = 4;
+                    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                    ESPectrum::trdos = true;
+                }
+
+            }
+
+        } else {
+
+            if (REG_PCh >= 0x40) {                
+
+                if (Z80Ops::is48)
+                    MemESP::romInUse = 0;
+                else
+                    MemESP::romInUse = MemESP::romLatch;
+                
                 MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-                ESPectrum::trdos = true;
+                ESPectrum::trdos = false;
+
             }
 
         }
@@ -933,34 +952,34 @@ IRAM_ATTR void Z80::check_trdos() {
 
 }
 
-IRAM_ATTR void Z80::check_trdos_unpage() {
+// IRAM_ATTR void Z80::check_trdos_unpage() {
 
-    if (ESPectrum::trdos) {
+//     if (ESPectrum::trdos) {
 
-        if (REG_PCh >= 0x40) {                
+//         if (REG_PCh >= 0x40) {                
 
-            if (Z80Ops::is48)
-                MemESP::romInUse = 0;
-            else
-                MemESP::romInUse = MemESP::romLatch;
+//             if (Z80Ops::is48)
+//                 MemESP::romInUse = 0;
+//             else
+//                 MemESP::romInUse = MemESP::romLatch;
             
-            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-            ESPectrum::trdos = false;
+//             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+//             ESPectrum::trdos = false;
 
-        }
+//         }
 
-    } else if (REG_PCh == 0x3D) {
+//     } else if (REG_PCh == 0x3D) {
 
-            // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
-            if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
-                MemESP::romInUse = 4;
-                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-                ESPectrum::trdos = true;                        
-            }
+//             // TR-DOS Rom can be accessed from 48K machines and from Spectrum 128/+2 and Pentagon if the currently mapped ROM is bank 1.
+//             if ((Z80Ops::is48) && (MemESP::romInUse == 0) || ((!Z80Ops::is48) && MemESP::romInUse == 1)) {
+//                 MemESP::romInUse = 4;
+//                 MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+//                 ESPectrum::trdos = true;                        
+//             }
 
-    }
+//     }
 
-}
+// }
 
 //Interrupción
 /* Desglose de la interrupción, según el modo:
@@ -994,8 +1013,8 @@ void Z80::interrupt(void) {
         
         REG_PC = Z80Ops::peek16((regI << 8) | 0xff); // +6 t-estados
 
-        check_trdos_unpage();
-
+        check_trdos();
+        // check_trdos_unpage();
 
     } else {
         REG_PC = 0x0038;
@@ -2322,7 +2341,8 @@ void Z80::decodeOpcodec0()
     if ((sz5h3pnFlags & ZERO_MASK) == 0) {
         REG_PC = REG_WZ = pop();
 
-        check_trdos_unpage();
+        check_trdos();
+        // check_trdos_unpage();
 
     }
     
@@ -2400,7 +2420,8 @@ void Z80::decodeOpcodec8()
     if ((sz5h3pnFlags & ZERO_MASK) != 0) {
         REG_PC = REG_WZ = pop();
 
-        check_trdos_unpage();
+        check_trdos();
+        // check_trdos_unpage();
 
     }
 
@@ -2410,7 +2431,8 @@ void Z80::decodeOpcodec9()
 { /* RET */
     REG_PC = REG_WZ = pop();
 
-    check_trdos_unpage();
+    check_trdos();
+    // check_trdos_unpage();
 
 }
 
@@ -4596,39 +4618,22 @@ void Z80::decodeDDFD(RegisterPair& regIXY) {
                     for (int i=0; i < 10; i++)
                         name += MemESP::ramCurrent[header_data++ >> 14][header_data & 0x3fff];
                     rtrim(name);
-                    Tape::tapeSaveName = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name + ".tap";
+
+                    SaveRes = DLG_YES;
 
                     struct stat stat_buf;
-                    SaveRes = DLG_YES;
-                    if (stat(Tape::tapeSaveName.c_str(), &stat_buf) == 0) {
-                        string title = OSD_TAPE_SAVE[Config::lang];
-                        string msg = OSD_TAPE_SAVE_EXIST[Config::lang];
-                        SaveRes = OSD::msgDialog(title,msg);
-                    }
 
-                    if (SaveRes == DLG_YES) {
-
-                        // printf("Removing previuous tap file %s.\n",Tape::tapeSaveName.c_str());
-                        /*int result = */remove(Tape::tapeSaveName.c_str());
-
-                        // check if file has been deleted successfully
-                        // if (result != 0) {
-                        //     // print error message
-                        //     printf("File deletion failed\n");
-                        // }
-                        // else {
-                        //     printf("File deleted succesfully\n");
-                        // }            
-
-                        // printf("Saving %s header.\n",Tape::tapeSaveName.c_str());
-                        
+                    printf("Tapesavename: %s\n",Tape::tapeSaveName.c_str());
+                    if ( Tape::tapeSaveName == "" || Tape::tapeSaveName == "none" || !FileUtils::hasTAPextension(Tape::tapeSaveName) || stat(Tape::tapeSaveName.c_str(), &stat_buf) ) {
+                        OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
+                        SaveRes = DLG_NO;
+                    } else {
                         REG_DE--;
                         regA = 0x00;
 
                         Tape::Save();
 
                         REG_PC = 0x555;
-                    
                     }
 
                 } else {

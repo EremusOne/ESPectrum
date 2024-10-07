@@ -38,6 +38,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #include "fabgl.h"
 #include <string>
+#include <vector>
 #include <algorithm>
 
 using namespace std;
@@ -49,6 +50,8 @@ using namespace std;
 #define IS_FOCUSED 1
 #define IS_NORMAL 2
 #define IS_INFO 3
+#define IS_SELECTED 4
+#define IS_SELECTED_FOCUSED 5
 
 #define OSD_FONT_W 6
 #define OSD_FONT_H 8
@@ -61,6 +64,10 @@ using namespace std;
 #define DLG_CANCEL 0
 #define DLG_YES 1
 #define DLG_NO 2
+
+// File dialog
+
+#define MAXSEARCHLEN 16
 
 // OSD Interface
 class OSD {
@@ -83,15 +90,24 @@ public:
     static void osdHome();
     static void osdAt(uint8_t row, uint8_t col);
     static void drawOSD(bool bottom_info);
+    static void drawWindow(uint16_t width, uint16_t height,string top, string bottom, bool clear);
+    static void drawKbdLayout(uint8_t layout);
     static void drawStats();
-    static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL);
+    static int  prepare_checkbox_menu(string &menu, string curopt);
+    static void pref_rom_menu();
+    static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT);
     static void HWInfo();
+    // static void UART_test();
 
     // Error
     static void errorPanel(string errormsg);
     static void errorHalt(string errormsg);
     static void osdCenteredMsg(string msg, uint8_t warn_level);
     static void osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause);
+
+    static void restoreBackbufferData(bool force = false);
+    static void saveBackbufferData(uint16_t x, uint16_t y, uint16_t w, uint16_t h, bool force = false);
+    static void saveBackbufferData(bool force = false);
 
     // Menu
     static unsigned short menuRealRowFor(uint8_t virtual_row_num);
@@ -106,8 +122,8 @@ public:
     static void menuScroll(bool up);
     static void fd_Redraw(string title, string fdir, uint8_t ftype);
     static void fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type);
-    static void tapemenuRedraw(string title);
-    static void PrintRow(uint8_t virtual_row_num, uint8_t line_type);
+    static void tapemenuRedraw(string title, bool force = true);
+    static void PrintRow(uint8_t virtual_row_num, uint8_t line_type, bool is_menu = false);
     static void menuAt(short int row, short int col);
     static void menuScrollBar(unsigned short br);
     static void click();
@@ -124,9 +140,10 @@ public:
 
     static uint8_t msgDialog(string title, string msg);
     static void progressDialog(string title, string msg, int percent, int action);
-    string inputBox(int x, int y, string text);
     static void joyDialog(uint8_t joynum);
     static void pokeDialog();
+
+    static string input(int x, int y, string inputLabel, string text, int inputSize, int maxSize, uint16_t ink_color, uint16_t paper_color, bool fat32mode);
 
     // Rows
     static unsigned short rowCount(string menu);
@@ -158,7 +175,7 @@ public:
 
     static uint8_t fdCursorFlash;    
     static bool fdSearchRefresh;    
-    static unsigned int fdSearchElements;    
+    static unsigned int fdSearchElements;   
 
 };
 

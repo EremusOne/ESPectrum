@@ -57,13 +57,17 @@ string   Config::arch = "48K";
 string   Config::romSet = "48K";
 string   Config::romSet48 = "48K";
 string   Config::romSet128 = "128K";
+string   Config::romSetTK90X = "v1es";
+string   Config::romSetTK95 = "95es";
 string   Config::pref_arch = "48K";
 string   Config::pref_romSet_48 = "48K";
 string   Config::pref_romSet_128 = "128K";
+string   Config::pref_romSet_TK90X = "v1es";
+string   Config::pref_romSet_TK95 = "95es";
 string   Config::ram_file = NO_RAM_FILE;
 string   Config::last_ram_file = NO_RAM_FILE;
 
-bool     Config::slog_on = false;
+bool     Config::slog_on = true;
 bool     Config::aspect_16_9 = false;
 uint8_t  Config::videomode = 0; // 0 -> SAFE VGA, 1 -> 50HZ VGA, 2 -> 50HZ CRT
 uint8_t  Config::esp32rev = 0;
@@ -132,9 +136,18 @@ string   Config::DSK_fileSearch = "";
 uint8_t Config::scanlines = 0;
 uint8_t Config::render = 0;
 
-bool     Config::TABasfire1 = false;
+bool Config::TABasfire1 = false;
 
-bool     Config::StartMsg = true;
+bool Config::StartMsg = true;
+
+uint8_t Config::port254default = 0xbf; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese
+
+uint8_t Config::ALUTK = 1; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
+uint8_t Config::DiskCtrl = 1; // 0 -> None, 1 -> Betadisk
+
+bool Config::TimeMachine = false; 
+
+int8_t Config::volume = ESP_VOLUME_DEFAULT;
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -235,6 +248,24 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_str(handle, "romSetTK90X", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "romSetTK90X", str_data, &required_size);
+            // printf("romSetTK90X:%s\n",str_data);
+            romSetTK90X = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "romSetTK95", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "romSetTK95", str_data, &required_size);
+            // printf("romSetTK95:%s\n",str_data);
+            romSetTK95 = str_data;
+            free(str_data);
+        }
+
         err = nvs_get_str(handle, "pref_arch", NULL, &required_size);
         if (err == ESP_OK) {
             str_data = (char *)malloc(required_size);
@@ -259,6 +290,24 @@ void Config::load() {
             nvs_get_str(handle, "pref_romSet_128", str_data, &required_size);
             // printf("pref_romSet_128:%s\n",str_data);
             pref_romSet_128 = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "pref_romSet_90X", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "pref_romSet_90X", str_data, &required_size);
+            // printf("pref_romSet_TK90X:%s\n",str_data);
+            pref_romSet_TK90X = str_data;
+            free(str_data);
+        }
+
+        err = nvs_get_str(handle, "pref_romSet_95", NULL, &required_size);
+        if (err == ESP_OK) {
+            str_data = (char *)malloc(required_size);
+            nvs_get_str(handle, "pref_romSet_95", str_data, &required_size);
+            // printf("pref_romSet_TK95:%s\n",str_data);
+            pref_romSet_TK95 = str_data;
             free(str_data);
         }
 
@@ -542,6 +591,21 @@ void Config::load() {
             free(str_data);
         }
 
+        err = nvs_get_u8(handle, "ALUTK", &Config::ALUTK);
+        if (err == ESP_OK) {
+            // printf("ALUTK:%u\n",Config::ALUTK);
+        }
+
+        err = nvs_get_u8(handle, "DiskCtrl", &Config::DiskCtrl);
+        if (err == ESP_OK) {
+            // printf("DiskCtrl:%u\n",Config::DiskCtrl);
+        }
+
+        err = nvs_get_i8(handle, "volume", &Config::volume);
+        if (err == ESP_OK) {
+            // printf("volume:%d\n",Config::volume);
+        }
+
         // Close
         nvs_close(handle);
     }
@@ -588,6 +652,12 @@ void Config::save(string value) {
         if((value=="romSet128") || (value=="all"))
             nvs_set_str(handle,"romSet128",romSet128.c_str());
 
+        if((value=="romSetTK90X") || (value=="all"))
+            nvs_set_str(handle,"romSetTK90X",romSetTK90X.c_str());
+
+        if((value=="romSetTK95") || (value=="all"))
+            nvs_set_str(handle,"romSetTK95",romSetTK95.c_str());
+
         if((value=="pref_arch") || (value=="all"))
             nvs_set_str(handle,"pref_arch",pref_arch.c_str());
 
@@ -596,6 +666,12 @@ void Config::save(string value) {
 
         if((value=="pref_romSet_128") || (value=="all"))
             nvs_set_str(handle,"pref_romSet_128",pref_romSet_128.c_str());
+
+        if((value=="pref_romSet_TK90X") || (value=="all"))
+            nvs_set_str(handle,"pref_romSet_90X",pref_romSet_TK90X.c_str());
+
+        if((value=="pref_romSet_TK95") || (value=="all"))
+            nvs_set_str(handle,"pref_romSet_95",pref_romSet_TK95.c_str());
 
         if((value=="ram") || (value=="all"))
             nvs_set_str(handle,"ram",ram_file.c_str());   
@@ -721,6 +797,15 @@ void Config::save(string value) {
         if((value=="StartMsg") || (value=="all"))
             nvs_set_str(handle,"StartMsg", StartMsg ? "true" : "false");
 
+        if((value=="ALUTK") || (value=="all"))
+            nvs_set_u8(handle,"ALUTK",Config::ALUTK);
+
+        if((value=="DiskCtrl") || (value=="all"))
+            nvs_set_u8(handle,"DiskCtrl",Config::DiskCtrl);
+
+        if((value=="volume") || (value=="all"))
+            nvs_set_i8(handle,"volume",Config::volume);
+
         // printf("Committing updates in NVS ... ");
 
         err = nvs_commit(handle);
@@ -738,10 +823,11 @@ void Config::save(string value) {
 
 }
 
-void Config::requestMachine(string newArch, string newRomSet)
-{
+void Config::requestMachine(string newArch, string newRomSet) {
 
     arch = newArch;
+
+    port254default = 0xbf; // Default value for port 254
 
     if (arch == "48K") {
 
@@ -796,20 +882,51 @@ void Config::requestMachine(string newArch, string newRomSet)
         MemESP::rom[0] = (uint8_t *) gb_rom_0_pentagon_128k;
         MemESP::rom[1] = (uint8_t *) gb_rom_1_pentagon_128k;
 
+    } else if (arch == "TK90X") {
+
+        if (newRomSet=="") romSet = "v1es"; else romSet = newRomSet;
+        
+        if (newRomSet=="") romSetTK90X = "v1es"; else romSetTK90X = newRomSet;
+
+        if (romSetTK90X == "v1es")
+            MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v1;
+        else if (romSetTK90X == "v1pt") {
+            MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v1;
+            port254default = 0x3f;                
+        } else if (romSetTK90X == "v2es") {
+            MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v2;
+        } else if (romSetTK90X == "v2pt") {
+            MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v2;
+            port254default = 0x3f;                
+        } else if (romSetTK90X == "v3es") {
+            MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v3es;
+        } else if (romSetTK90X == "v3pt") {
+            MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v3pt;
+        } else if (romSetTK90X == "v3en") {
+            MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v3en;
+        } else if (romSetTK90X == "TKcs") {
+            MemESP::rom[0] = (uint8_t *) rom_0_tk_custom;
+            MemESP::rom[0] += 8;
+        }
+
+
+    } else if (arch == "TK95") {
+
+        if (newRomSet=="") romSet = "95es"; else romSet = newRomSet;
+        
+        if (newRomSet=="") romSetTK95 = "95es"; else romSetTK95 = newRomSet;
+
+        if (romSetTK95 == "95es")
+            MemESP::rom[0] = (uint8_t *) rom_0_TK95ES;
+        else if (romSetTK95 == "95pt") {
+            MemESP::rom[0] = (uint8_t *) rom_0_TK95ES;
+            port254default = 0x3f;
+        }
+
     }
 
     MemESP::rom[4] = (uint8_t *) gb_rom_4_trdos_503;
 
-    // MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-    // MemESP::ramCurrent[1] = MemESP::ram[5];
-    // MemESP::ramCurrent[2] = MemESP::ram[2];
-    // MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-
-    // MemESP::ramContended[0] = false;
-    // MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
-    // MemESP::ramContended[2] = false;
-    // MemESP::ramContended[3] = false;
-  
 }
 
 void Config::setJoyMap(uint8_t joynum, uint8_t joytype) {
