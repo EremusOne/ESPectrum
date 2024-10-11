@@ -183,6 +183,7 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - ZjoyKiLer for his testing, code and ideas.
 - [Ackerman](https://github.com/rpsubc8/ESP32TinyZXSpectrum) for his code and ideas.
 - [Mark Woodmass](https://specemu.zxe.io) and [Juan Carlos González Amestoy](https://www.retrovirtualmachine.org) for his excellent emulators and his help with wd1793 emulation and many other things.
+- Magnus Krook for [SoftSpectrum 48](https://softspectrum48.weebly.com), an excellent emulator which together with his complete and well documented website was of great help and inspiration.
 - [Rodolfo Guerra](https://sites.google.com/view/rodolfoguerra) for his wonderful enhanced ROMs and his help for adding tape load turbo mode support to the emulator.
 - [Juanjo Ponteprino](https://github.com/SplinterGU) for his help and contributions to ESPectrum
 - Weiv and [MartianGirl](https://github.com/MartianGirl) for his detailed analysis of Snow effect.
@@ -191,13 +192,13 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - [Amstrad PLC](http://www.amstrad.com) for the ZX-Spectrum ROM binaries [liberated for emulation purposes](http://www.worldofspectrum.org/permits/amstrad-roms.txt).
 - [Jean Thomas](https://github.com/jeanthom/ESP32-APLL-cal) for his ESP32 APLL calculator.
 
-## Thanks also to all this writters, hobbist and documenters
+## Thanks also to all this writters, hobbyists and documenters
 
 - [Retrowiki](http://retrowiki.es/) especially the people at [ESP32 TTGO VGA32](http://retrowiki.es/viewforum.php?f=114) subforum.
 - [RetroReal](https://www.youtube.com/@retroreal) for his kindness and hospitality and his great work.
 - Rodrigo Méndez [Ron](https://www.twitch.tv/retrocrypta)
 - Armand López [El Viejoven FX](https://www.youtube.com/@ElViejovenFX)
-- Javi Ortiz [El Spectrumero](https://www.youtube.com/@ElSpectrumeroJaviOrtiz) 
+- Javi Ortiz [El Spectrumero](https://www.youtube.com/@ElSpectrumeroJaviOrtiz)
 - José Luis Rodríguez [VidaExtraRetro](https://www.twitch.tv/vidaextraretro)
 - [El Mundo del Spectrum](http://www.elmundodelspectrum.com/)
 - [Microhobby magazine](https://es.wikipedia.org/wiki/MicroHobby).

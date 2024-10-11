@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -149,16 +149,16 @@ public:
 
     // Tape
     static FILE *tape;
-    static FILE *cswBlock;    
+    static FILE *cswBlock;
     static string tapeFileName;
-    static string tapeSaveName;
+    static string tapeFilePath;
     static int tapeFileType;
     static uint8_t tapeEarBit;
     static uint8_t tapeStatus;
     static uint8_t SaveStatus;
     static uint8_t romLoading;
-    static int tapeCurBlock;  
-    static int tapeNumBlocks;  
+    static int tapeCurBlock;
+    static int tapeNumBlocks;
     static uint32_t tapebufByteCount;
     static uint32_t tapePlayOffset;
     static size_t tapeFileSize;
@@ -176,7 +176,7 @@ public:
     static bool FlashLoad();
     static void Save();
 
-    static void tapeEject();
+    static void Eject();
 
     static uint32_t CalcTapBlockPos(int block);
     static uint32_t CalcTZXBlockPos(int block);
@@ -192,17 +192,18 @@ public:
     static void moveSelectedBlocks(int targetPosition);
     static string getBlockName(int block);
     static void renameBlock(int block, string new_name);
-    
+
     static double tapeCompensation;
 
 private:
 
     static void (*GetBlock)();
 
-    static void TAP_Open(string name);
+    static void TAP_Open(string name, string path);
+    static void TAP_getBlockData();
     static void TAP_ReOpen();
     static void TAP_GetBlock();
-    static void TZX_Open(string name);
+    static void TZX_Open(string name, string path);
     static void TZX_GetBlock();
     static void TZX_BlockLen(TZXBlock &blockdata);
 
@@ -216,7 +217,7 @@ private:
     static uint16_t tapeBit1PulseLen; // lenght of pulse for bit 1
     static uint16_t tapeHdrLong;  // Header sync lenght in pulses
     static uint16_t tapeHdrShort; // Data sync lenght in pulses
-    static uint32_t tapeBlkPauseLen; 
+    static uint32_t tapeBlkPauseLen;
     static uint8_t tapeLastByteUsedBits;
     static uint8_t tapeEndBitMask;
     static uint32_t tapeNext;
@@ -237,7 +238,7 @@ private:
     static int callBlock;
 
     static int CSW_SampleRate;
-    static int CSW_PulseLenght;    
+    static int CSW_PulseLenght;
     static uint8_t CSW_CompressionType;
     static uint32_t CSW_StoredPulses;
 
@@ -250,10 +251,10 @@ private:
     static uint16_t asd;
     static uint32_t curGDBSymbol;
     static uint8_t curGDBPulse;
-    static uint8_t GDBsymbol;    
-    static uint8_t nb; 
-    static uint8_t curBit;       
-    static bool GDBEnd;     
+    static uint8_t GDBsymbol;
+    static uint8_t nb;
+    static uint8_t curBit;
+    static bool GDBEnd;
     static Symdef* SymDefTable;
 
 };

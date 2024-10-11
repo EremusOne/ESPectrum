@@ -55,7 +55,7 @@ using namespace std;
 FILE *Tape::tape;
 FILE *Tape::cswBlock;
 string Tape::tapeFileName = "none";
-string Tape::tapeSaveName = "none";
+string Tape::tapeFilePath = "none";
 int Tape::tapeFileType = TAPE_FTYPE_EMPTY;
 uint8_t Tape::tapeStatus = TAPE_STOPPED;
 uint8_t Tape::SaveStatus = SAVE_STOPPED;
@@ -282,7 +282,7 @@ void Tape::LoadTape(string mFile) {
         Tape::Stop();
 
         // Read and analyze tap file
-        Tape::TAP_Open(mFile);
+        Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
 
         ESPectrum::TapeNameScroller = 0;
 
@@ -294,7 +294,7 @@ void Tape::LoadTape(string mFile) {
         Tape::Stop();
 
         // Read and analyze tzx file
-        Tape::TZX_Open(mFile);
+        Tape::TZX_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
 
         ESPectrum::TapeNameScroller = 0;
 
@@ -311,19 +311,19 @@ void Tape::Init() {
 
 }
 
-void Tape::tapeEject() {
+void Tape::Eject() {
 
     Tape::Stop();
 
     if (tape != NULL) {
         fclose(tape);
         tape = NULL;
-    }   
+    }
 
     tapeFileType = TAPE_FTYPE_EMPTY;
 
     tapeFileName = "none";
-    tapeSaveName = "none";
+    tapeFilePath = "none";
 
 }
 
@@ -363,30 +363,11 @@ void Tape::TAP_setBlockTimings() {
 
 }
 
-void Tape::TAP_Open(string name) {
-
-    Tape::Stop();
-
-    if (tape != NULL) {
-        fclose(tape);
-        tape = NULL;
-    }   
-
-    string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
-
-    tapeIsReadOnly = access(fname.c_str(), W_OK);   
-    tape = fopen(fname.c_str(), tapeIsReadOnly == 0 ? "rb+" : "rb");
-    if (tape == NULL) {
-        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
-        return;
-    }
+void Tape::TAP_getBlockData() {
 
     fseek(tape,0,SEEK_END);
     tapeFileSize = ftell(tape);
     rewind(tape);
-
-    tapeSaveName = fname;
-    tapeFileName = name;
 
     Tape::TapeListing.clear(); // Clear TapeListing vector
     std::vector<TapeBlock>().swap(TapeListing); // free memory
@@ -496,6 +477,33 @@ void Tape::TAP_Open(string name) {
 
     tapeCurBlock = 0;
     tapeNumBlocks = tapeListIndex;
+
+}
+
+void Tape::TAP_Open(string name, string path) {
+
+    Tape::Stop();
+
+    if (tape != NULL) {
+        fclose(tape);
+        tape = NULL;
+    }
+
+    string fname = path + name;
+
+    printf("Fname: %s\n", fname.c_str());
+
+    tapeIsReadOnly = access(fname.c_str(), W_OK);
+    tape = fopen(fname.c_str(), tapeIsReadOnly == 0 ? "rb+" : "rb");
+    if (tape == NULL) {
+        OSD::osdCenteredMsg(OSD_TAPE_LOAD_ERR, LEVEL_ERROR);
+        return;
+    }
+
+    tapeFilePath = path;
+    tapeFileName = name;
+
+    TAP_getBlockData();
 
     rewind(tape);
 
@@ -1180,22 +1188,24 @@ IRAM_ATTR void Tape::Read() {
 
 void Tape::Save() {
 
-	FILE *fichero;
+	FILE *fichero = Tape::tape;
     unsigned char xxor,salir_s;
 	uint8_t dato;
 	int longitud;
 
-    Tape::Stop();
-    if (tape != NULL) {
-        fclose(tape);
-        tape = NULL;
-    }
+    // Tape::Stop();
+    // if (tape != NULL) {
+    //     fclose(tape);
+    //     tape = NULL;
+    // }
 
-    fichero = fopen(tapeSaveName.c_str(), "ab");
-    if (fichero == NULL) {
-        OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
-        return;
-    }
+    // fichero = fopen(tapeSaveName.c_str(), "ab");
+    // if (fichero == NULL) {
+    //     OSD::osdCenteredMsg(OSD_TAPE_SAVE_ERR, LEVEL_ERROR);
+    //     return;
+    // }
+
+    fseek(fichero,0,SEEK_END);
 
 	xxor=0;
 
@@ -1219,17 +1229,23 @@ void Tape::Save() {
 	 	if (!salir_s) {
             dato = MemESP::readbyte(Z80::getRegIX());
             fwrite(&dato,sizeof(uint8_t),1,fichero);
-	 		xxor^=dato;
-	        Z80::setRegIX(Z80::getRegIX() + 1);
-	        Z80::setRegDE(Z80::getRegDE() - 1);
-	 	}
-	} while (!salir_s);
+            xxor^=dato;
+            Z80::setRegIX(Z80::getRegIX() + 1);
+            Z80::setRegDE(Z80::getRegDE() - 1);
+        }
+    } while (!salir_s);
     fwrite(&xxor,sizeof(unsigned char),1,fichero);
-	Z80::setRegIX(Z80::getRegIX() + 2);
+    Z80::setRegIX(Z80::getRegIX() + 2);
 
-    fclose(fichero);
+    TAP_getBlockData();
 
-    Tape::TAP_Open( tapeFileName );
+    // fclose(fichero);
+
+    // Tape::TAP_Open( tapeFileName );
+
+    // Tape::TAP_Open( tapeSaveName );
+
+
 }
 
 bool Tape::FlashLoad() {
@@ -1394,7 +1410,7 @@ void Tape::removeSelectedBlocks() {
         return;
     }
 
-    string filename = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
+    string filename = tapeFilePath + tapeFileName;
 
     int blockIndex = 0;
     int tapeBlkLen = 0;
@@ -1448,18 +1464,21 @@ void Tape::removeSelectedBlocks() {
     if (tape != NULL) {
         fclose(tape);
         tape = NULL;
-    }   
+    }
 
     // Reemplazar el archivo original con el archivo temporal
     std::remove(filename.c_str());
     std::rename(filenameTemp.c_str(), filename.c_str());
 
-    Tape::LoadTape((" "+tapeFileName).c_str());
+    // Read and analyze tap file
+    Tape::TAP_Open(tapeFileName, tapeFilePath);
 
     selectedBlocks.clear();
+
 }
 
 void Tape::moveSelectedBlocks(int targetPosition) {
+
     char buffer[2048];
 
     // Crear un archivo temporal para la salida
@@ -1476,7 +1495,7 @@ void Tape::moveSelectedBlocks(int targetPosition) {
         return;
     }
 
-    string filename = FileUtils::MountPoint + FileUtils::TAP_Path + tapeFileName;
+    string filename = tapeFilePath + tapeFileName;
 
     int blockIndex = 0;
     int tapeBlkLen = 0;
@@ -1551,12 +1570,13 @@ void Tape::moveSelectedBlocks(int targetPosition) {
     if (tape != NULL) {
         fclose(tape);
         tape = NULL;
-    }   
+    }
 
     std::remove(filename.c_str());
     std::rename(outputFilename.c_str(), filename.c_str());
 
-    Tape::LoadTape((" " + tapeFileName).c_str());
+    // Read and analyze tap file
+    Tape::TAP_Open(tapeFileName,tapeFilePath);
 
     selectedBlocks.clear();
 }
@@ -1567,7 +1587,7 @@ string Tape::getBlockName(int block) {
     char fname[11] = { 0 };
     fseek( tape, CalcTapBlockPos(block) + 3, SEEK_SET );
     uint8_t blocktype = readByteFile(Tape::tape);
-    if (blocktype <= TapeBlock::Code_header) {        
+    if (blocktype <= TapeBlock::Code_header) {
         fread( fname, 1, 10, tape );
         string ret = (char *) fname;
         rtrim(ret);
@@ -1591,7 +1611,7 @@ void Tape::renameBlock(int block, string new_name) {
         case TapeBlock::Code_header: {
 
             long blockNameOff = CalcTapBlockPos(block) + 3; // size + flag
-            
+
             // Read header
             fseek( tape, blockNameOff, SEEK_SET );
             fread( header, 1, sizeof( header ), tape );

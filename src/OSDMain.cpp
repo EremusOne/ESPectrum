@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -231,8 +231,8 @@ void OSD::drawKbdLayout(uint8_t layout) {
     string bottom[5]={
         " P PS/2 | T TK |  Z ZX | 8 ZX81 ", // ZX Spectrum 48K layout
         " 4 48K | P PS/2 | Z ZX | 8 ZX81 ", // TK 90x layout
-        " 4 48K | T TK | Z ZX | 8 ZX81   ", // PS/2 kbd help          
-        " 4 48K | T TK | P PS/2 | 8 ZX81 ",  // ZX kbd help      
+        " 4 48K | T TK | Z ZX | 8 ZX81   ", // PS/2 kbd help
+        " 4 48K | T TK | P PS/2 | 8 ZX81 ",  // ZX kbd help
         " 4 48K | T TK | Z ZX | P PS/2   "  // ZX81+ layout
     };
 
@@ -268,7 +268,7 @@ void OSD::drawKbdLayout(uint8_t layout) {
             layoutdata = (uint8_t *)Layout_ZX81;
             break;
         }
-        
+
 
         int pos_x, pos_y;
 
@@ -309,15 +309,15 @@ void OSD::drawKbdLayout(uint8_t layout) {
             if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                 if (ESPectrum::readKbd(&Nextkey)) {
                     if(!Nextkey.down) continue;
-                    if (Nextkey.vk == fabgl::VK_F1 || 
-                        Nextkey.vk == fabgl::VK_ESCAPE || 
-                        Nextkey.vk == fabgl::VK_RETURN || 
-                        Nextkey.vk == fabgl::VK_JOY1A || 
-                        Nextkey.vk == fabgl::VK_JOY1B || 
-                        Nextkey.vk == fabgl::VK_JOY2A || 
+                    if (Nextkey.vk == fabgl::VK_F1 ||
+                        Nextkey.vk == fabgl::VK_ESCAPE ||
+                        Nextkey.vk == fabgl::VK_RETURN ||
+                        Nextkey.vk == fabgl::VK_JOY1A ||
+                        Nextkey.vk == fabgl::VK_JOY1B ||
+                        Nextkey.vk == fabgl::VK_JOY2A ||
                         Nextkey.vk == fabgl::VK_JOY2B ||
                         Nextkey.vk == fabgl::VK_4 ||
-                        Nextkey.vk == fabgl::VK_8 ||                        
+                        Nextkey.vk == fabgl::VK_8 ||
                         Nextkey.vk == fabgl::VK_T ||
                         Nextkey.vk == fabgl::VK_t ||
                         Nextkey.vk == fabgl::VK_P ||
@@ -350,7 +350,7 @@ void OSD::drawKbdLayout(uint8_t layout) {
             case fabgl::VK_p:
                 layout = 2;
                 break;
-            case fabgl::VK_Z:                        
+            case fabgl::VK_Z:
             case fabgl::VK_z:
                 layout = 3;
         };
@@ -361,7 +361,7 @@ void OSD::drawKbdLayout(uint8_t layout) {
 
     click();
 
-    if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+    if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
 
 }
 
@@ -382,8 +382,8 @@ void OSD::drawKbdLayout(uint8_t layout) {
 //     drawWindow(256 + 8, 176 + 18, "", bottom, true);
 
 //     #define UART_BUF_SIZE 1024
-    
-//     static const char *TAG = "UART TEST";    
+
+//     static const char *TAG = "UART TEST";
 
 //     /* Configure parameters of an UART driver,
 //     * communication pins and install the driver */
@@ -432,12 +432,12 @@ void OSD::drawKbdLayout(uint8_t layout) {
 //         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
 //             if (ESPectrum::readKbd(&Nextkey)) {
 //                 if(!Nextkey.down) continue;
-//                 if (Nextkey.vk == fabgl::VK_F1 || 
-//                     Nextkey.vk == fabgl::VK_ESCAPE || 
-//                     Nextkey.vk == fabgl::VK_RETURN || 
-//                     Nextkey.vk == fabgl::VK_JOY1A || 
-//                     Nextkey.vk == fabgl::VK_JOY1B || 
-//                     Nextkey.vk == fabgl::VK_JOY2A || 
+//                 if (Nextkey.vk == fabgl::VK_F1 ||
+//                     Nextkey.vk == fabgl::VK_ESCAPE ||
+//                     Nextkey.vk == fabgl::VK_RETURN ||
+//                     Nextkey.vk == fabgl::VK_JOY1A ||
+//                     Nextkey.vk == fabgl::VK_JOY1B ||
+//                     Nextkey.vk == fabgl::VK_JOY2A ||
 //                     Nextkey.vk == fabgl::VK_JOY2B
 //                 ) break;
 
@@ -455,11 +455,11 @@ void OSD::drawKbdLayout(uint8_t layout) {
 
 //     uart_driver_delete(UART_NUM_0);
 
-//     fclose(fichero);    
+//     fclose(fichero);
 
 //     click();
 
-//     if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+//     if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
 
 // }
 
@@ -488,7 +488,7 @@ static bool persistSave(uint8_t slotnumber) {
 
     struct stat stat_buf;
     char persistfname[sizeof(DISK_PSNA_FILE) + 7];
-    char persistfinfo[sizeof(DISK_PSNA_FILE) + 7];    
+    char persistfinfo[sizeof(DISK_PSNA_FILE) + 7];
 
     // printf(DISK_PSNA_FILE "%u.sna\n",slotnumber);
     // printf(DISK_PSNA_FILE "%u.esp\n",slotnumber);
@@ -529,10 +529,10 @@ static bool persistSave(uint8_t slotnumber) {
         if (Config::arch[0] == 'T') persist_ALUTK = std::to_string(Config::ALUTK);
 
         fputs((Config::arch + "\n" + Config::romSet + "\n" + persist_ALUTK + "\n").c_str(),f);    // Put architecture, romset and ALUTK on info file
-        fclose(f);    
+        fclose(f);
 
         if (!FileSNA::save(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) OSD::osdCenteredMsg(OSD_PSNA_SAVE_ERR, LEVEL_WARN);
-    
+
     }
 
     return true;
@@ -540,9 +540,9 @@ static bool persistSave(uint8_t slotnumber) {
 }
 
 static bool persistLoad(uint8_t slotnumber) {
-    
+
     char persistfname[sizeof(DISK_PSNA_FILE) + 7];
-    char persistfinfo[sizeof(DISK_PSNA_FILE) + 7];        
+    char persistfinfo[sizeof(DISK_PSNA_FILE) + 7];
 
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     sprintf(persistfinfo,DISK_PSNA_FILE "%u.esp",slotnumber);
@@ -562,11 +562,11 @@ static bool persistLoad(uint8_t slotnumber) {
         }
 
         char buf[256];
-        char *result;        
+        char *result;
         string persist_arch = "";
         string persist_romset = "";
         string persist_ALUTK = "255";
-        
+
         if ((result = fgets(buf, sizeof(buf),f)) != NULL) {
             persist_arch = buf;
             persist_arch.pop_back();
@@ -736,7 +736,7 @@ void OSD::pref_rom_menu() {
                 const string menu_res[] = {"v1es","v1pt","v2es","v2pt","v3es","v3pt","v3en","TKcs","Last"};
 
                 while (1) {
-                    
+
                     string rpref_menu = MENU_ROM_PREF_TK90X[Config::lang];
 
                     menu_curopt = prepare_checkbox_menu(rpref_menu,Config::pref_romSet_TK90X);
@@ -758,7 +758,7 @@ void OSD::pref_rom_menu() {
                 const string menu_res[] = {"95es","95pt","Last"};
 
                 while (1) {
-                    
+
                     string rpref_menu = MENU_ROM_PREF_TK95[Config::lang];
 
                     menu_curopt = prepare_checkbox_menu(rpref_menu,Config::pref_romSet_TK95);
@@ -770,7 +770,7 @@ void OSD::pref_rom_menu() {
 
                     if (opt3 != menu_curopt) {
                         Config::pref_romSet_TK95 = menu_res[opt3 - 1];
-                        Config::save("pref_romSet_TK95");                        
+                        Config::save("pref_romSet_TK95");
                     }
 
                 }
@@ -780,12 +780,12 @@ void OSD::pref_rom_menu() {
             menu_curopt = opt2;
             menu_saverect = false;
 
-        } else 
+        } else
             break;
 
     }
 
-    menu_curopt = 3;                            
+    menu_curopt = 3;
 
 }
 
@@ -809,7 +809,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
                 menu_saverect = false;
             } else {
-                Tape::tapeEject();
+                Tape::Eject();
                 osdCenteredMsg(OSD_TAPE_EJECT[Config::lang], LEVEL_INFO, 1000);
             }
         }
@@ -817,7 +817,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
         // if (KeytoESP == fabgl::VK_F11) { // Toggle snow effect
 
-        //     VIDEO::snow_toggle ^= 0X01;  
+        //     VIDEO::snow_toggle ^= 0X01;
 
         //     if (VIDEO::snow_toggle) {
         //         VIDEO::Draw = &VIDEO::MainScreen_Blank_Snow;
@@ -829,7 +829,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
         // } else
         if (KeytoESP == fabgl::VK_F1) { // Show kbd layout
-            
+
             uint8_t layout = 0;
 
             if (Config::arch[0] == 'T') {
@@ -863,7 +863,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 if (res != ESP_OK) {
                     printf("Can't set sample rate\n");
                 }
-                
+
                 // Reset AY emulation
                 AySound::init();
                 AySound::set_sound_format(ESPectrum::Audio_freq[ESPectrum::ESP_delay],1,8);
@@ -872,13 +872,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
             }
 
-        } else 
+        } else
         if (KeytoESP == fabgl::VK_F9) { // Input Poke
             pokeDialog();
-        } else 
+        } else
         if (KeytoESP == fabgl::VK_F10) { // NMI
             Z80::triggerNMI();
-        } else 
+        } else
         if (KeytoESP == fabgl::VK_F11) { // Reset to TR-DOS (48K only)
 
             if (Config::DiskCtrl || Z80Ops::isPentagon) {
@@ -901,32 +901,32 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
             }
 
-        } else 
-        // if (KeytoESP == fabgl::VK_F3) { 
+        } else
+        // if (KeytoESP == fabgl::VK_F3) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar -= 1;
         //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        // } else 
+        // } else
         // if (KeytoESP == fabgl::VK_F4) {
         //     // Test variable increase
         //     ESPectrum::ESPtestvar += 1;
         //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        // } else 
+        // } else
         // if (KeytoESP == fabgl::VK_F5) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar1 -= 1;
         //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
-        // } else 
+        // } else
         // if (KeytoESP == fabgl::VK_F6) {
         //     // Test variable increase
         //     ESPectrum::ESPtestvar1 += 1;
         //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
-        // } else 
+        // } else
         // if (KeytoESP == fabgl::VK_F7) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar2 -= 1;
         //     printf("ESPtestvar2: %d\n",ESPectrum::ESPtestvar2);
-        // } else 
+        // } else
         // if (KeytoESP == fabgl::VK_F8) {
         //     // Test variable increase
         //     ESPectrum::ESPtestvar2 += 1;
@@ -936,17 +936,17 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             if (Config::CenterH > -16) Config::CenterH--;
             Config::save("CenterH");
             osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
-        } else 
+        } else
         if (KeytoESP == fabgl::VK_F6) {
             if (Config::CenterH < 16) Config::CenterH++;
             Config::save("CenterH");
             osdCenteredMsg("Horiz. center: " + to_string(Config::CenterH), LEVEL_INFO, 375);
-        } else 
+        } else
         if (KeytoESP == fabgl::VK_F7) {
             if (Config::CenterV > -16) Config::CenterV--;
             Config::save("CenterV");
             osdCenteredMsg("Vert. center: " + to_string(Config::CenterV), LEVEL_INFO, 375);
-        } else 
+        } else
         if (KeytoESP == fabgl::VK_F8) {
             if (Config::CenterV < 16) Config::CenterV++;
             Config::save("CenterV");
@@ -962,7 +962,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             osdCenteredMsg(OSD_PAUSE[Config::lang], LEVEL_INFO, 1000);
 
             while (1) {
-                
+
                 if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
 
                 ESPectrum::readKbdJoy();
@@ -1003,11 +1003,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             }
             if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
         }
-        // else if (KeytoESP == fabgl::VK_F3) { 
+        // else if (KeytoESP == fabgl::VK_F3) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar -= 1;
         //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
-        // } 
+        // }
         // else if (KeytoESP == fabgl::VK_F4) {
         //     // Test variable increase
         //     ESPectrum::ESPtestvar += 1;
@@ -1057,8 +1057,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             if (opt2 && FileUtils::isSDReady()) persistSave(opt2);
         }
         else if (KeytoESP == fabgl::VK_F5) {
-            menu_level = 0; 
-            menu_saverect = false;  
+            menu_level = 0;
+            menu_saverect = false;
             if (FileUtils::isSDReady()) {
                 string mFile = fileDialog(FileUtils::TAP_Path, MENU_TAP_TITLE[Config::lang],DISK_TAPFILE,51,22);
                 if (mFile != "" && FileUtils::isSDReady()) {
@@ -1099,19 +1099,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             }
             click();
         }
-        // else if (KeytoESP == fabgl::VK_F7) { 
+        // else if (KeytoESP == fabgl::VK_F7) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar1 -= 1;
         //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
-        //     return;            
+        //     return;
         // }
         // else if (KeytoESP == fabgl::VK_F8) {
         //     // Test variable increase
         //     ESPectrum::ESPtestvar1 += 1;
         //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
-        //     return;            
+        //     return;
         // }
-        // else if (KeytoESP == fabgl::VK_F9) { 
+        // else if (KeytoESP == fabgl::VK_F9) {
         //     // Test variable decrease
         //     ESPectrum::ESPtestvar -= 1;
         //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
@@ -1128,7 +1128,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             if (Tape::tapeFileName=="none") {
                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
             } else {
-                menu_level = 0;      
+                menu_level = 0;
                 menu_curopt = 1;
                 // int tBlock = menuTape(Tape::tapeFileName.substr(6,28));
                 while ( 1 ) {
@@ -1154,7 +1154,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
             if ((VIDEO::OSD & 0x03) > 2) {
                 if ((VIDEO::OSD & 0x04) == 0) {
-                    if (Config::aspect_16_9) 
+                    if (Config::aspect_16_9)
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen;
                     else
                         VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
@@ -1163,7 +1163,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             } else {
 
                 if ((VIDEO::OSD & 0x04) == 0) {
-                    if (Config::aspect_16_9) 
+                    if (Config::aspect_16_9)
                         VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                     else
                         VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -1188,10 +1188,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         //     ESPectrum::ESPtestvar1 += 1;
         //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
         // }
-        else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUMEDOWN) { 
+        else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUMEDOWN) {
 
             // EXPERIMENTAL: TIME MACHINE TEST
-            
+
             // uint8_t slottoload;
 
             // if (MemESP::tm_framecnt >= 200) {
@@ -1213,7 +1213,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
             if (VIDEO::OSD == 0) {
 
-                if (Config::aspect_16_9) 
+                if (Config::aspect_16_9)
                     VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -1247,14 +1247,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             VIDEO::vga.setCursor(x + 4,y + 1);
             VIDEO::vga.print(Config::tape_player ? "TAP" : "VOL");
             for (int i = 0; i < ESPectrum::aud_volume + 16; i++)
-                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));                
+                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));
 
         }
-        else if (KeytoESP == fabgl::VK_F10 || KeytoESP == fabgl::VK_VOLUMEUP) { 
+        else if (KeytoESP == fabgl::VK_F10 || KeytoESP == fabgl::VK_VOLUMEUP) {
 
             if (VIDEO::OSD == 0) {
 
-                if (Config::aspect_16_9) 
+                if (Config::aspect_16_9)
                     VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
@@ -1287,7 +1287,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             VIDEO::vga.setCursor(x + 4,y + 1);
             VIDEO::vga.print(Config::tape_player ? "TAP" : "VOL");
             for (int i = 0; i < ESPectrum::aud_volume + 16; i++)
-                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));                                
+                VIDEO::vga.fillRect(x + 26 + (i * 7) , y + 1, 6, 7, zxColor( 7, 0));
 
         }
         else if (KeytoESP == fabgl::VK_F11) { // Hard reset
@@ -1306,14 +1306,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         else if (KeytoESP == fabgl::VK_F1) {
 
             menu_curopt = 1;
-            
+
             while(1) {
 
             // Main menu
             menu_saverect = false;
             menu_level = 0;
             uint8_t opt = menuRun("ESPectrum " + Config::arch + "\n" + MENU_MAIN[Config::lang]);
-    
+
             if (opt == 1) {
                 // ***********************************************************************************
                 // SNAPSHOTS MENU
@@ -1378,13 +1378,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         break;
                     }
                 }
-            } 
+            }
             else if (opt == 2) {
                 // ***********************************************************************************
                 // TAPE MENU
                 // ***********************************************************************************
                 menu_saverect = true;
-                menu_curopt = 1;            
+                menu_curopt = 1;
                 while(1) {
                     menu_level = 1;
                     // Tape menu
@@ -1443,7 +1443,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 OSD::osdCenteredMsg(OSD_TAPE_SELECT_ERR[Config::lang], LEVEL_WARN);
                                 menu_saverect = false;
                             } else {
-                                Tape::tapeEject();
+                                Tape::Eject();
                                 osdCenteredMsg(OSD_TAPE_EJECT[Config::lang], LEVEL_INFO, 1000);
                             }
                             menu_curopt = 3;
@@ -1477,7 +1477,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         }
                         else if (tap_num == 5) {
                             menu_level = 2;
-                            menu_curopt = 1;                    
+                            menu_curopt = 1;
                             menu_saverect = true;
                             while (1) {
                                 string Mnustr = MENU_TAPEPLAYER[Config::lang];
@@ -1504,7 +1504,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (Config::tape_player) {
                                             ESPectrum::aud_volume = ESP_VOLUME_MAX;
                                         } else {
-                                            ESPectrum::aud_volume = Config::volume;                                            
+                                            ESPectrum::aud_volume = Config::volume;
                                         }
                                         pwm_audio_set_volume(ESPectrum::aud_volume);
                                         Config::save("tape_player");
@@ -1513,7 +1513,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     menu_saverect = false;
                                 } else {
                                     menu_curopt = 5;
-                                    menu_level = 1;                                       
+                                    menu_level = 1;
                                     break;
                                 }
                             }
@@ -1530,7 +1530,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 // BETADISK MENU
                 // ***********************************************************************************
                 menu_saverect = true;
-                menu_curopt = 1;            
+                menu_curopt = 1;
                 while(1) {
                     // Betadisk menu
                     menu_level = 1;
@@ -1560,14 +1560,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         menu_saverect = false;
                                         menu_curopt = opt2;
                                     }
-                                } else 
+                                } else
                                 if (opt2 == 2) {
                                     ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
                                     return;
                                 }
                             } else {
                                 menu_curopt = dsk_num;
-                                break;                            
+                                break;
                             }
                         }
                     } else {
@@ -1576,7 +1576,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                     }
                 }
             }
-            else if (opt == 4) { 
+            else if (opt == 4) {
                 // ***********************************************************************************
                 // MACHINE MENU
                 // ***********************************************************************************
@@ -1591,7 +1591,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                 while (1) {
                     menu_level = 1;
-                    
+
 
                     uint8_t arch_num = menuRun(MENU_ARCH[Config::lang]);
                     if (arch_num) {
@@ -1621,7 +1621,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 menu_saverect = false;
                             } else {
                                 menu_curopt = 1;
-                                menu_level = 2;                                       
+                                menu_level = 2;
                             }
                         } else if (arch_num == 2) { // 128K
                             menu_level = 2;
@@ -1653,7 +1653,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                             } else {
                                 menu_curopt = 1;
-                                menu_level = 2;                                       
+                                menu_level = 2;
                             }
                         } else if (arch_num == 3) {
                             arch = "Pentagon";
@@ -1691,7 +1691,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 menu_saverect = false;
                             } else {
                                 menu_curopt = 1;
-                                menu_level = 2;                                       
+                                menu_level = 2;
                             }
                         } else if (arch_num == 5) { // TK95
                             menu_level = 2;
@@ -1713,7 +1713,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 menu_saverect = false;
                             } else {
                                 menu_curopt = 1;
-                                menu_level = 2;                                       
+                                menu_level = 2;
                             }
                         }
 
@@ -1724,11 +1724,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 Config::ram_file = "none";
                                 Config::save("ram");
 
-                               
+
                                 if (romset != Config::romSet) {
 
                                     if (arch == "48K") {
-                                        
+
                                         if (Config::pref_romSet_48 == "Last") {
 
                                             Config::romSet = romset;
@@ -1750,7 +1750,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         }
 
                                     } else if (arch == "TK90X") {
-                                        
+
                                         if (Config::pref_romSet_TK90X == "Last") {
 
                                             Config::romSet = romset;
@@ -1761,7 +1761,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         }
 
                                     } else if (arch == "TK95") {
-                                        
+
                                         if (Config::pref_romSet_TK95 == "Last") {
 
                                             Config::romSet = romset;
@@ -1806,7 +1806,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 Config::requestMachine(arch, romset);
 
                             }
-                        
+
                             ESPectrum::reset();
 
                             return;
@@ -1817,7 +1817,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         menu_saverect = false;
 
                     } else {
-                        menu_curopt = 4;                            
+                        menu_curopt = 4;
                         break;
                     }
 
@@ -1828,7 +1828,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 // RESET MENU
                 // ***********************************************************************************
                 menu_saverect = true;
-                menu_curopt = 1;            
+                menu_curopt = 1;
                 while(1) {
                     menu_level = 1;
                     // Reset
@@ -1897,7 +1897,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             if (opt2) {
                                 if (opt2 == 1) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string opt_menu = MENU_DISKCTRL[Config::lang];
@@ -1906,11 +1906,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_opt) {
                                             menu_curopt = 1;
                                             opt_menu.replace(opt_menu.find("[Y",0),2,"[*");
-                                            opt_menu.replace(opt_menu.find("[N",0),2,"[ ");                        
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[ ");
                                         } else {
                                             menu_curopt = 2;
                                             opt_menu.replace(opt_menu.find("[Y",0),2,"[ ");
-                                            opt_menu.replace(opt_menu.find("[N",0),2,"[*");                        
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[*");
                                         }
                                         uint8_t opt2 = menuRun(opt_menu);
                                         if (opt2) {
@@ -1926,14 +1926,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 1;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                                 else if (opt2 == 2) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string flash_menu = MENU_FLASHLOAD[Config::lang];
@@ -1942,11 +1942,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_flashload) {
                                             menu_curopt = 1;
                                             flash_menu.replace(flash_menu.find("[Y",0),2,"[*");
-                                            flash_menu.replace(flash_menu.find("[N",0),2,"[ ");                        
+                                            flash_menu.replace(flash_menu.find("[N",0),2,"[ ");
                                         } else {
                                             menu_curopt = 2;
                                             flash_menu.replace(flash_menu.find("[Y",0),2,"[ ");
-                                            flash_menu.replace(flash_menu.find("[N",0),2,"[*");                        
+                                            flash_menu.replace(flash_menu.find("[N",0),2,"[*");
                                         }
                                         uint8_t opt2 = menuRun(flash_menu);
                                         if (opt2) {
@@ -1962,14 +1962,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 1;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                                 else if (opt2 == 3) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string mnu_str = MENU_RGTIMINGS[Config::lang];
@@ -1978,11 +1978,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_opt) {
                                             menu_curopt = 1;
                                             mnu_str.replace(mnu_str.find("[Y",0),2,"[*");
-                                            mnu_str.replace(mnu_str.find("[N",0),2,"[ ");                        
+                                            mnu_str.replace(mnu_str.find("[N",0),2,"[ ");
                                         } else {
                                             menu_curopt = 2;
                                             mnu_str.replace(mnu_str.find("[Y",0),2,"[ ");
-                                            mnu_str.replace(mnu_str.find("[N",0),2,"[*");                        
+                                            mnu_str.replace(mnu_str.find("[N",0),2,"[*");
                                         }
                                         uint8_t opt2 = menuRun(mnu_str);
                                         if (opt2) {
@@ -2004,7 +2004,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 1;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
@@ -2012,14 +2012,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 menu_curopt = opt2;
                                 menu_saverect = false;
                             } else {
-                                menu_curopt = 1;                            
+                                menu_curopt = 1;
                                 break;
                             }
                         }
                     }
                     else if (options_num == 2) {
                         menu_level = 2;
-                        menu_curopt = 1;                    
+                        menu_curopt = 1;
                         menu_saverect = true;
                         while (1) {
                             string archprefmenu = MENU_ARCH_PREF[Config::lang];
@@ -2027,27 +2027,27 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             if (Config::pref_arch == "48K") {
                                 menu_curopt = 1;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[*");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");                        
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");                        
+                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
+                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");                                                        
+                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
                             } else if (Config::pref_arch == "128K") {
                                 menu_curopt = 2;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[*");                        
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");                        
+                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[*");
+                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");                                                        
+                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
                             } else if (Config::pref_arch == "Pentagon") {
                                 menu_curopt = 3;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[*");                        
+                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[*");
                                 archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
                                 archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");                                                        
+                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
                             } else if (Config::pref_arch == "TK90X") {
                                 menu_curopt = 4;
                                 archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
@@ -2109,11 +2109,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                     }
                     else if (options_num == 3) {
                         pref_rom_menu();
-                    }                          
+                    }
                     else if (options_num == 6) {
 
                         menu_level = 2;
-                        menu_curopt = 1;                    
+                        menu_curopt = 1;
                         menu_saverect = true;
                         while (1) {
                             // Video
@@ -2121,7 +2121,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             if (options_num > 0) {
                                 if (options_num == 1) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string opt_menu = MENU_RENDER[Config::lang];
@@ -2145,7 +2145,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             if (Config::render != prev_opt) {
                                                 Config::save("render");
 
-                                                VIDEO::snow_toggle = Config::arch != "Pentagon" ? Config::render : false;                                                
+                                                VIDEO::snow_toggle = Config::arch != "Pentagon" ? Config::render : false;
 
                                                 if (VIDEO::snow_toggle) {
                                                     VIDEO::Draw = &VIDEO::MainScreen_Blank_Snow;
@@ -2160,14 +2160,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 1;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                                 else if (options_num == 2) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
 
@@ -2177,11 +2177,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_asp) {
                                             menu_curopt = 2;
                                             asp_menu.replace(asp_menu.find("[4",0),2,"[ ");
-                                            asp_menu.replace(asp_menu.find("[1",0),2,"[*");                        
+                                            asp_menu.replace(asp_menu.find("[1",0),2,"[*");
                                         } else {
                                             menu_curopt = 1;
                                             asp_menu.replace(asp_menu.find("[4",0),2,"[*");
-                                            asp_menu.replace(asp_menu.find("[1",0),2,"[ ");                        
+                                            asp_menu.replace(asp_menu.find("[1",0),2,"[ ");
                                         }
                                         uint8_t opt2 = menuRun(asp_menu);
                                         if (opt2) {
@@ -2212,7 +2212,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 }
                                 else if (options_num == 3) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string opt_menu = MENU_SCANLINES[Config::lang];
@@ -2221,11 +2221,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_opt) {
                                             menu_curopt = 1;
                                             opt_menu.replace(opt_menu.find("[Y",0),2,"[*");
-                                            opt_menu.replace(opt_menu.find("[N",0),2,"[ ");                        
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[ ");
                                         } else {
                                             menu_curopt = 2;
                                             opt_menu.replace(opt_menu.find("[Y",0),2,"[ ");
-                                            opt_menu.replace(opt_menu.find("[N",0),2,"[*");                        
+                                            opt_menu.replace(opt_menu.find("[N",0),2,"[*");
                                         }
                                         uint8_t opt2 = menuRun(opt_menu);
                                         if (opt2) {
@@ -2245,7 +2245,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 3;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
@@ -2265,13 +2265,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             string Mnustr = MENU_JOY[Config::lang];
                             uint8_t opt2 = menuRun(Mnustr);
                             if (opt2) {
-                                // Joystick customization 
+                                // Joystick customization
                                 menu_level = 3;
                                 menu_curopt = 1;
                                 menu_saverect = true;
                                 while (1) {
                                     string joy_menu = MENU_DEFJOY[Config::lang];
-                                    joy_menu.replace(joy_menu.find("#",0),1,(string)" " + char(48 + opt2)); 
+                                    joy_menu.replace(joy_menu.find("#",0),1,(string)" " + char(48 + opt2));
                                     std::size_t pos = joy_menu.find("[",0);
                                     int nfind = 0;
                                     while (pos != string::npos) {
@@ -2285,7 +2285,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     }
                                     uint8_t optjoy = menuRun(joy_menu);
                                     if (optjoy>0 && optjoy<6) {
-                                        if (opt2 == 1) {                                        
+                                        if (opt2 == 1) {
                                             Config::joystick1 = optjoy - 1;
                                             Config::save("joystick1");
                                         } else {
@@ -2297,7 +2297,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         menu_saverect = false;
                                     } else if (optjoy == 6) {
                                         joyDialog(opt2);
-                                        if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                                                        
+                                        if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
                                         return;
                                     } else {
                                         menu_curopt = opt2;
@@ -2347,7 +2347,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         menu_saverect = false;
                                     } else {
                                         menu_curopt = 1;
-                                        menu_level = 2;                                       
+                                        menu_level = 2;
                                         break;
                                     }
                                 }
@@ -2362,11 +2362,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     if (Config::CursorAsJoy) {
                                         menu_curopt = 1;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
-                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");
                                     } else {
                                         menu_curopt = 2;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
-                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");
                                     }
                                     uint8_t opt2 = menuRun(csasjoy_menu);
                                     if (opt2) {
@@ -2384,7 +2384,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         menu_saverect = false;
                                     } else {
                                         menu_curopt = 2;
-                                        menu_level = 2;                                       
+                                        menu_level = 2;
                                         break;
                                     }
                                 }
@@ -2400,11 +2400,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     if (prev_opt) {
                                         menu_curopt = 1;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[*");
-                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");                        
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[ ");
                                     } else {
                                         menu_curopt = 2;
                                         csasjoy_menu.replace(csasjoy_menu.find("[Y",0),2,"[ ");
-                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");                        
+                                        csasjoy_menu.replace(csasjoy_menu.find("[N",0),2,"[*");
                                     }
                                     uint8_t opt2 = menuRun(csasjoy_menu);
                                     if (opt2) {
@@ -2434,7 +2434,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         menu_saverect = false;
                                     } else {
                                         menu_curopt = 3;
-                                        menu_level = 2;                                       
+                                        menu_level = 2;
                                         break;
                                     }
                                 }
@@ -2446,12 +2446,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                     }
                     else if (options_num == 9) {
                         menu_level = 2;
-                        menu_curopt = 1;                    
+                        menu_curopt = 1;
                         menu_saverect = true;
                         while (1) {
                             // language
                             uint8_t opt2;
-                            string Mnustr = MENU_INTERFACE_LANG[Config::lang];                            
+                            string Mnustr = MENU_INTERFACE_LANG[Config::lang];
                             std::size_t pos = Mnustr.find("[",0);
                             int nfind = 0;
                             while (pos != string::npos) {
@@ -2481,7 +2481,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                     }
                     else if (options_num == 8) {
                         menu_level = 2;
-                        menu_curopt = 1;                    
+                        menu_curopt = 1;
                         menu_saverect = true;
                         while (1) {
                             // Other
@@ -2489,7 +2489,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             if (options_num > 0) {
                                 if (options_num == 1) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string ay_menu = MENU_AY48[Config::lang];
@@ -2498,11 +2498,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_ay48) {
                                             menu_curopt = 1;
                                             ay_menu.replace(ay_menu.find("[Y",0),2,"[*");
-                                            ay_menu.replace(ay_menu.find("[N",0),2,"[ ");                        
+                                            ay_menu.replace(ay_menu.find("[N",0),2,"[ ");
                                         } else {
                                             menu_curopt = 2;
                                             ay_menu.replace(ay_menu.find("[Y",0),2,"[ ");
-                                            ay_menu.replace(ay_menu.find("[N",0),2,"[*");                        
+                                            ay_menu.replace(ay_menu.find("[N",0),2,"[*");
                                         }
                                         uint8_t opt2 = menuRun(ay_menu);
                                         if (opt2) {
@@ -2518,14 +2518,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 1;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                                 else if (options_num == 2) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string alu_menu = MENU_ALUTIMING[Config::lang];
@@ -2533,11 +2533,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_AluTiming == 0) {
                                             menu_curopt = 1;
                                             alu_menu.replace(alu_menu.find("[E",0),2,"[*");
-                                            alu_menu.replace(alu_menu.find("[L",0),2,"[ ");                        
+                                            alu_menu.replace(alu_menu.find("[L",0),2,"[ ");
                                         } else {
                                             menu_curopt = 2;
                                             alu_menu.replace(alu_menu.find("[E",0),2,"[ ");
-                                            alu_menu.replace(alu_menu.find("[L",0),2,"[*");                        
+                                            alu_menu.replace(alu_menu.find("[L",0),2,"[*");
                                         }
                                         uint8_t opt2 = menuRun(alu_menu);
                                         if (opt2) {
@@ -2554,14 +2554,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 2;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                                 else if (options_num == 3) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string iss_menu = MENU_ISSUE2[Config::lang];
@@ -2570,11 +2570,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (prev_iss) {
                                             menu_curopt = 1;
                                             iss_menu.replace(iss_menu.find("[Y",0),2,"[*");
-                                            iss_menu.replace(iss_menu.find("[N",0),2,"[ ");                        
+                                            iss_menu.replace(iss_menu.find("[N",0),2,"[ ");
                                         } else {
                                             menu_curopt = 2;
                                             iss_menu.replace(iss_menu.find("[Y",0),2,"[ ");
-                                            iss_menu.replace(iss_menu.find("[N",0),2,"[*");                        
+                                            iss_menu.replace(iss_menu.find("[N",0),2,"[*");
                                         }
                                         uint8_t opt2 = menuRun(iss_menu);
                                         if (opt2) {
@@ -2590,14 +2590,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 3;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                                 else if (options_num == 4) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string alu_menu = MENU_ALUTK_PREF[Config::lang];
@@ -2656,21 +2656,21 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 4;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                                 else if (options_num == 5) {
                                     menu_level = 3;
-                                    menu_curopt = 1;                    
+                                    menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string ps2_menu = MENU_KBD2NDPS2[Config::lang];
                                         uint8_t prev_ps2 = Config::ps2_dev2;
                                         if (prev_ps2) {
                                             menu_curopt = 2;
-                                            ps2_menu.replace(ps2_menu.find("[N",0),2,"[ ");                        
+                                            ps2_menu.replace(ps2_menu.find("[N",0),2,"[ ");
                                             ps2_menu.replace(ps2_menu.find("[K",0),2,"[*");
                                         } else {
                                             menu_curopt = 1;
@@ -2691,7 +2691,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_saverect = false;
                                         } else {
                                             menu_curopt = 5;
-                                            menu_level = 2;                                       
+                                            menu_level = 2;
                                             break;
                                         }
                                     }
@@ -2730,11 +2730,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             errMsg += " Code = " + to_string(res);
                                             osdCenteredMsg(errMsg, LEVEL_ERROR, 3000);
                                         }
-                                    
+
                                     }
 
                                     menu_curopt = 1;
-                                    menu_level = 2;                                       
+                                    menu_level = 2;
                                     menu_saverect = false;
 
                                 } else if (opt2 == 2) {
@@ -2778,10 +2778,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     }
 
                                     menu_curopt = 2;
-                                    menu_level = 2;                                       
+                                    menu_level = 2;
                                     menu_saverect = false;
 
-                                } else if (opt2 == 3) {                                    
+                                } else if (opt2 == 3) {
 
                                     if (FileUtils::isSDReady()) {
 
@@ -2825,10 +2825,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     }
 
                                     menu_curopt = 3;
-                                    menu_level = 2;                                       
+                                    menu_level = 2;
                                     menu_saverect = false;
 
-                                } else if (opt2 == 4) {                                    
+                                } else if (opt2 == 4) {
 
                                     if (FileUtils::isSDReady()) {
 
@@ -2865,7 +2865,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     }
 
                                     menu_curopt = 4;
-                                    menu_level = 2;                                       
+                                    menu_level = 2;
                                     menu_saverect = false;
 
                                 }
@@ -2913,16 +2913,16 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                 // click();
 
-                // if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+                // if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
 
                 return;
 
-            }        
+            }
             else if (opt == 8) {
 
                 // About
                 drawOSD(false);
-                
+
                 // Decode Logo in EBF8 format
                 uint8_t *logo = (uint8_t *)ESPectrum_logo;
 
@@ -2931,14 +2931,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 if (Config::videomode == 2) {
                     pos_x = 82;
                     if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
-                        VIDEO::vga.fillRect( 56, 24, 240,50,zxColor(0, 0));            
+                        VIDEO::vga.fillRect( 56, 24, 240,50,zxColor(0, 0));
                         pos_y = 35;
                     } else {
-                        VIDEO::vga.fillRect( 56, 48,240,50,zxColor(0, 0));            
+                        VIDEO::vga.fillRect( 56, 48,240,50,zxColor(0, 0));
                         pos_y = 59;
                     }
                 } else {
-                    VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 12 : 32,240,50,zxColor(0, 0));            
+                    VIDEO::vga.fillRect(Config::aspect_16_9 ? 60 : 40,Config::aspect_16_9 ? 12 : 32,240,50,zxColor(0, 0));
                     pos_x = Config::aspect_16_9 ? 86 : 66;
                     pos_y = Config::aspect_16_9 ? 23 : 43;
                 }
@@ -2951,13 +2951,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         VIDEO::vga.dotFast(pos_x + n,pos_y + i,logo[n+(i*logo_w)]);
 
                 VIDEO::vga.setTextColor(zxColor(7, 0), zxColor(1, 0));
-                
+
                 if (Config::videomode == 2) {
                     pos_x = 62;
                     pos_y = Config::arch[0] == 'T' && Config::ALUTK == 2 ? 80 : 104;
                 } else {
                     pos_x = Config::aspect_16_9 ? 66 : 46;
-                    pos_y = Config::aspect_16_9 ? 68 : 88;            
+                    pos_y = Config::aspect_16_9 ? 68 : 88;
                 }
 
                 int osdRow = 0; int osdCol = 0;
@@ -3027,7 +3027,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                     }
 
                     VIDEO::vga.fillRect(pos_x + ((osdCol + 1) * 6), pos_y + (osdRow * 8), 6,8, cursorCol );
-                    
+
                     if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
 
                     ESPectrum::readKbdJoy();
@@ -3035,7 +3035,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                     if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
                         if (ESPectrum::readKbd(&Nextkey)) {
                             if(!Nextkey.down) continue;
-                            if (Nextkey.vk == fabgl::VK_F1 || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY1B || Nextkey.vk == fabgl::VK_JOY2A || Nextkey.vk == fabgl::VK_JOY2B) break;                            
+                            if (Nextkey.vk == fabgl::VK_F1 || Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_RETURN || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY1B || Nextkey.vk == fabgl::VK_JOY2A || Nextkey.vk == fabgl::VK_JOY2B) break;
                         }
                     }
 
@@ -3045,13 +3045,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                 click();
 
-                if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes                
+                if (VIDEO::OSD) OSD::drawStats(); // Redraw stats for 16:9 modes
 
-                return;            
+                return;
 
             }
             else break;
-        }        
+        }
         }
 
     }
@@ -3136,7 +3136,7 @@ void OSD::osdCenteredMsg(string msg, uint8_t warn_level, uint16_t millispause) {
     VIDEO::vga.setFont(Font6x8);
     VIDEO::vga.setCursor(x + OSD_FONT_W, y + OSD_FONT_H);
     VIDEO::vga.print(msg.c_str());
-    
+
     if (millispause > 0) {
 
         vTaskDelay(millispause/portTICK_PERIOD_MS); // Pause if needed
@@ -3202,36 +3202,36 @@ void OSD::HWInfo() {
     switch (pkg_ver) {
         case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6 :
             if (chip_info.revision == 3)
-                textout += "ESP32-D0WDQ6-V3";  
+                textout += "ESP32-D0WDQ6-V3";
             else
                 textout += "ESP32-D0WDQ6";
             break;
         case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5 :
             if (chip_info.revision == 3)
-                textout += "ESP32-D0WD-V3";  
+                textout += "ESP32-D0WD-V3";
             else
                 textout += "ESP32-D0WD";
-            break;                
+            break;
         case EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 :
             textout += "ESP32-D2WD";
-            break;            
+            break;
         case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 :
             textout += "ESP32-PICO-D2";
-            break;            
+            break;
         case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 :
             textout += "ESP32-PICO-D4";
-            break;            
+            break;
         case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302 :
             textout += "ESP32-PICO-V3-02";
-            break;            
+            break;
         case EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3 :
             textout += "ESP32-D0WDR2-V3";
-            break;             
+            break;
         default:
             textout += "Unknown";
     }
     textout += "\n";
-    VIDEO::vga.print(textout.c_str());    
+    VIDEO::vga.print(textout.c_str());
 
     textout = " Chip cores    : " + to_string(chip_info.cores) + "\n";
     VIDEO::vga.print(textout.c_str());
@@ -3242,7 +3242,7 @@ void OSD::HWInfo() {
     textout = " Flash size    : " + to_string(spi_flash_get_chip_size() / (1024 * 1024)) + (chip_info.features & CHIP_FEATURE_EMB_FLASH ? "MB embedded" : "MB external") + "\n";
     VIDEO::vga.print(textout.c_str());
 
-    multi_heap_info_t info;    
+    multi_heap_info_t info;
     heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
     uint32_t psramsize = (info.total_free_bytes + info.total_allocated_bytes) >> 10;
     textout = " PSRAM size    : " + ( psramsize == 0 ? "N/A or disabled" : to_string(psramsize) + " MB") + "\n";
@@ -3259,14 +3259,14 @@ void OSD::HWInfo() {
     VIDEO::vga.print(textout.c_str());
 
     textout = " Minimum free ever        : " + to_string(info.minimum_free_bytes) + "\n";
-    VIDEO::vga.print(textout.c_str());    
-    
+    VIDEO::vga.print(textout.c_str());
+
     textout = " Largest free block       : " + to_string(info.largest_free_block) + "\n";
     VIDEO::vga.print(textout.c_str());
-    
+
     textout = " Free (MALLOC_CAP_32BIT)  : " + to_string(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT)) + "\n";
     VIDEO::vga.print(textout.c_str());
-        
+
     UBaseType_t wm;
     wm = uxTaskGetStackHighWaterMark(NULL);
     textout = " Main  Task Stack HWM     : " + to_string(wm) + "\n";
@@ -3280,7 +3280,7 @@ void OSD::HWInfo() {
     // printf("Loop Task Stack HWM: %u\n", wm);
 
     wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
-    textout = " Video Task Stack HWM     : " + (Config::videomode ? to_string(wm) : "N/A") + "\n";    
+    textout = " Video Task Stack HWM     : " + (Config::videomode ? to_string(wm) : "N/A") + "\n";
     VIDEO::vga.print(textout.c_str());
 
     // Wait for key
@@ -3338,7 +3338,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
     // printf("Running partition %s type %d subtype %d at offset 0x%x.\n", partition->label, partition->type, partition->subtype, partition->address);
     // printf("Target  partition %s type %d subtype %d at offset 0x%x.\n", target->label, target->type, target->subtype, target->address);
-    
+
     // Get firmware size
     fseek(customrom, 0, SEEK_END);
     long bytesfirmware = ftell(customrom);
@@ -3375,7 +3375,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
         dlgTitle += " TK    ";
 
-    }        
+    }
 
     uint8_t data[FWBUFFSIZE] = { 0 };
 
@@ -3392,7 +3392,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     uint32_t rom_off_128;
 
     uint8_t magic[8] =	{ 0x45, 0x53, 0x50, 0x52, 0x00, 0x34, 0x38, 0x4B }; // MAGIC -> "ESPR_48K" ;
-    uint8_t magictk[8] =	{ 0x45, 0x53, 0x50, 0x52, 0x00, 0x54, 0x4B, 0x58 }; // MAGIC -> "ESPR_TKX" ;    
+    uint8_t magictk[8] =	{ 0x45, 0x53, 0x50, 0x52, 0x00, 0x54, 0x4B, 0x58 }; // MAGIC -> "ESPR_TKX" ;
     uint8_t magic128[8] = { 0x45, 0x53, 0x50, 0x52, 0x00, 0x31, 0x32, 0x38 }; // MAGIC -> "ESPR_128"
 
     magic[4] = 0x5F;
@@ -3410,7 +3410,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
     for (uint32_t offset = 0; offset < partition->size; offset+=FWBUFFSIZE) {
         esp_err_t result = esp_partition_read(partition, offset, data, FWBUFFSIZE);
-        if (result == ESP_OK) {    
+        if (result == ESP_OK) {
             for (int n=0; n < FWBUFFSIZE; n++) {
                 if (data[n] == magic[sindex]) {
                     sindex++;
@@ -3421,7 +3421,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
                         //     for (int j = m; j < m + 16; j++) {
                         //         printf("%02X ", data[ n + j + 1]);
                         //     }
-                        //     printf("\n");  
+                        //     printf("\n");
                         // }
                     }
                 } else {
@@ -3436,7 +3436,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
                         //     for (int j = m; j < m + 16; j++) {
                         //         printf("%02X ", data[ n + j + 1]);
                         //     }
-                        //     printf("\n");  
+                        //     printf("\n");
                         // }
                     }
                 } else {
@@ -3451,7 +3451,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
                         //     for (int j = m; j < m + 16; j++) {
                         //         printf("%02X ", data[ n + j + 1]);
                         //     }
-                        //     printf("\n");  
+                        //     printf("\n");
                         // }
                     }
                 } else {
@@ -3460,7 +3460,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
             }
         } else {
             printf("esp_partition_read failed, err=0x%x.\n", result);
-            progressDialog("","",0,2); 
+            progressDialog("","",0,2);
             return result;
         }
     }
@@ -3476,7 +3476,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     esp_err_t result = esp_partition_erase_range(target, 0, target->size);
     if (result != ESP_OK) {
         printf("esp_partition_erase_range failed, err=0x%x.\n", result);
-        progressDialog("","",0,2); 
+        progressDialog("","",0,2);
         return result;
     }
 
@@ -3487,7 +3487,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
     rom_off += 8;
     rom_off_tk += 8;
-    rom_off_128 += 8;    
+    rom_off_128 += 8;
 
     // FILE *file;
     // file = fopen("/sd/firmware.out", "wb");
@@ -3495,13 +3495,13 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     //     printf("FileSNA: Error opening firmware.out for writing");
     //     return;
     // }
-    
+
     progressDialog(dlgTitle,OSD_ROM_WRITE[Config::lang],0,1);
 
     for(uint32_t i=0; i < partition->size; i += FWBUFFSIZE) {
 
             esp_err_t result = esp_partition_read(partition, i, data, FWBUFFSIZE);
-            if (result == ESP_OK) {    
+            if (result == ESP_OK) {
 
                 for(int m=i; m < i + FWBUFFSIZE; m++) {
 
@@ -3517,9 +3517,9 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
                 // Write the data, starting from the beginning of the partition
                 esp_err_t result = esp_partition_write(target, i, data, FWBUFFSIZE);
-                if (result != ESP_OK) {    
+                if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
                 }
 
@@ -3528,7 +3528,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
             } else {
                 printf("esp_partition_read failed, err=0x%x.\n", result);
-                progressDialog("","",0,2); 
+                progressDialog("","",0,2);
                 return result;
             }
 
@@ -3573,12 +3573,12 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
     // }
 
     // esp_partition_write(target,rom_off,&gb_rom_0_48k_rg[8],16384);
-    // esp_partition_write(target,rom_off + 0x4000,&gb_rom_0_48k_rg[8],16384);    
+    // esp_partition_write(target,rom_off + 0x4000,&gb_rom_0_48k_rg[8],16384);
 
     result = esp_ota_set_boot_partition(target);
     if (result != ESP_OK) {
         printf("esp_ota_set_boot_partition failed, err=0x%x.\n", result);
-        progressDialog("","",0,2); 
+        progressDialog("","",0,2);
         return result;
     }
 
@@ -3594,7 +3594,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
             result = esp_partition_write(target, rom_off + i, data, FWBUFFSIZE);
             if (result != ESP_OK) {
                 printf("esp_partition_write failed, err=0x%x.\n", result);
-                progressDialog("","",0,2); 
+                progressDialog("","",0,2);
                 return result;
             }
         }
@@ -3604,16 +3604,16 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         // Copy previous TK custom ROM
         for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
             esp_err_t result = esp_partition_read(partition, rom_off_tk + i, data, FWBUFFSIZE);
-            if (result == ESP_OK) {    
+            if (result == ESP_OK) {
                 result = esp_partition_write(target, rom_off_tk + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
                 }
             } else {
                     printf("esp_partition_read failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
             }
         }
@@ -3623,16 +3623,16 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         // Copy previous 128K custom ROM
         for (int i=0; i < 0x8000; i += FWBUFFSIZE) {
             esp_err_t result = esp_partition_read(partition, rom_off_128 + i, data, FWBUFFSIZE);
-            if (result == ESP_OK) {    
+            if (result == ESP_OK) {
                 result = esp_partition_write(target, rom_off_128 + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
                 }
             } else {
                 printf("esp_partition_read failed, err=0x%x.\n", result);
-                progressDialog("","",0,2); 
+                progressDialog("","",0,2);
                 return result;
             }
         }
@@ -3649,7 +3649,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
             result = esp_partition_write(target, rom_off_128 + i, data, FWBUFFSIZE);
             if (result != ESP_OK) {
                 printf("esp_partition_write failed, err=0x%x.\n", result);
-                progressDialog("","",0,2); 
+                progressDialog("","",0,2);
                 return result;
             }
         }
@@ -3658,18 +3658,18 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
 
         // Inject new 128K custom ROM part 2
         for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
-            
+
             if (bytesfirmware == 0x4000) {
                 for (int n=0;n<FWBUFFSIZE;n++)
                     data[n] = gb_rom_1_sinclair_128k[i + n];
             } else {
                 bytesread = fread(data, 1, FWBUFFSIZE , customrom);
             }
-            
+
             result = esp_partition_write(target, rom_off_128 + i + 0x4000, data, FWBUFFSIZE);
             if (result != ESP_OK) {
                 printf("esp_partition_write failed, err=0x%x.\n", result);
-                progressDialog("","",0,2); 
+                progressDialog("","",0,2);
                 return result;
             }
 
@@ -3680,16 +3680,16 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         // Copy previous 48K custom ROM
         for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
             esp_err_t result = esp_partition_read(partition, rom_off + i, data, FWBUFFSIZE);
-            if (result == ESP_OK) {    
+            if (result == ESP_OK) {
                 result = esp_partition_write(target, rom_off + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
                 }
             } else {
                     printf("esp_partition_read failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
             }
         }
@@ -3699,16 +3699,16 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         // Copy previous TK custom ROM
         for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
             esp_err_t result = esp_partition_read(partition, rom_off_tk + i, data, FWBUFFSIZE);
-            if (result == ESP_OK) {    
+            if (result == ESP_OK) {
                 result = esp_partition_write(target, rom_off_tk + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
                 }
             } else {
                     printf("esp_partition_read failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
             }
         }
@@ -3725,7 +3725,7 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
             result = esp_partition_write(target, rom_off_tk + i, data, FWBUFFSIZE);
             if (result != ESP_OK) {
                 printf("esp_partition_write failed, err=0x%x.\n", result);
-                progressDialog("","",0,2); 
+                progressDialog("","",0,2);
                 return result;
             }
         }
@@ -3735,16 +3735,16 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         // Copy previous 48K custom ROM
         for (int i=0; i < 0x4000; i += FWBUFFSIZE) {
             esp_err_t result = esp_partition_read(partition, rom_off + i, data, FWBUFFSIZE);
-            if (result == ESP_OK) {    
+            if (result == ESP_OK) {
                 result = esp_partition_write(target, rom_off + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
                 }
             } else {
                     printf("esp_partition_read failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
             }
         }
@@ -3754,16 +3754,16 @@ esp_err_t OSD::updateROM(FILE *customrom, uint8_t arch) {
         // Copy previous 128K custom ROM
         for (int i=0; i < 0x8000; i += FWBUFFSIZE) {
             esp_err_t result = esp_partition_read(partition, rom_off_128 + i, data, FWBUFFSIZE);
-            if (result == ESP_OK) {    
+            if (result == ESP_OK) {
                 result = esp_partition_write(target, rom_off_128 + i, data, FWBUFFSIZE);
                 if (result != ESP_OK) {
                     printf("esp_partition_write failed, err=0x%x.\n", result);
-                    progressDialog("","",0,2); 
+                    progressDialog("","",0,2);
                     return result;
                 }
             } else {
                 printf("esp_partition_read failed, err=0x%x.\n", result);
-                progressDialog("","",0,2); 
+                progressDialog("","",0,2);
                 return result;
             }
         }
@@ -3873,7 +3873,7 @@ esp_err_t OSD::updateFirmware(FILE *firmware) {
     }
 
     result = esp_ota_end(ota_handle);
-    if (result != ESP_OK) 
+    if (result != ESP_OK)
     {
         // printf("esp_ota_end failed, err=0x%x.\n", result);
         progressDialog("","",0,2);
@@ -3907,8 +3907,8 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
     static unsigned short y;
     static unsigned short w;
     static unsigned short x;
-    static unsigned short progress_x;    
-    static unsigned short progress_y;        
+    static unsigned short progress_x;
+    static unsigned short progress_y;
     static unsigned int j;
 
     bool curr_menu_saverect = menu_saverect;
@@ -3927,7 +3927,7 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
         // Save backbuffer data
         OSD::saveBackbufferData(x,y,w,h,true);
 
-        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);        
+        // printf("SaveRectPos: %04X\n",SaveRectpos << 2);
 
         // Set font
         VIDEO::vga.setFont(Font6x8);
@@ -3939,12 +3939,12 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
         VIDEO::vga.fillRect(x + 1, y + 1 + OSD_FONT_H, w - 2, h - OSD_FONT_H - 2, zxColor(7,1));
 
         // Title
-        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
+        VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
         VIDEO::vga.setCursor(x + OSD_FONT_W + 1, y + 1);
         VIDEO::vga.print(title.c_str());
-        
+
         // Msg
-        VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+        VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
         VIDEO::vga.setCursor(scrAlignCenterX(msg.length() * OSD_FONT_W), y + 1 + (OSD_FONT_H * 2));
         VIDEO::vga.print(msg.c_str());
 
@@ -3969,14 +3969,14 @@ void OSD::progressDialog(string title, string msg, int percent, int action) {
     } else if (action == 1 ) { // UPDATE
 
         // Msg
-        VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+        VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
         VIDEO::vga.setCursor(scrAlignCenterX(msg.length() * OSD_FONT_W), y + 1 + (OSD_FONT_H * 2));
         VIDEO::vga.print(msg.c_str());
 
         // Progress bar
         int barsize = (70 * percent) / 100;
         VIDEO::vga.fillRect(progress_x, progress_y, barsize, OSD_FONT_H, zxColor(5,1));
-        VIDEO::vga.fillRect(progress_x + barsize, progress_y, 70 - barsize, OSD_FONT_H, zxColor(7,1));        
+        VIDEO::vga.fillRect(progress_x + barsize, progress_y, 70 - barsize, OSD_FONT_H, zxColor(7,1));
 
     } else if (action == 2) { // CLOSE
 
@@ -4001,7 +4001,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
     // Save backbuffer data
     OSD::saveBackbufferData(x,y,w,h,true);
 
-    // printf("SaveRectPos: %04X\n",SaveRectpos << 2);    
+    // printf("SaveRectPos: %04X\n",SaveRectpos << 2);
 
     // Set font
     VIDEO::vga.setFont(Font6x8);
@@ -4013,23 +4013,23 @@ uint8_t OSD::msgDialog(string title, string msg) {
     VIDEO::vga.fillRect(x + 1, y + 1 + OSD_FONT_H, w - 2, h - OSD_FONT_H - 2, zxColor(7,1));
 
     // Title
-    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
+    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
     VIDEO::vga.setCursor(x + OSD_FONT_W + 1, y + 1);
     VIDEO::vga.print(title.c_str());
-    
+
     // Msg
-    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
     VIDEO::vga.setCursor(scrAlignCenterX(msg.length() * OSD_FONT_W), y + 1 + (OSD_FONT_H * 2));
     VIDEO::vga.print(msg.c_str());
 
     // Yes
-    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
     // VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
     VIDEO::vga.print(OSD_MSGDIALOG_YES[Config::lang]);
 
     // // Ruler
-    // VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+    // VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
     // VIDEO::vga.setCursor(x + 1, y + 1 + (OSD_FONT_H * 3));
     // VIDEO::vga.print("123456789012345678901234567");
 
@@ -4049,7 +4049,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
         }
         rb_paint_x += 5;
     }
-    
+
     // Keyboard loop
     fabgl::VirtualKeyItem Menukey;
     while (1) {
@@ -4068,9 +4068,9 @@ uint8_t OSD::msgDialog(string title, string msg) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
                     //VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
-                    VIDEO::vga.print(OSD_MSGDIALOG_YES[Config::lang]);                    
+                    VIDEO::vga.print(OSD_MSGDIALOG_YES[Config::lang]);
                     // No
-                    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+                    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) + (w >> 2), y + 1 + (OSD_FONT_H * 4));
                     VIDEO::vga.print(OSD_MSGDIALOG_NO[Config::lang]);
                     // VIDEO::vga.print("  No  ");
@@ -4078,7 +4078,7 @@ uint8_t OSD::msgDialog(string title, string msg) {
                     res = DLG_YES;
                 } else if (Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
                     // Yes
-                    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+                    VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
                     VIDEO::vga.setCursor(scrAlignCenterX(6 * OSD_FONT_W) - (w >> 2), y + 1 + (OSD_FONT_H * 4));
                     VIDEO::vga.print(OSD_MSGDIALOG_YES[Config::lang]);
                     //VIDEO::vga.print(Config::lang ? "  S\xA1  " : " Yes  ");
@@ -4129,24 +4129,24 @@ static const char *MENU_JOYSELKEY[NLANGS] = { MENU_JOYSELKEY_EN, MENU_JOYSELKEY_
     "B\n"\
     "C\n"\
     "D\n"\
-    "E\n"\				
+    "E\n"\
     "F\n"\
     "G\n"\
-	"H\n"\			
-	"I\n"\				
-	"J\n"\					
-	"K\n"\						
+	"H\n"\
+	"I\n"\
+	"J\n"\
+	"K\n"\
     "L\n"\
     "M\n"\
     "N\n"\
     "O\n"\
-    "P\n"\				
+    "P\n"\
     "Q\n"\
     "R\n"\
-	"S\n"\			
-	"T\n"\				
-	"U\n"\					
-	"V\n"\						
+	"S\n"\
+	"T\n"\
+	"U\n"\
+	"V\n"\
     "W\n"\
     "X\n"\
     "Y\n"\
@@ -4196,14 +4196,14 @@ static const char *MENU_JOYSELKEY[NLANGS] = { MENU_JOYSELKEY_EN, MENU_JOYSELKEY_
     "Up\n"\
     "Down\n"\
     "Fire 1\n"\
-    "Fire 2\n"		
+    "Fire 2\n"
 
 #define MENU_JOY_FULLER "Fuller\n"\
     "Left\n"\
     "Right\n"\
     "Up\n"\
     "Down\n"\
-    "Fire\n"	
+    "Fire\n"
 
 string vkToText(int key) {
 
@@ -4331,14 +4331,14 @@ case fabgl::VK_KEMPSTON_LEFT:
     return "Kmp.Left ";
 case fabgl::VK_KEMPSTON_RIGHT:
     return "Kmp.Right";
-case fabgl::VK_KEMPSTON_UP:   
+case fabgl::VK_KEMPSTON_UP:
     return " Kmp.Up  ";
 case fabgl::VK_KEMPSTON_DOWN:
     return "Kmp.Down ";
-case fabgl::VK_KEMPSTON_FIRE:    
+case fabgl::VK_KEMPSTON_FIRE:
     return "Kmp.Fire1";
 case fabgl::VK_KEMPSTON_ALTFIRE:
-    return "Kmp.Fire2";		
+    return "Kmp.Fire2";
 case fabgl::VK_FULLER_LEFT:
     return "Fll.Left ";
 case fabgl::VK_FULLER_RIGHT:
@@ -4395,12 +4395,12 @@ void DrawjoyControls(unsigned short x, unsigned short y) {
     }
 
     // START text
-    VIDEO::vga.setTextColor(joyControl[4][2], zxColor(7, 1));        
+    VIDEO::vga.setTextColor(joyControl[4][2], zxColor(7, 1));
     VIDEO::vga.setCursor(x + joyControl[4][0], y + joyControl[4][1]);
     VIDEO::vga.print("START");
 
     // MODE text
-    VIDEO::vga.setTextColor(joyControl[5][2], zxColor(7, 1));        
+    VIDEO::vga.setTextColor(joyControl[5][2], zxColor(7, 1));
     VIDEO::vga.setCursor(x + joyControl[5][0], y + joyControl[5][1]);
     VIDEO::vga.print("MODE");
 
@@ -4431,7 +4431,7 @@ void DrawjoyControls(unsigned short x, unsigned short y) {
     // Text Y
     VIDEO::vga.setTextColor(joyControl[10][2],zxColor(7, 1));
     VIDEO::vga.setCursor(x + joyControl[10][0], y + joyControl[10][1]);
-    VIDEO::vga.circle(x + joyControl[10][0] + 3, y + joyControl[10][1] + 3, 6, joyControl[10][2]);    
+    VIDEO::vga.circle(x + joyControl[10][0] + 3, y + joyControl[10][1] + 3, 6, joyControl[10][2]);
     VIDEO::vga.print("Y");
 
     // Text Z
@@ -4455,10 +4455,10 @@ void OSD::joyDialog(uint8_t joynum) {
         {181,89,6,8,10,12,0}, // B
         {241,89,7,-1,11,13,0}, // C
         {121,17,2,10,-1,6,0}, // X
-        {181,17,9,11,-1,7,0}, // Y                                        
+        {181,17,9,11,-1,7,0}, // Y
         {241,17,10,-1,-1,8,0}, // Z
         {181,121,5,13,7,-1,0}, // Ok
-        {241,121,12,-1,8,-1,0} // Test                
+        {241,121,12,-1,8,-1,0} // Test
     };
 
     string keymenu = MENU_JOYSELKEY[Config::lang];
@@ -4503,7 +4503,7 @@ void OSD::joyDialog(uint8_t joynum) {
     VIDEO::vga.fillRect(x + 1, y + 1 + OSD_FONT_H, w - 2, h - OSD_FONT_H - 2, zxColor(7,1));
 
     // Title
-    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
+    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
     VIDEO::vga.setCursor(x + OSD_FONT_W + 1, y + 1);
     VIDEO::vga.print((joynum == 1 ? "Joystick 1" : "Joystick 2"));
 
@@ -4525,7 +4525,7 @@ void OSD::joyDialog(uint8_t joynum) {
     // Draw Joy DropDowns
     for (int n=0; n<12; n++) {
         VIDEO::vga.rect(x + joyDropdown[n][0] - 2, y + joyDropdown[n][1] - 2, 58, 12, zxColor(0, 0));
-        if (n == curDropDown) 
+        if (n == curDropDown)
             VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
         else
             VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
@@ -4541,7 +4541,7 @@ void OSD::joyDialog(uint8_t joynum) {
     VIDEO::vga.print(" JoyTest ");
 
     // // Ruler
-    // VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));        
+    // VIDEO::vga.setTextColor(zxColor(0, 0), zxColor(7, 1));
     // VIDEO::vga.setCursor(x + 1, y + 1 + (OSD_FONT_H * 3));
     // VIDEO::vga.print("123456789012345678901234567");
 
@@ -4551,12 +4551,12 @@ void OSD::joyDialog(uint8_t joynum) {
     fabgl::VirtualKeyItem Nextkey;
 
     int joyTestExitCount1 = 0;
-    int joyTestExitCount2 = 0;    
+    int joyTestExitCount2 = 0;
 
     while (1) {
 
         if (joyDialogMode) {
-            DrawjoyControls(x,y);            
+            DrawjoyControls(x,y);
         }
 
         if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
@@ -4569,7 +4569,7 @@ void OSD::joyDialog(uint8_t joynum) {
             ESPectrum::PS2Controller.keyboard()->getNextVirtualKey(&Nextkey);
 
             if(!Nextkey.down) continue;
-            
+
             if (Nextkey.vk == fabgl::VK_LEFT || Nextkey.vk == fabgl::VK_JOY1LEFT || Nextkey.vk == fabgl::VK_JOY2LEFT) {
 
                 if (joyDialogMode == 0 && joyDropdown[curDropDown][2] >= 0) {
@@ -4577,7 +4577,7 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
@@ -4586,11 +4586,11 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
-                    click();                        
+                    click();
 
                 }
 
@@ -4602,7 +4602,7 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
@@ -4611,11 +4611,11 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
-                    click();                        
+                    click();
 
                 }
 
@@ -4627,7 +4627,7 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
@@ -4636,11 +4636,11 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
-                    click();                        
+                    click();
 
                 }
 
@@ -4652,7 +4652,7 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
@@ -4661,11 +4661,11 @@ void OSD::joyDialog(uint8_t joynum) {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(x + joyDropdown[curDropDown][0], y + joyDropdown[curDropDown][1]);
                     if (curDropDown < 12)
-                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());                    
+                        VIDEO::vga.print(vkToText(joyDropdown[curDropDown][6]).c_str());
                     else
                         VIDEO::vga.print(curDropDown == 12 ? "   Ok    " : " JoyTest ");
 
-                    click();                        
+                    click();
 
                 }
 
@@ -4675,7 +4675,7 @@ void OSD::joyDialog(uint8_t joynum) {
                 if (joyDialogMode == 0) {
 
                     if (curDropDown>=0 && curDropDown<12) {
-                        
+
                         click();
 
                         // Launch assign menu
@@ -4718,7 +4718,7 @@ void OSD::joyDialog(uint8_t joynum) {
                                     if (opt == 4) {// PS/2
                                         if (opt2 < 13) {
                                             joyDropdown[curDropDown][6] = (fabgl::VirtualKey) 158 + opt2;
-                                        } else 
+                                        } else
                                         if (opt2 == 13) {
                                             joyDropdown[curDropDown][6] = fabgl::VirtualKey::VK_PAUSE;
                                         } else
@@ -4827,7 +4827,7 @@ void OSD::joyDialog(uint8_t joynum) {
                         }
 
                     } else
-                    if (curDropDown == 13) {                    
+                    if (curDropDown == 13) {
                         // Enable joyTest
                         joyDialogMode = 1;
 
@@ -4846,20 +4846,20 @@ void OSD::joyDialog(uint8_t joynum) {
 
             } else
             if (Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY2A) {
-                
+
                 if (joyDialogMode) {
 
                     if (Nextkey.vk == fabgl::VK_ESCAPE) {
 
                         // Disable joyTest
                         joyDialogMode = 0;
-                        
+
                         VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                         VIDEO::vga.setCursor(x + joyDropdown[13][0], y + joyDropdown[13][1]);
                         VIDEO::vga.print(" JoyTest ");
-                        
+
                         for (int n = 0; n < 12; n++)
-                            joyControl[n][2] = zxColor(0,0);  
+                            joyControl[n][2] = zxColor(0,0);
 
                         DrawjoyControls(x,y);
 
@@ -4905,7 +4905,7 @@ void OSD::joyDialog(uint8_t joynum) {
 
             for (int n = (joynum == 1 ? fabgl::VK_JOY1LEFT : fabgl::VK_JOY2LEFT); n <= (joynum == 1 ? fabgl::VK_JOY1Z : fabgl::VK_JOY2Z); n++) {
                 if (ESPectrum::PS2Controller.keyboard()->isVKDown((fabgl::VirtualKey) n))
-                    joyControl[n - (joynum == 1 ? 248 : 260)][2] = zxColor(4,1);            
+                    joyControl[n - (joynum == 1 ? 248 : 260)][2] = zxColor(4,1);
                 else
                     joyControl[n - (joynum == 1 ? 248 : 260)][2] = zxColor(0,0);
             }
@@ -4984,7 +4984,7 @@ void OSD::pokeDialog() {
     const unsigned short w = (OSD_FONT_W * 20) + 2;
     const unsigned short x = scrAlignCenterX(w) - 3;
 
-    click();                        
+    click();
 
     // Set font
     VIDEO::vga.setFont(Font6x8);
@@ -4996,13 +4996,13 @@ void OSD::pokeDialog() {
     VIDEO::vga.fillRect(x + 1, y + 1 + OSD_FONT_H, w - 2, h - OSD_FONT_H - 2, zxColor(7,1));
 
     // Title
-    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));        
+    VIDEO::vga.setTextColor(zxColor(7, 1), zxColor(0, 0));
     VIDEO::vga.setCursor(x + OSD_FONT_W + 1, y + 1);
-    
+
     // string inputpok[NLANGS] = {"Input Poke","A" "\xA4" "adir Poke","Adicionar Poke"};
     // VIDEO::vga.print(inputpok[Config::lang].c_str());
 
-    VIDEO::vga.print(DLG_TITLE_INPUTPOK[Config::lang]);    
+    VIDEO::vga.print(DLG_TITLE_INPUTPOK[Config::lang]);
 
     // Rainbow
     unsigned short rb_y = y + 8;
@@ -5017,7 +5017,7 @@ void OSD::pokeDialog() {
 
     // Draw objects
     for (int n = 0; n < 5; n++) {
-        
+
         if (dlg_Objects[n].Label[Config::lang] != "" && dlg_Objects[n].objType != DLG_OBJ_BUTTON) {
             VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
             VIDEO::vga.setCursor(x + dlg_Objects[n].posx - 63, y + dlg_Objects[n].posy);
@@ -5025,14 +5025,14 @@ void OSD::pokeDialog() {
             VIDEO::vga.rect(x + dlg_Objects[n].posx - 2, y + dlg_Objects[n].posy - 2, 46, 12, zxColor(0, 0));
         }
 
-        if (n == curObject) 
+        if (n == curObject)
             VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
         else
             VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
 
         VIDEO::vga.setCursor(x + dlg_Objects[n].posx, y + dlg_Objects[n].posy);
         if (dlg_Objects[n].objType == DLG_OBJ_BUTTON) {
-            VIDEO::vga.print(dlg_Objects[n].Label[Config::lang].c_str());        
+            VIDEO::vga.print(dlg_Objects[n].Label[Config::lang].c_str());
         } else {
             VIDEO::vga.print(dlgValues[n].c_str());
         }
@@ -5055,7 +5055,7 @@ void OSD::pokeDialog() {
             ESPectrum::PS2Controller.keyboard()->getNextVirtualKey(&Nextkey);
 
             if(!Nextkey.down) continue;
-            
+
             if ((Nextkey.vk >= fabgl::VK_0) && (Nextkey.vk <= fabgl::VK_9)) {
 
                 if (dlg_Objects[curObject].objType == DLG_OBJ_INPUT) {
@@ -5074,7 +5074,7 @@ void OSD::pokeDialog() {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                     VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                     if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                     } else {
                         VIDEO::vga.print(dlgValues[curObject].c_str());
                     }
@@ -5084,12 +5084,12 @@ void OSD::pokeDialog() {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                     if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                     } else {
                         VIDEO::vga.print(dlgValues[curObject].c_str());
                     }
 
-                    click();                        
+                    click();
 
                 }
 
@@ -5101,7 +5101,7 @@ void OSD::pokeDialog() {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                     VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                     if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                     } else {
                         VIDEO::vga.print(dlgValues[curObject].c_str());
                     }
@@ -5111,12 +5111,12 @@ void OSD::pokeDialog() {
                     VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                     VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                     if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                        VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                     } else {
                         VIDEO::vga.print(dlgValues[curObject].c_str());
                     }
 
-                    click();                        
+                    click();
 
                 }
 
@@ -5158,7 +5158,7 @@ void OSD::pokeDialog() {
                             // Check value
                             if (stoi(val) > 255) {
                                 osdCenteredMsg(POKE_ERR_VALUE[Config::lang], LEVEL_WARN, 1000);
-                                validated = false;  
+                                validated = false;
                             }
                         } else {
                             dlgValues[2]="0";
@@ -5170,7 +5170,7 @@ void OSD::pokeDialog() {
                         VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                         VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                         if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                         } else {
                             VIDEO::vga.print(dlgValues[curObject].c_str());
                             if (dlg_Objects[curObject].objType == DLG_OBJ_INPUT) VIDEO::vga.print(" "); // Clear K cursor
@@ -5181,12 +5181,12 @@ void OSD::pokeDialog() {
                         VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                         VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                         if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                         } else {
                             VIDEO::vga.print(dlgValues[curObject].c_str());
                         }
 
-                        click();                        
+                        click();
 
                     }
 
@@ -5230,7 +5230,7 @@ void OSD::pokeDialog() {
                             // Check value
                             if (stoi(val) > 255) {
                                 osdCenteredMsg(POKE_ERR_VALUE[Config::lang], LEVEL_WARN, 1000);
-                                validated = false;  
+                                validated = false;
                             }
                         } else {
                             dlgValues[2]="0";
@@ -5242,7 +5242,7 @@ void OSD::pokeDialog() {
                         VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
                         VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                         if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                         } else {
                             VIDEO::vga.print(dlgValues[curObject].c_str());
                             if (dlg_Objects[curObject].objType == DLG_OBJ_INPUT) VIDEO::vga.print(" "); // Clear K cursor
@@ -5253,19 +5253,19 @@ void OSD::pokeDialog() {
                         VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                         VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                         if (dlg_Objects[curObject].objType == DLG_OBJ_BUTTON) {
-                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());        
+                            VIDEO::vga.print(dlg_Objects[curObject].Label[Config::lang].c_str());
                         } else {
                             VIDEO::vga.print(dlgValues[curObject].c_str());
                         }
 
-                        click();                        
+                        click();
 
                     }
 
                 }
 
             } else
-            if (Nextkey.vk == fabgl::VK_BACKSPACE) {            
+            if (Nextkey.vk == fabgl::VK_BACKSPACE) {
 
                 if (dlg_Objects[curObject].objType == DLG_OBJ_INPUT) {
                     if (dlgValues[curObject] != "") dlgValues[curObject].pop_back();
@@ -5331,7 +5331,7 @@ void OSD::pokeDialog() {
 
                     // Apply poke
                     if (dlgValues[0]=="   -   ") {
-                        // Poke address between 16384 and 65535                        
+                        // Poke address between 16384 and 65535
                         uint8_t page = address >> 14;
                         MemESP::ramCurrent[page][address & 0x3fff] = value;
                     } else {
@@ -5355,7 +5355,7 @@ void OSD::pokeDialog() {
 
             } else
             if (Nextkey.vk == fabgl::VK_ESCAPE || Nextkey.vk == fabgl::VK_JOY1A || Nextkey.vk == fabgl::VK_JOY2A) {
-                
+
                 click();
                 break;
 
@@ -5367,7 +5367,7 @@ void OSD::pokeDialog() {
 
             if ((++CursorFlash & 0xF) == 0) {
 
-                VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));                
+                VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(5, 1));
                 VIDEO::vga.setCursor(x + dlg_Objects[curObject].posx, y + dlg_Objects[curObject].posy);
                 VIDEO::vga.print(dlgValues[curObject].c_str());
 
@@ -5412,15 +5412,15 @@ string OSD::input(int x, int y, string inputLabel, string text, int inputSize, i
         while (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
 
             // printf("Key!\n");
-            
+
             ESPectrum::PS2Controller.keyboard()->getNextVirtualKey(&Nextkey);
 
             if(!Nextkey.down) continue;
 
             int ascii = 0;
 
-            if ( ( ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_LCTRL) || ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_RCTRL) ) && 
-                 ( ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_LSHIFT) || ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_RSHIFT) ) 
+            if ( ( ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_LCTRL) || ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_RCTRL) ) &&
+                 ( ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_LSHIFT) || ESPectrum::PS2Controller.keyboard()->isVKDown(fabgl::VK_RSHIFT) )
                ) {
                 mode_E = !mode_E;
             }
@@ -5440,16 +5440,16 @@ string OSD::input(int x, int y, string inputLabel, string text, int inputSize, i
                         case fabgl::VK_9        : ascii = ')'; break; /**< Right parenthesis: ) */
                         case fabgl::VK_0        : ascii = '_'; break; /**< Underscore: _ */
 
-                        case fabgl::VK_r        : 
+                        case fabgl::VK_r        :
                         case fabgl::VK_R        : ascii = '<'; break; /**< Less: < */
 
-                        case fabgl::VK_t        :  
+                        case fabgl::VK_t        :
                         case fabgl::VK_T        : ascii = '>'; break; /**< Greater: > */
 
-                        case fabgl::VK_o        : 
+                        case fabgl::VK_o        :
                         case fabgl::VK_O        : ascii = ';'; break; /**< Semicolon: ; */
 
-                        case fabgl::VK_p        : 
+                        case fabgl::VK_p        :
                         case fabgl::VK_P        : ascii = '"'; break; /**< Double quote: " */
 
                         case fabgl::VK_h        :
@@ -5510,7 +5510,7 @@ string OSD::input(int x, int y, string inputLabel, string text, int inputSize, i
                         case fabgl::VK_u        :
                         case fabgl::VK_U        : ascii = ']'; break; /**< Right bracket: ] */
 
-                        case fabgl::VK_p        : 
+                        case fabgl::VK_p        :
                         case fabgl::VK_P        : ascii = 0x7f; break; /**< copyright symbol > */
 
                     }
@@ -5540,7 +5540,7 @@ string OSD::input(int x, int y, string inputLabel, string text, int inputSize, i
                 }
 
             } else
-            if (Nextkey.vk == fabgl::VK_BACKSPACE) {            
+            if (Nextkey.vk == fabgl::VK_BACKSPACE) {
                 if (inputValue != "") inputValue.pop_back();
                 click();
 
@@ -5581,7 +5581,7 @@ string OSD::input(int x, int y, string inputLabel, string text, int inputSize, i
 
             VIDEO::vga.setTextColor(ink_color, paper_color);
 
-            if (ivsize < inputSize)            
+            if (ivsize < inputSize)
                 VIDEO::vga.print(std::string(inputSize - ivsize, ' ').c_str());
 
         }

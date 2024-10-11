@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -56,7 +56,7 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
     switch (tzx_blk_type) {
 
         case 0x10: // Standard Speed Data
-        
+
             fseek(tape,2,SEEK_CUR); // Jump pause len data
             tapeBlkLen=readByteFile(tape) | (readByteFile(tape) << 8);
             fseek(tape,tapeBlkLen,SEEK_CUR);
@@ -103,7 +103,7 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
 
             fseek(tape,0x5,SEEK_CUR); // Jump block data
             tapeBlkLen=readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16);
-            fseek(tape,tapeBlkLen,SEEK_CUR); 
+            fseek(tape,tapeBlkLen,SEEK_CUR);
             tapeBlkLen +=  0x08;
 
             break;
@@ -111,12 +111,12 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
         case 0x18: // CSW Recording
 
             tapeBlkLen=readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
-            fseek(tape,0x5,SEEK_CUR); 
+            fseek(tape,0x5,SEEK_CUR);
 
             if (readByteFile(tape) == 2) // Z-RLE
                 tzx_blk_type = 0xF8; // Use this code to signal Z-RLE 0x18 block
 
-            fseek(tape,tapeBlkLen - 0x6,SEEK_CUR); 
+            fseek(tape,tapeBlkLen - 0x6,SEEK_CUR);
             tapeBlkLen +=  0x04;
 
             // tapeBlkLen = -1; // For disable it until implementation
@@ -126,7 +126,7 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
         case 0x19: // Generalized Data Block
 
             tapeBlkLen=readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
-            fseek(tape,tapeBlkLen,SEEK_CUR); 
+            fseek(tape,tapeBlkLen,SEEK_CUR);
             tapeBlkLen +=  0x04;
 
             // tapeBlkLen = -1; // For disable it until implementation
@@ -150,7 +150,7 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
 
         case 0x22:
         case 0x25:
-        case 0x27:        
+        case 0x27:
 
             tapeBlkLen = 0;
 
@@ -167,7 +167,7 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
         case 0x26:
 
             tapeBlkLen=(readByteFile(tape) | (readByteFile(tape) << 8)) << 1;
-            fseek(tape,tapeBlkLen,SEEK_CUR); 
+            fseek(tape,tapeBlkLen,SEEK_CUR);
 
             tapeBlkLen +=  0x02;
 
@@ -176,7 +176,7 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
         case 0x28:
 
             tapeBlkLen= readByteFile(tape) | (readByteFile(tape) << 8);
-            fseek(tape,tapeBlkLen,SEEK_CUR); 
+            fseek(tape,tapeBlkLen,SEEK_CUR);
 
             tapeBlkLen +=  0x02;
 
@@ -215,7 +215,7 @@ void Tape::TZX_BlockLen(TZXBlock &blockdata) {
 
         case 0x32:
 
-            tapeBlkLen=readByteFile(tape) | (readByteFile(tape) << 8);                
+            tapeBlkLen=readByteFile(tape) | (readByteFile(tape) << 8);
             fseek(tape,tapeBlkLen,SEEK_CUR);
             tapeBlkLen += 0x2;
 
@@ -383,21 +383,21 @@ string Tape::tzxBlockReadData(int Blocknum) {
             break;
         default:
             blktype = "Unknown";
-            tapeBlkLen = -1;            
+            tapeBlkLen = -1;
     }
 
     fname[0] = '\0';
 
     if (tapeBlkLen >= 0)
-        snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);    
+        snprintf(buf, sizeof(buf), "%04d %s %10s % 6d\n", Blocknum + 1, blktype.c_str(), fname, tapeBlkLen);
     else
-        snprintf(buf, sizeof(buf), "%04d %s\n", Blocknum + 1, blktype.c_str());    
+        snprintf(buf, sizeof(buf), "%04d %s\n", Blocknum + 1, blktype.c_str());
 
     return buf;
 
 }
 
-void Tape::TZX_Open(string name) {
+void Tape::TZX_Open(string name, string path) {
 
     if (tape != NULL) {
         fclose(tape);
@@ -412,10 +412,7 @@ void Tape::TZX_Open(string name) {
 
     FileUtils::deleteFilesWithExtension(FileUtils::MountPoint.c_str(),".tmp");
 
-    string fname = FileUtils::MountPoint + FileUtils::TAP_Path + name;
-    // string fname = FileUtils::MountPoint + "/" + FileUtils::TAP_Path + "/" + name;
-
-    // printf("Fname: %s\n",fname.c_str());
+    string fname = path + name;
 
     tape = fopen(fname.c_str(), "rb");
     if (tape == NULL) {
@@ -439,7 +436,7 @@ void Tape::TZX_Open(string name) {
 
     // ERRONEA -> tzxheader[8] puede no contener \0 y eso provocar que el strcmp falle
     // char tzxheader[8];
-    // fread(&tzxheader, 8, 1, tape);    
+    // fread(&tzxheader, 8, 1, tape);
     // if (strcmp(tzxheader,"ZXTape!\x1a") != 0) {
 
     // VALIDA -> strncmp se limita a comparar los caracteres indicados. Ademas el orden de los parametros en fread es mas correcto (lee 8 elementos de 1 byte).
@@ -466,6 +463,7 @@ void Tape::TZX_Open(string name) {
         return;
     }
 
+    tapeFilePath = path;
     tapeFileName = name;
 
     fseek(tape, 2, SEEK_CUR); // Jump TZX version bytes
@@ -485,9 +483,9 @@ void Tape::TZX_Open(string name) {
 
         TZX_BlockLen(TZXblock);
         tapeBlkLen = TZXblock.BlockLenght;
-        
+
         // tapeBlkLen = TZX_BlockLen();
-        
+
         if (tapeBlkLen == 0) {
 
             Tape::TapeListing.clear(); // Clear TapeListing vector
@@ -496,6 +494,7 @@ void Tape::TZX_Open(string name) {
             OSD::osdCenteredMsg("Block type not supported.", LEVEL_ERROR);
             fclose(tape);
             tape = NULL;
+            tapeFilePath="none";
             tapeFileName="none";
             tapeFileType = TAPE_FTYPE_EMPTY;
             return;
@@ -553,7 +552,7 @@ void Tape::TZX_GetBlock() {
 
     int tapeData;
     short jumpDistance;
-    char cswFileName[16]; // Nombre del archivo descomprimido    
+    char cswFileName[16]; // Nombre del archivo descomprimido
 
     for (;;) {
 
@@ -586,7 +585,7 @@ void Tape::TZX_GetBlock() {
             // [17:10]
             // but glad you fixed it!
 
-            // ; extend the final pulse before ending tape playback - allows for DATA blocks with TAIL pulses of 0...            
+            // ; extend the final pulse before ending tape playback - allows for DATA blocks with TAIL pulses of 0...
 
         }
 
@@ -620,18 +619,18 @@ void Tape::TZX_GetBlock() {
                 tapebufByteCount += 4 + 1;
 
                 tapeBitMask=0x80;
-                tapeLastByteUsedBits = 8;   
-                tapeEndBitMask = 0x80;             
-                
+                tapeLastByteUsedBits = 8;
+                tapeEndBitMask = 0x80;
+
                 tapeCurByte = readByteFile(tape);
-                if (tapeCurByte & 0x80) tapeHdrPulses=tapeHdrShort; else tapeHdrPulses=tapeHdrLong;                
+                if (tapeCurByte & 0x80) tapeHdrPulses=tapeHdrShort; else tapeHdrPulses=tapeHdrLong;
 
                 tapeSyncLen *= tapeCompensation;
                 tapeSync1Len *= tapeCompensation;
-                tapeSync2Len *= tapeCompensation;                                        
+                tapeSync2Len *= tapeCompensation;
                 tapeBit0PulseLen *= tapeCompensation;
                 tapeBit1PulseLen *= tapeCompensation;
-                tapeBlkPauseLen *= tapeCompensation;                                        
+                tapeBlkPauseLen *= tapeCompensation;
 
                 tapePhase = TAPE_PHASE_SYNC;
                 tapeNext = tapeSyncLen;
@@ -649,7 +648,7 @@ void Tape::TZX_GetBlock() {
                 tapeBit1PulseLen = readByteFile(tape) | (readByteFile(tape) << 8);
                 tapeHdrPulses = readByteFile(tape) | (readByteFile(tape) << 8);
                 tapeLastByteUsedBits = readByteFile(tape);
-                tapeBlkPauseLen = (readByteFile(tape) | (readByteFile(tape) << 8)) * 3500;                
+                tapeBlkPauseLen = (readByteFile(tape) | (readByteFile(tape) << 8)) * 3500;
                 tapeBlockLen += (readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16)) + 0x12 + 1;
                 tapebufByteCount += 0x12 + 1;
 
@@ -661,10 +660,10 @@ void Tape::TZX_GetBlock() {
 
                 tapeSyncLen *= tapeCompensation;
                 tapeSync1Len *= tapeCompensation;
-                tapeSync2Len *= tapeCompensation;                                        
+                tapeSync2Len *= tapeCompensation;
                 tapeBit0PulseLen *= tapeCompensation;
                 tapeBit1PulseLen *= tapeCompensation;
-                tapeBlkPauseLen *= tapeCompensation;                                        
+                tapeBlkPauseLen *= tapeCompensation;
 
                 tapePhase=TAPE_PHASE_SYNC;
                 tapeNext = tapeSyncLen;
@@ -676,8 +675,8 @@ void Tape::TZX_GetBlock() {
                 // printf("TZX block: %d, ID 0x12 - Pure Tone Block, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
                 tapeSyncLen = readByteFile(tape) | (readByteFile(tape) << 8);
-                tapeHdrPulses = readByteFile(tape) | (readByteFile(tape) << 8);                
-               
+                tapeHdrPulses = readByteFile(tape) | (readByteFile(tape) << 8);
+
                 tapeBlockLen += 0x4 + 1;
                 tapebufByteCount += 0x4 + 1;
 
@@ -692,7 +691,7 @@ void Tape::TZX_GetBlock() {
 
                 // printf("TZX block: %d, ID 0x13 - Pulse Sequence Block, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
-                tapeHdrPulses = readByteFile(tape);                
+                tapeHdrPulses = readByteFile(tape);
                 tapeSyncLen=readByteFile(tape) | (readByteFile(tape) << 8);
 
                 tapeBlockLen += (tapeHdrPulses << 1) + 1 + 1;
@@ -701,7 +700,7 @@ void Tape::TZX_GetBlock() {
                 tapeSyncLen *= tapeCompensation;
 
                 tapePhase = TAPE_PHASE_PULSESEQ;
-                tapeNext = tapeSyncLen;                
+                tapeNext = tapeSyncLen;
 
                 return;
 
@@ -712,7 +711,7 @@ void Tape::TZX_GetBlock() {
                 tapeBit0PulseLen = readByteFile(tape) | (readByteFile(tape) << 8);
                 tapeBit1PulseLen = readByteFile(tape) | (readByteFile(tape) << 8);
                 tapeLastByteUsedBits=readByteFile(tape);
-                tapeBlkPauseLen = (readByteFile(tape) | (readByteFile(tape) << 8)) * 3500;                
+                tapeBlkPauseLen = (readByteFile(tape) | (readByteFile(tape) << 8)) * 3500;
 
                 tapeBlockLen += (readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16)) + 0x0a + 1;
                 tapebufByteCount += 0x0a + 1;
@@ -727,7 +726,7 @@ void Tape::TZX_GetBlock() {
 
                 tapeBit0PulseLen *= tapeCompensation;
                 tapeBit1PulseLen *= tapeCompensation;
-                tapeBlkPauseLen *= tapeCompensation;                                 
+                tapeBlkPauseLen *= tapeCompensation;
 
                 tapePhase=TAPE_PHASE_DATA1;
                 tapeNext = tapeCurByte & tapeBitMask ? tapeBit1PulseLen : tapeBit0PulseLen;
@@ -755,7 +754,7 @@ void Tape::TZX_GetBlock() {
                 tapeEarBit = tapeCurByte & tapeBitMask ? TAPEHIGH : TAPELOW;
 
                 tapeSyncLen *= tapeCompensation;
-                tapeBlkPauseLen *= tapeCompensation;                                        
+                tapeBlkPauseLen *= tapeCompensation;
 
                 tapePhase=TAPE_PHASE_DRB;
                 tapeNext = tapeSyncLen;
@@ -772,7 +771,7 @@ void Tape::TZX_GetBlock() {
                 CSW_SampleRate = 3500000 / (readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16)); // Sample rate (hz) converted to t-states per sample
                 CSW_CompressionType = readByteFile(tape);
                 CSW_StoredPulses = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
-                
+
                 tapebufByteCount += 0x0e + 1;
 
                 CSW_SampleRate *= tapeCompensation;
@@ -799,15 +798,15 @@ void Tape::TZX_GetBlock() {
                     CSW_PulseLenght = readByteFile(cswBlock);
                     if (CSW_PulseLenght == 0) {
                         CSW_PulseLenght = readByteFile(cswBlock) | (readByteFile(cswBlock) << 8) | (readByteFile(cswBlock) << 16) | (readByteFile(cswBlock) << 24);
-                    }                
+                    }
                     fseek(tape,tapeData - 0x0a,SEEK_CUR);
                     tapebufByteCount = tapeBlockLen;
-                } else { 
+                } else {
                     CSW_PulseLenght = readByteFile(tape);
                     if (CSW_PulseLenght == 0) {
                         CSW_PulseLenght = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
                         tapebufByteCount += 4;
-                    }                
+                    }
                 }
 
                 tapePhase=TAPE_PHASE_CSW;
@@ -820,7 +819,7 @@ void Tape::TZX_GetBlock() {
                 // printf("\n\n------------------------------------------------------------------------------------------------------------------------\nTZX block: %d, ID 0x19 - Generalized Data Block, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
                 tapeData = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
-                
+
                 tapeBlkPauseLen = (readByteFile(tape) | (readByteFile(tape) << 8)) * 3500;
 
                 totp = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
@@ -828,7 +827,7 @@ void Tape::TZX_GetBlock() {
                 asp = readByteFile(tape);
                 if (asp == 0) asp = 256;
 
-                totd = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);                
+                totd = readByteFile(tape) | (readByteFile(tape) << 8) | (readByteFile(tape) << 16) | (readByteFile(tape) << 24);
                 npd = readByteFile(tape);
                 asd = readByteFile(tape);
                 if (asd == 0) asd = 256;
@@ -878,7 +877,7 @@ void Tape::TZX_GetBlock() {
 
                     // Read pulse data
                     GDBsymbol = readByteFile(tape); // Read Symbol to be represented from PRLE[0]
-                    
+
                     // Get symbol flags
                     switch (SymDefTable[GDBsymbol].SymbolFlags) {
                         case 0:
@@ -961,14 +960,14 @@ void Tape::TZX_GetBlock() {
                         } else
                             curBit--;
                     }
-                    
+
                     // Get symbol flags
                     switch (SymDefTable[GDBsymbol].SymbolFlags) {
                     case 0:
                         tapeEarBit ^= 1;
                         break;
                     case 1:
-                        break;                                    
+                        break;
                     case 2:
                         tapeEarBit = TAPELOW;
                         break;
@@ -992,8 +991,8 @@ void Tape::TZX_GetBlock() {
             case 0x20:
 
                 // printf("TZX block: %d, ID 0x20 - Pause (silence) or 'Stop the Tape' command, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
-                
-                tapeBlkPauseLen = (readByteFile(tape) | (readByteFile(tape) << 8)) * 3500;                
+
+                tapeBlkPauseLen = (readByteFile(tape) | (readByteFile(tape) << 8)) * 3500;
 
                 if (tapeBlkPauseLen == 0) {
 
@@ -1051,7 +1050,7 @@ void Tape::TZX_GetBlock() {
                 // printf("TZX block: %d, ID 0x23 - Jump to block, Tape position: %d\n",tapeCurBlock + 1, tapebufByteCount);
 
                 jumpDistance = readByteFile(tape) | (readByteFile(tape) << 8);
- 
+
                 tapeCurBlock += jumpDistance;
 
                 if (tapeCurBlock >= (tapeNumBlocks - 1)) {
@@ -1076,7 +1075,7 @@ void Tape::TZX_GetBlock() {
 
                 // printf("TZX block: ID 0x24 - Loop Start\n");
 
-                nLoops=readByteFile(tape) | (readByteFile(tape) << 8);                
+                nLoops=readByteFile(tape) | (readByteFile(tape) << 8);
                 loopStart = tapeCurBlock;
                 loop_first = true;
 
@@ -1086,7 +1085,7 @@ void Tape::TZX_GetBlock() {
                 break;
 
             case 0x25:
-                
+
                 // printf("TZX block: ID 0x25 - Loop End\n");
 
                 if (loop_first) {
@@ -1111,7 +1110,7 @@ void Tape::TZX_GetBlock() {
 
             case 0x26: // Call Sequence
 
-                // printf("TZX block: ID 0x26- Call sequence\n");            
+                // printf("TZX block: ID 0x26- Call sequence\n");
 
                 if (callSeq == 0) {
                     callSeq = readByteFile(tape) | (readByteFile(tape) << 8);
@@ -1149,13 +1148,13 @@ void Tape::TZX_GetBlock() {
                 // printf("TZX block: ID 0x27- Return from sequence\n");
 
                 tapeCurBlock = callBlock;
-                
+
                 if (callSeq == 0) tapeCurBlock++;
 
                 tapeBlockLen++;
                 tapebufByteCount++;
 
-                fseek(tape,CalcTZXBlockPos(tapeCurBlock),SEEK_SET);             
+                fseek(tape,CalcTZXBlockPos(tapeCurBlock),SEEK_SET);
 
                 tapeCurByte = readByteFile(tape);
 
@@ -1166,7 +1165,7 @@ void Tape::TZX_GetBlock() {
                 // printf("TZX block: ID 0x28- Select Block\n");
 
                 // NOTE: Selection dialog not implemented. Now, this just jumps to next block.
-                
+
                 tapeData = readByteFile(tape) | (readByteFile(tape) << 8);
                 fseek(tape,tapeData,SEEK_CUR);
                 tapeData += 0x02 + 1;
@@ -1241,7 +1240,7 @@ void Tape::TZX_GetBlock() {
 
                 break;
 
-            case 0x32:            
+            case 0x32:
 
                 // printf("TZX block: ID 0x32 - Archive info\n");
 
