@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -57,6 +57,12 @@ using namespace std;
 #define JOYPS2_FULLER 4
 #define JOYPS2_CUSTOM 5
 #define JOYPS2_NONE 6
+
+#define CovoxNONE 0
+#define CovoxMONO 1
+#define CovoxSTEREO 2
+#define CovoxSOUNDDRIVE1 3
+#define CovoxSOUNDDRIVE2 4
 class Config
 {
 public:
@@ -73,13 +79,17 @@ public:
     static string   romSet;
     static string   romSet48;
     static string   romSet128;
-    static string   romSetTK90X;    
-    static string   romSetTK95;        
+    static string   romSet2A;
+    static string   romSet3;
+    static string   romSetTK90X;
+    static string   romSetTK95;
     static string   pref_arch;
     static string   pref_romSet_48;
     static string   pref_romSet_128;
+    static string   pref_romSet_2A;
+    static string   pref_romSet_3;
     static string   pref_romSet_TK90X;
-    static string   pref_romSet_TK95;    
+    static string   pref_romSet_TK95;
     static string   ram_file;
     static string   last_ram_file;
     static uint8_t  esp32rev;
@@ -87,20 +97,20 @@ public:
     static bool     aspect_16_9;
     static uint8_t  lang;
     static bool     AY48;
-    static bool     Issue2;    
-    static bool     flashload;    
-    static bool     tape_player;    
-    static bool     tape_timing_rg;    
+    static bool     Issue2;
+    static bool     flashload;
+    static bool     tape_player;
+    static bool     tape_timing_rg;
     static uint8_t  joystick1;
     static uint8_t  joystick2;
     static uint16_t joydef[24];
-    static uint8_t  joyPS2;    
+    static uint8_t  joyPS2;
     static uint8_t  videomode;
     static uint8_t  AluTiming;
     static uint8_t  ps2_dev2;
     static bool CursorAsJoy;
     static int8_t CenterH;
-    static int8_t CenterV;    
+    static int8_t CenterV;
 
     static string   SNA_Path;
     static uint16_t SNA_begin_row;
@@ -121,21 +131,27 @@ public:
     static string   DSK_fileSearch;
 
     static uint8_t scanlines;
-    static uint8_t render;    
+    static uint8_t render;
 
-    static bool TABasfire1; 
+    static bool TABasfire1;
 
-    static bool StartMsg;  
+    static bool StartMsg;
 
-    static uint8_t port254default; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese      
+    static uint8_t port254default; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese
 
     static uint8_t ALUTK; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
 
     static uint8_t DiskCtrl; // 0 -> None, 1 -> Betadisk
 
-    static bool TimeMachine; 
+    static bool TimeMachine;
 
     static int8_t volume;
+
+    // static bool reset;
+
+    static uint8_t Covox;
+
+    static uint8_t mouse;
 
 };
 

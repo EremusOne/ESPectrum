@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -42,7 +42,8 @@ visit https://zxespectrum.speccy.org/contacto
 #include "roms/romSinclair128K.h"
 #include "roms/rom128Kspanish.h"
 #include "roms/romPlus2.h"
-#include "roms/RomPlus2spanish.h"
+#include "roms/romPlus2spanish.h"
+#include "roms/rom+2A+3_4.1.h"
 #include "roms/rom128Kcustom.h"
 #include "roms/S128_ZX81+_ROM.h"
 #include "roms/rompentagon128k.h"

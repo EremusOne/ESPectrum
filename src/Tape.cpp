@@ -234,57 +234,75 @@ void (*Tape::GetBlock)() = &Tape::TAP_GetBlock;
 
 // Load tape file (.tap, .tzx)
 void Tape::LoadTape(string mFile) {
+
     if (FileUtils::hasTAPextension(mFile)) {
+
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
 
         // if ( FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0 ) {
 
             // Flashload .tap if needed
-            if ((FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0) && (keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs") && (Config::romSet != "TKcs")) {
+            if ((FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0) && (keySel ==  "R")
+                && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs") && (Config::romSet != "TKcs")) {
 
-                    OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD[Config::lang], LEVEL_INFO, 0);
+                OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD[Config::lang], LEVEL_INFO, 0);
 
-                    uint8_t OSDprev = VIDEO::OSD;
+                uint8_t OSDprev = VIDEO::OSD;
 
-                    if (Z80Ops::is48)
-                        FileZ80::loader48();
+                Tape::Stop();
+
+                // Read and analyze tap file
+                Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
+
+                if (Z80Ops::is48)
+                    FileZ80::loader48();
+                else
+                    FileZ80::loader128();
+
+                // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
+                // https://skoolkid.github.io/rom/asm/5C78.html
+                MemESP::writebyte(0x5C78,rand() % 256);
+                MemESP::writebyte(0x5C79,rand() % 256);
+
+                if (Config::ram_file != NO_RAM_FILE) {
+                    Config::ram_file = NO_RAM_FILE;
+                }
+                Config::last_ram_file = NO_RAM_FILE;
+
+                if (OSDprev) {
+
+                    VIDEO::OSD = OSDprev;
+                    if (Config::aspect_16_9)
+                        VIDEO::Draw_OSD169 = Z80Ops::is2a3 ? VIDEO::MainScreen_OSD_2A3 : VIDEO::MainScreen_OSD;
                     else
-                        FileZ80::loader128();
+                        VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
-                    // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                    // https://skoolkid.github.io/rom/asm/5C78.html
-                    MemESP::writebyte(0x5C78,rand() % 256);
-                    MemESP::writebyte(0x5C79,rand() % 256);
+                    ESPectrum::TapeNameScroller = 0;
 
-                    if (Config::ram_file != NO_RAM_FILE) {
-                        Config::ram_file = NO_RAM_FILE;
-                    }
-                    Config::last_ram_file = NO_RAM_FILE;
-
-                    if (OSDprev) {
-                        VIDEO::OSD = OSDprev;
-                        if (Config::aspect_16_9)
-                            VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
-                        else
-                            VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
-                        ESPectrum::TapeNameScroller = 0;
-                    }
+                }
 
             } else {
 
                 OSD::osdCenteredMsg(OSD_TAPE_INSERT[Config::lang], LEVEL_INFO);
 
+                Tape::Stop();
+
+                // Read and analyze tap file
+                Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
+
+                ESPectrum::TapeNameScroller = 0;
+
             }
 
         // }
 
-        Tape::Stop();
+        // Tape::Stop();
 
-        // Read and analyze tap file
-        Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
+        // // Read and analyze tap file
+        // Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
 
-        ESPectrum::TapeNameScroller = 0;
+        // ESPectrum::TapeNameScroller = 0;
 
     } else if (FileUtils::hasTZXextension(mFile)) {
 

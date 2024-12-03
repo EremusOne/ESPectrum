@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -38,7 +38,7 @@ visit https://zxespectrum.speccy.org/contacto
 extern "C" void app_main(void) {
 
   ESPectrum::setup();
-  
+
   ESPectrum::loop();
 
 }

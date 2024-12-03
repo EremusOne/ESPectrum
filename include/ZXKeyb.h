@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -51,7 +51,7 @@ public:
     static void ZXKbdRead(uint8_t mode);
 
     static uint8_t ZXcols[8];
-    static bool Exists;
+    static uint8_t Exists;
 
 private:
 

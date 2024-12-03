@@ -101,8 +101,8 @@ void Keyboard::enableVirtualKeys(bool generateVirtualKeys, bool createVKQueue)
 {
   PS2DeviceLock lock(this);
 
-  if (createVKQueue)
-    generateVirtualKeys = true;
+  // if (createVKQueue)
+  //   generateVirtualKeys = true;
 
   // create task and queue?
 
@@ -144,15 +144,20 @@ bool Keyboard::reset(bool sendCmdReset)
       m_keyboardAvailable = send_cmdReset();
       if (m_keyboardAvailable)
         break;
+      printf("PS/2 sendCmdReset. Try #%d\n",i);
       vTaskDelay(350 / portTICK_PERIOD_MS);
     }
     // give the time to the device to be fully initialized
     vTaskDelay(200 / portTICK_PERIOD_MS);
 
-  } else 
+    if (m_keyboardAvailable)
+      send_cmdSetScancodeSet(2);
+    else
+      printf("PS/2 sendCmdReset. No response.\n");
+  } else
     m_keyboardAvailable = true;
 
-  send_cmdSetScancodeSet(2);
+  // if (m_keyboardAvailable) send_cmdSetScancodeSet(2);
 
   return m_keyboardAvailable;
 }
@@ -436,7 +441,7 @@ bool Keyboard::blockingGetVirtualKey(VirtualKeyItem * item)
   uint8_t * scode = item->scancode;
 
   *scode = getNextScancode();
-  // printf("Scode: %x\n",*scode);      
+  // printf("Scode: %x\n",*scode);
   if (*scode == 0xE0) {
     // two bytes scancode
     // printf("  E0 Scode: %x\n",*scode);
@@ -735,7 +740,7 @@ bool Keyboard::isVKDown(VirtualKey virtualKey)
 
 bool Keyboard::getNextVirtualKey(VirtualKeyItem * item, int timeOutMS)
 {
-  bool r = (m_SCodeToVKConverterTask && item && xQueueReceive(m_virtualKeyQueue, item, msToTicks(timeOutMS)) == pdTRUE);
+  bool r = (/*m_SCodeToVKConverterTask &&*/ item && xQueueReceive(m_virtualKeyQueue, item, msToTicks(timeOutMS)) == pdTRUE);
   if (r && m_scancodeSet == 1)
     convertScancode2to1(item);
   return r;

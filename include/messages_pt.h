@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -129,7 +129,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define OSD_TAPE_INSERT_PT "Fita inserida"
 #define OSD_TAPE_EJECT_PT "Fita ejetada"
 
-#define TRDOS_RESET_ERR_PT "TR-DOS n\x84o presente. Ative o Betadisk."
+#define TRDOS_RESET_ERR_PT "Betadisk desativado ou n\x84o dispon\xA1vel"
 
 #define MENU_SNA_PT \
     "Menu snapshots\n"\
@@ -162,8 +162,8 @@ visit https://zxespectrum.speccy.org/contacto
     "Fita K7\t>\n"\
     "Betadisk\t>\n"\
     "Hardware\t>\n"\
-    "Reiniciar\t>\n"\
     "Op\x87\x94" "es\t>\n"\
+    "Reiniciar\t>\n"\
     "Ajuda\n"\
     "Sobre\n"
 
@@ -171,12 +171,12 @@ visit https://zxespectrum.speccy.org/contacto
     "Menu op\x87\x94" "es\n"\
     "Armazenamento\t>\n"\
     "Hardware favorito\t>\n"\
-    "ROM favorita\t>\n"\	
+    "ROM favorita\t>\n"\
     "Joystick\t>\n"\
     "Emula\x87\x84o do joystick\t>\n"\
     "Tela\t>\n"\
-	"Atualizar\t>\n"\
     "Outros\t>\n"\
+	"Atualizar\t>\n"\
     "Idioma\t>\n"
 
 #define MENU_UPDATE_PT \
@@ -218,21 +218,28 @@ visit https://zxespectrum.speccy.org/contacto
 #define MENU_STORAGE_PT "Armazenamento\n"\
     "Betadisk\t>\n"\
     "Carregamento r\xA0pido\t>\n"\
-    "Timings ROM R.G.\t>\n"	
+    "Timings ROM R.G.\t>\n"
 
 #define MENU_YESNO_PT "Sim\t[Y]\n"\
     "N\x84o\t[N]\n"
 
 #define MENU_OTHER_PT "Outros\n"\
     "AY em 48K\t>\n"\
+    "Covox\t>\n"\
     "Timing ULA\t>\n"\
     "48K Issue 2\t>\n"\
 	"ULA TK\t>\n"\
-    "Segundo disp. PS/2\t>\n"	
+    "Segundo disp. PS/2\t>\n"\
+    "Mouse\t>\n"
 
 #define MENU_KBD2NDPS2_PT "Dispositivo\n"\
     "Nada\t[N]\n"\
-    "Teclado\t[K]\n"
+    "Teclado\t[K]\n"\
+    "Mouse\t[M]\n"
+
+#define MENU_MOUSE_PT "Mouse\n"\
+    "N\x84o\t[N]\n"\
+    "Kempston\t[K]\n"
 
 #define MENU_ALUTIMING_PT "Timing ULA\n"\
     "Early\t[E]\n"\
@@ -278,7 +285,7 @@ visit https://zxespectrum.speccy.org/contacto
     "v3 Espanhol (R.G.)\t[v3es ]\n"\
     "v3 Portugu\x88s (R.G.)\t[v3pt ]\n"\
     "v3 Ingl\x88s (R.G.)\t[v3en ]\n"\
-    "Custom\t[TKcs ]\n"    	
+    "Custom\t[TKcs ]\n"
 
 #define MENU_ROMSTK95_PREF_PT "Espanhol\t[95es ]\n"\
     "Portugu\x88s\t[95pt ]\n"

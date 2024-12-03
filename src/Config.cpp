@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -57,11 +57,15 @@ string   Config::arch = "48K";
 string   Config::romSet = "48K";
 string   Config::romSet48 = "48K";
 string   Config::romSet128 = "128K";
+string   Config::romSet2A = "+2A";
+string   Config::romSet3 = "+3";
 string   Config::romSetTK90X = "v1es";
 string   Config::romSetTK95 = "95es";
 string   Config::pref_arch = "48K";
 string   Config::pref_romSet_48 = "48K";
 string   Config::pref_romSet_128 = "128K";
+string   Config::pref_romSet_2A = "+2A";
+string   Config::pref_romSet_3 = "+3";
 string   Config::pref_romSet_TK90X = "v1es";
 string   Config::pref_romSet_TK95 = "95es";
 string   Config::ram_file = NO_RAM_FILE;
@@ -80,7 +84,7 @@ bool     Config::tape_timing_rg = false; // Rodolfo Guerra ROMs tape timings
 
 uint8_t  Config::joystick1 = JOY_SINCLAIR1;
 uint8_t  Config::joystick2 = JOY_SINCLAIR2;
-uint16_t Config::joydef[24] = { 
+uint16_t Config::joydef[24] = {
     fabgl::VK_6,
     fabgl::VK_7,
     fabgl::VK_9,
@@ -145,15 +149,21 @@ uint8_t Config::port254default = 0xbf; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3
 uint8_t Config::ALUTK = 1; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
 uint8_t Config::DiskCtrl = 1; // 0 -> None, 1 -> Betadisk
 
-bool Config::TimeMachine = false; 
+bool Config::TimeMachine = false;
+
+// bool Config::reset = false;
+
+uint8_t Config::Covox = CovoxNONE;
 
 int8_t Config::volume = ESP_VOLUME_DEFAULT;
 
+uint8_t Config::mouse = 0; // 0 -> No mouse, 1 -> Kempston Mouse
+
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
-    s.erase(std::remove_if(s.begin(), s.end(), 
-            [&](char ch) 
-            { return std::iscntrl(static_cast<unsigned char>(ch));}), 
+    s.erase(std::remove_if(s.begin(), s.end(),
+            [&](char ch)
+            { return std::iscntrl(static_cast<unsigned char>(ch));}),
             s.end());
 }
 
@@ -202,412 +212,450 @@ void Config::load() {
 
         size_t required_size;
         char* str_data;
-        
-        err = nvs_get_str(handle, "arch", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "arch", str_data, &required_size);
-            // printf("arch:%s\n",str_data);
-            arch = str_data;
-            
-            // FORCE MODEL FOR TESTING
-            // arch = "48K";
-            
-            free(str_data);
-        } else {
+
+        // err = nvs_get_str(handle, "reset", NULL, &required_size);
+        // if (err == ESP_OK) {
+        //     str_data = (char *)malloc(required_size);
+        //     nvs_get_str(handle, "reset", str_data, &required_size);
+        //     // printf("reset:%s\n",str_data);
+        //     reset = strcmp(str_data, "false");
+        //     free(str_data);
+        // } else {
             // No nvs data found. Save it
-            nvs_close(handle);
-            Config::save();
-            return;
-        }
+        //     nvs_close(handle);
+        //     Config::save();
+        //     return;
+        // }
 
-        err = nvs_get_str(handle, "romSet", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "romSet", str_data, &required_size);
-            // printf("romSet:%s\n",str_data);
-            romSet = str_data;
-            free(str_data);
-        }
+        // if (reset) {
 
-        err = nvs_get_str(handle, "romSet48", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "romSet48", str_data, &required_size);
-            // printf("romSet48:%s\n",str_data);
-            romSet48 = str_data;
-            free(str_data);
-        }
+        //     nvs_close(handle);
+        //     reset = false;
+        //     return;
 
-        err = nvs_get_str(handle, "romSet128", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "romSet128", str_data, &required_size);
-            // printf("romSet128:%s\n",str_data);
-            romSet128 = str_data;
-            free(str_data);
-        }
+        // } else {
 
-        err = nvs_get_str(handle, "romSetTK90X", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "romSetTK90X", str_data, &required_size);
-            // printf("romSetTK90X:%s\n",str_data);
-            romSetTK90X = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "romSetTK95", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "romSetTK95", str_data, &required_size);
-            // printf("romSetTK95:%s\n",str_data);
-            romSetTK95 = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "pref_arch", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "pref_arch", str_data, &required_size);
-            // printf("pref_arch:%s\n",str_data);
-            pref_arch = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "pref_romSet_48", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "pref_romSet_48", str_data, &required_size);
-            // printf("pref_romSet_48:%s\n",str_data);
-            pref_romSet_48 = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "pref_romSet_128", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "pref_romSet_128", str_data, &required_size);
-            // printf("pref_romSet_128:%s\n",str_data);
-            pref_romSet_128 = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "pref_romSet_90X", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "pref_romSet_90X", str_data, &required_size);
-            // printf("pref_romSet_TK90X:%s\n",str_data);
-            pref_romSet_TK90X = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "pref_romSet_95", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "pref_romSet_95", str_data, &required_size);
-            // printf("pref_romSet_TK95:%s\n",str_data);
-            pref_romSet_TK95 = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "ram", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "ram", str_data, &required_size);
-            // printf("ram:%s\n",str_data);
-            ram_file = str_data;
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "slog", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "slog", str_data, &required_size);
-            // printf("slog:%s\n",str_data);
-            slog_on = strcmp(str_data, "false");            
-            free(str_data);
-
-            // slog_on = true; // Force for testing
-
-        }
-
-        err = nvs_get_str(handle, "sdstorage", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "sdstorage", str_data, &required_size);
-            // printf("sdstorage:%s\n",str_data);
-
-            // Force SD from now on
-            FileUtils::MountPoint = MOUNT_POINT_SD;
-
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "asp169", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "asp169", str_data, &required_size);
-            // printf("asp169:%s\n",str_data);
-            aspect_16_9 = strcmp(str_data, "false");
-            free(str_data);
-        }
-
-        err = nvs_get_u8(handle, "videomode", &Config::videomode);
-        if (err == ESP_OK) {
-            // printf("videomode:%u\n",Config::videomode);
-        }
-
-
-        err = nvs_get_u8(handle, "language", &Config::lang);
-        if (err == ESP_OK) {
-            // printf("language:%u\n",Config::lang);
-        }
-
-        err = nvs_get_str(handle, "AY48", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "AY48", str_data, &required_size);
-            // printf("AY48:%s\n",str_data);
-            AY48 = strcmp(str_data, "false");
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "Issue2", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "Issue2", str_data, &required_size);
-            // printf("Issue2:%s\n",str_data);
-            Issue2 = strcmp(str_data, "false");
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "flashload", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "flashload", str_data, &required_size);
-            // printf("Flashload:%s\n",str_data);
-            flashload = strcmp(str_data, "false");
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "tape_player", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "tape_player", str_data, &required_size);
-            // printf("Tape player:%s\n",str_data);
-            tape_player = strcmp(str_data, "false");
-            free(str_data);
-        }
-
-        err = nvs_get_str(handle, "tape_timing_rg", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "tape_timing_rg", str_data, &required_size);
-            // printf("Tape timing RG:%s\n",str_data);
-            tape_timing_rg = strcmp(str_data, "false");
-            free(str_data);
-        }
-
-        err = nvs_get_u8(handle, "joystick1", &Config::joystick1);
-        if (err == ESP_OK) {
-            // printf("joystick1:%u\n",Config::joystick1);
-        }
-
-        err = nvs_get_u8(handle, "joystick2", &Config::joystick2);
-        if (err == ESP_OK) {
-            // printf("joystick2:%u\n",Config::joystick2);
-        }
-
-        // Read joystick definition
-        for (int n=0; n < 24; n++) {
-            char joykey[9];
-            sprintf(joykey,"joydef%02u",n);
-            // printf("%s\n",joykey);
-            err = nvs_get_u16(handle, joykey, &Config::joydef[n]);
+            err = nvs_get_str(handle, "arch", NULL, &required_size);
             if (err == ESP_OK) {
-                // printf("joydef00:%u\n",Config::joydef[n]);
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "arch", str_data, &required_size);
+                // printf("arch:%s\n",str_data);
+                arch = str_data;
+
+                // FORCE MODEL FOR TESTING
+                // arch = "48K";
+
+                free(str_data);
+
+            } else {
+
+                // No nvs data found. Exit
+                nvs_close(handle);
+                // Config::save();
+                return;
+
             }
-        }
 
-        err = nvs_get_u8(handle, "joyPS2", &Config::joyPS2);
-        if (err == ESP_OK) {
-            // printf("joyPS2:%u\n",Config::joyPS2);
-        }
+            err = nvs_get_str(handle, "romSet", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "romSet", str_data, &required_size);
+                // printf("romSet:%s\n",str_data);
+                romSet = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_u8(handle, "AluTiming", &Config::AluTiming);
-        if (err == ESP_OK) {
-            // printf("AluTiming:%u\n",Config::AluTiming);
-        }
+            err = nvs_get_str(handle, "romSet48", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "romSet48", str_data, &required_size);
+                // printf("romSet48:%s\n",str_data);
+                romSet48 = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_u8(handle, "PS2Dev2", &Config::ps2_dev2);
-        if (err == ESP_OK) {
-            // printf("PS2Dev2:%u\n",Config::ps2_dev2);
-        }
+            err = nvs_get_str(handle, "romSet128", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "romSet128", str_data, &required_size);
+                // printf("romSet128:%s\n",str_data);
+                romSet128 = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_str(handle, "CursorAsJoy", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "CursorAsJoy", str_data, &required_size);
-            // printf("CursorAsJoy:%s\n",str_data);
-            CursorAsJoy = strcmp(str_data, "false");
-            free(str_data);
-        }
+            err = nvs_get_str(handle, "romSetTK90X", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "romSetTK90X", str_data, &required_size);
+                // printf("romSetTK90X:%s\n",str_data);
+                romSetTK90X = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_i8(handle, "CenterH", &Config::CenterH);
-        if (err == ESP_OK) {
-            // printf("PS2Dev2:%u\n",Config::ps2_dev2);
-        }
+            err = nvs_get_str(handle, "romSetTK95", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "romSetTK95", str_data, &required_size);
+                // printf("romSetTK95:%s\n",str_data);
+                romSetTK95 = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_i8(handle, "CenterV", &Config::CenterV);
-        if (err == ESP_OK) {
-            // printf("PS2Dev2:%u\n",Config::ps2_dev2);
-        }
+            err = nvs_get_str(handle, "pref_arch", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "pref_arch", str_data, &required_size);
+                // printf("pref_arch:%s\n",str_data);
+                pref_arch = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_str(handle, "SNA_Path", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "SNA_Path", str_data, &required_size);
-            // printf("SNA_Path:%s\n",str_data);
-            SNA_Path = str_data;
-            free(str_data);
-        }
+            err = nvs_get_str(handle, "pref_romSet_48", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "pref_romSet_48", str_data, &required_size);
+                // printf("pref_romSet_48:%s\n",str_data);
+                pref_romSet_48 = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_str(handle, "TAP_Path", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "TAP_Path", str_data, &required_size);
-            // printf("TAP_Path:%s\n",str_data);
-            TAP_Path = str_data;
-            free(str_data);
-        }
+            err = nvs_get_str(handle, "pref_romSet_128", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "pref_romSet_128", str_data, &required_size);
+                // printf("pref_romSet_128:%s\n",str_data);
+                pref_romSet_128 = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_str(handle, "DSK_Path", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "DSK_Path", str_data, &required_size);
-            // printf("DSK_Path:%s\n",str_data);
-            DSK_Path = str_data;
-            free(str_data);
-        }
+            err = nvs_get_str(handle, "pref_romSet_90X", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "pref_romSet_90X", str_data, &required_size);
+                // printf("pref_romSet_TK90X:%s\n",str_data);
+                pref_romSet_TK90X = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_u16(handle, "SNA_begin_row", &Config::SNA_begin_row);
-        if (err == ESP_OK) {
-            // printf("SNA_begin_row:%u\n",Config::SNA_begin_row);
-        }
+            err = nvs_get_str(handle, "pref_romSet_95", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "pref_romSet_95", str_data, &required_size);
+                // printf("pref_romSet_TK95:%s\n",str_data);
+                pref_romSet_TK95 = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_u16(handle, "TAP_begin_row", &Config::TAP_begin_row);
-        if (err == ESP_OK) {
-            // printf("TAP_begin_row:%u\n",Config::TAP_begin_row);
-        }
+            err = nvs_get_str(handle, "ram", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "ram", str_data, &required_size);
+                // printf("ram:%s\n",str_data);
+                ram_file = str_data;
+                free(str_data);
+            }
 
-        err = nvs_get_u16(handle, "DSK_begin_row", &Config::DSK_begin_row);
-        if (err == ESP_OK) {
-            // printf("begin_row:%u\n",Config::DSK_begin_row);
-        }
+            err = nvs_get_str(handle, "slog", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "slog", str_data, &required_size);
+                // printf("slog:%s\n",str_data);
+                slog_on = strcmp(str_data, "false");
+                free(str_data);
 
-        err = nvs_get_u16(handle, "SNA_focus", &Config::SNA_focus);
-        if (err == ESP_OK) {
-            // printf("SNA_focus:%u\n",Config::SNA_focus);
-        }
+                // slog_on = true; // Force for testing
 
-        err = nvs_get_u16(handle, "TAP_focus", &Config::TAP_focus);
-        if (err == ESP_OK) {
-            // printf("TAP_focus:%u\n",Config::TAP_focus);
-        }
+            }
 
-        err = nvs_get_u16(handle, "DSK_focus", &Config::DSK_focus);
-        if (err == ESP_OK) {
-            // printf("DSK_focus:%u\n",Config::DSK_focus);
-        }
+            err = nvs_get_str(handle, "sdstorage", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "sdstorage", str_data, &required_size);
+                // printf("sdstorage:%s\n",str_data);
 
-        err = nvs_get_u8(handle, "SNA_fdMode", &Config::SNA_fdMode);
-        if (err == ESP_OK) {
-            // printf("SNA_fdMode:%u\n",Config::SNA_fdMode);
-        }
+                // Force SD from now on
+                FileUtils::MountPoint = MOUNT_POINT_SD;
 
-        err = nvs_get_u8(handle, "TAP_fdMode", &Config::TAP_fdMode);
-        if (err == ESP_OK) {
-            // printf("TAP_fdMode:%u\n",Config::TAP_fdMode);
-        }
+                free(str_data);
+            }
 
-        err = nvs_get_u8(handle, "DSK_fdMode", &Config::DSK_fdMode);
-        if (err == ESP_OK) {
-            // printf("DSK_fdMode:%u\n",Config::DSK_fdMode);
-        }
+            err = nvs_get_str(handle, "asp169", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "asp169", str_data, &required_size);
+                // printf("asp169:%s\n",str_data);
+                aspect_16_9 = strcmp(str_data, "false");
+                free(str_data);
+            }
 
-        err = nvs_get_str(handle, "SNA_fileSearch", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "SNA_fileSearch", str_data, &required_size);
-            // printf("SNA_fileSearch:%s\n",str_data);
-            SNA_fileSearch = str_data;
-            free(str_data);
-        }
+            err = nvs_get_u8(handle, "videomode", &Config::videomode);
+            if (err == ESP_OK) {
+                // printf("videomode:%u\n",Config::videomode);
+            }
 
-        err = nvs_get_str(handle, "TAP_fileSearch", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "TAP_fileSearch", str_data, &required_size);
-            // printf("TAP_fileSearch:%s\n",str_data);
-            TAP_fileSearch = str_data;
-            free(str_data);
-        }
 
-        err = nvs_get_str(handle, "DSK_fileSearch", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "DSK_fileSearch", str_data, &required_size);
-            // printf("DSK_fileSearch:%s\n",str_data);
-            DSK_fileSearch = str_data;
-            free(str_data);
-        }
+            err = nvs_get_u8(handle, "language", &Config::lang);
+            if (err == ESP_OK) {
+                // printf("language:%u\n",Config::lang);
+            }
 
-        err = nvs_get_u8(handle, "scanlines", &Config::scanlines);
-        if (err == ESP_OK) {
-            // printf("scanlines:%u\n",Config::scanlines);
-        }
+            err = nvs_get_str(handle, "AY48", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "AY48", str_data, &required_size);
+                // printf("AY48:%s\n",str_data);
+                AY48 = strcmp(str_data, "false");
+                free(str_data);
+            }
 
-        err = nvs_get_u8(handle, "render", &Config::render);
-        if (err == ESP_OK) {
-            // printf("render:%u\n",Config::render);
-        }
+            err = nvs_get_str(handle, "Issue2", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "Issue2", str_data, &required_size);
+                // printf("Issue2:%s\n",str_data);
+                Issue2 = strcmp(str_data, "false");
+                free(str_data);
+            }
 
-        err = nvs_get_str(handle, "TABasfire1", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "TABasfire1", str_data, &required_size);
-            // printf("TABasfire1:%s\n",str_data);
-            TABasfire1 = strcmp(str_data, "false");
-            free(str_data);
-        }
+            err = nvs_get_str(handle, "flashload", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "flashload", str_data, &required_size);
+                // printf("Flashload:%s\n",str_data);
+                flashload = strcmp(str_data, "false");
+                free(str_data);
+            }
 
-        err = nvs_get_str(handle, "StartMsg", NULL, &required_size);
-        if (err == ESP_OK) {
-            str_data = (char *)malloc(required_size);
-            nvs_get_str(handle, "StartMsg", str_data, &required_size);
-            // printf("StartMsg:%s\n",str_data);
-            StartMsg = strcmp(str_data, "false");
-            free(str_data);
-        }
+            err = nvs_get_str(handle, "tape_player", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "tape_player", str_data, &required_size);
+                // printf("Tape player:%s\n",str_data);
+                tape_player = strcmp(str_data, "false");
+                free(str_data);
+            }
 
-        err = nvs_get_u8(handle, "ALUTK", &Config::ALUTK);
-        if (err == ESP_OK) {
-            // printf("ALUTK:%u\n",Config::ALUTK);
-        }
+            err = nvs_get_str(handle, "tape_timing_rg", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "tape_timing_rg", str_data, &required_size);
+                // printf("Tape timing RG:%s\n",str_data);
+                tape_timing_rg = strcmp(str_data, "false");
+                free(str_data);
+            }
 
-        err = nvs_get_u8(handle, "DiskCtrl", &Config::DiskCtrl);
-        if (err == ESP_OK) {
-            // printf("DiskCtrl:%u\n",Config::DiskCtrl);
-        }
+            err = nvs_get_u8(handle, "joystick1", &Config::joystick1);
+            if (err == ESP_OK) {
+                // printf("joystick1:%u\n",Config::joystick1);
+            }
 
-        err = nvs_get_i8(handle, "volume", &Config::volume);
-        if (err == ESP_OK) {
-            // printf("volume:%d\n",Config::volume);
-        }
+            err = nvs_get_u8(handle, "joystick2", &Config::joystick2);
+            if (err == ESP_OK) {
+                // printf("joystick2:%u\n",Config::joystick2);
+            }
+
+            // Read joystick definition
+            for (int n=0; n < 24; n++) {
+                char joykey[9];
+                sprintf(joykey,"joydef%02u",n);
+                // printf("%s\n",joykey);
+                err = nvs_get_u16(handle, joykey, &Config::joydef[n]);
+                if (err == ESP_OK) {
+                    // printf("joydef00:%u\n",Config::joydef[n]);
+                }
+            }
+
+            err = nvs_get_u8(handle, "joyPS2", &Config::joyPS2);
+            if (err == ESP_OK) {
+                // printf("joyPS2:%u\n",Config::joyPS2);
+            }
+
+            err = nvs_get_u8(handle, "AluTiming", &Config::AluTiming);
+            if (err == ESP_OK) {
+                // printf("AluTiming:%u\n",Config::AluTiming);
+            }
+
+            err = nvs_get_u8(handle, "PS2Dev2", &Config::ps2_dev2);
+            if (err == ESP_OK) {
+                // printf("PS2Dev2:%u\n",Config::ps2_dev2);
+            }
+
+            err = nvs_get_str(handle, "CursorAsJoy", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "CursorAsJoy", str_data, &required_size);
+                // printf("CursorAsJoy:%s\n",str_data);
+                CursorAsJoy = strcmp(str_data, "false");
+                free(str_data);
+            }
+
+            err = nvs_get_i8(handle, "CenterH", &Config::CenterH);
+            if (err == ESP_OK) {
+                // printf("PS2Dev2:%u\n",Config::ps2_dev2);
+            }
+
+            err = nvs_get_i8(handle, "CenterV", &Config::CenterV);
+            if (err == ESP_OK) {
+                // printf("PS2Dev2:%u\n",Config::ps2_dev2);
+            }
+
+            err = nvs_get_str(handle, "SNA_Path", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "SNA_Path", str_data, &required_size);
+                // printf("SNA_Path:%s\n",str_data);
+                SNA_Path = str_data;
+                free(str_data);
+            }
+
+            err = nvs_get_str(handle, "TAP_Path", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "TAP_Path", str_data, &required_size);
+                // printf("TAP_Path:%s\n",str_data);
+                TAP_Path = str_data;
+                free(str_data);
+            }
+
+            err = nvs_get_str(handle, "DSK_Path", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "DSK_Path", str_data, &required_size);
+                // printf("DSK_Path:%s\n",str_data);
+                DSK_Path = str_data;
+                free(str_data);
+            }
+
+            err = nvs_get_u16(handle, "SNA_begin_row", &Config::SNA_begin_row);
+            if (err == ESP_OK) {
+                // printf("SNA_begin_row:%u\n",Config::SNA_begin_row);
+            }
+
+            err = nvs_get_u16(handle, "TAP_begin_row", &Config::TAP_begin_row);
+            if (err == ESP_OK) {
+                // printf("TAP_begin_row:%u\n",Config::TAP_begin_row);
+            }
+
+            err = nvs_get_u16(handle, "DSK_begin_row", &Config::DSK_begin_row);
+            if (err == ESP_OK) {
+                // printf("begin_row:%u\n",Config::DSK_begin_row);
+            }
+
+            err = nvs_get_u16(handle, "SNA_focus", &Config::SNA_focus);
+            if (err == ESP_OK) {
+                // printf("SNA_focus:%u\n",Config::SNA_focus);
+            }
+
+            err = nvs_get_u16(handle, "TAP_focus", &Config::TAP_focus);
+            if (err == ESP_OK) {
+                // printf("TAP_focus:%u\n",Config::TAP_focus);
+            }
+
+            err = nvs_get_u16(handle, "DSK_focus", &Config::DSK_focus);
+            if (err == ESP_OK) {
+                // printf("DSK_focus:%u\n",Config::DSK_focus);
+            }
+
+            err = nvs_get_u8(handle, "SNA_fdMode", &Config::SNA_fdMode);
+            if (err == ESP_OK) {
+                // printf("SNA_fdMode:%u\n",Config::SNA_fdMode);
+            }
+
+            err = nvs_get_u8(handle, "TAP_fdMode", &Config::TAP_fdMode);
+            if (err == ESP_OK) {
+                // printf("TAP_fdMode:%u\n",Config::TAP_fdMode);
+            }
+
+            err = nvs_get_u8(handle, "DSK_fdMode", &Config::DSK_fdMode);
+            if (err == ESP_OK) {
+                // printf("DSK_fdMode:%u\n",Config::DSK_fdMode);
+            }
+
+            err = nvs_get_str(handle, "SNA_fileSearch", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "SNA_fileSearch", str_data, &required_size);
+                // printf("SNA_fileSearch:%s\n",str_data);
+                SNA_fileSearch = str_data;
+                free(str_data);
+            }
+
+            err = nvs_get_str(handle, "TAP_fileSearch", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "TAP_fileSearch", str_data, &required_size);
+                // printf("TAP_fileSearch:%s\n",str_data);
+                TAP_fileSearch = str_data;
+                free(str_data);
+            }
+
+            err = nvs_get_str(handle, "DSK_fileSearch", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "DSK_fileSearch", str_data, &required_size);
+                // printf("DSK_fileSearch:%s\n",str_data);
+                DSK_fileSearch = str_data;
+                free(str_data);
+            }
+
+            err = nvs_get_u8(handle, "scanlines", &Config::scanlines);
+            if (err == ESP_OK) {
+                // printf("scanlines:%u\n",Config::scanlines);
+            }
+
+            err = nvs_get_u8(handle, "render", &Config::render);
+            if (err == ESP_OK) {
+                // printf("render:%u\n",Config::render);
+            }
+
+            err = nvs_get_str(handle, "TABasfire1", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "TABasfire1", str_data, &required_size);
+                // printf("TABasfire1:%s\n",str_data);
+                TABasfire1 = strcmp(str_data, "false");
+                free(str_data);
+            }
+
+            err = nvs_get_str(handle, "StartMsg", NULL, &required_size);
+            if (err == ESP_OK) {
+                str_data = (char *)malloc(required_size);
+                nvs_get_str(handle, "StartMsg", str_data, &required_size);
+                // printf("StartMsg:%s\n",str_data);
+                StartMsg = strcmp(str_data, "false");
+                free(str_data);
+            }
+
+            err = nvs_get_u8(handle, "ALUTK", &Config::ALUTK);
+            if (err == ESP_OK) {
+                // printf("ALUTK:%u\n",Config::ALUTK);
+            }
+
+            err = nvs_get_u8(handle, "DiskCtrl", &Config::DiskCtrl);
+            if (err == ESP_OK) {
+                // printf("DiskCtrl:%u\n",Config::DiskCtrl);
+            }
+
+            err = nvs_get_i8(handle, "volume", &Config::volume);
+            if (err == ESP_OK) {
+                // printf("volume:%d\n",Config::volume);
+            }
+
+            err = nvs_get_u8(handle, "Covox", &Config::Covox);
+            if (err == ESP_OK) {
+                // printf("Covox:%u\n",Config::Covox);
+            }
+
+            err = nvs_get_u8(handle, "Mouse", &Config::mouse);
+            if (err == ESP_OK) {
+                // printf("Mouse:%u\n",Config::mouse);
+            }
+
+        // }
 
         // Close
         nvs_close(handle);
+
     }
 
 }
@@ -674,7 +722,7 @@ void Config::save(string value) {
             nvs_set_str(handle,"pref_romSet_95",pref_romSet_TK95.c_str());
 
         if((value=="ram") || (value=="all"))
-            nvs_set_str(handle,"ram",ram_file.c_str());   
+            nvs_set_str(handle,"ram",ram_file.c_str());
 
         if((value=="slog") || (value=="all"))
             nvs_set_str(handle,"slog",slog_on ? "true" : "false");
@@ -806,13 +854,22 @@ void Config::save(string value) {
         if((value=="volume") || (value=="all"))
             nvs_set_i8(handle,"volume",Config::volume);
 
+        if((value=="Covox") || (value=="all"))
+            nvs_set_u8(handle,"Covox",Config::Covox);
+
+        if((value=="Mouse") || (value=="all"))
+            nvs_set_u8(handle,"Mouse",Config::mouse);
+
+        // if((value=="reset") || (value=="all"))
+        //     nvs_set_str(handle,"reset", reset ? "true" : "false");
+
         // printf("Committing updates in NVS ... ");
 
         err = nvs_commit(handle);
         if (err != ESP_OK) {
             printf("Error (%s) commiting updates to NVS!\n", esp_err_to_name(err));
         }
-        
+
         // printf("Done\n");
 
         // Close
@@ -832,8 +889,8 @@ void Config::requestMachine(string newArch, string newRomSet) {
     if (arch == "48K") {
 
         if (newRomSet=="") romSet = "48K"; else romSet = newRomSet;
-        
-        if (newRomSet=="") romSet48 = "48K"; else romSet48 = newRomSet;        
+
+        if (newRomSet=="") romSet48 = "48K"; else romSet48 = newRomSet;
 
         if (romSet48 == "48K")
             MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_48k;
@@ -848,7 +905,7 @@ void Config::requestMachine(string newArch, string newRomSet) {
 
         if (newRomSet=="") romSet = "128K"; else romSet = newRomSet;
 
-        if (newRomSet=="") romSet128 = "128K"; else romSet128 = newRomSet;                
+        if (newRomSet=="") romSet128 = "128K"; else romSet128 = newRomSet;
 
         if (romSet128 == "128K") {
             MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_128k;
@@ -875,6 +932,19 @@ void Config::requestMachine(string newArch, string newRomSet) {
             MemESP::rom[1] = (uint8_t *) gb_rom_1_sinclair_128k;
         }
 
+    } else if (arch == "+2A") {
+
+        if (newRomSet=="") romSet = "+2A"; else romSet = newRomSet;
+
+        if (newRomSet=="") romSet2A = "+2A"; else romSet2A = newRomSet;
+
+        if (romSet2A == "+2A") {
+            MemESP::rom[0] = (uint8_t *) gb_rom_0_2A_3_v41;
+            MemESP::rom[1] = (uint8_t *) gb_rom_1_2A_3_v41;
+            MemESP::rom[2] = (uint8_t *) gb_rom_2_2A_3_v41;
+            MemESP::rom[3] = (uint8_t *) gb_rom_3_2A_3_v41;
+        }
+
     } else if (arch == "Pentagon") {
 
         if (newRomSet=="") romSet = "Pentagon"; else romSet = newRomSet;
@@ -885,19 +955,19 @@ void Config::requestMachine(string newArch, string newRomSet) {
     } else if (arch == "TK90X") {
 
         if (newRomSet=="") romSet = "v1es"; else romSet = newRomSet;
-        
+
         if (newRomSet=="") romSetTK90X = "v1es"; else romSetTK90X = newRomSet;
 
         if (romSetTK90X == "v1es")
             MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v1;
         else if (romSetTK90X == "v1pt") {
             MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v1;
-            port254default = 0x3f;                
+            port254default = 0x3f;
         } else if (romSetTK90X == "v2es") {
             MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v2;
         } else if (romSetTK90X == "v2pt") {
             MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v2;
-            port254default = 0x3f;                
+            port254default = 0x3f;
         } else if (romSetTK90X == "v3es") {
             MemESP::rom[0] = (uint8_t *) rom_0_TK90X_v3es;
         } else if (romSetTK90X == "v3pt") {
@@ -913,7 +983,7 @@ void Config::requestMachine(string newArch, string newRomSet) {
     } else if (arch == "TK95") {
 
         if (newRomSet=="") romSet = "95es"; else romSet = newRomSet;
-        
+
         if (newRomSet=="") romSetTK95 = "95es"; else romSetTK95 = newRomSet;
 
         if (romSetTK95 == "95es")
@@ -1003,7 +1073,7 @@ for (int n = m; n < m + 12; n++) {
         if (joytype != JOY_FULLER) {
             if (ESPectrum::JoyVKTranslation[n] >= fabgl::VK_FULLER_RIGHT && ESPectrum::JoyVKTranslation[n] <= fabgl::VK_FULLER_FIRE) {
                 ESPectrum::JoyVKTranslation[n] = fabgl::VK_NONE;
-                save = true;                
+                save = true;
             }
         }
 

@@ -104,6 +104,12 @@ void WD1793::ExecuteCommand(unsigned char wdCmd) {
 
     }
 
+    // // Patch added by Eremus. Solves some things but still it's not perfect.
+    // if ((StatusReg & STATUS_BUSY) != 0) {
+    //     StatusReg &= ~STATUS_BUSY;
+    //     return;
+    // }
+
     if ((StatusReg & STATUS_BUSY) != 0) return; // This solves stuttering in UNREAL and boot menu in ENL96_3.SCL and ENL96_4.SCL but maybe brokes something somewhere. Needs more testing and study.
 
     // set drive ready status bit

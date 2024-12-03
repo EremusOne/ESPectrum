@@ -36,7 +36,7 @@ visit https://zxespectrum.speccy.org/contacto
 #ifndef ESPECTRUM_MESSAGES_h
 #define ESPECTRUM_MESSAGES_h
 
-#define EMU_VERSION "      v1.32 "
+#define EMU_VERSION "  v1.4pr3.2 "
 
 // Language files
 #include "messages_en.h"
@@ -219,6 +219,13 @@ static const char *MENU_OTHER[NLANGS] = { MENU_OTHER_EN, MENU_OTHER_ES, MENU_OTH
 
 static const char *MENU_AY48[NLANGS] = { "AY on 48K \n" , "AY en 48K \n" , "AY em 48K \n"};
 
+#define MENU_COVOXS "Covox Mono\t[ ]\n"\
+    "Covox Stereo\t[ ]\n"\
+    "SoundDrive 1.05 mode 1\t[ ]\n"\
+	"SoundDrive 1.05 mode 2\t[ ]\n"
+
+static const char *MENU_COVOX[NLANGS] = { "Covox\n" "None   \t[ ]\n" MENU_COVOXS, "Covox\n" "Ninguno\t[ ]\n" MENU_COVOXS, "Covox\n" "Nenhum \t[ ]\n" MENU_COVOXS};
+
 #define MENU_ALUTK "Ferranti\t[F]\n"\
     "Microdigital 50hz\t[5]\n"\
 	"Microdigital 60hz\t[6]\n"
@@ -232,6 +239,7 @@ static const char *MENU_ISSUE2[NLANGS] = { "48K Issue 2\n", "48K Issue 2\n", "48
 
 #define MENU_ARCHS "Spectrum 48K\t>\n"\
     "Spectrum 128K\t>\n"\
+    "Spectrum +2A\n"\
 	"Pentagon 128K\n"\
 	"TK90X\t>\n"\
 	"TK95\t>\n"
@@ -246,11 +254,12 @@ static const char *MENU_ROMSTK[NLANGS] = { MENU_ROMSTK_EN, MENU_ROMSTK_ES, MENU_
 
 static const char *MENU_ROMSTK95[NLANGS] = { MENU_ROMSTK95_EN, MENU_ROMSTK95_ES, MENU_ROMSTK95_PT};
 
-#define MENU_ARCHS_PREF "Spectrum 48K\t[4]\n"\
-    "Spectrum 128K\t[1]\n"\
-	"Pentagon 128K\t[P]\n"\
-	"TK90X\t[T]\n"\
-	"TK95\t[9]\n"
+#define MENU_ARCHS_PREF "Spectrum 48K\t[ ]\n"\
+    "Spectrum 128K\t[ ]\n"\
+    "Spectrum +2A\t[ ]\n"\
+	"Pentagon 128K\t[ ]\n"\
+	"TK90X\t[ ]\n"\
+	"TK95\t[ ]\n"
 
 static const char *MENU_ARCH_PREF[NLANGS] = {
 	"Preferred machine\n" MENU_ARCHS_PREF "Last used\t[L]\n",
@@ -317,6 +326,8 @@ static const char *MENU_TABASFIRE[NLANGS] = { "TAB as fire 1\n" , "TAB disparo 1
 static const char *DLG_TITLE_INPUTPOK[NLANGS] = { DLG_TITLE_INPUTPOK_EN, DLG_TITLE_INPUTPOK_ES, DLG_TITLE_INPUTPOK_PT };
 
 static const char *POKE_BANK_MENU[NLANGS] = { " Bank  \n" , " Banco \n" , " Banco \n"};
+
+static const char *MENU_MOUSE[NLANGS] = { MENU_MOUSE_EN, MENU_MOUSE_ES, MENU_MOUSE_PT};
 
 #define DEDICATORIA "\nF1Dedicado especialmente a:\r"\
 	"\nB1      _       _ _\r"\

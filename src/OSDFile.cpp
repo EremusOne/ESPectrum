@@ -294,7 +294,7 @@ reset:
 
     while(1) {
 
-        ESPectrum::showMemInfo("file dialog: before checking dir");
+        // ESPectrum::showMemInfo("file dialog: before checking dir");
 
         fdCursorFlash = 0;
 
@@ -356,7 +356,7 @@ reset:
             }
         }
 
-        ESPectrum::showMemInfo("file dialog: after checking dir");
+        // ESPectrum::showMemInfo("file dialog: after checking dir");
 
         // Force reindex (for testing)
         // reIndex = ESPectrum::ESPtestvar ? true : reIndex;
@@ -364,44 +364,44 @@ reset:
         // There was no index or hashes are different: reIndex
         if (reIndex) {
 
-            ESPectrum::showMemInfo("file dialog: before reindex");
+            // ESPectrum::showMemInfo("file dialog: before reindex");
 
             if ( dirfile ) {
                 fclose(dirfile);
                 dirfile = nullptr;
             }
 
-#if 1
-            multi_heap_info_t info;
-            size_t ram_consumption;
+// #if 1
+//             multi_heap_info_t info;
+//             size_t ram_consumption;
 
-            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+//             heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
 
-            printf("\n=======================================================\n");
-            printf("ORDENANDO CARPETA\n");
-            printf("=======================================================\n");
-            printf("\nTotal free bytes          : %d\n", info.total_free_bytes);
-            printf("Minimum free ever         : %d\n", info.minimum_free_bytes);
+//             printf("\n=======================================================\n");
+//             printf("ORDENANDO CARPETA\n");
+//             printf("=======================================================\n");
+//             printf("\nTotal free bytes          : %d\n", info.total_free_bytes);
+//             printf("Minimum free ever         : %d\n", info.minimum_free_bytes);
 
-            size_t minimum_before = info.minimum_free_bytes;
+//             size_t minimum_before = info.minimum_free_bytes;
 
-            uint32_t time_start = esp_timer_get_time();
-#endif
+//             uint32_t time_start = esp_timer_get_time();
+// #endif
 
             FileUtils::DirToFile(filedir, ftype, hash, ndirs + elements ); // Prepare filelist
 
-#if 1
-            uint32_t time_elapsed = esp_timer_get_time() - time_start;
+// #if 1
+//             uint32_t time_elapsed = esp_timer_get_time() - time_start;
 
-            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
+//             heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
 
-            printf("TIEMPO DE ORDENACION      : %6.2f segundos\n", (float)time_elapsed / 1000000);
-            printf("Total free bytes  despues : %d\n", info.total_free_bytes);
-            printf("Minimum free ever despues : %d\n", info.minimum_free_bytes);
-            printf("Consumo RAM               : %d\n", minimum_before - info.minimum_free_bytes);
+//             printf("TIEMPO DE ORDENACION      : %6.2f segundos\n", (float)time_elapsed / 1000000);
+//             printf("Total free bytes  despues : %d\n", info.total_free_bytes);
+//             printf("Minimum free ever despues : %d\n", info.minimum_free_bytes);
+//             printf("Consumo RAM               : %d\n", minimum_before - info.minimum_free_bytes);
 
-            printf("\n=======================================================\n");
-#endif
+//             printf("\n=======================================================\n");
+// #endif
             // stat((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), &stat_buf);
 
             dirfile = fopen((filedir + FileUtils::fileTypes[ftype].indexFilename).c_str(), "r");
@@ -422,7 +422,7 @@ reset:
             // Reset position
             FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
 
-            ESPectrum::showMemInfo("file dialog: after reindex");
+            // ESPectrum::showMemInfo("file dialog: after reindex");
 
         }
 

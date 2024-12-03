@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -49,6 +49,7 @@ uint8_t* MemESP::rom[5];
 uint8_t* MemESP::ram[8] = { NULL };
 
 #ifdef ESPECTRUM_PSRAM
+#ifdef TIME_MACHINE
 uint32_t* MemESP::timemachine[TIME_MACHINE_SLOTS][8];
 uint8_t MemESP::tm_slotbanks[TIME_MACHINE_SLOTS][8];
 slotdata MemESP::tm_slotdata[TIME_MACHINE_SLOTS];
@@ -56,6 +57,7 @@ bool MemESP::tm_bank_chg[8];
 uint8_t MemESP::cur_timemachine = 0;
 int MemESP::tm_framecnt = 0;
 bool MemESP::tm_loading_slot = false;
+#endif
 #endif
 
 uint8_t* MemESP::ramCurrent[4];
@@ -66,6 +68,8 @@ uint8_t MemESP::videoLatch = 0;
 uint8_t MemESP::romLatch = 0;
 uint8_t MemESP::pagingLock = 0;
 uint8_t MemESP::romInUse = 0;
+uint8_t MemESP::pagingmode2A3 = 0;
+uint8_t MemESP::lastContendedMemReadWrite = 0xff;
 
 bool MemESP::SPRom = false;
 
@@ -73,22 +77,26 @@ bool MemESP::Init() {
 
     #ifdef ESPECTRUM_PSRAM
 
-    // Video pages in SRAM (faster)
+    // 48K and video pages in SRAM (faster)
+    MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
+    MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
     MemESP::ram[5] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
     MemESP::ram[7] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT);
 
     // Rest of pages in PSRAM
-    MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[0] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    // MemESP::ram[2] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     MemESP::ram[1] = (unsigned char *) heap_caps_calloc(0x8000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     MemESP::ram[3] = ((unsigned char *) MemESP::ram[1]) + 0x4000;
     MemESP::ram[4] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     MemESP::ram[6] = (unsigned char *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
 
+    #ifdef TIME_MACHINE
     // Allocate time machine RAM
     for (int i=0;i < TIME_MACHINE_SLOTS; i++)
         for (int n=0; n < 8; n++)
             MemESP::timemachine[i][n] = (uint32_t *) heap_caps_calloc(0x4000, sizeof(unsigned char), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    #endif
 
     #else
 
@@ -137,43 +145,49 @@ void MemESP::Reset() {
 
     MemESP::pagingLock = Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95" ? 1 : 0;
 
+    MemESP::pagingmode2A3 = 0;
+
+    MemESP::lastContendedMemReadWrite = 0xff;
+
     MemESP::SPRom = false;
 
     #ifdef ESPECTRUM_PSRAM
+    #ifdef TIME_MACHINE
     Tm_Init();
+    #endif
     #endif
 
 }
 
 #ifdef ESPECTRUM_PSRAM
-
+#ifdef TIME_MACHINE
 void MemESP::Tm_Init() {
-    
+
     if (tm_loading_slot) return;
-    
+
     // Init time machine
 
     for (int i=0; i < 8; i++) MemESP::tm_bank_chg[i] = !MemESP::pagingLock;
-    
+
     if (MemESP::pagingLock) {
         MemESP::tm_bank_chg[0] = true;
         MemESP::tm_bank_chg[2] = true;
-        MemESP::tm_bank_chg[5] = true;        
+        MemESP::tm_bank_chg[5] = true;
     }
-    
+
     for (int i=0;i < TIME_MACHINE_SLOTS; i++)
         for (int n=0; n < 8; n++)
             MemESP::tm_slotbanks[i][n]=0xff;
 
-    cur_timemachine = 0;  
-    tm_framecnt = 0;      
-    
+    cur_timemachine = 0;
+    tm_framecnt = 0;
+
 }
 
 void MemESP::Tm_Load(uint8_t slot) {
 
     tm_loading_slot = true;
-    
+
     // TO DO:
     // tstates, globaltstates, disk or tape status, whatever else i figure out
 
@@ -213,10 +227,10 @@ void MemESP::Tm_Load(uint8_t slot) {
     MemESP::romLatch = tm_slotdata[slot].romLatch;
     MemESP::pagingLock = tm_slotdata[slot].pagingLock;
     MemESP::bankLatch = tm_slotdata[slot].bankLatch;
-    
+
     if (tr_dos) {
         MemESP::romInUse = 4;
-        ESPectrum::trdos = true;            
+        ESPectrum::trdos = true;
     } else {
         MemESP::romInUse = MemESP::romLatch;
         ESPectrum::trdos = false;
@@ -229,7 +243,7 @@ void MemESP::Tm_Load(uint8_t slot) {
     VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
     // Read memory banks
-    for (int n=0; n < 8; n++) {   
+    for (int n=0; n < 8; n++) {
         if (tm_slotbanks[slot][n] != 0xff) {
             printf("Loaded slot %d\n",n);
             uint32_t* dst32 = (uint32_t *)MemESP::ram[n];
@@ -252,7 +266,7 @@ void MemESP::Tm_DoTimeMachine() {
     // printf("Time machine\n================\n");
 
     for (int n=0; n < 8; n++) { // Save active RAM banks during slot period
-        
+
         if (n == 2 || MemESP::tm_bank_chg[n]) { // Bank 2 is always copied because is always active
 
             // printf("Copying bank %d\n",n);
@@ -265,7 +279,7 @@ void MemESP::Tm_DoTimeMachine() {
             // Mark as inactive if is not current bank latched or current videobank
             if (n != MemESP::bankLatch && n != (MemESP::videoLatch ? 7 : 5))
                 MemESP::tm_bank_chg[n]=false;
-            
+
             // Register copied bank as current into slot bank list
             MemESP::tm_slotbanks[MemESP::cur_timemachine][n] = MemESP::cur_timemachine;
 
@@ -285,7 +299,7 @@ void MemESP::Tm_DoTimeMachine() {
     MemESP::tm_slotdata[MemESP::cur_timemachine].RegIX = Z80::getRegIX();
     MemESP::tm_slotdata[MemESP::cur_timemachine].inter = Z80::isIFF2() ? 0x04 : 0;
     MemESP::tm_slotdata[MemESP::cur_timemachine].RegR = Z80::getRegR();
-    MemESP::tm_slotdata[MemESP::cur_timemachine].RegAF = Z80::getRegAF();        
+    MemESP::tm_slotdata[MemESP::cur_timemachine].RegAF = Z80::getRegAF();
 
     MemESP::tm_slotdata[MemESP::cur_timemachine].RegSP = Z80::getRegSP();
     MemESP::tm_slotdata[MemESP::cur_timemachine].IM = Z80::getIM();
@@ -319,5 +333,5 @@ void MemESP::Tm_DoTimeMachine() {
     MemESP::tm_framecnt = 0;
 
 }
-
+#endif
 #endif

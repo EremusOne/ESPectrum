@@ -200,7 +200,7 @@ unsigned short OSD::menuRun(string new_menu) {
     }
     // printf("Cols previo: %d\n",cols);
     cols += 8;
-    cols = (cols > 32 ? 32 : cols);    
+    cols = (cols > 32 ? 32 : cols);
     // printf("Cols final: %d\n",cols);
 
     // Size
@@ -223,6 +223,8 @@ unsigned short OSD::menuRun(string new_menu) {
         if (ZXKeyb::Exists) ZXKeyb::ZXKbdRead();
 
         ESPectrum::readKbdJoy();
+
+        // printf("VK available: %d\n",ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable());
 
         // Process external keyboard
         if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -844,7 +846,7 @@ int OSD::menuTape(string title) {
                         tapemenuRedraw(title, true);
                     } else
                         osdCenteredMsg(OSD_BLOCK_TYPE_ERR[Config::lang], LEVEL_WARN, 1000);
-                            
+
                     fseek( Tape::tape, current_pos, SEEK_SET );
 
                 } else if (Tape::tapeFileType == TAPE_FTYPE_TAP && !Tape::tapeIsReadOnly && Menukey.vk == fabgl::VK_F6) {
@@ -872,7 +874,7 @@ int OSD::menuTape(string title) {
                             return -2;
                         }
                     }
-                    
+
                 } else if ( Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY2B) {
                     click();
                     if (Tape::tapeFileType == TAPE_FTYPE_TAP) {

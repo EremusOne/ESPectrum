@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -45,6 +45,10 @@ visit https://zxespectrum.speccy.org/contacto
 // #pragma GCC optimize("O3")
 
 uint32_t CPU::tstates = 0;
+
+int32_t CPU::prev_tstates = 0;
+uint32_t CPU::tstates_diff = 0;
+
 uint64_t CPU::global_tstates = 0;
 uint32_t CPU::statesInFrame = 0;
 uint8_t CPU::latetiming = 0;
@@ -52,16 +56,24 @@ uint8_t CPU::IntStart = 0;
 uint8_t CPU::IntEnd = 0;
 uint32_t CPU::stFrame = 0;
 
+uint8_t (*Z80Ops::fetchOpcode)() = &Z80Ops::fetchOpcode_std;
+uint8_t (*Z80Ops::peek8)(uint16_t address) = &Z80Ops::peek8_std;
+void (*Z80Ops::poke8)(uint16_t address, uint8_t value) = &Z80Ops::poke8_std;
+uint16_t (*Z80Ops::peek16)(uint16_t address) = &Z80Ops::peek16_std;
+void (*Z80Ops::poke16)(uint16_t address, RegisterPair word) = &Z80Ops::poke16_std;
+void (*Z80Ops::addressOnBus)(uint16_t address, int32_t wstates) = &Z80Ops::addressOnBus_std;
+
 bool Z80Ops::is48;
 bool Z80Ops::is128;
 bool Z80Ops::isPentagon;
+bool Z80Ops::is2a3;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void CPU::reset() {
 
     Z80::reset();
-    
+
     CPU::latetiming = Config::AluTiming;
 
     if (Config::arch == "48K") {
@@ -69,19 +81,21 @@ void CPU::reset() {
         Z80Ops::is48 = true;
         Z80Ops::is128 = false;
         Z80Ops::isPentagon = false;
+        Z80Ops::is2a3 = false;
         statesInFrame = TSTATES_PER_FRAME_48;
         IntStart = INT_START48;
         IntEnd = INT_END48 + CPU::latetiming;
         ESPectrum::target[0] = MICROS_PER_FRAME_48;
         ESPectrum::target[1] = MICROS_PER_FRAME_48;
         ESPectrum::target[2] = MICROS_PER_FRAME_48_125SPEED;
-        ESPectrum::target[3] = MICROS_PER_FRAME_48_150SPEED;                        
+        ESPectrum::target[3] = MICROS_PER_FRAME_48_150SPEED;
 
     } else if (Config::arch == "TK90X" || Config::arch == "TK95") {
 
         Z80Ops::is48 = true;
         Z80Ops::is128 = false;
         Z80Ops::isPentagon = false;
+        Z80Ops::is2a3 = false;
 
         switch (Config::ALUTK) {
         case 0:
@@ -90,7 +104,7 @@ void CPU::reset() {
             ESPectrum::target[0] = MICROS_PER_FRAME_48;
             ESPectrum::target[1] = MICROS_PER_FRAME_48;
             ESPectrum::target[2] = MICROS_PER_FRAME_48_125SPEED;
-            ESPectrum::target[3] = MICROS_PER_FRAME_48_150SPEED;                        
+            ESPectrum::target[3] = MICROS_PER_FRAME_48_150SPEED;
             break;
         case 1:
             Ports::getFloatBusData = &Ports::getFloatBusDataTK;
@@ -98,7 +112,7 @@ void CPU::reset() {
             ESPectrum::target[0] = MICROS_PER_FRAME_TK_50;
             ESPectrum::target[1] = MICROS_PER_FRAME_TK_50;
             ESPectrum::target[2] = MICROS_PER_FRAME_TK_50_125SPEED;
-            ESPectrum::target[3] = MICROS_PER_FRAME_TK_50_150SPEED;                        
+            ESPectrum::target[3] = MICROS_PER_FRAME_TK_50_150SPEED;
             break;
         case 2:
             Ports::getFloatBusData = &Ports::getFloatBusDataTK;
@@ -117,17 +131,33 @@ void CPU::reset() {
         Z80Ops::is48 = false;
         Z80Ops::is128 = true;
         Z80Ops::isPentagon = false;
+        Z80Ops::is2a3 = false;
         statesInFrame = TSTATES_PER_FRAME_128;
         IntStart = INT_START128;
         IntEnd = INT_END128 + CPU::latetiming;
         ESPectrum::target[0] = MICROS_PER_FRAME_128;
         ESPectrum::target[1] = MICROS_PER_FRAME_128;
         ESPectrum::target[2] = MICROS_PER_FRAME_128_125SPEED;
-        ESPectrum::target[3] = MICROS_PER_FRAME_128_150SPEED;                        
+        ESPectrum::target[3] = MICROS_PER_FRAME_128_150SPEED;
+    } else if (Config::arch == "+2A" || Config::arch=="+3") {
+        Ports::getFloatBusData = &Ports::getFloatBusData2A3;
+        Z80Ops::is48 = false;
+        Z80Ops::is128 = false;
+        Z80Ops::isPentagon = false;
+        Z80Ops::is2a3 = true;
+        statesInFrame = TSTATES_PER_FRAME_128;
+        IntStart = INT_STARTPLUS2A3;
+        IntEnd = INT_ENDPLUS2A3 + CPU::latetiming;
+        ESPectrum::target[0] = MICROS_PER_FRAME_128;
+        ESPectrum::target[1] = MICROS_PER_FRAME_128;
+        ESPectrum::target[2] = MICROS_PER_FRAME_128_125SPEED;
+        ESPectrum::target[3] = MICROS_PER_FRAME_128_150SPEED;
     } else if (Config::arch == "Pentagon") {
+        Ports::getFloatBusData = &Ports::getFloatBusDataPentagon;
         Z80Ops::is48 = false;
         Z80Ops::is128 = false;
         Z80Ops::isPentagon = true;
+        Z80Ops::is2a3 = false;
         statesInFrame = TSTATES_PER_FRAME_PENTAGON;
         IntStart = INT_START_PENTAGON;
         IntEnd = INT_END_PENTAGON + CPU::latetiming;
@@ -137,16 +167,43 @@ void CPU::reset() {
         ESPectrum::target[3] = MICROS_PER_FRAME_PENTAGON_150SPEED;
     }
 
+    if (Config::arch == "+2A" || Config::arch=="+3") {
+        Z80Ops::fetchOpcode = &Z80Ops::fetchOpcode_2A3;
+        Z80Ops::peek8  = &Z80Ops::peek8_2A3;
+        Z80Ops::poke8 = &Z80Ops::poke8_2A3;
+        Z80Ops::peek16 = &Z80Ops::peek16_2A3;
+        Z80Ops::poke16 = &Z80Ops::poke16_2A3;
+        Z80Ops::addressOnBus = &Z80Ops::addressOnBus_2A3;
+    } else {
+        Z80Ops::fetchOpcode = &Z80Ops::fetchOpcode_std;
+        Z80Ops::peek8  = &Z80Ops::peek8_std;
+        Z80Ops::poke8 = &Z80Ops::poke8_std;
+        Z80Ops::peek16 = &Z80Ops::peek16_std;
+        Z80Ops::poke16 = &Z80Ops::poke16_std;
+        Z80Ops::addressOnBus = &Z80Ops::addressOnBus_std;
+    }
+
     stFrame = statesInFrame - IntEnd;
 
     tstates = 0;
     global_tstates = 0;
+
+    prev_tstates = 0;
+    tstates_diff = 0;
 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 IRAM_ATTR void CPU::loop() {
+
+    // Reset audio buffer vars
+    ESPectrum::audbufcnt = 0;
+    ESPectrum::audbufcntover = 0;
+    ESPectrum::audioBitBuf = 0;
+    ESPectrum::audioBitbufCount = 0;
+    ESPectrum::audbufcntAY = 0;
+    ESPectrum::audbufcntCOVOX = 0;
 
     // Check NMI
     if (Z80::isNMI()) {
@@ -158,26 +215,40 @@ IRAM_ATTR void CPU::loop() {
 
     if (!Z80::isHalted()) {
         stFrame = statesInFrame - IntEnd;
-        Z80::exec_nocheck();
+        if (Z80Ops::is2a3)
+            Z80::exec_nocheck_2A3();
+        else
+            Z80::exec_nocheck();
         if (stFrame == 0) FlushOnHalt();
     } else {
         FlushOnHalt();
     }
 
     while (tstates < statesInFrame) Z80::execute();
-    
+
     VIDEO::EndFrame();
+
+    // // FDD calcs
+    // CPU::tstates_diff += CPU::tstates - CPU::prev_tstates;
+
+    // if ((ESPectrum::fdd.control & (kRVMWD177XHLD | kRVMWD177XHLT)) != 0) {
+    //     rvmWD1793Step(&ESPectrum::fdd, CPU::tstates_diff / WD177XSTEPSTATES); // FDD
+    // }
+
+    // CPU::tstates_diff = CPU::tstates_diff % WD177XSTEPSTATES;
 
     global_tstates += statesInFrame; // increase global Tstates
     tstates -= statesInFrame;
+
+    // CPU::prev_tstates = tstates;
 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 IRAM_ATTR void CPU::FlushOnHalt() {
-        
-    uint32_t stEnd = statesInFrame - IntEnd;    
+
+    uint32_t stEnd = statesInFrame - IntEnd;
 
     uint8_t page = Z80::getRegPC() >> 14;
     if (MemESP::ramContended[page]) {
@@ -220,15 +291,71 @@ IRAM_ATTR void CPU::FlushOnHalt() {
 // Z80Ops
 ///////////////////////////////////////////////////////////////////////////////
 
-// Read byte from RAM
-IRAM_ATTR uint8_t Z80Ops::peek8(uint16_t address) {
+// Fetch opcode from RAM (+2A/3 version)
+IRAM_ATTR uint8_t Z80Ops::fetchOpcode_2A3() {
+
+    uint8_t pg = Z80::getRegPC() >> 14;
+    uint8_t data = MemESP::ramCurrent[pg][Z80::getRegPC() & 0x3fff];
+    if (MemESP::ramContended[pg]) {
+        MemESP::lastContendedMemReadWrite = data;
+        VIDEO::Draw_Opcode(true);
+    } else {
+        VIDEO::Draw_Opcode(false);
+    };
+
+    return data;
+}
+
+// Fetch opcode from RAM (NON +2A/3 version)
+IRAM_ATTR uint8_t Z80Ops::fetchOpcode_std() {
+    uint8_t pg = Z80::getRegPC() >> 14;
+    VIDEO::Draw_Opcode(MemESP::ramContended[pg]);
+    return MemESP::ramCurrent[pg][Z80::getRegPC() & 0x3fff];
+}
+
+// Read byte from RAM (+2A/+3 version)
+IRAM_ATTR uint8_t Z80Ops::peek8_2A3(uint16_t address) {
+    uint8_t page = address >> 14;
+    uint8_t data = MemESP::ramCurrent[page][address & 0x3fff];
+    if (MemESP::ramContended[page]) {
+        MemESP::lastContendedMemReadWrite = data;
+        VIDEO::Draw(3,true);
+    } else {
+        VIDEO::Draw(3,false);
+    }
+    return data;
+}
+
+// Read byte from RAM (non +2A/+3 version)
+IRAM_ATTR uint8_t Z80Ops::peek8_std(uint16_t address) {
     uint8_t page = address >> 14;
     VIDEO::Draw(3,MemESP::ramContended[page]);
     return MemESP::ramCurrent[page][address & 0x3fff];
 }
 
-// Write byte to RAM
-IRAM_ATTR void Z80Ops::poke8(uint16_t address, uint8_t value) {
+// Write byte to RAM (+2A/+3 version)
+IRAM_ATTR void Z80Ops::poke8_2A3(uint16_t address, uint8_t value) {
+
+    uint8_t page = address >> 14;
+
+    if (page == MemESP::pagingmode2A3) {
+        VIDEO::Draw(3, false);
+        return;
+    }
+
+    if (MemESP::ramContended[page]) {
+        MemESP::lastContendedMemReadWrite = value;
+        VIDEO::Draw(3, true);
+    } else {
+        VIDEO::Draw(3, false);
+    }
+
+    MemESP::ramCurrent[page][address & 0x3fff] = value;
+
+}
+
+// Write byte to RAM (non +2A/+3 version)
+IRAM_ATTR void Z80Ops::poke8_std(uint16_t address, uint8_t value) {
 
     uint8_t page = address >> 14;
 
@@ -242,25 +369,22 @@ IRAM_ATTR void Z80Ops::poke8(uint16_t address, uint8_t value) {
 
 }
 
-// Read word from RAM
-IRAM_ATTR uint16_t Z80Ops::peek16(uint16_t address) {
+// Read word from RAM (+2A/+3 version)
+IRAM_ATTR uint16_t Z80Ops::peek16_2A3(uint16_t address) {
 
     uint8_t page = address >> 14;
-    // uint16_t addrinpage = address & 0x3fff;
-    // if (addrinpage < 0x3fff) {    // Check if address is between two different pages
     if (page == ((address + 1) >> 14)) {    // Check if address is between two different pages
 
-        // uint8_t page = address >> 14;
+        uint8_t msb = MemESP::ramCurrent[page][(address & 0x3fff) + 1];
 
         if (MemESP::ramContended[page]) {
+            MemESP::lastContendedMemReadWrite = msb;
             VIDEO::Draw(3, true);
-            VIDEO::Draw(3, true);            
+            VIDEO::Draw(3, true);
         } else
             VIDEO::Draw(6, false);
 
-        return ((MemESP::ramCurrent[page][(address & 0x3fff) + 1] << 8) | MemESP::ramCurrent[page][address & 0x3fff]);
-
-        // return (MemESP::ramCurrent[page][addrinpage + 1] << 8) | MemESP::ramCurrent[page][addrinpage];
+        return (msb << 8) | MemESP::ramCurrent[page][address & 0x3fff];
 
     } else {
 
@@ -273,13 +397,71 @@ IRAM_ATTR uint16_t Z80Ops::peek16(uint16_t address) {
 
 }
 
-// Write word to RAM
-IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
+// Read word from RAM (non +2A/+3 version)
+IRAM_ATTR uint16_t Z80Ops::peek16_std(uint16_t address) {
+
+    uint8_t page = address >> 14;
+    if (page == ((address + 1) >> 14)) {    // Check if address is between two different pages
+
+        if (MemESP::ramContended[page]) {
+            VIDEO::Draw(3, true);
+            VIDEO::Draw(3, true);
+        } else
+            VIDEO::Draw(6, false);
+
+        return ((MemESP::ramCurrent[page][(address & 0x3fff) + 1] << 8) | MemESP::ramCurrent[page][address & 0x3fff]);
+
+    } else {
+
+        // Order matters, first read lsb, then read msb, don't "optimize"
+        uint8_t lsb = Z80Ops::peek8(address);
+        uint8_t msb = Z80Ops::peek8(address + 1);
+        return (msb << 8) | lsb;
+
+    }
+
+}
+
+// Write word to RAM (+2A/+3 version)
+IRAM_ATTR void Z80Ops::poke16_2A3(uint16_t address, RegisterPair word) {
 
     uint8_t page = address >> 14;
     uint16_t page_addr = address & 0x3fff;
 
-    if (page_addr < 0x3fff) {    // Check if address is between two different pages    
+    if (page_addr < 0x3fff) {    // Check if address is between two different pages
+
+        if (page == MemESP::pagingmode2A3) {
+            VIDEO::Draw(6, false);
+            return;
+        }
+
+        if (MemESP::ramContended[page]) {
+            MemESP::lastContendedMemReadWrite = word.byte8.hi;
+            VIDEO::Draw(3, true);
+            VIDEO::Draw(3, true);
+        } else
+            VIDEO::Draw(6, false);
+
+        MemESP::ramCurrent[page][page_addr] = word.byte8.lo;
+        MemESP::ramCurrent[page][page_addr + 1] = word.byte8.hi;
+
+    } else {
+
+        // Order matters, first write lsb, then write msb, don't "optimize"
+        Z80Ops::poke8(address, word.byte8.lo);
+        Z80Ops::poke8(address + 1, word.byte8.hi);
+
+    }
+
+}
+
+// Write word to RAM (non +2A/+3 version)
+IRAM_ATTR void Z80Ops::poke16_std(uint16_t address, RegisterPair word) {
+
+    uint8_t page = address >> 14;
+    uint16_t page_addr = address & 0x3fff;
+
+    if (page_addr < 0x3fff) {    // Check if address is between two different pages
 
         if (page == 0) {
             VIDEO::Draw(6, false);
@@ -288,7 +470,7 @@ IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
 
         if (MemESP::ramContended[page]) {
             VIDEO::Draw(3, true);
-            VIDEO::Draw(3, true);            
+            VIDEO::Draw(3, true);
         } else
             VIDEO::Draw(6, false);
 
@@ -306,12 +488,17 @@ IRAM_ATTR void Z80Ops::poke16(uint16_t address, RegisterPair word) {
 }
 
 // Put an address on bus lasting 'tstates' cycles
-IRAM_ATTR void Z80Ops::addressOnBus(uint16_t address, int32_t wstates) {
+IRAM_ATTR void Z80Ops::addressOnBus_std(uint16_t address, int32_t wstates) {
     if (MemESP::ramContended[address >> 14]) {
-        for (int idx = 0; idx < wstates; idx++)
+        for (int i = 0; i < wstates; i++)
             VIDEO::Draw(1, true);
     } else
         VIDEO::Draw(wstates, false);
+}
+
+// Put an address on bus lasting 'tstates' cycles
+IRAM_ATTR void Z80Ops::addressOnBus_2A3(uint16_t address, int32_t wstates) {
+    VIDEO::Draw(wstates, false);
 }
 
 // Callback to know when the INT signal is active

@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -83,7 +83,7 @@ using namespace std;
 #define ESP_AUDIO_OVERSAMPLES_DIV_TK_60 19
 
 #define ESP_AUDIO_OVERSAMPLES_128 3732
-#define ESP_AUDIO_FREQ_128 31112 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz. 
+#define ESP_AUDIO_FREQ_128 31112 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz.
 #define ESP_AUDIO_FREQ_128_125SPEED 38890 // 125% speed
 #define ESP_AUDIO_FREQ_128_150SPEED 46669 // 150% speed
 #define ESP_AUDIO_SAMPLES_128 622
@@ -126,25 +126,37 @@ public:
     // Audio
     static void BeeperGetSample();
     static void AYGetSample();
+    static void COVOXGetSample();
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_PENTAGON];
+    static uint8_t SamplebufCOVOX[ESP_AUDIO_SAMPLES_PENTAGON];
+    static uint32_t audbufcntCOVOX;
+    static uint32_t faudbufcntCOVOX;
+    static uint8_t covoxData[4];
+    static uint16_t covoxMix;
+    static uint16_t fcovoxMix;
     static uint32_t* overSamplebuf;
     static unsigned char audioSampleDivider;
-    static unsigned char audioAYDivider;    
-    static unsigned char audioOverSampleDivider;    
+    static unsigned char audioAYDivider;
+    static unsigned char audioCOVOXDivider;
+    static unsigned char audioOverSampleDivider;
     static signed char aud_volume;
     static uint32_t audbufcnt;
-    static uint32_t audbufcntover;    
+    // static uint32_t faudbufcnt;
+    static uint32_t audbufcntover;
+    static uint32_t faudbufcntover;
     static uint32_t audbufcntAY;
-    static uint32_t faudbufcnt;
     static uint32_t faudbufcntAY;
     static int lastaudioBit;
-    static int faudioBit;
+    static int flastaudioBit;
     static int samplesPerFrame;
     static bool AY_emu;
     static int Audio_freq[4];
+    static int audioBitBuf;
+    static unsigned char audioBitbufCount;
+    static uint8_t aud_active_sources;
 
     static uint8_t ESP_delay;
-    static int sync_cnt;    
+    static int sync_cnt;
 
     static int TapeNameScroller;
 
@@ -158,16 +170,25 @@ public:
 
     static int ESPtestvar;
     static int ESPtestvar1;
-    static int ESPtestvar2;        
+    static int ESPtestvar2;
 
     static volatile bool vsync;
 
-    static TaskHandle_t audioTaskHandle;    
+    static TaskHandle_t audioTaskHandle;
 
+    static bool ps2kbd;
     static bool ps2kbd2;
+    static bool ps2mouse;
+
+    static int zxDelay;
 
     static bool trdos;
     static WD1793 Betadisk;
+
+    static int32_t mouseX;
+    static int32_t mouseY;
+    static bool mouseButtonL;
+    static bool mouseButtonR;
 
     // static uint32_t sessid;
 

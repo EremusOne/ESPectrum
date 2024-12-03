@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -124,7 +124,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define OSD_TAPE_INSERT_ES "Cinta insertada"
 #define OSD_TAPE_EJECT_ES "Cinta expulsada"
 
-#define TRDOS_RESET_ERR_ES "Error en reset a TR-DOS. Active Betadisk."
+#define TRDOS_RESET_ERR_ES "Betadisk desactivado o no disponible"
 
 #define MENU_SNA_ES \
     "Men\xA3 snapshots\n"\
@@ -157,8 +157,8 @@ visit https://zxespectrum.speccy.org/contacto
     "Casete\t>\n"\
     "Betadisk\t>\n"\
     "Modelo\t>\n"\
-    "Resetear\t>\n"\
     "Opciones\t>\n"\
+    "Resetear\t>\n"\
     "Ayuda\n"\
     "Acerca de\n"
 
@@ -170,8 +170,8 @@ visit https://zxespectrum.speccy.org/contacto
     "Joystick\t>\n"\
     "Emulaci\xA2n joystick\t>\n"\
     "Pantalla\t>\n"\
-	"Actualizar\t>\n"\
     "Otros\t>\n"\
+	"Actualizar\t>\n"\
     "Idioma\t>\n"
 
 #define MENU_UPDATE_ES \
@@ -179,7 +179,7 @@ visit https://zxespectrum.speccy.org/contacto
 	"Firmware\n"\
 	"ROM Custom 48K\n"\
 	"ROM Custom 128k\n"\
-	"ROM Custom TK\n"		
+	"ROM Custom TK\n"
 
 #define MENU_VIDEO_ES \
     "Pantalla\n"\
@@ -213,21 +213,28 @@ visit https://zxespectrum.speccy.org/contacto
 #define MENU_STORAGE_ES "Almacenamiento\n"\
     "Betadisk\t>\n"\
     "Carga r\xA0pida cinta\t>\n"\
-    "Timings ROM R.G.\t>\n"	
+    "Timings ROM R.G.\t>\n"
 
 #define MENU_YESNO_ES "S\xA1\t[Y]\n"\
     "No\t[N]\n"
 
 #define MENU_OTHER_ES "Otros\n"\
     "AY en 48K\t>\n"\
+    "Covox\t>\n"\
     "Timing ULA\t>\n"\
     "48K Issue 2\t>\n"\
 	"ULA TK\t>\n"\
-    "Segundo disp. PS/2\t>\n"	
+    "Segundo disp. PS/2\t>\n"\
+    "Rat\xA2n\t>\n"
 
 #define MENU_KBD2NDPS2_ES "Dispositivo\n"\
     "Nada\t[N]\n"\
-    "Teclado\t[K]\n"
+    "Teclado\t[K]\n"\
+    "Rat\xA2n\t[M]\n"
+
+#define MENU_MOUSE_ES "Rat\xA2n\n"\
+    "No\t[N]\n"\
+    "Kempston\t[K]\n"
 
 #define MENU_ALUTIMING_ES "Timing ULA\n"\
     "Early\t[E]\n"\
@@ -274,7 +281,7 @@ visit https://zxespectrum.speccy.org/contacto
     "v3 Espa\xA4ol (R.G.)\t[v3es ]\n"\
     "v3 Portugu\x82s (R.G.)\t[v3pt ]\n"\
     "v3 Ingl\x82s (R.G.)\t[v3en ]\n"\
-    "Custom\t[TKcs ]\n"    	
+    "Custom\t[TKcs ]\n"
 
 #define MENU_ROMSTK95_PREF_ES "Espa\xA4ol\t[95es ]\n"\
     "Portugu\x82s\t[95pt ]\n"

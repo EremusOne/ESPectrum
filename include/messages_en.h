@@ -28,7 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
+To Contact the dev team you can write to zxespectrum@gmail.com or
 visit https://zxespectrum.speccy.org/contacto
 
 */
@@ -127,7 +127,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define OSD_TAPE_INSERT_EN "Tape inserted"
 #define OSD_TAPE_EJECT_EN "Tape ejected"
 
-#define TRDOS_RESET_ERR_EN "Can't reset to TR-DOS. Enable Betadisk."
+#define TRDOS_RESET_ERR_EN "Betadisk disabled or not available"
 
 #define MENU_SNA_EN \
     "Snapshot menu\n"\
@@ -160,8 +160,8 @@ visit https://zxespectrum.speccy.org/contacto
     "Tape\t>\n"\
     "Betadisk\t>\n"\
 	"Machine\t>\n"\
-    "Reset\t>\n"\
     "Options\t>\n"\
+    "Reset\t>\n"\
     "Help\n"\
     "About\n"
 
@@ -173,8 +173,8 @@ visit https://zxespectrum.speccy.org/contacto
     "Joystick\t>\n"\
     "Joystick emulation\t>\n"\
     "Display\t>\n"\
-	"Update\t>\n"\
     "Other\t>\n"\
+	"Update\t>\n"\
     "Language\t>\n"
 
 #define MENU_UPDATE_EN \
@@ -182,7 +182,7 @@ visit https://zxespectrum.speccy.org/contacto
 	"Firmware\n"\
 	"Custom ROM 48K\n"\
 	"Custom ROM 128k\n"\
-	"Custom ROM TK\n"		    
+	"Custom ROM TK\n"
 
 #define MENU_VIDEO_EN \
     "Display\n"\
@@ -216,21 +216,28 @@ visit https://zxespectrum.speccy.org/contacto
 #define MENU_STORAGE_EN "Storage\n"\
     "Betadisk\t>\n"\
     "Flash tape load\t>\n"\
-    "R.G. ROM timings\t>\n"	
+    "R.G. ROM timings\t>\n"
 
 #define MENU_YESNO_EN "Yes\t[Y]\n"\
     "No\t[N]\n"
 
 #define MENU_OTHER_EN "Other\n"\
     "AY on 48K\t>\n"\
+    "Covox\t>\n"\
     "ULA Timing\t>\n"\
     "48K Issue 2\t>\n"\
 	"TK ULA\t>\n"\
-    "Second PS/2 device\t>\n"
+    "Second PS/2 device\t>\n"\
+    "Mouse\t>\n"
 
 #define MENU_KBD2NDPS2_EN "Device     \n"\
     "None\t[N]\n"\
-    "Keyboard\t[K]\n"
+    "Keyboard\t[K]\n"\
+    "Mouse\t[M]\n"
+
+#define MENU_MOUSE_EN "Mouse\n"\
+    "No\t[N]\n"\
+    "Kempston\t[K]\n"
 
 #define MENU_ALUTIMING_EN "ULA Timing\n"\
     "Early\t[E]\n"\
@@ -291,7 +298,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MENU_INTERFACE_LANG_EN "Language\n"\
     "English\t[ ]\n"\
     "Spanish\t[ ]\n"\
-    "Portuguese\t[ ]\n"	
+    "Portuguese\t[ ]\n"
 
 #define MENU_JOY_EN "Joystick menu\n"
 

@@ -132,13 +132,13 @@ static const uint8_t click128[116] = {   0,8,32,32,32,32,32,32,32,32,32,32,32,32
                                         32,32,8,0
                                     };
 
-IRAM_ATTR void OSD::click() {
-
-    size_t written;
+/* IRAM_ATTR */ void OSD::click() {
 
     if (Config::tape_player) return; // Disable interface click on tape player mode
 
     pwm_audio_set_volume(ESP_VOLUME_MAX);
+
+    size_t written;
 
     if (Z80Ops::is48)
         pwm_audio_write((uint8_t *) click48, 12, &written,  5 / portTICK_PERIOD_MS);
@@ -865,10 +865,11 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 }
 
                 // Reset AY emulation
-                AySound::init();
+                // AySound::init();
                 AySound::set_sound_format(ESPectrum::Audio_freq[ESPectrum::ESP_delay],1,8);
-                AySound::set_stereo(AYEMU_MONO,NULL);
-                AySound::reset();
+                // AySound::set_stereo_MONO,NULL);
+                // AySound::reset();
+                AySound::prepare_generation();
 
             }
 
@@ -879,9 +880,9 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         if (KeytoESP == fabgl::VK_F10) { // NMI
             Z80::triggerNMI();
         } else
-        if (KeytoESP == fabgl::VK_F11) { // Reset to TR-DOS (48K only)
+        if (KeytoESP == fabgl::VK_F11) { // Reset to TR-DOS
 
-            if (Config::DiskCtrl || Z80Ops::isPentagon) {
+            if ((Config::DiskCtrl || Z80Ops::isPentagon) && !Z80Ops::is2a3) {
 
                 if (Config::ram_file != NO_RAM_FILE) {
                     Config::ram_file = NO_RAM_FILE;
@@ -1013,8 +1014,19 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         //     ESPectrum::ESPtestvar += 1;
         //     printf("ESPtestvar: %d\n",ESPectrum::ESPtestvar);
         // }
+        // else if (KeytoESP == fabgl::VK_F6) {
+        //     // Test variable decrease
+        //     ESPectrum::ESPtestvar1 -= 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // }
+        // else if (KeytoESP == fabgl::VK_F7) {
+        //     // Test variable increase
+        //     ESPectrum::ESPtestvar1 += 1;
+        //     printf("ESPtestvar1: %d\n",ESPectrum::ESPtestvar1);
+        // }
         else if (KeytoESP == fabgl::VK_F3) {
 
+            // #ifdef TIME_MACHINE
             // if (MemESP::cur_timemachine > 0)
             //     MemESP::cur_timemachine--;
             // else
@@ -1022,6 +1034,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
             // if (MemESP::tm_slotbanks[MemESP::cur_timemachine][2] != 0xff)
             //     MemESP::Tm_Load(MemESP::cur_timemachine);
+            // #endif
 
             // Persist Load
             string menuload = MENU_PERSIST_LOAD[Config::lang] + getStringPersistCatalog();
@@ -1155,7 +1168,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             if ((VIDEO::OSD & 0x03) > 2) {
                 if ((VIDEO::OSD & 0x04) == 0) {
                     if (Config::aspect_16_9)
-                        VIDEO::Draw_OSD169 = VIDEO::MainScreen;
+                        VIDEO::Draw_OSD169 = Z80Ops::is2a3 ? VIDEO::MainScreen_2A3 : VIDEO::MainScreen;
                     else
                         VIDEO::Draw_OSD43 = Z80Ops::isPentagon ? VIDEO::BottomBorder_Pentagon :  VIDEO::BottomBorder;
                 }
@@ -1164,7 +1177,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
 
                 if ((VIDEO::OSD & 0x04) == 0) {
                     if (Config::aspect_16_9)
-                        VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                        VIDEO::Draw_OSD169 = Z80Ops::is2a3 ? VIDEO::MainScreen_OSD_2A3 : VIDEO::MainScreen_OSD;
                     else
                         VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
@@ -1190,6 +1203,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         // }
         else if (KeytoESP == fabgl::VK_F9 || KeytoESP == fabgl::VK_VOLUMEDOWN) {
 
+            // #ifdef TIME_MACHINE
             // EXPERIMENTAL: TIME MACHINE TEST
 
             // uint8_t slottoload;
@@ -1210,11 +1224,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             //     MemESP::Tm_Load(slottoload);
 
             // return;
+            // #endif
 
             if (VIDEO::OSD == 0) {
 
                 if (Config::aspect_16_9)
-                    VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                    VIDEO::Draw_OSD169 = Z80Ops::is2a3 ? VIDEO::MainScreen_OSD_2A3 : VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
@@ -1255,7 +1270,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
             if (VIDEO::OSD == 0) {
 
                 if (Config::aspect_16_9)
-                    VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+                    VIDEO::Draw_OSD169 = Z80Ops::is2a3 ? VIDEO::MainScreen_OSD_2A3 : VIDEO::MainScreen_OSD;
                 else
                     VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
@@ -1552,8 +1567,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                         if (mFile != "" && FileUtils::isSDReady()) {
                                             mFile.erase(0, 1);
                                             string fname = FileUtils::MountPoint + FileUtils::DSK_Path + mFile;
+
                                             ESPectrum::Betadisk.EjectDisk(dsk_num - 1);
                                             ESPectrum::Betadisk.InsertDisk(dsk_num - 1,fname);
+
+                                            // rvmWD1793InsertDisk(&ESPectrum::fdd,dsk_num -1, fname);
+
                                             return;
                                         }
                                     } else {
@@ -1585,9 +1604,10 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 // Set curopt to reflect current machine
                 if (Config::arch == "48K") menu_curopt = 1;
                 else if (Config::arch == "128K") menu_curopt = 2;
-                else if (Config::arch == "Pentagon") menu_curopt = 3;
-                else if (Config::arch == "TK90X") menu_curopt = 4;
-                else if (Config::arch == "TK95") menu_curopt = 5;
+                else if (Config::arch == "+2A") menu_curopt = 4;
+                else if (Config::arch == "Pentagon") menu_curopt = 4;
+                else if (Config::arch == "TK90X") menu_curopt = 5;
+                else if (Config::arch == "TK95") menu_curopt = 6;
 
                 while (1) {
                     menu_level = 1;
@@ -1656,10 +1676,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 menu_level = 2;
                             }
                         } else if (arch_num == 3) {
+                            arch = "+2A";
+                            romset = "+2A";
+                            opt2 = 1;
+                        } else if (arch_num == 4) {
                             arch = "Pentagon";
                             romset = "Pentagon";
                             opt2 = 1;
-                        } else if (arch_num == 4) { // TK90X
+                        } else if (arch_num == 5) { // TK90X
                             menu_level = 2;
 
                             // Set curopt to reflect current romset
@@ -1693,7 +1717,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 menu_curopt = 1;
                                 menu_level = 2;
                             }
-                        } else if (arch_num == 5) { // TK95
+                        } else if (arch_num == 6) { // TK95
                             menu_level = 2;
 
                             // Set curopt to reflect current romset
@@ -1824,60 +1848,6 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 }
             }
             else if (opt == 5) {
-                // ***********************************************************************************
-                // RESET MENU
-                // ***********************************************************************************
-                menu_saverect = true;
-                menu_curopt = 1;
-                while(1) {
-                    menu_level = 1;
-                    // Reset
-                    uint8_t opt2 = menuRun(MENU_RESET[Config::lang]);
-                    if (opt2 == 1) {
-                        // Soft
-                        if (Config::last_ram_file != NO_RAM_FILE) {
-                            LoadSnapshot(Config::last_ram_file,"","",0xff);
-                            Config::ram_file = Config::last_ram_file;
-                        } else ESPectrum::reset();
-                        return;
-                    }
-                    else if (opt2 == 4) {
-                        // ESP host reset
-                        Config::ram_file = NO_RAM_FILE;
-                        Config::save("ram");
-                        esp_hard_reset();
-                    }
-                    else if (opt2 != 0) {
-
-                        if (opt2 == 2 && Config::DiskCtrl == 0 && !Z80Ops::isPentagon) {
-                            OSD::osdCenteredMsg(TRDOS_RESET_ERR[Config::lang], LEVEL_ERROR, 1500 );
-                            return;
-                        }
-
-                        // Hard reset
-                        if (Config::ram_file != NO_RAM_FILE) {
-                            Config::ram_file = NO_RAM_FILE;
-                        }
-                        Config::last_ram_file = NO_RAM_FILE;
-                        ESPectrum::reset();
-
-                        // Reset to TR-DOS
-                        if (opt2 == 2) {
-                            if (Z80Ops::is128 || Z80Ops::isPentagon) MemESP::romLatch = 1;
-                            MemESP::romInUse = 4;
-                            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-                            ESPectrum::trdos = true;
-                        }
-
-                        return;
-
-                    } else {
-                        menu_curopt = 5;
-                        break;
-                    }
-                }
-            }
-            else if (opt == 6) {
                 // ***********************************************************************************
                 // OPTIONS MENU
                 // ***********************************************************************************
@@ -2024,55 +1994,31 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                         while (1) {
                             string archprefmenu = MENU_ARCH_PREF[Config::lang];
                             string prev_archpref = Config::pref_arch;
+                            menu_curopt = 7;
                             if (Config::pref_arch == "48K") {
                                 menu_curopt = 1;
-                                archprefmenu.replace(archprefmenu.find("[4",0),2,"[*");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
+                                archprefmenu.replace(archprefmenu.find("48K") + 5, 1 ,"*");
                             } else if (Config::pref_arch == "128K") {
                                 menu_curopt = 2;
-                                archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[*");
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
-                            } else if (Config::pref_arch == "Pentagon") {
+                                archprefmenu.replace(archprefmenu.find("28K") + 5, 1 ,"*");
+                            } else if (Config::pref_arch == "+2A") {
                                 menu_curopt = 3;
-                                archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[*");
-                                archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
-                            } else if (Config::pref_arch == "TK90X") {
+                                archprefmenu.replace(archprefmenu.find("+2A") + 5, 1 ,"*");
+                            } else if (Config::pref_arch == "Pentagon") {
                                 menu_curopt = 4;
-                                archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[T",0),2,"[*");
-                                archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
-                            } else if (Config::pref_arch == "TK95") {
+                                archprefmenu.replace(archprefmenu.find("n 1") + 8, 1 ,"*");
+                            } else if (Config::pref_arch == "TK90X") {
                                 menu_curopt = 5;
-                                archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[9",0),2,"[*");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[ ");
-                            } else {
+                                archprefmenu.replace(archprefmenu.find("90X") + 5, 1 ,"*");
+                            } else if (Config::pref_arch == "TK95") {
                                 menu_curopt = 6;
-                                archprefmenu.replace(archprefmenu.find("[4",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[1",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[P",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[T",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[9",0),2,"[ ");
-                                archprefmenu.replace(archprefmenu.find("[L",0),2,"[*");
+                                archprefmenu.replace(archprefmenu.find("K95") + 5, 1 ,"*");
                             }
+                            if (menu_curopt == 7)
+                                archprefmenu.replace(archprefmenu.find("[L"), 2 ,"[*");
+                            else
+                                archprefmenu.replace(archprefmenu.find("[L"), 2 ,"[ ");
+
                             uint8_t opt2 = menuRun(archprefmenu);
                             if (opt2) {
 
@@ -2083,15 +2029,18 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     Config::pref_arch = "128K";
                                 else
                                 if (opt2 == 3)
-                                    Config::pref_arch = "Pentagon";
+                                    Config::pref_arch = "+2A";
                                 else
                                 if (opt2 == 4)
-                                    Config::pref_arch = "TK90X";
+                                    Config::pref_arch = "Pentagon";
                                 else
                                 if (opt2 == 5)
-                                    Config::pref_arch = "TK95";
+                                    Config::pref_arch = "TK90X";
                                 else
                                 if (opt2 == 6)
+                                    Config::pref_arch = "TK95";
+                                else
+                                if (opt2 == 7)
                                     Config::pref_arch = "Last";
 
                                 if (Config::pref_arch != prev_archpref) {
@@ -2479,7 +2428,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                             }
                         }
                     }
-                    else if (options_num == 8) {
+                    else if (options_num == 7) {
                         menu_level = 2;
                         menu_curopt = 1;
                         menu_saverect = true;
@@ -2512,6 +2461,14 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                                 Config::AY48 = false;
 
                                             if (Config::AY48 != prev_ay48) {
+                                                if (Z80Ops::is48) {
+                                                    ESPectrum::AY_emu = Config::AY48;
+                                                    if (ESPectrum::AY_emu == false) {
+                                                    for (int i=0; i < ESPectrum::samplesPerFrame; i++)
+                                                        AySound::SamplebufAY[i] = ESPectrum::audioBuffer[i] = 0;
+                                                    }
+                                                    ESPectrum::aud_active_sources = (Config::Covox & 0x01) | (ESPectrum::AY_emu << 1);
+                                                }
                                                 Config::save("AY48");
                                             }
                                             menu_curopt = opt2;
@@ -2524,6 +2481,52 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                     }
                                 }
                                 else if (options_num == 2) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;
+                                    menu_saverect = true;
+                                    while (1) {
+                                        string optmenu = MENU_COVOX[Config::lang];
+                                        uint8_t prev_opt = Config::Covox;
+                                        if (prev_opt == 0) {
+                                            menu_curopt = 1;
+                                            optmenu.replace(15, 1 ,"*");
+                                        } else
+                                        if (prev_opt == 1) {
+                                            menu_curopt = 2;
+                                            optmenu.replace(optmenu.find("ono") + 5, 1 ,"*");
+                                        } else
+                                        if (prev_opt == 2) {
+                                            menu_curopt = 3;
+                                            optmenu.replace(optmenu.find("reo") + 5, 1 ,"*");
+                                        } else
+                                        if (prev_opt == 3) {
+                                            menu_curopt = 4;
+                                            optmenu.replace(optmenu.find("de 1") + 6, 1 ,"*");
+                                        } else
+                                        if (prev_opt == 4) {
+                                            menu_curopt = 5;
+                                            optmenu.replace(optmenu.find("e 2") + 5, 1 ,"*");
+                                        }
+                                        uint8_t opt2 = menuRun(optmenu);
+                                        if (opt2) {
+                                            if (Config::Covox != (opt2 - 1)) {
+                                                Config::Covox = opt2 -1;
+                                                Config::save("Covox");
+                                                ESPectrum::covoxData[0] = ESPectrum::covoxData[1] = ESPectrum::covoxData[2] = ESPectrum::covoxData[3] = 0;
+                                                for (int i=0; i < ESPectrum::samplesPerFrame; i++)
+                                                    ESPectrum::SamplebufCOVOX[i] = ESPectrum::audioBuffer[i] = 0;
+                                                ESPectrum::aud_active_sources = (Config::Covox & 0x01) | (ESPectrum::AY_emu << 1);
+                                            }
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+                                        } else {
+                                            menu_curopt = 2;
+                                            menu_level = 2;
+                                            break;
+                                        }
+                                    }
+                                }
+                                else if (options_num == 3) {
                                     menu_level = 3;
                                     menu_curopt = 1;
                                     menu_saverect = true;
@@ -2553,13 +2556,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_curopt = opt2;
                                             menu_saverect = false;
                                         } else {
-                                            menu_curopt = 2;
+                                            menu_curopt = 3;
                                             menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
-                                else if (options_num == 3) {
+                                else if (options_num == 4) {
                                     menu_level = 3;
                                     menu_curopt = 1;
                                     menu_saverect = true;
@@ -2589,13 +2592,13 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_curopt = opt2;
                                             menu_saverect = false;
                                         } else {
-                                            menu_curopt = 3;
+                                            menu_curopt = 4;
                                             menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
-                                else if (options_num == 4) {
+                                else if (options_num == 5) {
                                     menu_level = 3;
                                     menu_curopt = 1;
                                     menu_saverect = true;
@@ -2655,34 +2658,43 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_curopt = opt2;
                                             menu_saverect = false;
                                         } else {
-                                            menu_curopt = 4;
+                                            menu_curopt = 5;
                                             menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
-                                else if (options_num == 5) {
+                                else if (options_num == 6) {
                                     menu_level = 3;
                                     menu_curopt = 1;
                                     menu_saverect = true;
                                     while (1) {
                                         string ps2_menu = MENU_KBD2NDPS2[Config::lang];
                                         uint8_t prev_ps2 = Config::ps2_dev2;
-                                        if (prev_ps2) {
+                                        if (prev_ps2 == 1) {
                                             menu_curopt = 2;
                                             ps2_menu.replace(ps2_menu.find("[N",0),2,"[ ");
                                             ps2_menu.replace(ps2_menu.find("[K",0),2,"[*");
+                                            ps2_menu.replace(ps2_menu.find("[M",0),2,"[ ");
+                                        } else if (prev_ps2 == 2) {
+                                            menu_curopt = 3;
+                                            ps2_menu.replace(ps2_menu.find("[N",0),2,"[ ");
+                                            ps2_menu.replace(ps2_menu.find("[K",0),2,"[ ");
+                                            ps2_menu.replace(ps2_menu.find("[M",0),2,"[*");
                                         } else {
                                             menu_curopt = 1;
                                             ps2_menu.replace(ps2_menu.find("[N",0),2,"[*");
                                             ps2_menu.replace(ps2_menu.find("[K",0),2,"[ ");
+                                            ps2_menu.replace(ps2_menu.find("[M",0),2,"[ ");
                                         }
                                         uint8_t opt2 = menuRun(ps2_menu);
                                         if (opt2) {
                                             if (opt2 == 1)
                                                 Config::ps2_dev2 = 0;
-                                            else
+                                            else if (opt2 == 2)
                                                 Config::ps2_dev2 = 1;
+                                            else
+                                                Config::ps2_dev2 = 2;
 
                                             if (Config::ps2_dev2 != prev_ps2) {
                                                 Config::save("PS2Dev2");
@@ -2690,18 +2702,53 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                             menu_curopt = opt2;
                                             menu_saverect = false;
                                         } else {
-                                            menu_curopt = 5;
+                                            menu_curopt = 6;
+                                            menu_level = 2;
+                                            break;
+                                        }
+                                    }
+                                }
+                                else if (options_num == 7) {
+                                    menu_level = 3;
+                                    menu_curopt = 1;
+                                    menu_saverect = true;
+                                    while (1) {
+                                        string mouse_menu = MENU_MOUSE[Config::lang];
+                                        uint8_t prev_mouse = Config::mouse;
+                                        if (prev_mouse == 0) {
+                                            menu_curopt = 1;
+                                            mouse_menu.replace(mouse_menu.find("[N",0),2,"[*");
+                                            mouse_menu.replace(mouse_menu.find("[K",0),2,"[ ");
+                                        } else if (prev_mouse == 1) {
+                                            menu_curopt = 2;
+                                            mouse_menu.replace(mouse_menu.find("[N",0),2,"[ ");
+                                            mouse_menu.replace(mouse_menu.find("[K",0),2,"[*");
+                                        }
+                                        uint8_t opt2 = menuRun(mouse_menu);
+                                        if (opt2) {
+                                            if (opt2 == 1)
+                                                Config::mouse = 0;
+                                            else if (opt2 == 2)
+                                                Config::mouse = 1;
+
+                                            if (Config::mouse != prev_mouse) {
+                                                Config::save("Mouse");
+                                            }
+                                            menu_curopt = opt2;
+                                            menu_saverect = false;
+                                        } else {
+                                            menu_curopt = 7;
                                             menu_level = 2;
                                             break;
                                         }
                                     }
                                 }
                             } else {
-                                menu_curopt = 8;
+                                menu_curopt = 7;
                                 break;
                             }
                         }
-                    } else if (options_num == 7) {
+                    } else if (options_num == 8) {
                         menu_level = 2;
                         menu_curopt = 1;
                         menu_saverect = true;
@@ -2871,10 +2918,64 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 }
 
                             } else {
-                                menu_curopt = 7;
+                                menu_curopt = 8;
                                 break;
                             }
                         }
+
+                    } else {
+                        menu_curopt = 5;
+                        break;
+                    }
+                }
+            }
+            else if (opt == 6) {
+                // ***********************************************************************************
+                // RESET MENU
+                // ***********************************************************************************
+                menu_saverect = true;
+                menu_curopt = 1;
+                while(1) {
+                    menu_level = 1;
+                    // Reset
+                    uint8_t opt2 = menuRun(MENU_RESET[Config::lang]);
+                    if (opt2 == 1) {
+                        // Soft
+                        if (Config::last_ram_file != NO_RAM_FILE) {
+                            LoadSnapshot(Config::last_ram_file,"","",0xff);
+                            Config::ram_file = Config::last_ram_file;
+                        } else ESPectrum::reset();
+                        return;
+                    }
+                    else if (opt2 == 4) {
+                        // ESP host reset
+                        Config::ram_file = NO_RAM_FILE;
+                        Config::save("ram");
+                        esp_hard_reset();
+                    }
+                    else if (opt2 != 0) {
+
+                        if (opt2 == 2 && Config::DiskCtrl == 0 && !Z80Ops::isPentagon) {
+                            OSD::osdCenteredMsg(TRDOS_RESET_ERR[Config::lang], LEVEL_ERROR, 1500 );
+                            return;
+                        }
+
+                        // Hard reset
+                        if (Config::ram_file != NO_RAM_FILE) {
+                            Config::ram_file = NO_RAM_FILE;
+                        }
+                        Config::last_ram_file = NO_RAM_FILE;
+                        ESPectrum::reset();
+
+                        // Reset to TR-DOS
+                        if (opt2 == 2) {
+                            if (Z80Ops::is128 || Z80Ops::isPentagon) MemESP::romLatch = 1;
+                            MemESP::romInUse = 4;
+                            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                            ESPectrum::trdos = true;
+                        }
+
+                        return;
 
                     } else {
                         menu_curopt = 6;
