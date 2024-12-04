@@ -675,8 +675,6 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             MemESP::romLatch = (bitRead(data, 2) << 1) + (MemESP::romInUse & 0x01) ;
             MemESP::romInUse = MemESP::romLatch & 0x3;
 
-            MemESP::videoLatch = 0;
-
             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
             MemESP::ramCurrent[1] = MemESP::ram[5];
             MemESP::ramCurrent[2] = MemESP::ram[2];
