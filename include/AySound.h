@@ -147,7 +147,6 @@ public:
 
     static void reset();
     static uint8_t getRegisterData();
-    static void selectRegister(uint8_t data);
     static void setRegisterData(uint8_t data);
 
     static void init();

@@ -461,7 +461,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
 
             if ((address & 0x4000) != 0)
-                AySound::selectRegister(data);
+                AySound::selectedRegister = data & 0x0f;
             else {
                 ESPectrum::AYGetSample();
                 AySound::setRegisterData(data);
@@ -487,7 +487,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
 
             if ((address & 0x4000) != 0)
-                AySound::selectRegister(data);
+                AySound::selectedRegister = data & 0x0f;
             else {
                 ESPectrum::AYGetSample();
                 AySound::setRegisterData(data);

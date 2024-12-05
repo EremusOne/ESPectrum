@@ -545,23 +545,12 @@ IRAM_ATTR uint8_t AySound::getRegisterData()
 
 }
 
-IRAM_ATTR void AySound::selectRegister(uint8_t registerNumber)
-{
-    selectedRegister = registerNumber;
+IRAM_ATTR void AySound::setRegisterData(uint8_t data) {
+    regs[selectedRegister] = data;
+    updateReg[selectedRegister]();
 }
 
-IRAM_ATTR void AySound::setRegisterData(uint8_t data)
-{
-
-    if (selectedRegister < 16) {
-        regs[selectedRegister] = data;
-        updateReg[selectedRegister]();
-    }
-
-}
-
-void AySound::reset()
-{
+void AySound::reset() {
 
     cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
     bit_a = bit_b = bit_c = bit_n = 0;
@@ -583,8 +572,18 @@ void AySound::reset()
 
     regs[7] = 0xff; // Mixer register
 
-    selectedRegister = 0xff;
+    selectedRegister = 0;
 
     for(int i=0; i < 16; i++) updateReg[i](); // Update all registers
+
+    // for (int i=0;i<16;i++) {
+    //     selectedRegister = i;
+    //     setRegisterData(0);
+    // }
+
+    // selectedRegister = 7;
+    // setRegisterData(0xff); // Mixer register
+
+    // selectedRegister = 0;
 
 }

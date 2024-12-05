@@ -229,7 +229,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_KBD2NDPS2_ES "Dispositivo\n"\
     "Nada\t[N]\n"\
-    "Teclado\t[K]\n"\
+    "Teclado / Adapt. DB9\t[K]\n"\
     "Rat\xA2n\t[M]\n"
 
 #define MENU_MOUSE_ES "Rat\xA2n\n"\

@@ -152,6 +152,7 @@ public:
     static uint8_t Covox;
 
     static uint8_t mouse;
+    static uint8_t mousedpi;
 
 };
 

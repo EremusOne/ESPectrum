@@ -799,6 +799,25 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
         if (KeytoESP == fabgl::VK_F1) { // Show H/W info
             OSD::HWInfo();
         } else
+        if (KeytoESP == fabgl::VK_F3) { // 2nd PS/2 mode
+            if (Config::ps2_dev2 < 2)
+                Config::ps2_dev2++;
+            else
+                Config::ps2_dev2 = 0;
+            Config::save("PS2Dev2");
+            string ps2devmode = SECOND_PS2_DEVICE[Config::lang][Config::ps2_dev2 + 1];
+            osdCenteredMsg(SECOND_PS2_DEVICE[Config::lang][0] + ps2devmode, LEVEL_INFO, 1000);
+        } else
+        if (KeytoESP == fabgl::VK_F4) { // Mouse DPI
+            if (Config::mousedpi < 3)
+                Config::mousedpi++;
+            else
+                Config::mousedpi = 0;
+            Config::save("MouseDPI");
+            if (ESPectrum::ps2mouse) ESPectrum::PS2Controller.mouse()->setResolution(Config::mousedpi);
+            string mousedpi = MOUSE_RES[Config::lang][Config::mousedpi + 1];
+            osdCenteredMsg(MOUSE_RES[Config::lang][0] + mousedpi, LEVEL_INFO, 1000);
+        } else
         // if (KeytoESP == fabgl::VK_F5) { // UART test
         //     OSD::UART_test();
         // } else

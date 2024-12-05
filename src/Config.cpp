@@ -113,7 +113,7 @@ uint16_t Config::joydef[24] = {
 
 uint8_t  Config::joyPS2 = JOY_KEMPSTON;
 uint8_t  Config::AluTiming = 0;
-uint8_t  Config::ps2_dev2 = 0; // Second port PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
+uint8_t  Config::ps2_dev2 = 0; // Second port PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse
 bool     Config::CursorAsJoy = false;
 int8_t   Config::CenterH = 0;
 int8_t   Config::CenterV = 0;
@@ -158,6 +158,7 @@ uint8_t Config::Covox = CovoxNONE;
 int8_t Config::volume = ESP_VOLUME_DEFAULT;
 
 uint8_t Config::mouse = 0; // 0 -> No mouse, 1 -> Kempston Mouse
+uint8_t Config::mousedpi = 2; // 0 -> 25dpi, 1 -> 50dpi, 2 -> 100dpi, 3 -> 200dpi
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -651,6 +652,11 @@ void Config::load() {
                 // printf("Mouse:%u\n",Config::mouse);
             }
 
+            err = nvs_get_u8(handle, "MouseDPI", &Config::mousedpi);
+            if (err == ESP_OK) {
+                // printf("MouseDPI:%u\n",Config::mousedpi);
+            }
+
         // }
 
         // Close
@@ -859,6 +865,9 @@ void Config::save(string value) {
 
         if((value=="Mouse") || (value=="all"))
             nvs_set_u8(handle,"Mouse",Config::mouse);
+
+        if((value=="MouseDPI") || (value=="all"))
+            nvs_set_u8(handle,"MouseDPI",Config::mousedpi);
 
         // if((value=="reset") || (value=="all"))
         //     nvs_set_str(handle,"reset", reset ? "true" : "false");

@@ -232,7 +232,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_KBD2NDPS2_EN "Device     \n"\
     "None\t[N]\n"\
-    "Keyboard\t[K]\n"\
+    "Kbd / DB9 adapter\t[K]\n"\
     "Mouse\t[M]\n"
 
 #define MENU_MOUSE_EN "Mouse\n"\

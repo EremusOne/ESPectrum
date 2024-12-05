@@ -36,7 +36,7 @@ visit https://zxespectrum.speccy.org/contacto
 #ifndef ESPECTRUM_MESSAGES_h
 #define ESPECTRUM_MESSAGES_h
 
-#define EMU_VERSION "  v1.4pr3.2 "
+#define EMU_VERSION "  v1.4pr3.3 "
 
 // Language files
 #include "messages_en.h"
@@ -218,6 +218,18 @@ static const char *MENU_RGTIMINGS[NLANGS] = { "R.G. Timings\n" , "Timings R.G.\n
 static const char *MENU_OTHER[NLANGS] = { MENU_OTHER_EN, MENU_OTHER_ES, MENU_OTHER_PT};
 
 static const char *MENU_AY48[NLANGS] = { "AY on 48K \n" , "AY en 48K \n" , "AY em 48K \n"};
+
+static const char *SECOND_PS2_DEVICE[NLANGS][4] = {
+	{ "2nd PS/2 device: ", "None" , "Kbd / DB9 adapter" , "Mouse"},
+	{ "Segundo disp. PS/2: ", "Nada" , "Teclado / Adapt. DB9" , "Rat\xA2n"},
+	{ "Segundo disp. PS/2: ", "Nada" , "Teclado / Adapt. DB9" , "Mouse"}
+};
+
+static const char *MOUSE_RES[NLANGS][5] = {
+	{ "Mouse resolution: ", "25 dpi" , "50 dpi" , "100 dpi", "200 dpi" },
+	{ "Resoluci\xA2n rat\xA2n: ", "25 ppp" , "50 ppp" , "100 ppp", "200 ppp" },
+	{ "Resolu\x87\x84o mouse: ", "25 dpi" , "50 dpi" , "100 dpi", "200 dpi" }
+};
 
 #define MENU_COVOXS "Covox Mono\t[ ]\n"\
     "Covox Stereo\t[ ]\n"\

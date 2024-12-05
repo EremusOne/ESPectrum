@@ -668,7 +668,7 @@ void ESPectrum::setup() {
 
     if (ps2mouse) {
         printf("Mouse detected\n");
-        PS2Controller.mouse()->setResolution(2); // TO DO: Make this an option
+        PS2Controller.mouse()->setResolution(Config::mousedpi);
         PS2Controller.mouse()->setSampleRate(100);
         PS2Controller.mouse()->setScaling(1);
     }
@@ -1741,6 +1741,12 @@ IRAM_ATTR void ESPectrum::processKeyboard() {
             } else
             if (!bitRead(ZXKeyb::ZXcols[6],2)) { // K -> Help / Kbd layout
                 OSD::do_OSD(fabgl::VK_F1,true,0);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[1],1)) { // S -> 2nd PS/2 device
+                OSD::do_OSD(fabgl::VK_F3,0,true);
+            } else
+            if (!bitRead(ZXKeyb::ZXcols[1],2)) { // D -> Mouse DPI
+                OSD::do_OSD(fabgl::VK_F4,0,true);
             } else
             if (!bitRead(ZXKeyb::ZXcols[0],1)) { // Z -> CenterH
                 if (Config::CenterH > -16) Config::CenterH--;
