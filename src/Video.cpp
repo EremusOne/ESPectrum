@@ -489,10 +489,6 @@ void VIDEO::Reset() {
 
 IRAM_ATTR void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {
 
-    // if (Z80Ops::is2a3 && contended && (CPU::tstates >= (tstateDraw - 3))) {
-    //     statestoadd += wait_st[CPU::tstates - (tstateDraw - 3)];
-    // }
-
     CPU::tstates += statestoadd;
 
     if (CPU::tstates >= tstateDraw) {

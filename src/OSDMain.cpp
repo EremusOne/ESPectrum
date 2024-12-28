@@ -886,7 +886,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                 // Reset AY emulation
                 // AySound::init();
                 AySound::set_sound_format(ESPectrum::Audio_freq[ESPectrum::ESP_delay],1,8);
-                // AySound::set_stereo_MONO,NULL);
+                // AySound::set_stereo(AYEMU_MONO,NULL);
                 // AySound::reset();
                 AySound::prepare_generation();
 
