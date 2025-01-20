@@ -628,6 +628,9 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         // printf("+2A/+3 0x7FFD OUT\n");
 
+        MemESP::romLatch = (MemESP::romInUse & 0x02) + bitRead(data, 4);
+        MemESP::romInUse = MemESP::romLatch & 0x3;
+
         if (MemESP::pagingmode2A3 == 0) {
 
             MemESP::pagingLock = bitRead(data, 5);
@@ -643,9 +646,13 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
                 MemESP::ramContended[3] = MemESP::bankLatch > 3;
             }
 
-            MemESP::romLatch = (MemESP::romInUse & 0x02) + bitRead(data, 4);
-            MemESP::romInUse = MemESP::romLatch & 0x3;
             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+
+
+
+        } else {
+
+            if (MemESP::bankLatch != (data & 0x7)) MemESP::bankLatch = data & 0x7;
 
         }
 

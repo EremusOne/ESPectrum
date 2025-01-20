@@ -1325,7 +1325,7 @@ void DoKeyboardLoad_48K() {
 
     ESPectrum::reset(); // Reset machine
 
-    for (int i=0; i<94; i++) CPU::loop(); // Run 100 frames (about 1 seconds)
+    for (int i=0; i<125; i++) CPU::loop(); // Run 125 frames (about 1 1/4 seconds)
 
     bitWrite(Ports::port[6], 3, false); // Set J pressed
     CPU::loop();
