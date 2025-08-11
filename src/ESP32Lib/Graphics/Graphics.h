@@ -1,10 +1,10 @@
 /*
 	Author: bitluni 2019
-	License: 
+	License:
 	Creative Commons Attribution ShareAlike 4.0
 	https://creativecommons.org/licenses/by-sa/4.0/
-	
-	For further details check out: 
+
+	For further details check out:
 		https://youtube.com/bitlunislab
 		https://github.com/bitluni
 		http://bitluni.net
@@ -41,15 +41,15 @@ class Graphics {
 	virtual int B(Color c) const = 0;
 	virtual int A(Color c) const = 0;
 
-	Color RGB(unsigned long rgb) const 
+	Color RGB(unsigned long rgb) const
 	{
 		return RGBA(rgb & 255, (rgb >> 8) & 255, (rgb >> 16) & 255);
 	}
-	Color RGBA(unsigned long rgba) const 
+	Color RGBA(unsigned long rgba) const
 	{
 		return RGBA(rgba & 255, (rgba >> 8) & 255, (rgba >> 16) & 255, rgba >> 24);
 	}
-	Color RGB(int r, int g, int b) const 
+	Color RGB(int r, int g, int b) const
 	{
 		return RGBA(r, g, b);
 	}
@@ -123,6 +123,48 @@ class Graphics {
 					// dotMix(px + x, py + y, backColor);
 	}
 
+	virtual void drawChar_offset(int x, int y, int ch, int offset)	{
+		const unsigned char *pix;
+		if (!font)
+			return;
+		// if (!font->valid(ch))
+		if (!(ch >= 24 && ch < 176))
+			return;
+		if (codepage == 860 && ch >= 128 && ch <= 169) {
+			ch -= 128;
+		 	pix = &font->pixels2[font->charWidth * font->charHeight * ch];
+		} else {
+			pix = &font->pixels[font->charWidth * font->charHeight * (ch - font->firstChar)];
+		}
+		if (offset >= 0) {
+			if (offset) offset--;
+			for (int py = 0; py < font->charHeight; py++) {
+				for (int px = 0; px < font->charWidth; px++) {
+					if (py >= offset) {
+						if (*pix)
+							dotFast(px + x, py + y, frontColor);
+						else
+							dotFast(px + x, py + y, backColor);
+					}
+					pix++;
+				}
+			}
+		} else {
+			offset = (offset - 1) * -1;
+			for (int py = 0; py < font->charHeight; py++) {
+				for (int px = 0; px < font->charWidth; px++) {
+					if (py < offset) {
+						if (*pix)
+							dotFast(px + x, py + y, frontColor);
+						else
+							dotFast(px + x, py + y, backColor);
+					}
+					pix++;
+				}
+			}
+		}
+	}
+
 	void print(const char ch) {
 		if (!font)
 			return;
@@ -130,7 +172,7 @@ class Graphics {
 		if (ch >= 24 && ch < 176)
 			drawChar(cursorX, cursorY, ch);
 		else
-			drawChar(cursorX, cursorY, ' ');		
+			drawChar(cursorX, cursorY, ' ');
 		cursorX += font->charWidth;
 		if (cursorX + font->charWidth > xres) {
 			cursorX = cursorBaseX;
@@ -160,7 +202,7 @@ class Graphics {
 	}
 
 	void println(const char *str) {
-		print(str); 
+		print(str);
 		print("\n");
 	}
 
@@ -201,7 +243,7 @@ class Graphics {
 		for (; i > 31 - minCharacters; i--)
 			temp[i] = ' ';
 		print(&temp[i + 1]);
-	}	
+	}
 
 	void println(long number, int base = 10, int minCharacters = 1)	{
 		print(number, base, minCharacters); print("\n");
@@ -271,7 +313,7 @@ class Graphics {
 	}
 
 	void println(double number, int fractionalDigits = 2, int minCharacters = 1) {
-		print(number, fractionalDigits, minCharacters); 
+		print(number, fractionalDigits, minCharacters);
 		print("\n");
 	}
 
@@ -416,7 +458,7 @@ class Graphics {
 			int xr = (int)sqrt(r * r - i * i);
 			xLine(x - oxr, x - xr + 1, y + i, color);
 			xLine(x + xr, x + oxr + 1, y + i, color);
-			if(i) 
+			if(i)
 			{
 				xLine(x - oxr, x - xr + 1, y - i, color);
 				xLine(x + xr, x + oxr + 1, y - i, color);
@@ -430,7 +472,7 @@ class Graphics {
 		{
 			int xr = (int)sqrt(r * r - i * i);
 			xLine(x - xr, x + xr + 1, y + i, color);
-			if(i) 
+			if(i)
 				xLine(x - xr, x + xr + 1, y - i, color);
 		}
 	}

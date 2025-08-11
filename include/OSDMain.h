@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -61,11 +60,18 @@ using namespace std;
 #define LEVEL_WARN 2
 #define LEVEL_ERROR 3
 
+// Message dialog
+#define MSGDIALOG_CUSTOM 0
+#define MSGDIALOG_YESNO 1
 #define DLG_CANCEL 0
 #define DLG_YES 1
 #define DLG_NO 2
 
 // File dialog
+#define FILEDIALOG_NEW 0x08
+#define FILEDIALOG_DELETE 0x04
+#define FILEDIALOG_RENAME 0x02
+#define FILEDIALOG_MKDIR 0x01
 
 #define MAXSEARCHLEN 16
 
@@ -97,7 +103,7 @@ public:
     static void pref_rom_menu();
     static void do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT);
     static void HWInfo();
-    // static void UART_test();
+    static void AboutDlg();
 
     // Error
     static void errorPanel(string errormsg);
@@ -117,8 +123,8 @@ public:
     static void WindowDraw();
     static unsigned short menuRun(string new_menu);
     static unsigned short simpleMenuRun(string new_menu, uint16_t posx, uint16_t posy, uint8_t max_rows, uint8_t max_cols);
-    static string fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows);
-    static int menuTape(string title);    
+    static string fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols, uint8_t mfrows, uint8_t actions);
+    static int menuTape(string title);
     static void menuScroll(bool up);
     static void fd_Redraw(string title, string fdir, uint8_t ftype);
     static void fd_PrintRow(uint8_t virtual_row_num, uint8_t line_type);
@@ -128,9 +134,9 @@ public:
     static void menuScrollBar(unsigned short br);
     static void click();
     static uint8_t menu_level;
-    static bool menu_saverect;    
-    static unsigned short menu_curopt;    
-    static unsigned int SaveRectpos;    
+    static bool menu_saverect;
+    static unsigned short menu_curopt;
+    static unsigned int SaveRectpos;
 
     static int8_t fdScrollPos;
     static int timeStartScroll;
@@ -138,7 +144,7 @@ public:
     static unsigned int elements;
     static unsigned int ndirs;
 
-    static uint8_t msgDialog(string title, string msg);
+    static uint8_t msgDialog(string title, string msg, uint8_t type, const char *options = nullptr, uint8_t default_opt = 1);
     static void progressDialog(string title, string msg, int percent, int action);
     static void joyDialog(uint8_t joynum);
     static void pokeDialog();
@@ -173,9 +179,9 @@ public:
     static uint8_t last_focus;               // To check for changes
     static unsigned short last_begin_row; // To check for changes
 
-    static uint8_t fdCursorFlash;    
-    static bool fdSearchRefresh;    
-    static unsigned int fdSearchElements;   
+    static uint8_t fdCursorFlash;
+    static bool fdSearchRefresh;
+    static unsigned int fdSearchElements;
 
 };
 

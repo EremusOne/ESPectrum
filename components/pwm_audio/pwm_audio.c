@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+/* SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,7 +190,7 @@ static esp_err_t IRAM_ATTR rb_read_byte(ringbuf_handle_t *rb, uint8_t *outdata)
     return ESP_OK;
 }
 
-static esp_err_t rb_write_byte(ringbuf_handle_t *rb, const uint8_t indata)
+static esp_err_t IRAM_ATTR rb_write_byte(ringbuf_handle_t *rb, const uint8_t indata)
 {
     // Calculate next head
     uint32_t next_head = rb->head + 1;
@@ -237,9 +237,6 @@ static inline void ledc_set_right_duty_fast(uint32_t duty_val)
     *g_ledc_right_conf1_val |= 0x80000000;
 }
 
-
-volatile uint32_t pwmcount = 0;
-
 /*
  * Timer group ISR handler
  */
@@ -259,16 +256,15 @@ static void IRAM_ATTR timer_group_isr(void *para)
         return ;
     }
 
-    // pwmcount++;
-
     /* Clear the interrupt */
     timer_group_clr_intr_status_in_isr(handle->config.tg_num, handle->config.timer_num);
     /* After the alarm has been triggered we need enable it again, so it is triggered the next time */
     timer_group_enable_alarm_in_isr(handle->config.tg_num, handle->config.timer_num);
 #endif
 
-    static uint8_t wave_h, wave_l;
-    static uint16_t value;
+    static uint8_t wave_h;
+    // static uint8_t wave_l;
+    // static uint16_t value;
     ringbuf_handle_t *rb = handle->ringbuf;
 
 // #if (1==ISR_DEBUG)
@@ -335,6 +331,8 @@ static void IRAM_ATTR timer_group_isr(void *para)
     //     }
     // }
 
+    AudioInGetAudio();
+
     /**
      * Send semaphore when buffer free is more than BUFFER_MIN_SIZE
      */
@@ -342,10 +340,10 @@ static void IRAM_ATTR timer_group_isr(void *para)
     if (0 == rb->is_give && free_size > BUFFER_MIN_SIZE) {
         /**< The execution time of the following code is 2.71 microsecond */
         rb->is_give = 1; /**< To prevent multiple give semaphores */
-        BaseType_t xHigherPriorityTaskWoken;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xSemaphoreGiveFromISR(rb->semaphore_rb, &xHigherPriorityTaskWoken);
 
-        if (pdFALSE != xHigherPriorityTaskWoken) {
+        if (xHigherPriorityTaskWoken == pdTRUE) {
             portYIELD_FROM_ISR();
         }
     }
@@ -486,18 +484,12 @@ esp_err_t pwm_audio_init(const pwm_audio_config_t *cfg)
     /**
      * Get the address of LEDC register to reduce the addressing time
      */
-    g_ledc_left_duty_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].\
-                           channel[handle->ledc_channel[CHANNEL_LEFT_INDEX].channel].duty.val;
-    g_ledc_left_conf0_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].\
-                            channel[handle->ledc_channel[CHANNEL_LEFT_INDEX].channel].conf0.val;
-    g_ledc_left_conf1_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].\
-                            channel[handle->ledc_channel[CHANNEL_LEFT_INDEX].channel].conf1.val;
-    g_ledc_right_duty_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].\
-                            channel[handle->ledc_channel[CHANNEL_RIGHT_INDEX].channel].duty.val;
-    g_ledc_right_conf0_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].\
-                             channel[handle->ledc_channel[CHANNEL_RIGHT_INDEX].channel].conf0.val;
-    g_ledc_right_conf1_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].\
-                             channel[handle->ledc_channel[CHANNEL_RIGHT_INDEX].channel].conf1.val;
+    g_ledc_left_duty_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].channel[handle->ledc_channel[CHANNEL_LEFT_INDEX].channel].duty.val;
+    g_ledc_left_conf0_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].channel[handle->ledc_channel[CHANNEL_LEFT_INDEX].channel].conf0.val;
+    g_ledc_left_conf1_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].channel[handle->ledc_channel[CHANNEL_LEFT_INDEX].channel].conf1.val;
+    g_ledc_right_duty_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].channel[handle->ledc_channel[CHANNEL_RIGHT_INDEX].channel].duty.val;
+    g_ledc_right_conf0_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].channel[handle->ledc_channel[CHANNEL_RIGHT_INDEX].channel].conf0.val;
+    g_ledc_right_conf1_val = &LEDC.channel_group[handle->ledc_timer.speed_mode].channel[handle->ledc_channel[CHANNEL_RIGHT_INDEX].channel].conf1.val;
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     gptimer_config_t timer_config = {
@@ -628,19 +620,23 @@ esp_err_t IRAM_ATTR pwm_audio_write(uint8_t *inbuf, size_t inbuf_len, size_t *by
 {
     esp_err_t res = ESP_OK;
     pwm_audio_data_t *handle = g_pwm_audio_handle;
-    PWM_AUDIO_CHECK(NULL != handle, PWM_AUDIO_NOT_INITIALIZED, ESP_ERR_INVALID_STATE);
-    PWM_AUDIO_CHECK(inbuf != NULL && bytes_written != NULL, "Invalid pointer", ESP_ERR_INVALID_ARG);
-    PWM_AUDIO_CHECK(inbuf_len != 0, "Length should not be zero", ESP_ERR_INVALID_ARG);
+    // PWM_AUDIO_CHECK(NULL != handle, PWM_AUDIO_NOT_INITIALIZED, ESP_ERR_INVALID_STATE);
+    // PWM_AUDIO_CHECK(inbuf != NULL && bytes_written != NULL, "Invalid pointer", ESP_ERR_INVALID_ARG);
+    // PWM_AUDIO_CHECK(inbuf_len != 0, "Length should not be zero", ESP_ERR_INVALID_ARG);
 
     *bytes_written = 0;
     ringbuf_handle_t *rb = handle->ringbuf;
+
     TickType_t start_ticks = xTaskGetTickCount();
 
     while (inbuf_len) {
 
         uint32_t free = rb_get_free(rb);
 
-        if (ESP_OK == rb_wait_semaphore(rb, ticks_to_wait)) {
+        rb->is_give = 0; /**< As long as it's written, it's allowed to give semaphore again */
+        if (xSemaphoreTake(rb->semaphore_rb, ticks_to_wait) == pdTRUE) {
+
+        // if (ESP_OK == rb_wait_semaphore(rb, ticks_to_wait)) {
 
             // uint32_t bytes_can_write = inbuf_len;
             // if (inbuf_len > free) {
@@ -847,18 +843,10 @@ esp_err_t pwm_audio_deinit(void)
     return ESP_OK;
 }
 
-uint32_t pwm_audio_rbstats(void)
-{
- 
+uint32_t IRAM_ATTR pwm_audio_rbstats(void) {
+
     pwm_audio_data_t *handle = g_pwm_audio_handle;
 
     return rb_get_count(handle->ringbuf);
-
-}
-
-uint32_t pwm_audio_pwmcount(void)
-{
- 
-    return pwmcount;
 
 }

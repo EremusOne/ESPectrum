@@ -2,7 +2,7 @@
 
 This is an emulator of the Sinclair ZX Spectrum computer running on Espressif ESP32 SoC powered boards.
 
-Currently, it can be used with Lilygo's TTGo VGA32 board, Antonio Villena's ESPectrum board and ESP32-SBC-FabGL board from Olimex.
+Currently, it can be used with many different boards being Lilygo's TTGo VGA32 board one of the best starting choices for his wonderful cost-features ratio. There are also some more boards out there that can run ESPectrum out-of-the-box like the ESP32-SBC-FabGL board from Olimex.
 
 Just connect a VGA monitor or CRT TV (with special VGA-RGB cable needed), a PS/2 keyboard, prepare a SD Card as needed and power via microUSB.
 
@@ -10,7 +10,7 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 
 ## Features
 
-- ZX Spectrum 48K, 128K and Pentagon 128K 100% cycle accurate emulation (no PSRAM needed).
+- ZX Spectrum 48K, 128K, +2A and Pentagon 128K 100% cycle accurate emulation (no PSRAM needed).
 - Microdigital TK90X and TK95 models (w/Microdigital ULA at 50 and 60hz) emulation.
 - State of the art Z80 emulation (Authored by [José Luis Sánchez](https://github.com/jsanchezv/z80cpp))
 - Selectable Sinclair 48K, Sinclair 128K and Amstrad +2 english and spanish ROMs.
@@ -30,26 +30,25 @@ This project is based on David Crespo excellent work on [ZX-ESPectrum-Wiimote](h
 - Beeper & Mic emulation (Cobra’s Arc).
 - Dual PS/2 keyboard support: you can connect two devices using PS/2 protocol at the same time.
 - PS/2 Joystick emulation (Cursor, Sinclair, Kempston and Fuller).
-- Two real joysticks support (Up to 8 button joysticks) using [ESPjoy adapter](https://antoniovillena.es/store/product/espjoy-for-espectrum/) or DIY DB9 to PS/2 converter.
+- Two real joysticks support (Up to 8 button joysticks) using DB9 to PS/2 converter.
+- Kempston mouse emulation through PS/2 mouse.
 - Emulation of Betadisk interface with reset to tr-dos option, four drives and TRD (read and write) and SCL (read only) support.
 - Realtime (with OSD) TZX and TAP file loading.
 - Flashload of TAP files.
 - Rodolfo Guerra's ROMs fast load routines support with on the fly standard speed blocks translation.
 - Virtual tape system with support for SAVE command and block renaming, deleting and moving.
 - SNA, Z80 and SP snapshot loading.
-- Snapshot saving and loading.
-- Complete file navigation system with autoindexing, folder support and search functions.
+- Real audio loading support through different GPIOs or specific board connectors.
+- Complete own snapshot system for saving and loading your games with quick save and autonumbering.
+- Complete file navigation system with autoindexing, folder support, search functions and file and directoty management functions.
 - Complete OSD menu in three languages: English, Spanish and Portuguese.
 - BMP screen capture to SD Card (thanks David Crespo 😉).
 
-## Work in progress
-
-- +2A/+3 models.
-- DSK support.
-
 ## Installing
 
-You can flash the binaries directly to the board if do not want to mess with code and compilers. Check the [releases section](https://github.com/EremusOne/ZX-ESPectrum-IDF/releases)
+The easiest method is using our [online web flasher](https://zxespectrum.speccy.org/flash/)
+
+You can flash also the binaries directly to the board. Check the [releases section](https://github.com/EremusOne/ESPectrum/releases) for bin files and detailed instructions
 
 ## Compiling and installing
 
@@ -84,12 +83,12 @@ There's also no need to sort files using external utilities: the emulator create
 ## PS/2 Keyboard functions
 
 - F1 Main menu
-- F2 Load (SNA,Z80, SP, P)
-- F3 Load custom snapshot
-- F4 Save customn snapshot
-- F5 Select TAP file
-- F6 Play/Stop tape
-- F7 Tape Browser
+- F2 Snapshot file browser (SNA,Z80, SP, P)
+- F3 Disk file browser (TRD,SCL)
+- F4 Tape file browser (TAP, TZX)
+- F5 Play/Stop tape
+- F6 ESP (own snapshot format) file browser
+- F7 ESP Quick save
 - F8 CPU / Tape load stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
 - F9 Volume down
 - F10 Volume up
@@ -97,12 +96,17 @@ There's also no need to sort files using external utilities: the emulator create
 - F12 Reset ESP32
 - CTRL + F1 Show current machine keyboard layout
 - CTRL + F2 Cycle turbo modes -> 100% speed (blue OSD), 125% speed (red OSD), 150% speed (magenta OSD) and MAX speed (black speed and no sound)
-- CTRL + F5..F8 Screen centering in CRT 15K/50hz mode
+- CTRL + F3 Second PS/2 port (if present) device selection
+- CTRL + F4 Select mouse DPI
+- CTRL + F5..F8 Screen centering in CRT 15K/50hz mode (select and restart ESP32 for changes to be applied)
 - CTRL + F9 Input poke
 - CTRL + F10 NMI
 - CTRL + F11 Reset to TR-DOS
 - SHIFT + F1 Hardware info
-- SHIFT + F6 Eject tape
+- SHIFT + F2 Real audio-in toggle
+- SHIFT + F3 Eject disk
+- SHIFT + F4 Tape blocks browser
+- SHIFT + F5 Eject tape
 - Pause Pause
 - ScrollLock Switch "Cursor keys as joy" setting
 - PrntScr BMP screen capture (Folder /.c at SDCard)
@@ -112,12 +116,12 @@ There's also no need to sort files using external utilities: the emulator create
 Press CAPS SHIFT + SYMBOL SHIFT and:
 
 - 1 Main menu
-- 2 Load (SNA,Z80, SP, P)
-- 3 Load custom snapshot
-- 4 Save custom snapshot
-- 5 Select TAP file
-- 6 Play/Stop tape
-- 7 Tape browser
+- 2 Snapshot file browser (SNA,Z80, SP, P)
+- 3 Disk file browser (TRD,SCL)
+- 4 Tape file browser (TAP, TZX)
+- 5 Play/Stop tape
+- 6 ESP (own snapshot format) file browser
+- 7 ESP Quick save
 - 8 CPU / Tape load stats ( [CPU] microsecs per CPU cycle, [IDL] idle microsecs, [FPS] Frames per second, [FND] FPS w/no delay applied )
 - 9 Volume down
 - 0 Volume up
@@ -125,11 +129,15 @@ Press CAPS SHIFT + SYMBOL SHIFT and:
 - W Reset ESP32
 - E Eject tape
 - R Reset to TR-DOS
-- T Cycle turbo modes -> 100% speed (blue OSD), 125% speed (red OSD), 150% speed (magenta OSD) and MAX speed (black speed and no sound)
+- T Tape blocks browser
 - I Hardware info
 - O Input poke
 - P Pause
+- S Second PS/2 port (if present) device selection
+- D Select mouse DPI
+- F Cycle turbo modes -> 100% speed (blue OSD), 125% speed (red OSD), 150% speed (magenta OSD) and MAX speed (black speed and no sound)
 - K Show current machine keyboard layout
+- L Real audio-in toggle
 - Z,X,C,V Screen centering in CRT 15K mode
 - B BMP screen capture (Folder /.c at SDCard)
 - N NMI
@@ -165,7 +173,6 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 ## Supported hardware
 
 - [Lilygo FabGL VGA32](https://www.lilygo.cc/products/fabgl-vga32?_pos=1&_sid=b28e8cac0&_ss=r)
-- [Antonio Villena's ESPectrum board](https://antoniovillena.es/store/product/espectrum/) and [ESPjoy add-on](https://antoniovillena.es/store/product/espjoy-for-espectrum/)
 - [ESP32-SBC-FabGL board from Olimex](https://www.olimex.com/Products/Retro-Computers/ESP32-SBC-FabGL/open-source-hardware)
 
 ## Thanks to
@@ -179,7 +186,7 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - PS2 Driver from Fabrizio di Vittorio for his [FabGL library](https://github.com/fdivitto/FabGL).
 - [Paul Farrow](http://www.fruitcake.plus.com/index.html) for his kind permission to include his amazing ZX81+ IF2 ROM.
 - Azesmbog for testing and providing very valuable info to make the emu more precise.
-- David Carrión for hardware and ZX keyboard code.
+- David Carrión for hardware and ZX keyboard code and creating the [DB9_2_Keyboard](https://github.com/dacarsoft/DB9_2_Keyboard) firmware.
 - ZjoyKiLer for his testing, code and ideas.
 - [Ackerman](https://github.com/rpsubc8/ESP32TinyZXSpectrum) for his code and ideas.
 - [Mark Woodmass](https://specemu.zxe.io) and [Juan Carlos González Amestoy](https://www.retrovirtualmachine.org) for his excellent emulators and his help with wd1793 emulation and many other things.
@@ -187,7 +194,6 @@ Pin assignment in `hardpins.h` is set to match the boards we've tested emulator 
 - [Rodolfo Guerra](https://sites.google.com/view/rodolfoguerra) for his wonderful enhanced ROMs and his help for adding tape load turbo mode support to the emulator.
 - [Juanjo Ponteprino](https://github.com/SplinterGU) for his help and contributions to ESPectrum
 - Weiv and [MartianGirl](https://github.com/MartianGirl) for his detailed analysis of Snow effect.
-- [Antonio Villena](https://antoniovillena.es/store) for creating the ESPectrum board.
 - Tsvetan Usunov from [Olimex Ltd](https://www.olimex.com).
 - [Amstrad PLC](http://www.amstrad.com) for the ZX-Spectrum ROM binaries [liberated for emulation purposes](http://www.worldofspectrum.org/permits/amstrad-roms.txt).
 - [Jean Thomas](https://github.com/jeanthom/ESP32-APLL-cal) for his ESP32 APLL calculator.

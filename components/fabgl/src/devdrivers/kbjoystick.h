@@ -39,7 +39,7 @@
 
 #include "fabglconf.h"
 #include "comdrivers/ps2device.h"
-#include "fabui.h"
+// #include "fabui.h"
 #include "kbdlayouts.h"
 #include "codepages.h"
 
@@ -65,7 +65,7 @@ namespace fabgl {
  * Example:
  *
  *     fabgl::Keyboard Keyboard;
- *     
+ *
  *     // Setup pins GPIO33 for CLK and GPIO32 for DATA
  *     Keyboard.begin(GPIO_NUM_33, GPIO_NUM_32);  // clk, dat
  *
@@ -146,7 +146,7 @@ public:
    *
    * @param app The UI app where to send keyboard events
    */
-  void setUIApp(uiApp * app) { m_uiApp = app; }
+  // void setUIApp(uiApp * app) { m_uiApp = app; }
 
   /**
    * @brief Sends a Reset command to the keyboard.
@@ -403,7 +403,7 @@ public:
 private:
 
   VirtualKey scancodeToVK(uint8_t scancode, bool isExtended, KeyboardLayout const * layout = nullptr);
-  VirtualKey scancodeTojoyVK(uint8_t scancode, KeyboardLayout const * layout = nullptr);  
+  VirtualKey scancodeTojoyVK(uint8_t scancode, KeyboardLayout const * layout = nullptr);
   VirtualKey VKtoAlternateVK(VirtualKey in_vk, bool down, KeyboardLayout const * layout = nullptr);
   VirtualKey manageCAPSLOCK(VirtualKey vk);
   void updateLEDs();
@@ -429,7 +429,7 @@ private:
 
   KeyboardLayout const *    m_layout;
 
-  uiApp *                   m_uiApp;
+  // uiApp *                   m_uiApp;
 
   bool                      m_CTRL;
   bool                      m_LALT;

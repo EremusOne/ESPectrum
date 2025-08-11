@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -14,6 +14,8 @@ https://github.com/rampa069/ZX-ESPectrum
 
 Original project by Pete Todd
 https://github.com/retrogubbins/paseVGA
+
+This file includes some contributions from J. Ponteprino
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,8 +30,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -40,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <vector>
 #include <algorithm>
 #include "FileUtils.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "cpuESP.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
@@ -66,8 +67,9 @@ sdmmc_card_t *FileUtils::card;
 string FileUtils::SNA_Path = "/"; // Current path on the SD
 string FileUtils::TAP_Path = "/"; // Current path on the SD
 string FileUtils::DSK_Path = "/"; // Current path on the SD
+string FileUtils::ESP_Path = "/"; // Current path on the SD
 string FileUtils::ROM_Path = "/"; // Current path on the SD
-string FileUtils::ESP_Path = "/.p/"; // Current path on the SD
+string FileUtils::LIB_Path = "/lib/"; // Current path on the SD
 
 DISK_FTYPE FileUtils::fileTypes[5] = {
     {"sna,z80,sp,p",".s",2,2,0,""},
@@ -89,19 +91,9 @@ string FileUtils::getLCaseExt(const string& filename) {
     if (dotPos == string::npos) {
         return ""; // dot position don't found
     }
-
     // get the substring after dot
     string extension = filename.substr(dotPos + 1);
-
-    // convert extension to lowercase
-//    for (char& c : extension) {
-//        c = ::tolower(static_cast<unsigned char>(c));
-//    }
-
-//    return extension;
-
     return toLower( extension );
-
 }
 
 size_t FileUtils::fileSize(const char * mFile) {
@@ -114,11 +106,13 @@ size_t FileUtils::fileSize(const char * mFile) {
 
 void FileUtils::initFileSystem() {
 
-    // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
-    if (!SDReady) SDReady = mountSDCard(PIN_NUM_MISO_LILYGO_ESPECTRUM,PIN_NUM_MOSI_LILYGO_ESPECTRUM,PIN_NUM_CLK_LILYGO_ESPECTRUM,PIN_NUM_CS_LILYGO_ESPECTRUM);
+    // // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
+    // if (!SDReady) SDReady = mountSDCard(PIN_NUM_MISO_LILYGO_ESPECTRUM,PIN_NUM_MOSI_LILYGO_ESPECTRUM,PIN_NUM_CLK_LILYGO_ESPECTRUM,PIN_NUM_CS_LILYGO_ESPECTRUM);
 
-    // Try to mount SD card on Olimex ESP32-SBC-FABGL Board
-    if ((!ZXKeyb::Exists) && (!SDReady)) SDReady = mountSDCard(PIN_NUM_MISO_SBCFABGL,PIN_NUM_MOSI_SBCFABGL,PIN_NUM_CLK_SBCFABGL,PIN_NUM_CS_SBCFABGL);
+    // // Try to mount SD card on Olimex ESP32-SBC-FABGL Board
+    // if ((!ZXKeyb::Exists) && (!SDReady)) SDReady = mountSDCard(PIN_NUM_MISO_SBCFABGL,PIN_NUM_MOSI_SBCFABGL,PIN_NUM_CLK_SBCFABGL,PIN_NUM_CS_SBCFABGL);
+
+    if (!SDReady) SDReady = mountSDCard(Config::Board == BOARD_OLIMEX ? PIN_NUM_MISO_SBCFABGL : PIN_NUM_MISO_LILYGO_ESPECTRUM, PIN_NUM_MOSI_LILYGO_ESPECTRUM, PIN_NUM_CLK_LILYGO_ESPECTRUM, PIN_NUM_CS_LILYGO_ESPECTRUM);
 
 }
 
@@ -141,7 +135,7 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
         .sclk_io_num = PIN_CLK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = 4000,
+        .max_transfer_sz = 2048 /*4000*/,
     };
 
     ret = spi_bus_initialize(SPI2_HOST, &bus_cfg, SPI_DMA_CH1);
@@ -391,6 +385,7 @@ string FileUtils::getResolvedPath(const string& path) {
 }
 
 string FileUtils::createTmpDir() {
+
     string tempDir = MountPoint + "/.tmp";
 
     // Verificar si el directorio ya existía
@@ -478,12 +473,12 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     // printf("\n");
 
 
-    int bufferSize;
-    if (Config::videomode < 2) {
-        bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort
-    } else {
-        bufferSize = item_count > DIR_CACHE_SIZE_OVERSCAN ? DIR_CACHE_SIZE_OVERSCAN : item_count;  // Size of buffer to read and sort
-    }
+    int cachesiz;
+    if (Config::videomode < 2)
+        cachesiz = Config::psram_size ? DIR_CACHE_SIZE : DIR_CACHE_SIZE_NOPSRAM;
+    else
+        cachesiz = Config::psram_size ? DIR_CACHE_SIZE_OVERSCAN : DIR_CACHE_SIZE_OVERSCAN_NOPSRAM;
+    int bufferSize = item_count > cachesiz ? cachesiz : item_count;  // Size of buffer to read and sort
     std::vector<std::string> buffer;
 
     int iterations = 0;
@@ -700,21 +695,21 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
 
 }
 
-bool FileUtils::hasExtension(string filename, string extension) {
-    return ( getLCaseExt(filename) == toLower(extension) );
-}
+// bool FileUtils::hasExtension(string filename, string extension) {
+//     return ( getLCaseExt(filename) == toLower(extension) );
+// }
 
-bool FileUtils::hasSNAextension(string filename) {
-    return ( getLCaseExt(filename) == "sna" );
-}
+// bool FileUtils::hasSNAextension(string filename) {
+//     return ( getLCaseExt(filename) == "sna" );
+// }
 
-bool FileUtils::hasZ80extension(string filename) {
-    return ( getLCaseExt(filename) == "z80" );
-}
+// bool FileUtils::hasZ80extension(string filename) {
+//     return ( getLCaseExt(filename) == "z80" );
+// }
 
-bool FileUtils::hasPextension(string filename) {
-    return ( getLCaseExt(filename) == "p" );
-}
+// bool FileUtils::hasPextension(string filename) {
+//     return ( getLCaseExt(filename) == "p" );
+// }
 
 bool FileUtils::hasTAPextension(string filename) {
     return ( getLCaseExt(filename) == "tap" );

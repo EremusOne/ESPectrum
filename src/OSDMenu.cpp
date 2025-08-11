@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -44,7 +43,7 @@ visit https://zxespectrum.speccy.org/contacto
 using namespace std;
 
 #include "FileUtils.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "ESPectrum.h"
 #include "cpuESP.h"
 #include "Video.h"
@@ -268,7 +267,7 @@ unsigned short OSD::menuRun(string new_menu) {
                         }
                     }
                     click();
-                } else if (Menukey.vk == fabgl::VK_PAGEUP || Menukey.vk == fabgl::VK_LEFT || Menukey.vk == fabgl::VK_JOY1LEFT || Menukey.vk == fabgl::VK_JOY2LEFT) {
+                } else if (Menukey.vk == fabgl::VK_PAGEUP/* || Menukey.vk == fabgl::VK_LEFT || Menukey.vk == fabgl::VK_JOY1LEFT || Menukey.vk == fabgl::VK_JOY2LEFT*/) {
                     if (begin_row > virtual_rows) {
                         focus = 1;
                         begin_row -= virtual_rows - 1;
@@ -278,7 +277,7 @@ unsigned short OSD::menuRun(string new_menu) {
                     }
                     menuRedraw();
                     click();
-                } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
+                } else if (Menukey.vk == fabgl::VK_PAGEDOWN/* || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT*/) {
                     if (real_rows - begin_row - virtual_rows > virtual_rows) {
                         focus = 1;
                         begin_row += virtual_rows - 1;
@@ -298,11 +297,20 @@ unsigned short OSD::menuRun(string new_menu) {
                     begin_row = real_rows - virtual_rows + 1;
                     menuRedraw();
                     click();
-                } else if (Menukey.vk == fabgl::VK_RETURN /*|| Menukey.vk == fabgl::VK_SPACE*/ || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY2C) {
-                    click();
-                    menu_prevopt = menuRealRowFor(focus);
-                    return menu_prevopt;
-                } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_F1 || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A) {
+                } else if (Menukey.vk == fabgl::VK_RETURN || Menukey.vk == fabgl::VK_JOY1B || Menukey.vk == fabgl::VK_JOY1C || Menukey.vk == fabgl::VK_JOY2B || Menukey.vk == fabgl::VK_JOY2C
+                        || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
+                    bool retOK = true;
+                    if (Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
+                        string line = rowGet(menu, menuRealRowFor(focus));
+                        if (line.find(">") == line.npos) retOK = false;
+                    }
+                    if (retOK) {
+                        click();
+                        menu_prevopt = menuRealRowFor(focus);
+                        return menu_prevopt;
+                    }
+                } else if (Menukey.vk == fabgl::VK_ESCAPE || Menukey.vk == fabgl::VK_F1 || Menukey.vk == fabgl::VK_JOY1A || Menukey.vk == fabgl::VK_JOY2A
+                        || Menukey.vk == fabgl::VK_LEFT || Menukey.vk == fabgl::VK_JOY1LEFT || Menukey.vk == fabgl::VK_JOY2LEFT) {
                     if (menu_level!=0) OSD::restoreBackbufferData(true);
                     click();
                     return 0;
@@ -865,7 +873,7 @@ int OSD::menuTape(string title) {
                     } else {
                         string title = Tape::selectedBlocks.empty() ? MENU_DELETE_CURRENT_TAP_BLOCK[Config::lang] : MENU_DELETE_TAP_BLOCKS[Config::lang];
                         string msg = OSD_DLG_SURE[Config::lang];
-                        uint8_t res = msgDialog(title,msg);
+                        uint8_t res = msgDialog(title,msg,MSGDIALOG_YESNO);
 
                         if (res == DLG_YES) {
                             if ( Tape::selectedBlocks.empty() ) Tape::selectBlockToggle(begin_row - 2 + focus);

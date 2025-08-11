@@ -1,4 +1,5 @@
 !.keep
+*.bak
 .pio
 .VSCodeCounter
 .VSCodeCounter/**

@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,13 +28,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
-#ifndef Config_h
-#define Config_h
+#ifndef ESPConfig_h
+#define ESPConfig_h
 
 #include <stdio.h>
 #include <inttypes.h>
@@ -63,11 +62,21 @@ using namespace std;
 #define CovoxSTEREO 2
 #define CovoxSOUNDDRIVE1 3
 #define CovoxSOUNDDRIVE2 4
-class Config
-{
+
+#define BOARD_LILYGO 0
+#define BOARD_OLIMEX 1
+#define BOARD_ESPECTRUM_NOPSRAM 2
+#define BOARD_ESPECTRUM_PSRAM 3
+
+#define RST_ACTION_RESET 0
+#define RST_ACTION_NMI 1
+#define RST_ACTION_STATS 2
+#define RST_ACTION_MENU 3
+
+class Config {
 public:
 
-    static void load();
+    static bool load();
     static void save();
     static void save(string value);
 
@@ -88,8 +97,8 @@ public:
     static string   pref_romSet_128;
     static string   pref_romSet_2A;
     static string   pref_romSet_3;
-    static string   pref_romSet_TK90X;
-    static string   pref_romSet_TK95;
+    static string   pref_romSet_90X;
+    static string   pref_romSet_95;
     static string   ram_file;
     static string   last_ram_file;
     static uint8_t  esp32rev;
@@ -99,7 +108,6 @@ public:
     static bool     AY48;
     static bool     Issue2;
     static bool     flashload;
-    static bool     tape_player;
     static bool     tape_timing_rg;
     static uint8_t  joystick1;
     static uint8_t  joystick2;
@@ -130,6 +138,12 @@ public:
     static uint8_t  DSK_fdMode;
     static string   DSK_fileSearch;
 
+    static string   ESP_Path;
+    static uint16_t ESP_begin_row;
+    static uint16_t ESP_focus;
+    static uint8_t  ESP_fdMode;
+    static string   ESP_fileSearch;
+
     static uint8_t scanlines;
     static uint8_t render;
 
@@ -137,11 +151,12 @@ public:
 
     static bool StartMsg;
 
-    static uint8_t port254default; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese
+    // static uint8_t port254default; // For TK90X v1 ROM -> 0xbf: Spanish, 0x3f: Portuguese
+    static uint8_t port254default; // For TK90X v1 ROM -> 0xff: Spanish, 0x7f: Portuguese
 
     static uint8_t ALUTK; // TK ALU -> 0 -> Ferranti, 1 -> Microdigital 50hz, 2 -> Microdigital 60hz
 
-    static uint8_t DiskCtrl; // 0 -> None, 1 -> Betadisk
+    static uint8_t DiskCtrl; // 0 -> Disabled, 1 -> TR-DOS 5.03, 2 -> TR-DOS 5.03 (Fast mode), 3-> TR-DOS 5.05D, 4-> TR-DOS 5.05D (Fast mode)
 
     static bool TimeMachine;
 
@@ -154,6 +169,20 @@ public:
     static uint8_t mouse;
     static uint8_t mousedpi;
 
+    static uint8_t rst_button;
+    static uint8_t rst_btn_action;
+
+    static bool AudioInMode;
+    static uint8_t AudioInGPIO;
+
+    static size_t psram_size;
+    static uint8_t Board;
+
+    static bool EarBoost;
+    static bool MicBoost;
+
+    static bool tapFPI; // Fast program index
+
 };
 
-#endif // Config.h
+#endif // ESPConfig.h

@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,13 +28,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
 #include "Ports.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "ESPectrum.h"
 #include "Z80_JLS/z80.h"
 #include "MemESP.h"
@@ -42,7 +41,9 @@ visit https://zxespectrum.speccy.org/contacto
 #include "AySound.h"
 #include "Tape.h"
 #include "cpuESP.h"
-#include "wd1793.h"
+#include "AudioIn.h"
+
+#include "disk/wd1793.h"
 
 // #pragma GCC optimize("O3")
 
@@ -131,11 +132,6 @@ uint8_t Ports::getFloatBusData2A3() {
     if (line < 63 || line >= 255) return MemESP::lastContendedMemReadWrite | 1;
 
 	uint8_t halfpix = currentTstates % 228;
-
-	// Test/Ask if this is more correct because contention lasts 129 t-states in +2A/+3
-    // if (halfpix > 128) return MemESP::lastContendedMemReadWrite | 1;
-    // if (halfpix & 0x04) return MemESP::lastContendedMemReadWrite | 1;
-
 	if (halfpix & 0x84) return MemESP::lastContendedMemReadWrite | 1;
 
     line -= 63;
@@ -144,6 +140,19 @@ uint8_t Ports::getFloatBusData2A3() {
 }
 
 static uint32_t p_states;
+
+IRAM_ATTR void Ports::FDDStep(bool force) {
+
+    CPU::tstates_diff += p_states - CPU::prev_tstates;
+
+    if (force || ((ESPectrum::fdd.control & (kRVMWD177XHLD | kRVMWD177XHLT)) != 0))
+        rvmWD1793Step(&ESPectrum::fdd, CPU::tstates_diff / WD177XSTEPSTATES); // FDD
+
+    CPU::tstates_diff = CPU::tstates_diff % WD177XSTEPSTATES;
+
+    CPU::prev_tstates = p_states;
+
+}
 
 const uint8_t contention2[8] = {6, 6, 5, 4, 3, 2, 1, 0};
 const uint8_t contention3[129] = {
@@ -184,6 +193,7 @@ uint8_t tkIOcon(uint16_t a) {
 
 }
 
+
 IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
     uint8_t data;
@@ -201,7 +211,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
             VIDEO::Draw(3, Z80Ops::is48 || Z80Ops::is128);   // I/O Contention (Late)
         }
 
-        data = Config::port254default; // For TK90X spanish and rest of machines default port value is 0xBF. For TK90X portuguese is 0x3f.
+        data = Config::port254default;
 
         uint8_t portHigh = ~(address >> 8) & 0xff;
         for (int row = 0, mask = 0x01; row < 8; row++, mask <<= 1) {
@@ -209,23 +219,45 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 data &= port[row];
         }
 
-        // ** ESPectrum **
-        if (Tape::tapeStatus==TAPE_LOADING) {
+        if ( AudioIn::Status == AUDIOIN_PLAY && Tape::tapeFileType == TAPE_FTYPE_EMPTY) {
+
+            Tape::tapeEarBit = AudioIn::GetLevel();
+
+        } else if (Tape::tapeStatus==TAPE_LOADING) {
+
             Tape::Read();
-            bitWrite(data,6,Tape::tapeEarBit);
-        } else {
-    		if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
-				if (port254 & 0x18) data |= 0x40;
-			else
-				if (port254 & 0x10) data |= 0x40;
-		}
+
+            if (Config::EarBoost) {
+                int Audiobit = Tape::tapeEarBit ? 255 : 0;
+                if (Audiobit != ESPectrum::lastaudioBit) {
+                    ESPectrum::BeeperGetSample();
+                    ESPectrum::lastaudioBit = Audiobit;
+                }
+            }
+
+        }
+
+        if ((Z80Ops::is48) && (Config::Issue2)) {
+            data = port254 & 0x18 ? data | 0x40: data & 0xbf;
+        } else if (!Z80Ops::is2a3) {
+            data = port254 & 0x10 ? data | 0x40 : data & 0xbf;
+        }
+
+        if (Tape::tapeEarBit) data ^= 0x40;
 
     } else {
 
         if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
         else
-            ioContentionLate((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]);
+            // ioContentionLate((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]);
+            if ((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]) {
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+            } else
+                VIDEO::Draw(3, false);
+            // End ioContentionLate
 
         // The default port value is 0xFF.
         data = 0xff;
@@ -233,28 +265,29 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
         // Check if TRDOS Rom is mapped.
         if (ESPectrum::trdos) {
 
-            switch (address & 0xe3) {
+            uint8_t dat;
+
+            switch( address & 0xe3) {
                 case 0x03:
-                    data = ESPectrum::Betadisk.ReadStatusReg();
-                    // printf("WD1793 Read Status Register: %d\n",(int)data);
-                    return data;
                 case 0x23:
-                    data = ESPectrum::Betadisk.ReadTrackReg();
-                    // printf("WD1793 Read Track Register: %d\n",(int)data);
-                    return data;
                 case 0x43:
-                    data = ESPectrum::Betadisk.ReadSectorReg();
-                    // printf("WD1793 Read Sector Register: %d\n",(int)data);
-                    return data;
                 case 0x63:
-                    data = ESPectrum::Betadisk.ReadDataReg();
-                    // printf("WD1793 Read Data Register: %d\n",(int)data);
-                    return data;
-                case 0xe3:
-                    data = ESPectrum::Betadisk.ReadSystemReg();
-                    // printf("WD1793 Read Control Register: %d\n",(int)data);
-                    return data;
+
+                    FDDStep(false);
+
+                    return rvmWD1793Read(&ESPectrum::fdd,((address >> 5) & 0x3));
+
+                case 0xe3: {
+
+                    FDDStep(true);
+
+                    uint8_t v=0;
+                    if(ESPectrum::fdd.control & kRVMWD177XDRQ) v|=0x40;
+                    if(ESPectrum::fdd.control & (kRVMWD177XINTRQ | kRVMWD177XFINTRQ)) v|=0x80;
+                    return v;
+                }
             }
+
         }
 
         if (ESPectrum::ps2mouse && Config::mouse == 1) {
@@ -321,10 +354,10 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
         }
 
         // Kempston Joystick
-        if ((Config::joystick1 == JOY_KEMPSTON || Config::joystick2 == JOY_KEMPSTON || Config::joyPS2 == JOYPS2_KEMPSTON) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
+        if ((ESPectrum::joystick1 == JOY_KEMPSTON || ESPectrum::joystick2 == JOY_KEMPSTON || Config::joyPS2 == JOYPS2_KEMPSTON) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
 
         // Fuller Joystick
-        if ((Config::joystick1 == JOY_FULLER || Config::joystick2 == JOY_FULLER || Config::joyPS2 == JOYPS2_FULLER) && (address & 0xFF) == 0x7F) return port[0x7f];
+        if ((ESPectrum::joystick1 == JOY_FULLER || ESPectrum::joystick2 == JOY_FULLER || Config::joyPS2 == JOYPS2_FULLER) && (address & 0xFF) == 0x7F) return port[0x7f];
 
         // Sound (AY-3-8912)
         if (ESPectrum::AY_emu) {
@@ -340,27 +373,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 return AySound::getRegisterData();
             }
 
-            // TO DO: ASK JOSE LUIS
-            //             if (joystickModel == JoystickModel.FULLER && (port & 0xff) == 0x3f) {
-            // //                System.out.println(String.format("InPort: %04X", port));
-            //                 return ay8912.readRegister();
-            //             }
-
         }
-
-        // if (address == 0x1FFD) {
-        //     printf("Motor request\n");
-        // }
-        // else if (address == 0x2FFD && _hardwareMode == 4)
-        // {
-        //     // inValue = _plus3Disk.MainStatusRegister();
-        //     // function = "+3 Disk main status";
-        // }
-        // else if (address == 0x3FFD && _hardwareMode == 4)
-        // {
-        //     // inValue = _plus3Disk.ReturnOutput();
-        //     // function = "+3 Disk return result";
-        // }
 
         if (Z80Ops::is2a3) {
 
@@ -369,7 +382,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
             if (MemESP::pagingLock || (address & 4093) != address) {
                 data = 0xff;
             } else {
-                data = getFloatBusData2A3();
+                data = getFloatBusData();
             }
 
         } else {
@@ -378,7 +391,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
         }
 
-        if ((Z80Ops::is128) && ((address & 0x8002) == 0)) {
+        if ((Z80Ops::is128) && ((address & 0x8002) == 0) && ESPectrum::trdos == false) {
 
             // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
             // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
@@ -399,7 +412,7 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 }
 
                 MemESP::romLatch = bitRead(data, 4);
-                bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+                MemESP::romInUse = MemESP::romLatch;
                 MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
             }
 
@@ -413,14 +426,14 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
 IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
-    int Audiobit;
+    int Audiobit = 0;
     uint8_t rambank = address >> 14;
     p_states = CPU::tstates;
 
     VIDEO::Draw(1, (Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]); // I/O Contention (Early)
 
     // ULA =======================================================================
-    if ((address & 0x0001) == 0) {
+    if( !(address & 0x1)) {
 
         port254 = data;
 
@@ -442,13 +455,14 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         }
 
-        if (ESPectrum::ESP_delay) { // Disable beeper on turbo mode
+        if (ESPectrum::ESP_delay && !Config::EarBoost) {
 
-            if (Config::tape_player)
-                Audiobit = Tape::tapeEarBit ? 255 : 0; // For tape player mode
-            else
-                // Beeper Audio
-                Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+            // Beeper Audio
+            Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+
+            if (Config::MicBoost) {
+                Audiobit = (data >> 3) & 0x01 ? 255 : Audiobit;
+            }
 
             if (Audiobit != ESPectrum::lastaudioBit) {
                 ESPectrum::BeeperGetSample();
@@ -500,32 +514,46 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         // Check if TRDOS Rom is mapped.
         if (ESPectrum::trdos) {
 
-            switch (address & 0xFF) {
-                case 0xFF:
-                    // printf("WD1793 Write Control Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteSystemReg(data);
-                    goto lateIOContention;
+            switch (address & 0xe3) {
+
+                case 0x03:
+                case 0x23:
+                case 0x43:
+                case 0x63:
+                    FDDStep(false);
+                    rvmWD1793Write(&ESPectrum::fdd,((address >> 5) & 0x3),data);
                     break;
-                case 0x1F:
-                    // printf("WD1793 Write Command Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteCommandReg(data);
-                    goto lateIOContention;
+                case 0xe3:
+
+                    FDDStep(true);
+
+                    // Change active disk unit
+                    if (ESPectrum::fdd.diskS != (data & 0x3)) {
+                        ESPectrum::fdd.diskS = data & 0x3;
+                        if (ESPectrum::fdd.disk[ESPectrum::fdd.diskS] != NULL && ESPectrum::fdd.side && ESPectrum::fdd.disk[ESPectrum::fdd.diskS]->sides == 1) ESPectrum::fdd.side = 0;
+                        ESPectrum::fdd.sclConverted = false;
+                    }
+
+                    if(!(data & 0x4)) {
+                        rvmWD1793Reset(&ESPectrum::fdd);
+                    }
+
+                    if(data & 0x8) ESPectrum::fdd.control|=kRVMWD177XTest;
+                    else ESPectrum::fdd.control&=~kRVMWD177XTest;
+
+                    if(data & 0x10) ESPectrum::fdd.side=0;
+                    else {
+                        if (ESPectrum::fdd.disk[ESPectrum::fdd.diskS] != NULL)
+                            ESPectrum::fdd.side = ESPectrum::fdd.disk[ESPectrum::fdd.diskS]->sides == 1 ? 0 : 1;
+                        else
+                            ESPectrum::fdd.side = 1;
+                    }
+
+                    if(data & 0x40) ESPectrum::fdd.control|=kRVMWD177XDDEN;
+                    else ESPectrum::fdd.control&=~kRVMWD177XDDEN;
+
                     break;
-                case 0x3F:
-                    // printf("WD1793 Write Track Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteTrackReg(data);
-                    goto lateIOContention;
-                    break;
-                case 0x5F:
-                    // printf("WD1793 Write Sector Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteSectorReg(data);
-                    goto lateIOContention;
-                    break;
-                case 0x7F:
-                    // printf("WD1793 Write Data Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteDataReg(data);
-                    goto lateIOContention;
-                    break;
+
             }
 
         }
@@ -583,7 +611,14 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
         else
-            ioContentionLate((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]);
+            // ioContentionLate((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]);
+            if ((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]) {
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+            } else
+                VIDEO::Draw(3, false);
+            // End ioContentionLate
 
     }
 
@@ -607,7 +642,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             }
 
             MemESP::romLatch = bitRead(data, 4);
-            bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+            MemESP::romInUse = MemESP::romLatch;
             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
@@ -633,8 +668,6 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
         if (MemESP::pagingmode2A3 == 0) {
 
-            MemESP::pagingLock = bitRead(data, 5);
-
             if (MemESP::bankLatch != (data & 0x7)) {
                 MemESP::bankLatch = data & 0x7;
                 #ifdef ESPECTRUM_PSRAM
@@ -648,7 +681,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
 
-
+            MemESP::pagingLock = bitRead(data, 5);
 
         } else {
 
@@ -668,101 +701,89 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
     // Spectrum +2A/+3: Check port 0x1FFD for extra memory paging commands and disk motor switch (motor switch is not implemented).
     // The port is partially decoded: Bits 1, 13, 14 and 15 must be reset and bit 12 set.
-    } else if ((Z80Ops::is2a3) && ((address & 0xF002) == 0x1000) && (!MemESP::pagingLock)) {
+    } else if ((Z80Ops::is2a3) && ((address & 0xF002) == 0x1000)/* && (!MemESP::pagingLock)*/) {
 
         // printf("+2A/+3 0x1FFD OUT\n");
 
-        if (bitRead(data, 0) == 0) {
+        if (!MemESP::pagingLock) {
 
-            // printf("Paging mode normal\n");
+            if (bitRead(data, 0) == 0) {
 
-            MemESP::pagingmode2A3 = 0;
+                MemESP::pagingmode2A3 = 0;
 
-            // Bit 2 is the high bit of the ROM bank selection
-            MemESP::romLatch = (bitRead(data, 2) << 1) + (MemESP::romInUse & 0x01) ;
-            MemESP::romInUse = MemESP::romLatch & 0x3;
+                // Bit 2 is the high bit of the ROM bank selection
+                MemESP::romLatch = (bitRead(data, 2) << 1) + (MemESP::romInUse & 0x01) ;
+                MemESP::romInUse = MemESP::romLatch & 0x3;
 
-            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-            MemESP::ramCurrent[1] = MemESP::ram[5];
-            MemESP::ramCurrent[2] = MemESP::ram[2];
-            MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                MemESP::ramCurrent[1] = MemESP::ram[5];
+                MemESP::ramCurrent[2] = MemESP::ram[2];
+                MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
 
-            MemESP::ramContended[0] = MemESP::ramContended[2] = false;
-            MemESP::ramContended[1] = true;
-            MemESP::ramContended[3] = MemESP::bankLatch > 3;
+                MemESP::ramContended[0] = MemESP::ramContended[2] = false;
+                MemESP::ramContended[1] = true;
+                MemESP::ramContended[3] = MemESP::bankLatch > 3;
 
-        } else {
+            } else {
 
-            // printf("Paging mode allram\n");
+                MemESP::pagingmode2A3 = 0xff;
 
-            MemESP::pagingmode2A3 = 0xff;
+                switch ((data & 6) >> 1) {
+                    case 0:
+                        MemESP::ramCurrent[0] = MemESP::ram[0];
+                        MemESP::ramCurrent[1] = MemESP::ram[1];
+                        MemESP::ramCurrent[2] = MemESP::ram[2];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
 
-            switch ((data & 6) >> 1) {
-                case 0:
-                    MemESP::ramCurrent[0] = MemESP::ram[0];
-                    MemESP::ramCurrent[1] = MemESP::ram[1];
-                    MemESP::ramCurrent[2] = MemESP::ram[2];
-                    MemESP::ramCurrent[3] = MemESP::ram[3];
+                        MemESP::ramContended[0] = false;
+                        MemESP::ramContended[1] = false;
+                        MemESP::ramContended[2] = false;
+                        MemESP::ramContended[3] = false;
 
-                    MemESP::ramContended[0] = false;
-                    MemESP::ramContended[1] = false;
-                    MemESP::ramContended[2] = false;
-                    MemESP::ramContended[3] = false;
+                        break;
+                    case 1:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[7];
 
-                    break;
-                case 1:
-                    MemESP::ramCurrent[0] = MemESP::ram[4];
-                    MemESP::ramCurrent[1] = MemESP::ram[5];
-                    MemESP::ramCurrent[2] = MemESP::ram[6];
-                    MemESP::ramCurrent[3] = MemESP::ram[7];
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = true;
 
-                    MemESP::ramContended[0] = true;
-                    MemESP::ramContended[1] = true;
-                    MemESP::ramContended[2] = true;
-                    MemESP::ramContended[3] = true;
+                        break;
+                    case 2:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
 
-                    break;
-                case 2:
-                    MemESP::ramCurrent[0] = MemESP::ram[4];
-                    MemESP::ramCurrent[1] = MemESP::ram[5];
-                    MemESP::ramCurrent[2] = MemESP::ram[6];
-                    MemESP::ramCurrent[3] = MemESP::ram[3];
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
 
-                    MemESP::ramContended[0] = true;
-                    MemESP::ramContended[1] = true;
-                    MemESP::ramContended[2] = true;
-                    MemESP::ramContended[3] = false;
+                        break;
+                    case 3:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[7];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
 
-                    break;
-                case 3:
-                    MemESP::ramCurrent[0] = MemESP::ram[4];
-                    MemESP::ramCurrent[1] = MemESP::ram[7];
-                    MemESP::ramCurrent[2] = MemESP::ram[6];
-                    MemESP::ramCurrent[3] = MemESP::ram[3];
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
 
-                    MemESP::ramContended[0] = true;
-                    MemESP::ramContended[1] = true;
-                    MemESP::ramContended[2] = true;
-                    MemESP::ramContended[3] = false;
-
-                    break;
+                        break;
+                }
             }
+
+            LastOutTo1FFD = data;
+
         }
 
-        LastOutTo1FFD = data;
-
-    }
-
-}
-
-IRAM_ATTR void Ports::ioContentionLate(bool contend) {
-
-    if (contend) {
-        VIDEO::Draw(1, true);
-        VIDEO::Draw(1, true);
-        VIDEO::Draw(1, true);
-    } else {
-        VIDEO::Draw(3, false);
     }
 
 }

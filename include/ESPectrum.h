@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -39,7 +38,8 @@ visit https://zxespectrum.speccy.org/contacto
 #include "hardpins.h"
 #include "CaptureBMP.h"
 #include "fabgl.h"
-#include "wd1793.h"
+
+#include "disk/wd1793.h"
 
 using namespace std;
 
@@ -91,6 +91,15 @@ using namespace std;
 #define ESP_AUDIO_AY_DIV_128  114
 #define ESP_AUDIO_OVERSAMPLES_DIV_128 19
 
+// #define ESP_AUDIO_OVERSAMPLES_128 4431
+// #define ESP_AUDIO_FREQ_128 31662 // ESP_AUDIO_SAMPLES_128 * 50,020008 fps = 31112,445 Hz.
+// #define ESP_AUDIO_FREQ_128_125SPEED 38890 // 125% speed
+// #define ESP_AUDIO_FREQ_128_150SPEED 46669 // 150% speed
+// #define ESP_AUDIO_SAMPLES_128 633
+// #define ESP_AUDIO_SAMPLES_DIV_128  7
+// #define ESP_AUDIO_AY_DIV_128  112
+// #define ESP_AUDIO_OVERSAMPLES_DIV_128 16
+
 #define ESP_AUDIO_OVERSAMPLES_PENTAGON 4480
 #define ESP_AUDIO_FREQ_PENTAGON 31250 // ESP_AUDIO_SAMPLES_PENTAGON * 48,828125 frames per second = 31250 Hz
 #define ESP_AUDIO_FREQ_PENTAGON_125SPEED 39062 // 125% speed
@@ -113,10 +122,12 @@ public:
 
     // Kbd
     static void processKeyboard();
-    static void bootKeyboard();
+    static void bootKeyboard(int timeout);
     static bool readKbd(fabgl::VirtualKeyItem *Nextkey);
     static void readKbdJoy();
     static fabgl::PS2Controller PS2Controller;
+    static uint8_t joystick1;
+    static uint8_t joystick2;
     static fabgl::VirtualKey JoyVKTranslation[24];
     static fabgl::VirtualKey VK_ESPECTRUM_FIRE1;
     static fabgl::VirtualKey VK_ESPECTRUM_FIRE2;
@@ -183,7 +194,10 @@ public:
     static int zxDelay;
 
     static bool trdos;
-    static WD1793 Betadisk;
+
+    static rvmWD1793 fdd;
+
+    static bool rst_button;
 
     static int32_t mouseX;
     static int32_t mouseY;
@@ -205,10 +219,9 @@ private:
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet(value, bit) : bitClear(value, bit))
 
-unsigned long millis();
+// unsigned long millis();
 
-inline void delay(uint32_t ms)
-{
+inline void delay(uint32_t ms) {
     vTaskDelay(ms / portTICK_PERIOD_MS);
 }
 

@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,26 +28,42 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
-#ifndef ESPectrum_hardconfig_h
-#define ESPectrum_hardconfig_h
+#ifndef ESPECTRUM_AUDIOIN_H
+#define ESPECTRUM_AUDIOIN_H
 
-///////////////////////////////////////////////////////////////////////////////
-// LOG_DEBUG_TIMING generates simple timing log messages to console every second.
-///////////////////////////////////////////////////////////////////////////////
+#include <inttypes.h>
 
-// #define LOG_DEBUG_TIMING
+#define AUDIOIN_STOP 0
+#define AUDIOIN_PLAY 1
+#define AUDIOIN_PAUSE 2
 
-///////////////////////////////////////////////////////////////////////////////
-// Testing code
-//
-// Activate sections of code for testing / profiling
-///////////////////////////////////////////////////////////////////////////////
+class AudioIn {
 
-// #define TESTING_CODE
+public:
 
-#endif // ESPectrum_config_h
+    static volatile uint8_t Status;
+    static volatile uint8_t* Buffer;
+    static volatile int Bufsize;
+    static volatile int sample_index;
+    static double Factor;
+    static uint64_t Basepos;
+    static volatile uint32_t* gpio_in;
+    static volatile uint32_t gpio_mask;
+
+    static void Init();
+    static void GPIOSetup();
+    static void Start();
+    static void Play();
+    static void Stop();
+    static void Pause();
+    static void Resume();
+    static void PrepareFrame();
+    static uint8_t GetLevel();
+
+};
+
+#endif

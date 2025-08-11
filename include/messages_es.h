@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -38,8 +37,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define ERR_FS_EXT_FAIL_ES "\xAD" "Almacenamiento externo no disponible!"
 
-#define OSD_MSGDIALOG_YES_ES "  S\xA1  "
-#define OSD_MSGDIALOG_NO_ES "  No  "
+#define OSD_MSGDIALOG_YESNO_ES "  S\xA1  \n  No  \n"
 
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"
 
@@ -53,9 +51,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define OSD_TAPE_SAVE_EXIST_ES "El fichero ya existe \xA8Sobreescribir?"
 
-#define OSD_PSNA_SAVE_ES "Guardar snapshot"
+#define OSD_PSNA_SAVE_ES "Guardar snapshot ESP"
 
-#define OSD_PSNA_EXISTS_ES "\xA8Sobreescribir ranura?"
+#define OSD_PSNA_EXISTS_ES "\xA8Sobreescribir?"
 
 #define OSD_TAPE_SELECT_ERR_ES "Fichero de cinta no seleccionado"
 
@@ -104,9 +102,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DSK_TITLE_ES "Elija disco"
 
-#define MENU_ESP_LOAD_TITLE_ES "Elija snapshot de ESPectrum"
+#define MENU_ESP_LOAD_TITLE_ES "Elija snap ESP"
 
-#define MENU_ESP_SAVE_TITLE_ES "Guardar snapshot de ESPectrum"
+#define MENU_ESP_SAVE_TITLE_ES "Guardar snap ESP"
 
 #define MENU_DELETE_TAP_BLOCKS_ES "Borrar selecci\xA2n"
 
@@ -117,28 +115,64 @@ visit https://zxespectrum.speccy.org/contacto
 #define OSD_BLOCK_TYPE_ERR_ES "Tipo de bloque inv\xA0lido"
 
 #define MENU_DELETE_CURRENT_FILE_ES "Borrar archivo"
+#define MENU_DELETE_CURRENT_DIR_ES "Borrar directorio"
 
 #define OSD_READONLY_FILE_WARN_ES "Archivo de solo lectura"
+#define OSD_FILEEXISTS_WARN_ES "El archivo ya existe"
+#define OSD_FILEERROR_WARN_ES "Error de archivo: "
+
+#define OSD_DIREXISTS_WARN_ES "El directorio ya existe"
+#define OSD_DIRNOTEMPTY_WARN_ES "Directorio no vacio"
 
 #define OSD_TAPE_FLASHLOAD_ES "Carga rapida de cinta"
 #define OSD_TAPE_INSERT_ES "Cinta insertada"
 #define OSD_TAPE_EJECT_ES "Cinta expulsada"
+
+#define OSD_DISK_EJECT_ES "Disco expulsado"
 
 #define TRDOS_RESET_ERR_ES "Betadisk desactivado o no disponible"
 
 #define MENU_SNA_ES \
     "Men\xA3 snapshots\n"\
     "Cargar (SNA,Z80,SP,P) \t(F2) >\n"\
-    "Cargar snapshot\t(F3) >\n"\
-    "Guardar snapshot\t(F4) >\n"
+    "Cargar snapshot ESP\t(F6) >\n"\
+    "Guardar snapshot ESP\t(F7)  \n"
 
 #define MENU_TAPE_ES \
     "Casete\n"\
-    "Elegir (TAP,TZX) \t(F5) >\n"\
-    "Play/Stop\t(F6)  \n"\
-    "Expulsar cinta\t(SF6) \n"\
-    "Navegador cinta\t(F7)  \n"\
-	"Modo reproductor\t>\n"
+    "Elegir (TAP,TZX) \t(F4) >\n"\
+    "Play/Stop\t(F5)  \n"\
+    "Expulsar cinta\t(SF5)  \n"\
+    "Navegador cinta\t(SF4)  \n"\
+	"Amplificaci\xA2n\t>\n"\
+    "Entrada audio\t>\n"\
+    "H/W entrada audio\t>\n"
+
+#define MENU_AMP_ES "Amplificaci\xA2n\n"\
+    "EAR\t[1]\n"\
+    "MIC\t[2]\n"\
+    "Ambos\t[3]\n"\
+    "Ninguna\t[4]\n"
+
+#define MENU_AUDIOIN_ESPECTRUM_ES "Entrada EAR (GPIO03)\t[03]\n"\
+    "USB-A 1     (GPIO32)\t[32]\n"\
+    "USB-A 1     (GPIO33)\t[33]\n"\
+    "USB-A 2     (GPIO16)\t[16]\n"\
+    "USB-A 2     (GPIO17)\t[17]\n"
+
+#define MENU_AUDIOIN_ESPECTRUM_PSRAM_ES "Entrada EAR (GPIO03)\t[03]\n"\
+    "USB-A       (GPIO32)\t[32]\n"\
+    "USB-A       (GPIO33)\t[33]\n"
+
+#define MENU_AUDIOIN_LILYGO_ES "Segundo PS/2 (GPIO26)\t[26]\n"\
+    "Segundo PS/2 (GPIO27)\t[27]\n"\
+    "Pad interno  (GPI34)\t[34]\n"\
+    "Pad interno  (GPI39)\t[39]\n"
+
+#define MENU_AUDIOIN_OLIMEX_ES "Segundo PS/2 (GPIO26)\t[26]\n"\
+	"Segundo PS/2 (GPIO27)\t[27]\n"\
+	"Access Bus 6 (GPI34)\t[34]\n"\
+	"Access Bus 8 (GPI39)\t[39]\n"
 
 #define MENU_BETADISK_ES \
     "Unidades\n"\
@@ -204,6 +238,15 @@ visit https://zxespectrum.speccy.org/contacto
     "Reset completo\t(F11)\n"\
     "Resetear ESP32\t(F12)\n"
 
+#define MENU_RESET_HWB_ES "Bot\xA2n hardware\t>\n"
+
+#define MENU_RESET_BUTTON_ES \
+    "Bot\xA2n hardware\n"\
+    "GPI34\t[34]\n"\
+    "GPI36\t[36]\n"\
+    "GPI39\t[39]\n"\
+    "No presente\t[00]\n"
+
 #define MENU_PERSIST_SAVE_ES \
     "Guardar snapshot\n"
 
@@ -213,10 +256,18 @@ visit https://zxespectrum.speccy.org/contacto
 #define MENU_STORAGE_ES "Almacenamiento\n"\
     "Betadisk\t>\n"\
     "Carga r\xA0pida cinta\t>\n"\
-    "Timings ROM R.G.\t>\n"
+    "Timings ROM R.G.\t>\n"\
+    "Indice r\xA0pido TAP\t>\n"
 
 #define MENU_YESNO_ES "S\xA1\t[Y]\n"\
     "No\t[N]\n"
+
+#define MENU_DISKCTRL_ES "Betadisk\n"\
+    "TR-DOS 5.03\t[1]\n"\
+    "TR-DOS 5.03  (Modo r\xA0pido)\t[2]\n"\
+    "TR-DOS 5.05D\t[3]\n"\
+    "TR-DOS 5.05D (Modo r\xA0pido)\t[4]\n"\
+    "Desactivado\t[5]\n"
 
 #define MENU_OTHER_ES "Otros\n"\
     "AY en 48K\t>\n"\

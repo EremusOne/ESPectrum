@@ -27,10 +27,11 @@
 #include "MemESP.h"
 #include "cpuESP.h"
 #include "Tape.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "FileUtils.h"
 #include "OSDMain.h"
 #include "messages.h"
+
 
 // #include "Snapshot.h"
 
@@ -44,7 +45,7 @@ uint8_t page;
 // miembros estáticos
 
 uint8_t Z80::opCode;
-uint8_t Z80::prefixOpcode = { 0x00 };
+uint8_t Z80::prefixOpcode = 0;
 bool Z80::execDone;
 uint8_t Z80::regA;
 uint8_t Z80::sz5h3pnFlags;
@@ -921,7 +922,7 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
 
 IRAM_ATTR void Z80::check_trdos() {
 
-    if ((Config::DiskCtrl == 1 || ESPectrum::trdos == true || Z80Ops::isPentagon) && !Z80Ops::is2a3) {
+    if ((Config::DiskCtrl != 0 || ESPectrum::trdos == true || Z80Ops::isPentagon) && !Z80Ops::is2a3) {
 
         if (!ESPectrum::trdos) {
 
@@ -2384,18 +2385,127 @@ void Z80::decodeOpcodebe()
 
 }
 
-IRAM_ATTR void Z80::decodeOpcodebf()
+/*IRAM_ATTR*/ void Z80::decodeOpcodebf()
 { /* CP A */
 
     cp(regA);
 
     if (REG_PC == 0x56b) { // LOAD trap
 
-        // printf("Trap Load!\n");
+        if ((Tape::tapeFileType == TAPE_FTYPE_TAP) && (Tape::tapeFileName != "none")) {
 
-        if ((Config::flashload) && (Tape::tapeFileType == TAPE_FTYPE_TAP) && (Tape::tapeFileName != "none") && (Tape::tapeStatus != TAPE_LOADING)) {
-            // printf("Loading tape %s\n",Tape::tapeFileName.c_str());
-            if (Tape::FlashLoad()) REG_PC = 0x5e2;
+            if (Config::tapFPI) {
+
+                // Get required block loading info
+                string name = "";
+                uint8_t isHeader = REG_Ax;
+                uint16_t header_data = REG_IX - 0x11;
+                uint8_t type_ix = MemESP::ramCurrent[header_data >> 14][header_data & 0x3fff];
+                header_data = REG_IX - 0x10;
+                uint8_t valid_name = MemESP::ramCurrent[header_data >> 14][header_data & 0x3fff];
+                if (isHeader == 0 && type_ix == 00 && valid_name != 0xff) {
+
+                    // Searching for program header: let's speed up things ;)
+                    for (int i=0; i < 10; i++) {
+                        name += MemESP::ramCurrent[(header_data + i) >> 14][(header_data + i) & 0x3fff];
+                    }
+                    rtrim(name);
+
+                    // printf("Inicio lectura tapinfo. Buscando: %s\n",name.c_str());
+
+                    string tapinfo = FileUtils::MountPoint + "/.tmp/tapinfo";
+
+                    FILE* outputFile = fopen(tapinfo.c_str(), "r");
+                    if (!outputFile) {
+
+                        printf("Error al abrir el archivo tapinfo\n");
+
+                    } else {
+
+                        char stringLeido[10];
+                        int intLeido1, intLeido2;
+
+                        const char *stringABuscar = name.c_str();
+
+                        while (fscanf(outputFile, "%s %d %d", stringLeido, &intLeido1, &intLeido2) == 3) {
+                            // printf("String '%s' leido. Datos asociados: %d y %d\n", stringLeido, intLeido1, intLeido2);
+                            if (strcmp(stringLeido, stringABuscar) == 0) {
+                                // printf("Coincidencia!!\n");
+                                Tape::tapeCurBlock = intLeido1;
+                                fseek(Tape::tape,intLeido2,SEEK_SET);
+                                if (!Config::flashload) {
+                                    Tape::Stop();
+                                    Tape::Play();
+                                }
+                                break;
+                            }
+                        }
+
+                        // printf("Final lectura tapinfo!\n");
+
+                        fclose(outputFile);
+
+                    }
+
+                }
+
+            }
+
+            if ((Config::flashload) && (Tape::tapeStatus != TAPE_LOADING)) {
+
+                // // Get required block loading info
+                // string name = "";
+                // uint8_t isHeader = REG_Ax;
+                // uint16_t header_data = REG_IX - 0x11;
+                // uint8_t type_ix = MemESP::ramCurrent[header_data >> 14][header_data & 0x3fff];
+                // header_data = REG_IX - 0x10;
+                // uint8_t valid_name = MemESP::ramCurrent[header_data >> 14][header_data & 0x3fff];
+                // if (isHeader == 0 && type_ix == 00 && valid_name != 0xff) {
+
+                //     // Searching for program header: let's speed up things ;)
+                //     for (int i=0; i < 10; i++) {
+                //         name += MemESP::ramCurrent[(header_data + i) >> 14][(header_data + i) & 0x3fff];
+                //     }
+                //     rtrim(name);
+
+                //     // printf("Inicio lectura tapinfo. Buscando: %s\n",name.c_str());
+
+                //     string tapinfo = FileUtils::MountPoint + "/.tmp/tapinfo";
+
+                //     FILE* outputFile = fopen(tapinfo.c_str(), "r");
+                //     if (!outputFile) {
+
+                //         printf("Error al abrir el archivo tapinfo\n");
+
+                //     } else {
+
+                //         char stringLeido[10];
+                //         int intLeido1, intLeido2;
+
+                //         const char *stringABuscar = name.c_str();
+
+                //         while (fscanf(outputFile, "%s %d %d", stringLeido, &intLeido1, &intLeido2) == 3) {
+                //             // printf("String '%s' leido. Datos asociados: %d y %d\n", stringLeido, intLeido1, intLeido2);
+                //             if (strcmp(stringLeido, stringABuscar) == 0) {
+                //                 // printf("Coincidencia!!\n");
+                //                 Tape::tapeCurBlock = intLeido1;
+                //                 fseek(Tape::tape,intLeido2,SEEK_SET);
+                //                 break;
+                //             }
+                //         }
+
+                //         // printf("Final lectura tapinfo!\n");
+
+                //         fclose(outputFile);
+
+                //     }
+
+                // }
+
+                if (Tape::FlashLoad()) REG_PC = 0x5e2;
+
+            }
+
         }
 
     }

@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -43,6 +42,8 @@ class Ports {
 
 public:
 
+    // static uint8_t input_48(uint16_t address);
+    // static void output_48(uint16_t address, uint8_t data);
     static uint8_t input(uint16_t address);
     static void output(uint16_t address, uint8_t data);
     static uint8_t port[128];
@@ -54,12 +55,16 @@ public:
     static uint8_t getFloatBusDataPentagon();
     static uint8_t getFloatBusData2A3();
 
+    static void FDDStep(bool force);
+
     static uint8_t LastOutTo1FFD;
+
+    static uint8_t port254;
 
 private:
 
-    static void ioContentionLate(bool contend);
-    static uint8_t port254;
+    // static void ioContentionLate(bool contend);
+
     static uint8_t speaker_values[8];
 
 };

@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -37,8 +36,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include "ESPectrum.h"
 #include "MemESP.h"
 #include "Ports.h"
-#include "hardconfig.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "Video.h"
 #include "Z80_JLS/z80.h"
 
@@ -228,19 +226,18 @@ IRAM_ATTR void CPU::loop() {
 
     VIDEO::EndFrame();
 
-    // // FDD calcs
-    // CPU::tstates_diff += CPU::tstates - CPU::prev_tstates;
+    // FDD calcs
+    CPU::tstates_diff += CPU::tstates - CPU::prev_tstates;
 
-    // if ((ESPectrum::fdd.control & (kRVMWD177XHLD | kRVMWD177XHLT)) != 0) {
-    //     rvmWD1793Step(&ESPectrum::fdd, CPU::tstates_diff / WD177XSTEPSTATES); // FDD
-    // }
-
-    // CPU::tstates_diff = CPU::tstates_diff % WD177XSTEPSTATES;
+    if ((ESPectrum::fdd.control & (kRVMWD177XHLD | kRVMWD177XHLT)) != 0) {
+        rvmWD1793Step(&ESPectrum::fdd, CPU::tstates_diff / WD177XSTEPSTATES); // FDD
+    }
+    CPU::tstates_diff = CPU::tstates_diff % WD177XSTEPSTATES;
 
     global_tstates += statesInFrame; // increase global Tstates
     tstates -= statesInFrame;
 
-    // CPU::prev_tstates = tstates;
+    CPU::prev_tstates = tstates;
 
 }
 

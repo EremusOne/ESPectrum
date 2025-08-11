@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -38,8 +37,7 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define ERR_FS_EXT_FAIL_PT "\xAD" "Armazenamento externo n\x84o dispon\xA1vel!"
 
-#define OSD_MSGDIALOG_YES_PT " Sim  "
-#define OSD_MSGDIALOG_NO_PT " N\x84o  "
+#define OSD_MSGDIALOG_YESNO_PT " Sim  \n N\x84o  \n"
 
 #define OSD_PAUSE_PT "--=[PAUSADO]=--"
 
@@ -55,9 +53,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define OSD_TAPE_SAVE_EXIST_PT "O arquivo j\xA0 existe. Substituir?"
 
-#define OSD_PSNA_SAVE_PT "Salvar snapshot"
+#define OSD_PSNA_SAVE_PT "Salvar snapshot ESP"
 
-#define OSD_PSNA_EXISTS_PT "Substituir slot?"
+#define OSD_PSNA_EXISTS_PT "Substituir?"
 
 #define OSD_TAPE_SELECT_ERR_PT "Arquivo de fita n\x84o selecionado"
 
@@ -109,9 +107,9 @@ visit https://zxespectrum.speccy.org/contacto
 
 #define MENU_DSK_TITLE_PT "Escolha o disco"
 
-#define MENU_ESP_LOAD_TITLE_PT "Escolha snapshot de ESPectrum"
+#define MENU_ESP_LOAD_TITLE_PT "Escolha snap ESP"
 
-#define MENU_ESP_SAVE_TITLE_PT "Salvar snapshot de ESPectrum"
+#define MENU_ESP_SAVE_TITLE_PT "Salvar snap ESP"
 
 #define MENU_DELETE_TAP_BLOCKS_PT "Excluir sele\x87\x84o"
 
@@ -122,28 +120,44 @@ visit https://zxespectrum.speccy.org/contacto
 #define OSD_BLOCK_TYPE_ERR_PT "Tipo de bloco inv\xA0lido"
 
 #define MENU_DELETE_CURRENT_FILE_PT "Excluir arquivo"
+#define MENU_DELETE_CURRENT_DIR_PT "Excluir diret\xA2rio"
 
 #define OSD_READONLY_FILE_WARN_PT "Arquivo de somente leitura"
+#define OSD_FILEEXISTS_WARN_PT "Arquivo existe"
+#define OSD_FILEERROR_WARN_PT "Erro de arquivo: "
+
+#define OSD_DIREXISTS_WARN_PT "Diret\xA2rio existe"
+#define OSD_DIRNOTEMPTY_WARN_PT "Diret\xA2rio n\x84o est\xA0 vazio"
 
 #define OSD_TAPE_FLASHLOAD_PT "Carregamento rapido de fita"
 #define OSD_TAPE_INSERT_PT "Fita inserida"
 #define OSD_TAPE_EJECT_PT "Fita ejetada"
+
+#define OSD_DISK_EJECT_PT "Disco ejetado"
 
 #define TRDOS_RESET_ERR_PT "Betadisk desativado ou n\x84o dispon\xA1vel"
 
 #define MENU_SNA_PT \
     "Menu snapshots\n"\
     "Carregar (SNA,Z80,SP,P)\t(F2) >\n"\
-    "Carregar snapshot\t(F3) >\n"\
-    "Salvar snapshot\t(F4) >\n"
+    "Carregar snapshot ESP\t(F6) >\n"\
+    "Salvar snapshot ESP\t(F7)  \n"
 
 #define MENU_TAPE_PT \
     "Fita K7\n"\
-    "Escolher (TAP,TZX)\t(F5) >\n"\
-    "Play/Stop\t(F6)  \n"\
-    "Ejetar fita\t(SF6) \n"\
-    "Navegador fita\t(F7)  \n"\
-	"Modo reprodutor\t>\n"
+    "Escolher (TAP,TZX)\t(F4) >\n"\
+    "Play/Stop\t(F5)  \n"\
+    "Ejetar fita\t(SF5)  \n"\
+    "Navegador fita\t(SF4)  \n"\
+	"Amplifica\x87\x84o\t>\n"\
+    "Entrada \xA0udio\t>\n"\
+    "H/W entrada \xA0udio\t>\n"
+
+#define MENU_AMP_PT "Amplifica\x87\x84o\n"\
+    "EAR\t[1]\n"\
+    "MIC\t[2]\n"\
+    "Ambos\t[3]\n"\
+    "Nenhum\t[4]\n"
 
 #define MENU_BETADISK_PT \
     "Drive\n"\
@@ -209,6 +223,15 @@ visit https://zxespectrum.speccy.org/contacto
     "Reinicializa\x87\x84o total\t(F11)\n"\
     "Reiniciar ESP32\t(F12)\n"
 
+#define MENU_RESET_HWB_PT "Bot\x84o hardware\t>\n"
+
+#define MENU_RESET_BUTTON_PT \
+    "Bot\x84o hardware\t>\n"\
+    "GPI34\t[34]\n"\
+    "GPI36\t[36]\n"\
+    "GPI39\t[39]\n"\
+    "N\x84o presente\t[00]\n"
+
 #define MENU_PERSIST_SAVE_PT \
     "Salvar snapshot\n"
 
@@ -218,10 +241,18 @@ visit https://zxespectrum.speccy.org/contacto
 #define MENU_STORAGE_PT "Armazenamento\n"\
     "Betadisk\t>\n"\
     "Carregamento r\xA0pido\t>\n"\
-    "Timings ROM R.G.\t>\n"
+    "Timings ROM R.G.\t>\n"\
+    "Indice r\xA0pido TAP\t>\n"
 
 #define MENU_YESNO_PT "Sim\t[Y]\n"\
     "N\x84o\t[N]\n"
+
+#define MENU_DISKCTRL_PT "Betadisk\n"\
+    "TR-DOS 5.03\t[1]\n"\
+    "TR-DOS 5.03  (Modo r\xA0pido)\t[2]\n"\
+    "TR-DOS 5.05D\t[3]\n"\
+    "TR-DOS 5.05D (Modo r\xA0pido)\t[4]\n"\
+    "Desabilitado\t[5]\n"
 
 #define MENU_OTHER_PT "Outros\n"\
     "AY em 48K\t>\n"\

@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -44,22 +43,29 @@ using namespace std;
 
 bool LoadSnapshot(string filename, string force_arch, string force_romset, uint8_t force_ALU);
 
+class FileESP
+{
+public:
+    static bool load(string esp_fn);
+    static bool save(string esp_fn);
+    static bool save(string esp_fn, bool blockMode);
+};
+
 class FileSNA
 {
 public:
     static bool load(string sna_fn, string force_arch, string force_romset, uint8_t force_ALU);
     static bool save(string sna_fn);
     static bool save(string sna_fn, bool blockMode);
-    static bool isPersistAvailable(string filename);
 };
 
 class FileZ80
 {
 public:
     static bool load(string z80_fn);
-    static void loader48();    
-    static void loader128();  
-    static bool keepArch;      
+    static void loader48();
+    static void loader128();
+    static bool keepArch;
 private:
     static void loadCompressedMemData(FILE *f, uint16_t dataLen, uint16_t memStart, uint16_t memlen);
     static void loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage, uint16_t memlen);
@@ -67,7 +73,7 @@ private:
 
 class FileSP
 {
-public: 
+public:
     static bool load(string sp_fn);
 };
 

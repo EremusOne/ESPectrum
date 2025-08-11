@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -38,13 +37,13 @@ visit https://zxespectrum.speccy.org/contacto
 #include "cpuESP.h"
 #include "MemESP.h"
 #include "ZXKeyb.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "OSDMain.h"
 #include "messages.h"
-#include "hardconfig.h"
 #include "hardpins.h"
 #include "Z80_JLS/z80.h"
 #include "Z80_JLS/z80operations.h"
+#include "AudioIn.h"
 
 #pragma GCC optimize("O3")
 
@@ -70,7 +69,7 @@ uint8_t* VIDEO::grmem;
 uint16_t VIDEO::offBmp[SPEC_H];
 uint16_t VIDEO::offAtt[SPEC_H];
 uint32_t* VIDEO::SaveRect;
-int VIDEO::VsyncFinetune[2];
+uint32_t VIDEO::VsyncTarget;
 uint32_t VIDEO::framecnt = 0;
 uint8_t VIDEO::dispUpdCycle;
 uint8_t VIDEO::att1;
@@ -79,7 +78,6 @@ uint8_t VIDEO::att2;
 uint8_t VIDEO::bmp2;
 bool VIDEO::snow_att = false;
 bool VIDEO::dbl_att = false;
-// bool VIDEO::opCodeFetch;
 uint8_t VIDEO::lastbmp;
 uint8_t VIDEO::lastatt;
 uint8_t VIDEO::snowpage;
@@ -130,41 +128,19 @@ static const uint8_t wait_st_2a3[131] = {
 
 IRAM_ATTR void VGA6Bit::interrupt(void *arg) {
 
-    static int64_t prevmicros = 0;
     static int64_t elapsedmicros = 0;
-    static int cntvsync = 0;
-
-    if (Config::tape_player) {
-        ESPectrum::vsync = true;
-        return;
-    }
 
     int64_t currentmicros = esp_timer_get_time();
 
-    if (prevmicros) {
+    static int64_t prevmicros = currentmicros;
 
-        elapsedmicros += currentmicros - prevmicros;
+    elapsedmicros += currentmicros - prevmicros;
 
-        if (elapsedmicros >= ESPectrum::target[0]) {
+    if (elapsedmicros >= VIDEO::VsyncTarget) {
 
-            ESPectrum::vsync = true;
+        ESPectrum::vsync = true;
 
-            // This code is needed to "finetune" the sync. Without it, vsync and emu video gets slowly desynced.
-            if (VIDEO::VsyncFinetune[0]) {
-                if (cntvsync++ == VIDEO::VsyncFinetune[1]) {
-                    elapsedmicros += VIDEO::VsyncFinetune[0];
-                    cntvsync = 0;
-                }
-            }
-
-            elapsedmicros -= ESPectrum::target[0];
-
-        } else ESPectrum::vsync = false;
-
-    } else {
-
-        elapsedmicros = 0;
-        ESPectrum::vsync = false;
+        elapsedmicros -= ESPectrum::target[0];
 
     }
 
@@ -184,6 +160,7 @@ static uint16_t* brdptr16;
 
 uint32_t VIDEO::lastBrdTstate;
 uint8_t VIDEO::brdnextline;
+uint8_t VIDEO::osdstartX;
 uint8_t VIDEO::brdlin_osdstart;
 uint8_t VIDEO::brdlin_osdend;
 bool VIDEO::brdChange = false;
@@ -268,7 +245,7 @@ void VIDEO::vgataskinit(void *unused) {
     // Init mode
     vga.init(Mode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
 
-    // This 'for' is needed for video mode with use_interruption = true.
+    // This 'for' is needed for video mode with use_interrupt = true.
     for (;;){}
 
 }
@@ -298,7 +275,9 @@ void VIDEO::Init() {
 
         vga.VGA6Bit_useinterrupt=false;
 
+        // ESPectrum::showMemInfo("Before VGA init");
         vga.init( Mode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+        // ESPectrum::showMemInfo("After VGA init");
 
     }
 
@@ -340,13 +319,8 @@ void VIDEO::Reset() {
         tStatesPerLine = TSTATES_PER_LINE;
         tStatesScreen = TS_SCREEN_48;
         tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x272 : (is169 ? TS_BORDER_360x200 : TS_BORDER_320x240);
-        if (Config::videomode == 1) {
-            VsyncFinetune[0] = is169 ? -1 : 0;
-            VsyncFinetune[1] = is169 ? 152 : 0;
-        } else {
-            VsyncFinetune[0] = is169 ? 0 : 0;
-            VsyncFinetune[1] = is169 ? 0 : 0;
-        }
+
+        VsyncTarget = MICROS_PER_FRAME_48;
 
     } else if (Config::arch == "TK90X" || Config::arch == "TK95" ) {
 
@@ -355,24 +329,19 @@ void VIDEO::Reset() {
             tStatesPerLine = TSTATES_PER_LINE;
             tStatesScreen = TS_SCREEN_48;
             tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x272 : (is169 ? TS_BORDER_360x200 : TS_BORDER_320x240);
+            VsyncTarget = MICROS_PER_FRAME_48;
             break;
         case 1: // Microdigital 50hz
             tStatesPerLine = TSTATES_PER_LINE_TK_50;
             tStatesScreen = TS_SCREEN_TK_50;
             tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x272_TK_50 : (is169 ? TS_BORDER_360x200_TK_50 : TS_BORDER_320x240_TK_50);
+            VsyncTarget = MICROS_PER_FRAME_TK_50;
             break;
         case 2: // Microdigital 60hz
             tStatesPerLine = TSTATES_PER_LINE_TK_60;
             tStatesScreen = TS_SCREEN_TK_60;
             tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x224_TK_60 : (is169 ? TS_BORDER_360x200_TK_60 : TS_BORDER_320x240_TK_60);
-        }
-
-        if (Config::videomode == 1) {
-            VsyncFinetune[0] = is169 ? -1 : 0;
-            VsyncFinetune[1] = is169 ? 152 : 0;
-        } else {
-            VsyncFinetune[0] = is169 ? 0 : 0;
-            VsyncFinetune[1] = is169 ? 0 : 0;
+            VsyncTarget = MICROS_PER_FRAME_TK_60;
         }
 
     } else if (Config::arch == "128K") {
@@ -380,13 +349,8 @@ void VIDEO::Reset() {
         tStatesPerLine = TSTATES_PER_LINE_128;
         tStatesScreen = TS_SCREEN_128;
         tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x272_128 : (is169 ? TS_BORDER_360x200_128 : TS_BORDER_320x240_128);
-        if (Config::videomode == 1) {
-            VsyncFinetune[0] = is169 ? 1 : 1;
-            VsyncFinetune[1] = is169 ? 123 : 123;
-        } else {
-            VsyncFinetune[0] = is169 ? 0 : 0;
-            VsyncFinetune[1] = is169 ? 0 : 0;
-        }
+
+        VsyncTarget = MICROS_PER_FRAME_128;
 
     } else if (Config::arch == "+2A") {
 
@@ -396,26 +360,20 @@ void VIDEO::Reset() {
         tStatesScreen = TS_SCREEN_128 + 3;
         tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x272_128 : (is169 ? TS_BORDER_360x200_128 : TS_BORDER_320x240_128);
         tStatesBorder += 3;
-        if (Config::videomode == 1) {
-            VsyncFinetune[0] = is169 ? 1 : 1;
-            VsyncFinetune[1] = is169 ? 123 : 123;
-        } else {
-            VsyncFinetune[0] = is169 ? 0 : 0;
-            VsyncFinetune[1] = is169 ? 0 : 0;
-        }
+
+        VsyncTarget = MICROS_PER_FRAME_128;
 
     } else if (Config::arch == "Pentagon") {
 
         tStatesPerLine = TSTATES_PER_LINE_PENTAGON;
         tStatesScreen = TS_SCREEN_PENTAGON;
         tStatesBorder = Config::videomode == 2 ? TS_BORDER_352x272_PENTAGON : (is169 ? TS_BORDER_360x200_PENTAGON : TS_BORDER_320x240_PENTAGON);
-        // TODO: ADJUST THESE VALUES FOR PENTAGON
+
+        VsyncTarget = MICROS_PER_FRAME_PENTAGON;
         if (Config::videomode == 1) {
-            VsyncFinetune[0] = is169 ? 1 : 1;
-            VsyncFinetune[1] = is169 ? 123 : 123;
-        } else {
-            VsyncFinetune[0] = is169 ? 0 : 0;
-            VsyncFinetune[1] = is169 ? 0 : 0;
+            VsyncTarget -= 1792;
+        } else if (Config::videomode == 2) {
+            VsyncTarget -= 0;
         }
 
         Draw_OSD43 = BottomBorder_Pentagon;
@@ -428,6 +386,8 @@ void VIDEO::Reset() {
     if (Config::videomode == 2) {
 
         brdnextline -= 16;
+
+        osdstartX = 168;
 
         if (Config::arch[0] == 'T' && Config::ALUTK == 2) {
             lin_end = 16;
@@ -444,10 +404,14 @@ void VIDEO::Reset() {
     } else {
 
         if (is169) {
+            osdstartX = 156;
             brdnextline -= 16;
             lin_end = 4;
             lin_end2 = 196;
+            brdlin_osdstart = 176;
+            brdlin_osdend = 191;
         } else {
+            osdstartX = 168;
             lin_end = 24;
             lin_end2 = 216;
             brdlin_osdstart = 220;
@@ -468,14 +432,6 @@ void VIDEO::Reset() {
         Draw_Opcode = &Blank_Opcode;
     }
 
-    // if (VIDEO::snow_toggle) {
-    //     Draw = &MainScreen_Blank_Snow;
-    //     Draw_Opcode = &MainScreen_Blank_Snow_Opcode;
-    // } else {
-    //     Draw = Z80Ops::is2a3 ? &MainScreen_Blank_2A3 : &MainScreen_Blank;
-    //     Draw_Opcode = Z80Ops::is2a3 ? &MainScreen_Blank_Opcode_2A3 : &MainScreen_Blank_Opcode;
-    // }
-
     // Restart border drawing
     lastBrdTstate = tStatesBorder;
     brdChange = false;
@@ -488,6 +444,10 @@ void VIDEO::Reset() {
 ///////////////////////////////////////////////////////////////////////////////
 
 IRAM_ATTR void VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended) {
+
+    // if (Z80Ops::is2a3 && contended && (CPU::tstates >= (tstateDraw - 3))) {
+    //     statestoadd += wait_st[CPU::tstates - (tstateDraw - 3)];
+    // }
 
     CPU::tstates += statestoadd;
 
@@ -625,7 +585,7 @@ IRAM_ATTR void VIDEO::MainScreen_Blank_Snow_Opcode(bool contended) {
 // ----------------------------------------------------------------------------------
 // Fast video emulation with no ULA cycle emulation and no snow effect support
 // ----------------------------------------------------------------------------------
-IRAM_ATTR void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
+/*IRAM_ATTR*/ void VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
     if (contended) statestoadd += wait_st[CPU::tstates - tstateDraw];
 
@@ -1049,27 +1009,6 @@ IRAM_ATTR void VIDEO::EndFrame() {
 //----------------------------------------------------------------------------------------------------------------
 // Border Drawing
 //----------------------------------------------------------------------------------------------------------------
-
-// IRAM_ATTR void VIDEO::DrawBorderFast() {
-
-//     uint8_t border = zxColor(borderColor,0);
-
-//     int i = 0;
-
-//     // Top border
-//     for (; i < lin_end; i++) memset((uint32_t *)(vga.frameBuffer[i]),border, vga.xres);
-
-//     // Paper border
-//     int brdsize = (vga.xres - SPEC_W) >> 1;
-//     for (; i < lin_end2; i++) {
-//         memset((uint32_t *)(vga.frameBuffer[i]), border, brdsize);
-//         memset((uint32_t *)(vga.frameBuffer[i] + vga.xres - brdsize), border, brdsize);
-//     }
-
-//     // Bottom border
-//     for (; i < OSD::scrH; i++) memset((uint32_t *)(vga.frameBuffer[i]),border, vga.xres);
-
-// }
 
 static int brdcol_cnt = 0;
 static int brdlin_cnt = 0;

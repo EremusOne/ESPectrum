@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -43,7 +42,7 @@ using namespace std;
 #include "Tape.h"
 #include "FileUtils.h"
 #include "OSDMain.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "messages.h"
 #include "Z80_JLS/z80.h"
 
@@ -563,10 +562,15 @@ void Tape::TZX_GetBlock() {
                 // tapeNext = 7000;
                 tapeNext = TAPE_PHASE_TAIL_LEN;
             } else {
-                tapeCurBlock = 0;
-                Stop();
-                rewind(tape);
-                tapeNext = 0xFFFFFFFF;
+                if (tapeBlkPauseLen == 0) {
+                    tapePhase=TAPE_PHASE_END;
+                    tapeNext=TAPE_PHASE_TAIL_LEN;
+                } else {
+                    tapeCurBlock = 0;
+                    Stop();
+                    rewind(tape);
+                    tapeNext = 0xFFFFFFFF;
+                }
             }
             return;
 
@@ -1002,7 +1006,7 @@ void Tape::TZX_GetBlock() {
                         tapeCurBlock++;
                     } else {
                         tapeCurBlock = 0;
-                        tapeEarBit = TAPELOW;
+                        // tapeEarBit = TAPELOW;
                         rewind(tape);
                     }
 

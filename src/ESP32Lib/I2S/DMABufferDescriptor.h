@@ -1,10 +1,10 @@
 /*
 	Author: bitluni 2019
-	License: 
+	License:
 	Creative Commons Attribution ShareAlike 4.0
 	https://creativecommons.org/licenses/by-sa/4.0/
-	
-	For further details check out: 
+
+	For further details check out:
 		https://youtube.com/bitlunislab
 		https://github.com/bitluni
 		http://bitluni.net
