@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -14,6 +14,8 @@ https://github.com/rampa069/ZX-ESPectrum
 
 Original project by Pete Todd
 https://github.com/retrogubbins/paseVGA
+
+This file includes some contributions from J. Ponteprino
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,8 +30,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -38,7 +39,6 @@ visit https://zxespectrum.speccy.org/contacto
 #include <string>
 #include <inttypes.h>
 #include "miniz/miniz.h"
-// #include "rom/miniz.h"
 
 using namespace std;
 
@@ -47,10 +47,11 @@ using namespace std;
 #include "cpuESP.h"
 #include "Video.h"
 #include "OSDMain.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "Snapshot.h"
 #include "messages.h"
 #include "Z80_JLS/z80.h"
+#include "Ports.h"
 
 FILE *Tape::tape;
 FILE *Tape::cswBlock;
@@ -60,7 +61,7 @@ int Tape::tapeFileType = TAPE_FTYPE_EMPTY;
 uint8_t Tape::tapeStatus = TAPE_STOPPED;
 uint8_t Tape::SaveStatus = SAVE_STOPPED;
 uint8_t Tape::romLoading = false;
-uint8_t Tape::tapeEarBit;
+uint8_t Tape::tapeEarBit = TAPEHIGH;
 std::vector<TapeBlock> Tape::TapeListing;
 int Tape::tapeCurBlock;
 int Tape::tapeNumBlocks;
@@ -234,57 +235,75 @@ void (*Tape::GetBlock)() = &Tape::TAP_GetBlock;
 
 // Load tape file (.tap, .tzx)
 void Tape::LoadTape(string mFile) {
+
     if (FileUtils::hasTAPextension(mFile)) {
+
         string keySel = mFile.substr(0,1);
         mFile.erase(0, 1);
 
         // if ( FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0 ) {
 
             // Flashload .tap if needed
-            if ((FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0) && (keySel ==  "R") && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs") && (Config::romSet != "TKcs")) {
+            if ((FileUtils::fileSize( ( FileUtils::MountPoint + FileUtils::TAP_Path + mFile ).c_str() ) > 0) && (keySel ==  "R")
+                && (Config::flashload) && (Config::romSet != "ZX81+") && (Config::romSet != "48Kcs") && (Config::romSet != "128Kcs") && (Config::romSet != "TKcs")) {
 
-                    OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD[Config::lang], LEVEL_INFO, 0);
+                OSD::osdCenteredMsg(OSD_TAPE_FLASHLOAD[Config::lang], LEVEL_INFO, 0);
 
-                    uint8_t OSDprev = VIDEO::OSD;
+                uint8_t OSDprev = VIDEO::OSD;
 
-                    if (Z80Ops::is48)
-                        FileZ80::loader48();
+                Tape::Stop();
+
+                // Read and analyze tap file
+                Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
+
+                if (Z80Ops::is48)
+                    FileZ80::loader48();
+                else
+                    FileZ80::loader128();
+
+                // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
+                // https://skoolkid.github.io/rom/asm/5C78.html
+                MemESP::writebyte(0x5C78,rand() % 256);
+                MemESP::writebyte(0x5C79,rand() % 256);
+
+                if (Config::ram_file != NO_RAM_FILE) {
+                    Config::ram_file = NO_RAM_FILE;
+                }
+                Config::last_ram_file = NO_RAM_FILE;
+
+                if (OSDprev) {
+
+                    VIDEO::OSD = OSDprev;
+                    if (Config::aspect_16_9)
+                        VIDEO::Draw_OSD169 = Z80Ops::is2a3 ? VIDEO::MainScreen_OSD_2A3 : VIDEO::MainScreen_OSD;
                     else
-                        FileZ80::loader128();
+                        VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
 
-                    // Put something random on FRAMES SYS VAR as recommended by Mark Woodmass
-                    // https://skoolkid.github.io/rom/asm/5C78.html
-                    MemESP::writebyte(0x5C78,rand() % 256);
-                    MemESP::writebyte(0x5C79,rand() % 256);
+                    ESPectrum::TapeNameScroller = 0;
 
-                    if (Config::ram_file != NO_RAM_FILE) {
-                        Config::ram_file = NO_RAM_FILE;
-                    }
-                    Config::last_ram_file = NO_RAM_FILE;
-
-                    if (OSDprev) {
-                        VIDEO::OSD = OSDprev;
-                        if (Config::aspect_16_9)
-                            VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
-                        else
-                            VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
-                        ESPectrum::TapeNameScroller = 0;
-                    }
+                }
 
             } else {
 
                 OSD::osdCenteredMsg(OSD_TAPE_INSERT[Config::lang], LEVEL_INFO);
 
+                Tape::Stop();
+
+                // Read and analyze tap file
+                Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
+
+                ESPectrum::TapeNameScroller = 0;
+
             }
 
         // }
 
-        Tape::Stop();
+        // Tape::Stop();
 
-        // Read and analyze tap file
-        Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
+        // // Read and analyze tap file
+        // Tape::TAP_Open(mFile,FileUtils::MountPoint + FileUtils::TAP_Path);
 
-        ESPectrum::TapeNameScroller = 0;
+        // ESPectrum::TapeNameScroller = 0;
 
     } else if (FileUtils::hasTZXextension(mFile)) {
 
@@ -378,6 +397,20 @@ void Tape::TAP_getBlockData() {
     TapeBlock block;
     if ( tapeFileSize > 0 ) {
 
+        // Crear un archivo temporal para la salida
+        string tempDir = FileUtils::createTmpDir();
+        if (tempDir == "") {
+            return;
+        }
+
+        string outputFilename = tempDir + "/tapinfo";
+
+        FILE* outputFile = fopen(outputFilename.c_str(), "w");
+        if (!outputFile) {
+            printf("Error al crear el archivo de salida temporal.\n");
+            return;
+        }
+
         do {
 
             // Analyze .tap file
@@ -409,6 +442,7 @@ void Tape::TAP_getBlockData() {
                     case 0:
                         dataBlockType = TapeBlock::BlockType::Program_header;
                         break;
+
                     case 1:
                         dataBlockType = TapeBlock::BlockType::Number_array_header;
                         break;
@@ -424,8 +458,15 @@ void Tape::TAP_getBlockData() {
                 }
 
                 // Get the filename.
+                string fname = "";
                 for (int i = 0; i < 10; i++) {
-                    uint8_t tst = readByteFile(tape);
+                    // uint8_t tst = readByteFile(tape);
+                    fname += readByteFile(tape);
+                }
+                rtrim(fname);
+
+                if (blocktype == 0) {
+                    fprintf(outputFile, "%s %d %d\n", fname.c_str(), tapeListIndex, tapeContentIndex);
                 }
 
                 fseek(tape,6,SEEK_CUR);
@@ -473,10 +514,15 @@ void Tape::TAP_getBlockData() {
             tapeContentIndex += tapeBlkLen + 2;
 
         } while(tapeContentIndex < tapeFileSize);
+
+        fclose(outputFile);
+
     }
 
     tapeCurBlock = 0;
     tapeNumBlocks = tapeListIndex;
+
+
 
 }
 
@@ -725,6 +771,8 @@ void Tape::Stop() {
 
     tapeStatus=TAPE_STOPPED;
     tapePhase=TAPE_PHASE_STOPPED;
+    tapeEarBit=TAPEHIGH;
+    // Ports::port254 = 0;
     if (VIDEO::OSD) VIDEO::OSD = 2;
 
 }
@@ -1159,7 +1207,7 @@ IRAM_ATTR void Tape::Read() {
                 }
                 break;
             case TAPE_PHASE_END:
-                tapeEarBit = TAPEHIGH;
+                // tapeEarBit = TAPEHIGH;
                 tapeCurBlock = 0;
                 Stop();
                 rewind(tape);
@@ -1302,7 +1350,7 @@ bool Tape::FlashLoad() {
 
         // printf("Case 1\n");
 
-        if (page != 0 )
+        if (page != MemESP::pagingmode2A3 )
             fread(&MemESP::ramCurrent[page][addr2], nBytes, 1, tape);
         else {
             fseek(tape,nBytes, SEEK_CUR);
@@ -1321,9 +1369,11 @@ bool Tape::FlashLoad() {
         int chunk1 = 0x4000 - addr2;
         int chunkrest = nBytes > (blockLen - 1) ? (blockLen - 1) : nBytes;
 
+        uint8_t firstpage = MemESP::pagingmode2A3 ? 0 : 1;
+
         do {
 
-            if ((page > 0) && (page < 4)) {
+            if ((page >= firstpage) && (page < 4)) {
 
                 fread(&MemESP::ramCurrent[page][addr2], chunk1, 1, tape);
 

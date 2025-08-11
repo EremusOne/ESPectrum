@@ -1,10 +1,10 @@
 /*
 	Author: bitluni 2019
-	License: 
+	License:
 	Creative Commons Attribution ShareAlike 4.0
 	https://creativecommons.org/licenses/by-sa/4.0/
-	
-	For further details check out: 
+
+	For further details check out:
 		https://youtube.com/bitlunislab
 		https://github.com/bitluni
 		http://bitluni.net
@@ -14,7 +14,7 @@
 #include "../VGA/VGA.h"
 #include <soc/rtc.h>
 #include <driver/rtc_io.h>
-#include "Config.h"
+#include "ESPConfig.h"
 
 i2s_dev_t *i2sDevices[] = {&I2S0, &I2S1};
 
@@ -46,7 +46,7 @@ IRAM_ATTR void I2S::interruptStatic(void *arg)
 	//(note: defining the code of the [member] interrupt function outside the class declaration,
 	// and with IRAM flag does not avoid the crash)
 	//((I2S *)arg)->interrupt();
-	
+
 	if(((I2S *)arg)->interruptStaticChild)
 		((I2S *)arg)->interruptStaticChild(arg);
 }
@@ -120,8 +120,8 @@ DMABufferDescriptor *I2S::firstDescriptorAddress() const
 }
 
 bool I2S::useInterrupt()
-{ 
-	return false; 
+{
+	return false;
 };
 
 bool I2S::initParallelOutputMode(const int *pinMap, int mode, const int bitCount, int wordSelect, int baseClock)

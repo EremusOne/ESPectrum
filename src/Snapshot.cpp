@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,15 +28,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
 #include "Snapshot.h"
-#include "hardconfig.h"
 #include "FileUtils.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "cpuESP.h"
 #include "Video.h"
 #include "MemESP.h"
@@ -48,13 +46,10 @@ visit https://zxespectrum.speccy.org/contacto
 #include "AySound.h"
 #include "pwm_audio.h"
 #include "Z80_JLS/z80.h"
-#include "Config.h"
 #include "Tape.h"
 #include "pwm_audio.h"
 #include "AySound.h"
-#include "loaders.h"
 #include "ZXKeyb.h"
-#include "Config.h"
 
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -64,45 +59,394 @@ visit https://zxespectrum.speccy.org/contacto
 
 using namespace std;
 
+void ResetToLoadSnapshot(string fname) {
+
+    Config::SNA_Path = FileUtils::SNA_Path;
+    Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
+    Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+    Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
+    Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
+
+    Config::TAP_Path = FileUtils::TAP_Path;
+    Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
+    Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+    Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
+    Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
+
+    Config::DSK_Path = FileUtils::DSK_Path;
+    Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
+    Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+    Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
+    Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
+
+    Config::ESP_Path = FileUtils::ESP_Path;
+    Config::ESP_begin_row = FileUtils::fileTypes[DISK_ESPFILE].begin_row;
+    Config::ESP_focus = FileUtils::fileTypes[DISK_ESPFILE].focus;
+    Config::ESP_fdMode = FileUtils::fileTypes[DISK_ESPFILE].fdMode;
+    Config::ESP_fileSearch = FileUtils::fileTypes[DISK_ESPFILE].fileSearch;
+
+    Config::ram_file = fname;
+
+    printf("Fname: %s\n",fname.c_str());
+
+    Config::save();
+    OSD::esp_hard_reset();
+
+}
+
 // Change running snapshot
 bool LoadSnapshot(string filename, string force_arch, string force_romset, uint8_t force_ALU) {
 
     bool res = false;
 
     uint8_t OSDprev = VIDEO::OSD;
-    
-    if (FileUtils::hasSNAextension(filename)) {
 
-        // OSD::osdCenteredMsg(MSG_LOADING_SNA + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
-
+    string ext = FileUtils::getLCaseExt(filename);
+    if (ext == "sna") {
         res = FileSNA::load(filename, force_arch, force_romset, force_ALU);
-
-    } else if (FileUtils::hasZ80extension(filename)) {
-
-        // OSD::osdCenteredMsg(MSG_LOADING_Z80 + (string) ": " + filename.substr(filename.find_last_of("/") + 1), LEVEL_INFO, 0);
-
+    } else if (ext == "z80") {
         res = FileZ80::load(filename);
-
-    } else if (FileUtils::hasExtension(filename, "sp")) {
-        
+    } else if (ext == "sp") {
         res = FileSP::load(filename);
-
-    } else if (FileUtils::hasPextension(filename)) {
-
+    } else if (ext == "p") {
         res = FileP::load(filename);
-
+    } else if (ext == "esp") {
+        res = FileESP::load(filename);
     }
+
+    // if (FileUtils::hasExtension(filename, "sna")) {
+    //     res = FileSNA::load(filename, force_arch, force_romset, force_ALU);
+    // } else if (FileUtils::hasExtension(filename,"z80")) {
+    //     res = FileZ80::load(filename);
+    // } else if (FileUtils::hasExtension(filename, "sp")) {
+    //     res = FileSP::load(filename);
+    // } else if (FileUtils::hasExtension(filename, "p")) {
+    //     res = FileP::load(filename);
+    // } else if (FileUtils::hasExtension(filename, "esp")) {
+    //     res = FileESP::load(filename);
+    // }
 
     if (res && OSDprev) {
         VIDEO::OSD = OSDprev;
         if (Config::aspect_16_9)
-            VIDEO::Draw_OSD169 = VIDEO::MainScreen_OSD;
+            VIDEO::Draw_OSD169 = Z80Ops::is2a3 ? VIDEO::MainScreen_OSD_2A3 : VIDEO::MainScreen_OSD;
         else
             VIDEO::Draw_OSD43  = Z80Ops::isPentagon ? VIDEO::BottomBorder_OSD_Pentagon : VIDEO::BottomBorder_OSD;
         ESPectrum::TapeNameScroller = 0;
-    }    
+    }
 
     return res;
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool FileESP::load(string esp_fn) {
+
+    FILE *file;
+    int esp_size;
+    string snapshotArch;
+    bool oldESP = false;
+    string force_arch;
+    string force_romset;
+    uint8_t force_ALU = 0xff;
+
+    file = fopen(esp_fn.c_str(), "rb");
+    if (file==NULL) {
+        OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+        return false;
+    }
+
+    fseek(file,0,SEEK_END);
+    esp_size = ftell(file) - 0x400; // Substract ESP header size
+    rewind (file);
+
+    if(esp_size < 0) { // File is too small. Old ESPectrum snapshot ?
+
+        char buf[256];
+        char *result;
+
+        if ((result = fgets(buf, sizeof(buf),file)) != NULL) {
+            force_arch = buf;
+            force_arch.pop_back();
+            printf("[%s]\n",force_arch.c_str());
+        }
+
+        if ((result = fgets(buf, sizeof(buf),file)) != NULL) {
+            force_romset = buf;
+            force_romset.pop_back();
+            printf("[%s]\n",force_romset.c_str());
+        }
+
+        if ((result = fgets(buf, sizeof(buf),file)) != NULL) {
+            string persist_ALUTK = buf;
+            persist_ALUTK.pop_back();
+            if (persist_ALUTK != "") force_ALU = stoi(persist_ALUTK);
+            printf("[%s]\n",persist_ALUTK.c_str());
+        }
+
+        fclose(file);
+
+        esp_fn = esp_fn.substr(0,esp_fn.find_last_of(".")) + ".sna";
+
+        file = fopen(esp_fn.c_str(), "rb");
+        if (file==NULL) {
+            OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+            return false;
+        }
+
+        fseek(file,0,SEEK_END);
+        esp_size = ftell(file);
+        rewind (file);
+
+        oldESP = true;
+
+    }
+
+    // Check if snapshot size is a valid one
+    if (esp_size != SNA_48K_SIZE && esp_size != SNA_48K_WITH_ROM_SIZE && esp_size != SNA_128K_SIZE1 && esp_size != SNA_128K_SIZE2 && esp_size != SNA_2A3_SIZE1) {
+        printf("FileESP::load: bad ESP %s: size = %d\n", esp_fn.c_str(), esp_size + 0x400);
+        fclose(file);
+        return false;
+    }
+
+    if (!oldESP) {
+
+        // Read ESP header
+        char buf[12];
+
+        fread(buf, 1, 12, file);
+        force_arch = buf;
+
+        fread(buf, 1, 12, file);
+        force_romset = buf;
+
+        force_ALU = readByteFile(file);
+
+    }
+
+    printf("Force arch: %s, Force romset: %s, Force ALU: %d\n", force_arch.c_str(),force_romset.c_str(),force_ALU);
+
+    // Change arch if needed
+    bool vreset = false;
+    if (force_arch != Config::arch) {
+        Config::requestMachine(force_arch, force_romset);
+        // If switching between TK models there's no need to reset in vidmodes > 0
+        if (Config::videomode && !(force_arch[0] == 'T' && Config::arch[0] == 'T')) vreset = true;
+    } else if (force_romset != Config::romSet) {
+        Config::requestMachine(Config::arch, force_romset);
+    }
+
+    // Change ALU to snapshot one if present
+    if (force_ALU != 0xff && force_ALU != Config::ALUTK) {
+        Config::ALUTK = force_ALU;
+        if(Config::videomode) vreset = true;
+    }
+
+    // Video mode or TK ALU changes: reset ESPectrum
+    if(vreset) ResetToLoadSnapshot(esp_fn);
+
+    ESPectrum::reset();
+
+    printf("FileESP::load: Opening %s: size = %d\n", esp_fn.c_str(), esp_size);
+
+    if (!oldESP) {
+
+        // Load joystick configuration
+        ESPectrum::joystick1 = readByteFile(file);
+        ESPectrum::joystick2 = readByteFile(file);
+
+        for(int i = 0; i < 24; i++) {
+            ESPectrum::JoyVKTranslation[i] = (fabgl::VirtualKey) readWordFileLE(file);
+        }
+
+        // Snapshot data
+
+        fseek(file, 0x400, SEEK_SET); // Skip ESP header
+
+    }
+
+    // Read in the registers
+    Z80::setRegI(readByteFile(file));
+
+    Z80::setRegHLx(readWordFileLE(file));
+    Z80::setRegDEx(readWordFileLE(file));
+    Z80::setRegBCx(readWordFileLE(file));
+    Z80::setRegAFx(readWordFileLE(file));
+
+    Z80::setRegHL(readWordFileLE(file));
+    Z80::setRegDE(readWordFileLE(file));
+    Z80::setRegBC(readWordFileLE(file));
+
+    Z80::setRegIY(readWordFileLE(file));
+    Z80::setRegIX(readWordFileLE(file));
+
+    uint8_t inter = readByteFile(file);
+    Z80::setIFF2(inter & 0x04 ? true : false);
+    Z80::setIFF1(Z80::isIFF2());
+    Z80::setRegR(readByteFile(file));
+
+    Z80::setRegAF(readWordFileLE(file));
+    Z80::setRegSP(readWordFileLE(file));
+
+    Z80::setIM((Z80::IntMode)(readByteFile(file)));
+
+    VIDEO::borderColor = readByteFile(file) & 0x07;
+    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+
+    if (Z80Ops::is48 && esp_size == SNA_48K_WITH_ROM_SIZE) {
+        // Load ROM if present
+        readBlockFile(file, MemESP::ram[1], 0x4000);
+        MemESP::ramCurrent[0] = MemESP::ram[1];
+        MemESP::SPRom = true;
+    }
+
+    // read 48K memory
+    readBlockFile(file, MemESP::ram[5], 0x4000);
+    readBlockFile(file, MemESP::ram[2], 0x4000);
+    readBlockFile(file, MemESP::ram[0], 0x4000);
+
+    if (Z80Ops::is48) {
+
+        // in 48K mode, pop PC from stack
+        uint16_t SP = Z80::getRegSP();
+        Z80::setRegPC(MemESP::readword(SP));
+        Z80::setRegSP(SP + 2);
+
+    } else {
+
+        // in 128K mode, recover stored PC
+        uint16_t sna_PC = readWordFileLE(file);
+        Z80::setRegPC(sna_PC);
+
+        // tmp_port contains page switching status, including current page number (latch)
+        uint8_t tmp_port = readByteFile(file);
+        uint8_t tmp_latch = tmp_port & 0x07;
+
+        // copy what was read into page 0 to correct page
+        memcpy(MemESP::ram[tmp_latch], MemESP::ram[0], 0x4000);
+
+        uint8_t tr_dos = readByteFile(file);     // Check if TR-DOS is paged
+
+        // read remaining pages
+        for (int page = 0; page < 8; page++) {
+            if (page != tmp_latch && page != 2 && page != 5) {
+                readBlockFile(file, MemESP::ram[page], 0x4000);
+            }
+        }
+
+        // decode tmp_port
+        MemESP::videoLatch = bitRead(tmp_port, 3);
+        MemESP::romLatch = bitRead(tmp_port, 4);
+        MemESP::pagingLock = bitRead(tmp_port, 5);
+        MemESP::bankLatch = tmp_latch;
+
+        if (tr_dos) {
+            MemESP::romInUse = 4;
+            ESPectrum::trdos = true;
+        } else {
+            MemESP::romInUse = MemESP::romLatch;
+            ESPectrum::trdos = false;
+        }
+
+        MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+        MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+        MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
+
+        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+
+        if (esp_size == SNA_2A3_SIZE1) {
+
+            uint8_t tmp_port = readByteFile(file);
+
+            if (bitRead(tmp_port, 0) == 0) {
+
+                MemESP::pagingmode2A3 = 0;
+
+                // Bit 2 is the high bit of the ROM bank selection
+                MemESP::romLatch = bitRead(MemESP::romInUse, 0) + (bitRead(tmp_port, 2) << 1);
+                MemESP::romInUse = MemESP::romLatch & 0x3;
+
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                // MemESP::ramCurrent[1] = MemESP::ram[5];
+                // MemESP::ramCurrent[2] = MemESP::ram[2];
+                // MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+
+                MemESP::ramContended[3] = MemESP::bankLatch >= 4 ? true: false;
+
+            } else {
+
+                MemESP::pagingmode2A3 = 0xff;
+
+                switch ((tmp_port & 6) >> 1) {
+                    case 0:
+                        MemESP::ramCurrent[0] = MemESP::ram[0];
+                        MemESP::ramCurrent[1] = MemESP::ram[1];
+                        MemESP::ramCurrent[2] = MemESP::ram[2];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = false;
+                        MemESP::ramContended[1] = false;
+                        MemESP::ramContended[2] = false;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                    case 1:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[7];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = true;
+
+                        break;
+                    case 2:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                    case 3:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[7];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                }
+            }
+
+            Ports::LastOutTo1FFD = tmp_port;
+
+            AySound::selectedRegister = readByteFile(file);
+
+            for(int i=0; i < 16; i++) AySound::regs[i] = readByteFile(file);
+
+            for(int i=0; i < 16; i++) AySound::updateReg[i](); // Update all registers
+
+        }
+
+    }
+
+    fclose(file);
+
+    printf("ESP loaded!\n");
+
+    return true;
 
 }
 
@@ -137,20 +481,26 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
         // // If using some 48K arch it keeps unmodified. If not, we choose 48k because is SNA format default
         // if (ConfigZ80Ops::is48)
         //     snapshotArch = Config::arch;
-        // else    
+        // else
         //     snapshotArch = "48K";
 
     } else if ((sna_size == SNA_128K_SIZE1) || (sna_size == SNA_128K_SIZE2)) {
 
-        if (force_arch == "" && Z80Ops::is48) {
+        if (force_arch == "" && (Z80Ops::is48 || Z80Ops::is2a3)) {
             force_arch = "Pentagon";
         }
 
         // // If using some 128K arch it keeps unmodified. If not, we choose Pentagon because is SNA format default
         // if (!Z80Ops::is48)
         //     snapshotArch = Config::arch;
-        // else    
+        // else
         //     snapshotArch = "Pentagon";
+
+    } else if (sna_size == SNA_2A3_SIZE1) {
+
+        if (force_arch == "" && !Z80Ops::is2a3) {
+            force_arch = "+2A";
+        }
 
     } else {
         printf("FileSNA::load: bad SNA %s: size = %d\n", sna_fn.c_str(), sna_size);
@@ -158,197 +508,27 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
     }
 
     // Change arch if needed
+    bool vreset = false;
     if (force_arch != "" && force_arch != Config::arch) {
-        
-        bool vreset = Config::videomode;
-
-        // If switching between TK models there's no need to reset in vidmodes > 0
-        if (force_arch[0] == 'T' && Config::arch[0] == 'T') vreset = false;
-    
         Config::requestMachine(force_arch, force_romset);
-    
-        // Condition this to 50hz mode
-        if (vreset) {
-
-            Config::SNA_Path = FileUtils::SNA_Path;
-            Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-            Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-            Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-            Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
-
-            Config::TAP_Path = FileUtils::TAP_Path;
-            Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-            Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-            Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-            Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-            Config::DSK_Path = FileUtils::DSK_Path;
-            Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-            Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-            Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-            Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-            Config::ram_file = sna_fn;
-            Config::save();
-            OSD::esp_hard_reset(); 
-        }                           
-    
+        // If switching between TK models there's no need to reset in vidmodes > 0
+        if (Config::videomode && !(force_arch[0] == 'T' && Config::arch[0] == 'T')) vreset = true;
     } else if (force_romset != "" && force_romset != Config::romSet) {
-
         Config::requestMachine(Config::arch, force_romset);
-
     }
 
-    // // Manage arch change
-    
-    // if (Z80Ops::is128) { // If we are on 128K machine
-
-    //     if (snapshotArch == "48K") {
-
-    //         Config::requestMachine("48K", force_romset);
-
-    //         // Condition this to 50hz mode
-    //         if(Config::videomode) {
-
-    //             Config::SNA_Path = FileUtils::SNA_Path;
-    //             Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-    //             Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-    //             Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-    //             Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
-
-    //             Config::TAP_Path = FileUtils::TAP_Path;
-    //             Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-    //             Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-    //             Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-    //             Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-    //             Config::DSK_Path = FileUtils::DSK_Path;
-    //             Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-    //             Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-    //             Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-    //             Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-    //             Config::ram_file = sna_fn;
-    //             Config::save();
-    //             OSD::esp_hard_reset(); 
-    //         }                           
-        
-    //     } else {
-            
-    //         if ((force_arch != "") && ((Config::arch != force_arch) || (Config::romSet != force_romset))) {
-                
-    //             snapshotArch = force_arch;
-
-    //             Config::requestMachine(force_arch, force_romset);
-
-    //             // Condition this to 50hz mode
-    //             if(Config::videomode) {
-
-    //                 Config::SNA_Path = FileUtils::SNA_Path;
-    //                 Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-    //                 Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-    //                 Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-    //                 Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
-
-    //                 Config::TAP_Path = FileUtils::TAP_Path;
-    //                 Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-    //                 Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-    //                 Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-    //                 Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-    //                 Config::DSK_Path = FileUtils::DSK_Path;
-    //                 Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-    //                 Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-    //                 Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-    //                 Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-    //                 Config::ram_file = sna_fn;
-    //                 Config::save();
-    //                 OSD::esp_hard_reset();                            
-    //             }
-
-    //         }
-
-    //     }
-
-    // } else if (Z80Ops::is48) {
-
-    //     if (snapshotArch == "Pentagon") {
-
-    //         if (force_arch == "")
-    //             Config::requestMachine("Pentagon", "");
-    //         else {
-    //             snapshotArch = force_arch;
-    //             Config::requestMachine(force_arch, force_romset);
-    //         }
-
-    //         // Condition this to 50hz mode
-    //         if(Config::videomode) {
-
-    //             Config::SNA_Path = FileUtils::SNA_Path;
-    //             Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-    //             Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-    //             Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-    //             Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
-
-    //             Config::TAP_Path = FileUtils::TAP_Path;
-    //             Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-    //             Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-    //             Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-    //             Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-    //             Config::DSK_Path = FileUtils::DSK_Path;
-    //             Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-    //             Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-    //             Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-    //             Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-    //             Config::ram_file = sna_fn;
-    //             Config::save();
-    //             OSD::esp_hard_reset();                            
-    //         }
-
-    //     }
-
-    // }
-    
     // Change ALU to snapshot one if present
     if (force_ALU != 0xff && force_ALU != Config::ALUTK) {
-
         Config::ALUTK = force_ALU;
-
-        // Condition this to 50hz mode
-        if(Config::videomode) {
-
-            Config::SNA_Path = FileUtils::SNA_Path;
-            Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-            Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-            Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-            Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
-
-            Config::TAP_Path = FileUtils::TAP_Path;
-            Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-            Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-            Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-            Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-            Config::DSK_Path = FileUtils::DSK_Path;
-            Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-            Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-            Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-            Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-            Config::ram_file = sna_fn;
-            Config::save();
-            OSD::esp_hard_reset(); 
-
-        }                           
-
+        if(Config::videomode) vreset = true;
     }
+
+    // Video mode or TK ALU changes: reset ESPectrum
+    if(vreset) ResetToLoadSnapshot(sna_fn);
 
     ESPectrum::reset();
 
-    // printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
+    printf("FileSNA::load: Opening %s: size = %d\n", sna_fn.c_str(), sna_size);
 
     // Read in the registers
     Z80::setRegI(readByteFile(file));
@@ -375,7 +555,7 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
 
     Z80::setIM((Z80::IntMode)(readByteFile(file)));
 
-    VIDEO::borderColor = readByteFile(file);
+    VIDEO::borderColor = readByteFile(file) & 0x07;
     VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
 
     if (Z80Ops::is48 && sna_size == SNA_48K_WITH_ROM_SIZE) {
@@ -411,7 +591,7 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
         memcpy(MemESP::ram[tmp_latch], MemESP::ram[0], 0x4000);
 
         uint8_t tr_dos = readByteFile(file);     // Check if TR-DOS is paged
-        
+
         // read remaining pages
         for (int page = 0; page < 8; page++) {
             if (page != tmp_latch && page != 2 && page != 5) {
@@ -424,10 +604,10 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
         MemESP::romLatch = bitRead(tmp_port, 4);
         MemESP::pagingLock = bitRead(tmp_port, 5);
         MemESP::bankLatch = tmp_latch;
-        
+
         if (tr_dos) {
             MemESP::romInUse = 4;
-            ESPectrum::trdos = true;            
+            ESPectrum::trdos = true;
         } else {
             MemESP::romInUse = MemESP::romLatch;
             ESPectrum::trdos = false;
@@ -439,25 +619,96 @@ bool FileSNA::load(string sna_fn, string force_arch, string force_romset, uint8_
 
         VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
-        // if (Z80Ops::isPentagon) CPU::tstates = 22; // Pentagon SNA load fix... still dunno why this works but it works
+        if (sna_size == SNA_2A3_SIZE1) {
+
+            uint8_t tmp_port = readByteFile(file);
+
+            if (bitRead(tmp_port, 0) == 0) {
+
+                MemESP::pagingmode2A3 = 0;
+
+                // Bit 2 is the high bit of the ROM bank selection
+                MemESP::romLatch = bitRead(MemESP::romInUse, 0) + (bitRead(tmp_port, 2) << 1);
+                MemESP::romInUse = MemESP::romLatch & 0x3;
+
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                // MemESP::ramCurrent[1] = MemESP::ram[5];
+                // MemESP::ramCurrent[2] = MemESP::ram[2];
+                // MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+
+                MemESP::ramContended[3] = MemESP::bankLatch >= 4 ? true: false;
+
+            } else {
+
+                MemESP::pagingmode2A3 = 0xff;
+
+                switch ((tmp_port & 6) >> 1) {
+                    case 0:
+                        MemESP::ramCurrent[0] = MemESP::ram[0];
+                        MemESP::ramCurrent[1] = MemESP::ram[1];
+                        MemESP::ramCurrent[2] = MemESP::ram[2];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = false;
+                        MemESP::ramContended[1] = false;
+                        MemESP::ramContended[2] = false;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                    case 1:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[7];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = true;
+
+                        break;
+                    case 2:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                    case 3:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[7];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                }
+            }
+
+            Ports::LastOutTo1FFD = tmp_port;
+
+            AySound::selectedRegister = readByteFile(file);
+
+            for(int i=0; i < 16; i++) AySound::regs[i] = readByteFile(file);
+
+            for(int i=0; i < 16; i++) AySound::updateReg[i](); // Update all registers
+
+        }
 
     }
-    
+
     fclose(file);
 
-    return true;
-
-}
-
-// ///////////////////////////////////////////////////////////////////////////////
-
-bool FileSNA::isPersistAvailable(string filename) {
-
-    FILE *f = fopen(filename.c_str(), "rb");
-    if (f == NULL)
-        return false;
-    else
-        fclose(f);
+    printf("Sna loaded!\n");
 
     return true;
 
@@ -528,8 +779,168 @@ static bool writeMemPage(uint8_t page, FILE *file, bool blockMode)
 
 // ///////////////////////////////////////////////////////////////////////////////
 
+bool FileESP::save(string esp_file) {
+
+    // Try to save using pages
+    if (FileESP::save(esp_file, true)) return true;
+
+    OSD::osdCenteredMsg(OSD_PSNA_SAVE_WARN, LEVEL_WARN);
+
+    // Try to save byte-by-byte
+    return FileESP::save(esp_file, false);
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
+bool FileESP::save(string esp_file, bool blockMode) {
+
+    FILE *file;
+
+    file = fopen(esp_file.c_str(), "wb");
+    if (file==NULL)
+    {
+        printf("FileESP: Error opening %s for writing",esp_file.c_str());
+        return false;
+    }
+
+    // ESPectrum data (75 bytes long)
+
+    // Write arch
+    char archbuf[12] = { 0 };
+    for (int i=0; i < Config::arch.length(); i++) archbuf[i] = Config::arch[i];
+    fwrite(archbuf, 1, sizeof(archbuf), file);
+
+    // Write romset
+    char romsetbuf[12] = { 0 };
+    for (int i=0; i < Config::romSet.length(); i++) romsetbuf[i] = Config::arch[i];
+    fwrite(romsetbuf, 1, sizeof(romsetbuf), file);
+
+    // Write TK ALU
+    writeByteFile(Config::arch[0] == 'T' ? Config::ALUTK : 0xff, file);
+
+    // Write joystick definition
+    writeByteFile(ESPectrum::joystick1, file);
+    writeByteFile(ESPectrum::joystick2, file);
+    for (int n=0; n < 24; n++) {
+        writeWordFileLE((uint16_t)ESPectrum::JoyVKTranslation[n], file);
+    }
+
+    // Fill with 0 up to 1024 (reserved ESP header for future use)
+    for (int i=0; i < 1024 - 75; i++) writeByteFile(0, file); // SNAPSHOT start
+
+    // SNAPSHOT start
+
+    // write registers: begin with I
+    writeByteFile(Z80::getRegI(), file);
+
+    writeWordFileLE(Z80::getRegHLx(), file);
+    writeWordFileLE(Z80::getRegDEx(), file);
+    writeWordFileLE(Z80::getRegBCx(), file);
+    writeWordFileLE(Z80::getRegAFx(), file);
+
+    writeWordFileLE(Z80::getRegHL(), file);
+    writeWordFileLE(Z80::getRegDE(), file);
+    writeWordFileLE(Z80::getRegBC(), file);
+
+    writeWordFileLE(Z80::getRegIY(), file);
+    writeWordFileLE(Z80::getRegIX(), file);
+
+    uint8_t inter = Z80::isIFF2() ? 0x04 : 0;
+    writeByteFile(inter, file);
+    writeByteFile(Z80::getRegR(), file);
+
+    writeWordFileLE(Z80::getRegAF(), file);
+
+    uint16_t SP = Z80::getRegSP();
+
+    // if (Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95") {
+    if (Z80Ops::is48) {
+        // decrement stack pointer it for pushing PC to stack, only on 48K
+        SP -= 2;
+        MemESP::writeword(SP, Z80::getRegPC());
+    }
+    writeWordFileLE(SP, file);
+
+    writeByteFile(Z80::getIM(), file);
+
+    uint8_t bordercol = VIDEO::borderColor;
+    writeByteFile(bordercol, file);
+
+    // write 16K ROM page if we've loaded it previously
+    if (Z80Ops::is48 && MemESP::SPRom) {
+        if (!writeMemPage(1, file, blockMode)) {
+            fclose(file);
+            return false;
+        }
+    }
+
+    // write RAM pages in 48K address space (0x4000 - 0xFFFF)
+    uint8_t pages[3] = {5, 2, 0};
+
+    if (Z80Ops::is128 || Z80Ops::is2a3 || Z80Ops::isPentagon)
+        pages[2] = MemESP::bankLatch;
+
+    for (uint8_t ipage = 0; ipage < 3; ipage++) {
+        uint8_t page = pages[ipage];
+        if (!writeMemPage(page, file, blockMode)) {
+            fclose(file);
+            return false;
+        }
+    }
+
+    if (Z80Ops::is128 || Z80Ops::is2a3 || Z80Ops::isPentagon) {
+    // if (Config::arch != "48K") {
+
+        // write pc
+        writeWordFileLE( Z80::getRegPC(), file);
+        // printf("PC: %u\n",(unsigned int)Z80::getRegPC());
+
+        // write memESP bank control port
+        uint8_t tmp_port = MemESP::bankLatch;
+        bitWrite(tmp_port, 3, MemESP::videoLatch);
+        bitWrite(tmp_port, 4, MemESP::romLatch);
+        bitWrite(tmp_port, 5, MemESP::pagingLock);
+        writeByteFile(tmp_port, file);
+        // printf("7FFD: %u\n",(unsigned int)tmp_port);
+
+        if (ESPectrum::trdos)
+            writeByteFile(1, file);     // TR-DOS paged
+        else
+            writeByteFile(0, file);     // TR-DOS not paged
+
+        // write remaining ram pages
+        for (int page = 0; page < 8; page++) {
+            if (page != MemESP::bankLatch && page != 2 && page != 5) {
+                if (!writeMemPage(page, file, blockMode)) {
+                    fclose(file);
+                    return false;
+
+                }
+            }
+        }
+    }
+
+    if (Z80Ops::is2a3) {
+        // write 1ffd port
+        writeByteFile(Ports::LastOutTo1FFD, file);
+
+        writeByteFile(AySound::selectedRegister, file);
+        for(int i=0; i < 16; i++)
+            writeByteFile(AySound::regs[i],file);
+
+    }
+
+    fclose(file);
+
+    return true;
+
+}
+
+// ///////////////////////////////////////////////////////////////////////////////
+
 bool FileSNA::save(string sna_file) {
-        
+
     // Try to save using pages
     if (FileSNA::save(sna_file, true)) return true;
 
@@ -575,9 +986,9 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     writeWordFileLE(Z80::getRegAF(), file);
 
     uint16_t SP = Z80::getRegSP();
-    
+
     // if (Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95") {
-    if (Z80Ops::is48) {    
+    if (Z80Ops::is48) {
         // decrement stack pointer it for pushing PC to stack, only on 48K
         SP -= 2;
         MemESP::writeword(SP, Z80::getRegPC());
@@ -585,12 +996,11 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     writeWordFileLE(SP, file);
 
     writeByteFile(Z80::getIM(), file);
-    
+
     uint8_t bordercol = VIDEO::borderColor;
     writeByteFile(bordercol, file);
 
     // write 16K ROM page if we've loaded it previously
-
     if (Z80Ops::is48 && MemESP::SPRom) {
         if (!writeMemPage(1, file, blockMode)) {
             fclose(file);
@@ -601,7 +1011,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
     // write RAM pages in 48K address space (0x4000 - 0xFFFF)
     uint8_t pages[3] = {5, 2, 0};
 
-    if (Z80Ops::is128 || Z80Ops::isPentagon)    
+    if (Z80Ops::is128 || Z80Ops::is2a3 || Z80Ops::isPentagon)
         pages[2] = MemESP::bankLatch;
 
     for (uint8_t ipage = 0; ipage < 3; ipage++) {
@@ -612,7 +1022,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         }
     }
 
-    if (Z80Ops::is128 || Z80Ops::isPentagon) {
+    if (Z80Ops::is128 || Z80Ops::is2a3 || Z80Ops::isPentagon) {
     // if (Config::arch != "48K") {
 
         // write pc
@@ -629,7 +1039,7 @@ bool FileSNA::save(string sna_file, bool blockMode) {
 
         if (ESPectrum::trdos)
             writeByteFile(1, file);     // TR-DOS paged
-        else            
+        else
             writeByteFile(0, file);     // TR-DOS not paged
 
         // write remaining ram pages
@@ -644,6 +1054,16 @@ bool FileSNA::save(string sna_file, bool blockMode) {
         }
     }
 
+    if (Z80Ops::is2a3) {
+        // write 1ffd port
+        writeByteFile(Ports::LastOutTo1FFD, file);
+
+        writeByteFile(AySound::selectedRegister, file);
+        for(int i=0; i < 16; i++)
+            writeByteFile(AySound::regs[i],file);
+
+    }
+
     fclose(file);
 
     return true;
@@ -654,7 +1074,7 @@ static uint16_t mkword(uint8_t lobyte, uint8_t hibyte) {
     return lobyte | (hibyte << 8);
 }
 
-bool FileZ80::keepArch = false;      
+bool FileZ80::keepArch = false;
 
 bool FileZ80::load(string z80_fn) {
 
@@ -715,10 +1135,10 @@ bool FileZ80::load(string z80_fn) {
             if (mch == 4) z80_arch = "128K";
             if (mch == 5) z80_arch = "128K"; // + if1
             if (mch == 6) z80_arch = "128K"; // + mgt
-            if (mch == 7) z80_arch = "128K"; // Spectrum +3
+            if (mch == 7) z80_arch = "+2A"; // Spectrum +3
             if (mch == 9) z80_arch = "Pentagon";
             if (mch == 12) z80_arch = "128K"; // Spectrum +2
-            if (mch == 13) z80_arch = "128K"; // Spectrum +2A            
+            if (mch == 13) z80_arch = "+2A"; // Spectrum +2A
         }
 
     }
@@ -738,15 +1158,15 @@ bool FileZ80::load(string z80_fn) {
     if (keepArch) {
 
         if (z80_arch == "48K") {
-            if (Config::arch == "128K" || Config::arch == "Pentagon") keepArch = false;
+            if (Config::arch == "128K" || Config::arch == "+2A" || Config::arch == "Pentagon") keepArch = false;
         } else {
             if (Config::arch == "48K" || Config::arch == "TK90X" || Config::arch == "TK95") keepArch = false;
         }
 
     }
 
-    // printf("fileTypes -> Path: %s, begin_row: %d, focus: %d\n",FileUtils::SNA_Path.c_str(),FileUtils::fileTypes[DISK_SNAFILE].begin_row,FileUtils::fileTypes[DISK_SNAFILE].focus);                    
-    // printf("Config    -> Path: %s, begin_row: %d, focus: %d\n",Config::Path.c_str(),(int)Config::begin_row,(int)Config::focus);                    
+    // printf("fileTypes -> Path: %s, begin_row: %d, focus: %d\n",FileUtils::SNA_Path.c_str(),FileUtils::fileTypes[DISK_SNAFILE].begin_row,FileUtils::fileTypes[DISK_SNAFILE].focus);
+    // printf("Config    -> Path: %s, begin_row: %d, focus: %d\n",Config::Path.c_str(),(int)Config::begin_row,(int)Config::focus);
 
     // Manage arch change
     if (Config::arch != z80_arch) {
@@ -774,43 +1194,20 @@ bool FileZ80::load(string z80_fn) {
             }
 
             // printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
-            
+
             Config::requestMachine(z80_arch, z80_romset);
 
             // Condition this to 50hz mode
-            if(Config::videomode) {
-
-                Config::SNA_Path = FileUtils::SNA_Path;
-                Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-                Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-                Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-                Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
-
-                Config::TAP_Path = FileUtils::TAP_Path;
-                Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-                Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-                Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-                Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-                Config::DSK_Path = FileUtils::DSK_Path;
-                Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-                Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-                Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-                Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-                Config::ram_file = z80_fn;
-                Config::save();
-                OSD::esp_hard_reset(); 
-            }                           
+            if (Config::videomode) ResetToLoadSnapshot(z80_fn);
 
         }
 
     } else {
 
         if (z80_arch == "128K") {
-            
+
             string z80_romset = "";
-            
+
             // printf("z80_arch: %s mch: %d pref_romset48: %s pref_romset128: %s z80_romset: %s\n",z80_arch.c_str(),mch,Config::pref_romSet_48.c_str(),Config::pref_romSet_128.c_str(),z80_romset.c_str());
 
             if (mch == 12) { // +2
@@ -822,7 +1219,7 @@ bool FileZ80::load(string z80_fn) {
                     else
                         z80_romset = "+2";
 
-                    Config::requestMachine(z80_arch, z80_romset);        
+                    Config::requestMachine(z80_arch, z80_romset);
 
                 }
 
@@ -835,7 +1232,7 @@ bool FileZ80::load(string z80_fn) {
                     else
                         z80_romset = "128K";
 
-                    Config::requestMachine(z80_arch, z80_romset);        
+                    Config::requestMachine(z80_arch, z80_romset);
                 }
 
             }
@@ -845,7 +1242,7 @@ bool FileZ80::load(string z80_fn) {
         }
 
     }
-    
+
     ESPectrum::reset();
 
     keepArch = false;
@@ -875,13 +1272,13 @@ bool FileZ80::load(string z80_fn) {
     // begin loading registers
     Z80::setRegA  (       header[0]);
     Z80::setFlags (       header[1]);
-    
+
     // Z80::setRegBC (mkword(header[2], header[3]));
-    Z80::setRegC(header[2]);    
+    Z80::setRegC(header[2]);
     Z80::setRegB(header[3]);
-    
+
     // Z80::setRegHL (mkword(header[4], header[5]));
-    Z80::setRegL(header[4]);    
+    Z80::setRegL(header[4]);
     Z80::setRegH(header[5]);
 
     Z80::setRegPC (mkword(header[6], header[7]));
@@ -900,7 +1297,7 @@ bool FileZ80::load(string z80_fn) {
 
     VIDEO::borderColor = (b12 >> 1) & 0x07;
     VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
-    
+
     // Z80::setRegDE (mkword(header[13], header[14]));
     Z80::setRegE(header[13]);
     Z80::setRegD(header[14]);
@@ -932,7 +1329,7 @@ bool FileZ80::load(string z80_fn) {
     // spectrum.setIssue2((z80Header1[29] & 0x04) != 0); // TO DO: Implement this
 
     uint16_t RegPC = Z80::getRegPC();
-   
+
     bool dataCompressed = (b12 & 0x20) ? true : false;
 
     if (z80version == 1) {
@@ -998,16 +1395,16 @@ bool FileZ80::load(string z80_fn) {
                 uint8_t hdr1 = readByteFile(file); dataOffset ++;
                 uint8_t hdr2 = readByteFile(file); dataOffset ++;
                 uint16_t compDataLen = mkword(hdr0, hdr1);
-                
+
                 uint16_t memoff = pageStart[hdr2];
 
-                if (compDataLen == 0xffff) {                 
+                if (compDataLen == 0xffff) {
 
                     // Uncompressed data
 
                     compDataLen = 0x4000;
 
-                    for (int i = 0; i < compDataLen; i++)                    
+                    for (int i = 0; i < compDataLen; i++)
                         MemESP::writebyte(memoff + i, readByteFile(file));
 
                 } else {
@@ -1020,8 +1417,8 @@ bool FileZ80::load(string z80_fn) {
 
             }
 
-        } else if ((z80_arch == "128K") || (z80_arch == "Pentagon")) {
-            
+        } else if ((z80_arch == "128K") || (z80_arch == "+2A") || (z80_arch == "Pentagon")) {
+
             // paging register
             uint8_t b35 = header[35];
             // printf("Paging register: %u\n",b35);
@@ -1030,6 +1427,64 @@ bool FileZ80::load(string z80_fn) {
             MemESP::pagingLock = bitRead(b35, 5);
             MemESP::bankLatch = b35 & 0x07;
             MemESP::romInUse = MemESP::romLatch;
+
+            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+            MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+
+            if (z80_arch == "+2A")
+                MemESP::ramContended[3] = MemESP::bankLatch >= 4 ? true: false;
+            else
+                MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
+
+            // +2A / +3 header
+            if (ahblen == 55) {
+
+                uint8_t b86 = header[86];
+
+                if (bitRead(b86, 0) == 0) {
+
+                    MemESP::pagingmode2A3 = 0;
+
+                    // Bit 2 is the high bit of the ROM bank selection
+                    MemESP::romLatch = bitRead(MemESP::romInUse, 0) + (bitRead(b86, 2) << 1);
+                    MemESP::romInUse = MemESP::romLatch & 0x3;
+                    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+
+                } else {
+
+                    MemESP::pagingmode2A3 = 0xff;
+
+                    switch ((b86 & 6) >> 1) {
+                        case 0:
+                            MemESP::ramCurrent[0] = MemESP::ram[0];
+                            MemESP::ramCurrent[1] = MemESP::ram[1];
+                            MemESP::ramCurrent[2] = MemESP::ram[2];
+                            MemESP::ramCurrent[3] = MemESP::ram[3];
+                            break;
+                        case 1:
+                            MemESP::ramCurrent[0] = MemESP::ram[4];
+                            MemESP::ramCurrent[1] = MemESP::ram[5];
+                            MemESP::ramCurrent[2] = MemESP::ram[6];
+                            MemESP::ramCurrent[3] = MemESP::ram[7];
+                            break;
+                        case 2:
+                            MemESP::ramCurrent[0] = MemESP::ram[4];
+                            MemESP::ramCurrent[1] = MemESP::ram[5];
+                            MemESP::ramCurrent[2] = MemESP::ram[6];
+                            MemESP::ramCurrent[3] = MemESP::ram[3];
+                            break;
+                        case 3:
+                            MemESP::ramCurrent[0] = MemESP::ram[4];
+                            MemESP::ramCurrent[1] = MemESP::ram[7];
+                            MemESP::ramCurrent[2] = MemESP::ram[6];
+                            MemESP::ramCurrent[3] = MemESP::ram[3];
+                            break;
+                    }
+                }
+
+            }
+
+            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
             uint8_t* pages[12] = {
                 MemESP::rom[0], MemESP::rom[2], MemESP::rom[1],
@@ -1047,15 +1502,15 @@ bool FileZ80::load(string z80_fn) {
                 uint8_t hdr1 = readByteFile(file); dataOffset ++;
                 uint8_t hdr2 = readByteFile(file); dataOffset ++;
                 uint16_t compDataLen = mkword(hdr0, hdr1);
-                
-                if (compDataLen == 0xffff) { 
+
+                if (compDataLen == 0xffff) {
 
                     // load uncompressed data into memory
                     // printf("Loading uncompressed data\n");
 
                     compDataLen = 0x4000;
 
-                    if ((hdr2 > 2) && (hdr2 < 11)) 
+                    if ((hdr2 > 2) && (hdr2 < 11))
                         for (int i = 0; i < compDataLen; i++)
                             pages[hdr2][i] = readByteFile(file);
 
@@ -1063,7 +1518,7 @@ bool FileZ80::load(string z80_fn) {
 
                     // Block is compressed
 
-                    if ((hdr2 > 2) && (hdr2 < 11)) 
+                    if ((hdr2 > 2) && (hdr2 < 11))
                         loadCompressedMemPage(file, compDataLen, pages[hdr2], 0x4000);
 
                 }
@@ -1072,11 +1527,11 @@ bool FileZ80::load(string z80_fn) {
 
             }
 
-            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-            MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-            MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
+            // MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+            // MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+            // MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
 
-            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+            // VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
         }
     }
@@ -1163,286 +1618,164 @@ void FileZ80::loadCompressedMemPage(FILE *f, uint16_t dataLen, uint8_t* memPage,
     }
 }
 
-void FileZ80::loader48() {
+void DoKeyboardLoad_48K() {
 
-    unsigned char *z80_array = (unsigned char *) load48;
-    uint32_t dataOffset = 86;
+    ESPectrum::reset(); // Reset machine
 
-    ESPectrum::reset();
+    for (int i=0; i<125; i++) CPU::loop(); // Run 125 frames (about 1 1/4 seconds)
 
-    // begin loading registers
-    Z80::setRegA  (z80_array[0]);
-    Z80::setFlags (z80_array[1]);
-    Z80::setRegBC (mkword(z80_array[2], z80_array[3]));
-    Z80::setRegHL (mkword(z80_array[4], z80_array[5]));
-    Z80::setRegPC (mkword(z80_array[6], z80_array[7]));
-    Z80::setRegSP (mkword(z80_array[8], z80_array[9]));
-    Z80::setRegI  (z80_array[10]);
+    bitWrite(Ports::port[6], 3, false); // Set J pressed
+    CPU::loop();
+    bitWrite(Ports::port[6], 3, true); // Set J released
+    for (int i=0; i<2; i++) CPU::loop();
 
-    uint8_t regR = z80_array[11] & 0x7f;
-    if ((z80_array[12] & 0x01) != 0) {
-        regR |= 0x80;
-    }
-    Z80::setRegR(regR);
+    bitWrite(Ports::port[7], 1, false); // Set SS pressed
+    bitWrite(Ports::port[5], 0, false); // Set P pressed
+    CPU::loop();
+    bitWrite(Ports::port[5], 0, true); // Set P released
+    for (int i=0; i<4; i++) CPU::loop();
 
-    VIDEO::borderColor = (z80_array[12] >> 1) & 0x07;
-    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
+    bitWrite(Ports::port[5], 0, false); // Set P pressed
+    CPU::loop();
+    bitWrite(Ports::port[5], 0, true); // Set P released
+    bitWrite(Ports::port[7], 1, true); // Set SS released
+    for (int i=0; i<4; i++) CPU::loop();
 
-    Z80::setRegDE (mkword(z80_array[13], z80_array[14]));
-    Z80::setRegBCx(mkword(z80_array[15], z80_array[16]));
-    Z80::setRegDEx(mkword(z80_array[17], z80_array[18]));
-    Z80::setRegHLx(mkword(z80_array[19], z80_array[20]));
-    
-    Z80::setRegAx(z80_array[21]);
-    Z80::setRegFx(z80_array[22]);
-    
-    Z80::setRegIY (mkword(z80_array[23], z80_array[24]));
-    Z80::setRegIX (mkword(z80_array[25], z80_array[26]));
-    Z80::setIFF1  (z80_array[27] ? true : false);
-    Z80::setIFF2  (z80_array[28] ? true : false);
-    Z80::setIM((Z80::IntMode)(z80_array[29] & 0x03));
-
-    // program counter
-    uint16_t RegPC = mkword(z80_array[32], z80_array[33]);
-    Z80::setRegPC(RegPC);
-
-    z80_array += dataOffset;
-
-    MemESP::romLatch = 0;
-    MemESP::romInUse = 0;
-    MemESP::bankLatch = 0;
-    MemESP::pagingLock = 1;
-    MemESP::videoLatch = 0;
-
-    uint16_t pageStart[12] = {0, 0, 0, 0, 0x8000, 0xC000, 0, 0, 0x4000, 0, 0};
-
-    uint32_t dataLen = sizeof(load48);
-    while (dataOffset < dataLen) {
-        uint8_t hdr0 = z80_array[0]; dataOffset ++;
-        uint8_t hdr1 = z80_array[1]; dataOffset ++;
-        uint8_t hdr2 = z80_array[2]; dataOffset ++;
-        z80_array += 3;
-        uint16_t compDataLen = mkword(hdr0, hdr1);
-        
-        uint16_t memoff = pageStart[hdr2];
-        
-        {
-
-            uint16_t dataOff = 0;
-            uint8_t ed_cnt = 0;
-            uint8_t repcnt = 0;
-            uint8_t repval = 0;
-            uint16_t memidx = 0;
-
-            while(dataOff < compDataLen && memidx < 0x4000) {
-                uint8_t databyte = z80_array[0]; z80_array ++;
-                if (ed_cnt == 0) {
-                    if (databyte != 0xED)
-                        MemESP::writebyte(memoff + memidx++, databyte);
-                    else
-                        ed_cnt++;
-                }
-                else if (ed_cnt == 1) {
-                    if (databyte != 0xED) {
-                        MemESP::writebyte(memoff + memidx++, 0xED);
-                        MemESP::writebyte(memoff + memidx++, databyte);
-                        ed_cnt = 0;
-                    }
-                    else
-                        ed_cnt++;
-                }
-                else if (ed_cnt == 2) {
-                    repcnt = databyte;
-                    ed_cnt++;
-                }
-                else if (ed_cnt == 3) {
-                    repval = databyte;
-                    for (uint16_t i = 0; i < repcnt; i++)
-                        MemESP::writebyte(memoff + memidx++, repval);
-                    ed_cnt = 0;
-                }
-            }
-
-        }
-
-        dataOffset += compDataLen;
-
-    }
-
-    memset(MemESP::ram[2],0,0x4000);
-
-    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-    MemESP::ramContended[3] = false;
-
-    VIDEO::grmem = MemESP::ram[5];
+    bitWrite(Ports::port[6], 0, false); // Set ENTER pressed
+    CPU::loop();
+    bitWrite(Ports::port[6], 0, true); // Set ENTER released
 
 }
+
+void FileZ80::loader48() {
+    DoKeyboardLoad_48K();
+}
+
+void DoKeyboardLoad_128K_Pentagon() {
+
+    ESPectrum::reset(); // Reset machine
+
+    for (int i=0; i<60; i++) CPU::loop(); // Run 100 frames (about 2 seconds)
+    bitWrite(Ports::port[6], 0, false); // Set ENTER pressed for Speccy
+    CPU::loop(); // Run 1 frame more for reading ENTER key
+    bitWrite(Ports::port[6], 0, true); // Set ENTER released for Speccy
+
+}
+
+void DoKeyboardLoad_128K_es() {
+
+    ESPectrum::reset(); // Reset machine
+
+    for (int i=0; i<50; i++) CPU::loop(); // Run 50 frames (about 1/2 seconds)
+
+    bitWrite(Ports::port[6], 1, false); // Set L pressed
+    CPU::loop();
+    bitWrite(Ports::port[6], 1, true); // Set L released
+    for (int i=0; i<2; i++) CPU::loop();
+
+    bitWrite(Ports::port[5], 1, false); // Set O pressed
+    CPU::loop();
+    bitWrite(Ports::port[5], 1, true); // Set O released
+    for (int i=0; i<2; i++) CPU::loop();
+
+    bitWrite(Ports::port[1], 0, false); // Set A pressed
+    CPU::loop();
+    bitWrite(Ports::port[1], 0, true); // Set A released
+    for (int i=0; i<2; i++) CPU::loop();
+
+    bitWrite(Ports::port[1], 2, false); // Set D pressed
+    CPU::loop();
+    bitWrite(Ports::port[1], 2, true); // Set D released
+    for (int i=0; i<2; i++) CPU::loop();
+
+    bitWrite(Ports::port[7], 1, false); // Set SS pressed
+    bitWrite(Ports::port[5], 0, false); // Set P pressed
+    CPU::loop();
+    bitWrite(Ports::port[5], 0, true); // Set P released
+    for (int i=0; i<4; i++) CPU::loop();
+
+    bitWrite(Ports::port[5], 0, false); // Set P pressed
+    CPU::loop();
+    bitWrite(Ports::port[5], 0, true); // Set P released
+    bitWrite(Ports::port[7], 1, true); // Set SS released
+    for (int i=0; i<4; i++) CPU::loop();
+
+    bitWrite(Ports::port[6], 0, false); // Set ENTER pressed
+    CPU::loop();
+    bitWrite(Ports::port[6], 0, true); // Set ENTER released
+
+}
+
+void DoKeyboardLoad_ZX81() {
+
+    ESPectrum::reset(); // Reset machine
+
+    for (int i=0; i<15; i++) CPU::loop(); // Run 15 frames for ZX81+ ROM to load
+
+    for (int i=0; i<4; i++) {
+        bitWrite(Ports::port[0], 0, false); // Set CAPS SHIFT pressed
+        bitWrite(Ports::port[4], 4, false); // Set 6 pressed
+        CPU::loop();
+        bitWrite(Ports::port[0], 0, true); // Set CAPS SHIFT released
+        bitWrite(Ports::port[4], 4, true); // Set 6 released
+        CPU::loop();
+    }
+
+    bitWrite(Ports::port[6], 0, false); // Set ENTER pressed
+    CPU::loop();
+    bitWrite(Ports::port[6], 0, true); // Set ENTER released
+    CPU::loop();
+
+    for (int i=0; i < 142; i++) CPU::loop(); // Run 142 frames for ZX81+ to start emulation
+
+    bitWrite(Ports::port[7], 2, false); // Set M pressed (PAUSE command)
+    for (int i=0; i<2; i++) CPU::loop();
+    bitWrite(Ports::port[7], 2, true); // Set M released
+    for (int i=0; i<4; i++) CPU::loop();
+
+    bitWrite(Ports::port[3], 4, false); // Set 5 pressed
+    for (int i=0; i<2; i++) CPU::loop();
+    bitWrite(Ports::port[3], 4, true); // Set 5 released
+    for (int i=0; i<4; i++) CPU::loop();
+
+    for (int i=0; i<3; i++) {
+        bitWrite(Ports::port[4], 0, false); // Set 0 pressed for Speccy
+        for (int i=0; i<2; i++) CPU::loop();
+        bitWrite(Ports::port[4], 0, true); // Set 0 released
+        for (int i=0; i<4; i++) CPU::loop();
+    }
+
+    bitWrite(Ports::port[6], 0, false); // Set ENTER pressed
+    for (int i=0; i<2; i++) CPU::loop();
+    bitWrite(Ports::port[6], 0, true); // Set ENTER released
+    for (int i=0; i<4; i++) CPU::loop();
+
+    for (int i=0; i<22; i++) CPU::loop(); // Process PAUSE 5000 command
+
+}
+
 
 void FileZ80::loader128() {
 
-    unsigned char *z80_array;
-    uint32_t dataLen;
-
     if (Config::arch == "128K") {
-
-        z80_array = (unsigned char *) load128;
-        dataLen = sizeof(load128);
-
         if (Config::romSet == "128K") {
-            // printf("128K\n");
-            z80_array = (unsigned char *) load128;
-            dataLen = sizeof(load128);
+            DoKeyboardLoad_128K_Pentagon();
         } else if (Config::romSet == "128Kes") {
-            // printf("128Kes\n");
-            z80_array = (unsigned char *) load128spa;
-            dataLen = sizeof(load128spa);
+            DoKeyboardLoad_128K_es();
         } else if (Config::romSet == "+2") {
-            // printf("+2\n");
-            z80_array = (unsigned char *) loadplus2;
-            dataLen = sizeof(loadplus2);
+            DoKeyboardLoad_128K_Pentagon();
         } else if (Config::romSet == "+2es") {
-            // printf("+2es\n");
-            z80_array = (unsigned char *) loadplus2;
-            dataLen = sizeof(loadplus2);
+            DoKeyboardLoad_128K_Pentagon();
         } else if (Config::romSet == "ZX81+") {
-            // printf("ZX81+\n");
-            z80_array = (unsigned char *) loadzx81;
-            dataLen = sizeof(loadzx81);
+            DoKeyboardLoad_ZX81();
         }
-
-
+    } else if (Config::arch == "+2A") {
+        DoKeyboardLoad_128K_Pentagon();
     } else if (Config::arch == "Pentagon") {
-
-        z80_array = (unsigned char *) loadpentagon;
-        dataLen = sizeof(loadpentagon);
-
+        DoKeyboardLoad_128K_Pentagon();
     }
-
-    // unsigned char *z80_array = Z80Ops::is128 ? (unsigned char *) load128spa : (unsigned char *) loadpentagon;    
-    // uint32_t dataLen = Z80Ops::is128 ? sizeof(load128spa) : sizeof(loadpentagon);
-
-    uint32_t dataOffset = 86;
-
-    ESPectrum::reset();
-
-    // begin loading registers
-    Z80::setRegA  (z80_array[0]);
-    Z80::setFlags (z80_array[1]);
-    Z80::setRegBC (mkword(z80_array[2], z80_array[3]));
-    Z80::setRegHL (mkword(z80_array[4], z80_array[5]));
-    Z80::setRegPC (mkword(z80_array[6], z80_array[7]));
-    Z80::setRegSP (mkword(z80_array[8], z80_array[9]));
-    Z80::setRegI  (z80_array[10]);
-
-    uint8_t regR = z80_array[11] & 0x7f;
-    if ((z80_array[12] & 0x01) != 0) {
-        regR |= 0x80;
-    }
-    Z80::setRegR(regR);
-
-    VIDEO::borderColor = (z80_array[12] >> 1) & 0x07;
-    VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
-
-    Z80::setRegDE (mkword(z80_array[13], z80_array[14]));
-    Z80::setRegBCx(mkword(z80_array[15], z80_array[16]));
-    Z80::setRegDEx(mkword(z80_array[17], z80_array[18]));
-    Z80::setRegHLx(mkword(z80_array[19], z80_array[20]));
-    
-    Z80::setRegAx(z80_array[21]);
-    Z80::setRegFx(z80_array[22]);
-    
-    Z80::setRegIY (mkword(z80_array[23], z80_array[24]));
-    Z80::setRegIX (mkword(z80_array[25], z80_array[26]));
-    Z80::setIFF1  (z80_array[27] ? true : false);
-    Z80::setIFF2  (z80_array[28] ? true : false);
-    Z80::setIM((Z80::IntMode)(z80_array[29] & 0x03));
-
-    // program counter
-    Z80::setRegPC(mkword(z80_array[32], z80_array[33]));
-
-    // paging register
-    MemESP::pagingLock = bitRead(z80_array[35], 5);
-    MemESP::romLatch = bitRead(z80_array[35], 4);
-    MemESP::videoLatch = bitRead(z80_array[35], 3);
-    MemESP::bankLatch = z80_array[35] & 0x07;
-    MemESP::romInUse = MemESP::romLatch;
-
-    z80_array += dataOffset;
-
-    uint8_t* pages[12] = {
-        MemESP::rom[0], MemESP::rom[2], MemESP::rom[1],
-        MemESP::ram[0], MemESP::ram[1], MemESP::ram[2], MemESP::ram[3],
-        MemESP::ram[4], MemESP::ram[5], MemESP::ram[6], MemESP::ram[7],
-        MemESP::rom[3] };
-
-    while (dataOffset < dataLen) {
-        uint8_t hdr0 = z80_array[0]; dataOffset ++;
-        uint8_t hdr1 = z80_array[1]; dataOffset ++;
-        uint8_t hdr2 = z80_array[2]; dataOffset ++;
-        z80_array += 3;
-        uint16_t compDataLen = mkword(hdr0, hdr1);
-
-        {
-            uint16_t dataOff = 0;
-            uint8_t ed_cnt = 0;
-            uint8_t repcnt = 0;
-            uint8_t repval = 0;
-            uint16_t memidx = 0;
-
-            while(dataOff < compDataLen && memidx < 0x4000) {
-                uint8_t databyte = z80_array[0];
-                z80_array ++;
-                if (ed_cnt == 0) {
-                    if (databyte != 0xED)
-                        pages[hdr2][memidx++] = databyte;
-                    else
-                        ed_cnt++;
-                } else if (ed_cnt == 1) {
-                    if (databyte != 0xED) {
-                        pages[hdr2][memidx++] = 0xED;
-                        pages[hdr2][memidx++] = databyte;
-                        ed_cnt = 0;
-                    } else
-                        ed_cnt++;
-                } else if (ed_cnt == 2) {
-                    repcnt = databyte;
-                    ed_cnt++;
-                } else if (ed_cnt == 3) {
-                    repval = databyte;
-                    for (uint16_t i = 0; i < repcnt; i++)
-                        pages[hdr2][memidx++] = repval;
-                    ed_cnt = 0;
-                }
-            }
-        }
-
-        dataOffset += compDataLen;
-
-    }
-
-    // Empty void ram pages
-    memset(MemESP::ram[1],0,0x4000);
-
-    // ZX81+ loader has block 3 void and has info on block5
-    if (Config::romSet128 == "ZX81+")
-        memset(MemESP::ram[0],0,0x4000);
-    else
-        memset(MemESP::ram[2],0,0x4000);
-
-    memset(MemESP::ram[3],0,0x4000);
-    memset(MemESP::ram[4],0,0x4000);
-    memset(MemESP::ram[6],0,0x4000);
-    
-    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
-    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-    MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
-
-    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
 
 }
-
-// ///////////////////////////////////////////////////////////////////////////////
 
 bool FileP::load(string p_fn) {
 
@@ -1466,39 +1799,25 @@ bool FileP::load(string p_fn) {
 
     // Manage arch change
     if (Config::arch != "128K" || Config::romSet != "ZX81+") {
+
+        bool vreset = (Config::arch != "128K") && (Config::videomode);
         Config::requestMachine("128K", "ZX81+");
-        // Condition this to 50hz mode
-        if(Config::videomode) {
+        if (vreset) ResetToLoadSnapshot(p_fn);
 
-            Config::SNA_Path = FileUtils::SNA_Path;
-            Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-            Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-            Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-            Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
+        // if (Config::arch == "128K") {
+        //     Config::requestMachine("128K", "ZX81+");
+        // } else {
+        //     Config::requestMachine("128K", "ZX81+");
+        //     // Condition this to 50hz mode
+        //     if (Config::videomode) ResetToLoadSnapshot(p_fn);
+        // }
 
-            Config::TAP_Path = FileUtils::TAP_Path;
-            Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-            Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-            Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-            Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-            Config::DSK_Path = FileUtils::DSK_Path;
-            Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-            Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-            Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-            Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-            Config::ram_file = p_fn;
-            Config::save();
-            OSD::esp_hard_reset(); 
-        }                           
     }
 
-    FileZ80::loader128();
+    DoKeyboardLoad_ZX81();
 
-    uint16_t address = 16393;
-    uint8_t page = address >> 14;
-    fread(&MemESP::ramCurrent[page][address & 0x3fff], p_size, 1, file);
+    // Read data and copy to address 16393
+    fread(&MemESP::ramCurrent[1][0x9], p_size, 1, file);
 
     fclose(file);
 
@@ -1506,7 +1825,6 @@ bool FileP::load(string p_fn) {
 
 }
 
-// ///////////////////////////////////////////////////////////////////////////////
 /*
       Ficheros *.SP:
 Offset    Longitud    Descripci¢n
@@ -1580,36 +1898,8 @@ bool FileSP::load(string sp_fn) {
 
     // Change arch if needed
     if ( !Z80Ops::is48) {
-
-        bool vreset = Config::videomode;
-
         Config::requestMachine("48K", "");
-
-        // Condition this to 50hz mode
-        if(vreset) {
-            Config::SNA_Path = FileUtils::SNA_Path;
-            Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-            Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
-            Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
-            Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
-
-            Config::TAP_Path = FileUtils::TAP_Path;
-            Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-            Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
-            Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
-            Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
-
-            Config::DSK_Path = FileUtils::DSK_Path;
-            Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-            Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
-            Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
-            Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
-
-            Config::ram_file = sp_fn;
-            Config::save();
-            OSD::esp_hard_reset();
-        }
-
+        if (Config::videomode) ResetToLoadSnapshot(sp_fn);
     }
 
     ESPectrum::reset();

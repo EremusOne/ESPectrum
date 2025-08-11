@@ -58,6 +58,7 @@ enum class PS2Preset {
   MousePort1,                 /**< Mouse on port 1 (no keyboard) */
   KeyboardPort0_KeybJoystickPort1,/**< Keyboard on Port 0 and Port 1 */
   zxKeyb, //** Just ZX Keyboard, init PS/2 controller with no reset
+  KeybJoystickPort1,
 };
 
 
@@ -188,7 +189,7 @@ public:
    *
    * @return A pointer to a KeybJoystick object
    */
-  static KeybJoystick * keybjoystick()               { return s_keybjoystick; }  
+  static KeybJoystick * keybjoystick()               { return s_keybjoystick; }
 
   static void setKeybJoystick(KeybJoystick * value)  { s_keybjoystick = value; }
 
@@ -242,7 +243,7 @@ private:
   // Keyboard and Mouse instances can be created by PS2Controller in one of the begin() calls, or can be
   // set using setKeyboard() and setMouse() calls.
   static Keyboard *         s_keyboard;
-  static KeybJoystick *     s_keybjoystick;  
+  static KeybJoystick *     s_keybjoystick;
   static Mouse *            s_mouse;
 
   static bool               s_keyboardAllocated;

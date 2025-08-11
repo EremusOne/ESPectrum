@@ -32,12 +32,38 @@ To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
-#include "ESPectrum.h"
+#ifndef ESPECTRUM_AUDIOIN_H
+#define ESPECTRUM_AUDIOIN_H
 
-extern "C" void app_main(void) {
+#include <inttypes.h>
 
-  ESPectrum::setup();
+#define AUDIOIN_STOP 0
+#define AUDIOIN_PLAY 1
+#define AUDIOIN_PAUSE 2
 
-  ESPectrum::loop();
+class AudioIn {
 
-}
+public:
+
+    static volatile uint8_t Status;
+    static volatile uint8_t* Buffer;
+    static volatile int Bufsize;
+    static volatile int sample_index;
+    static double Factor;
+    static uint64_t Basepos;
+    static volatile uint32_t* gpio_in;
+    static volatile uint32_t gpio_mask;
+
+    static void Init();
+    static void GPIOSetup();
+    static void Start();
+    static void Play();
+    static void Stop();
+    static void Pause();
+    static void Resume();
+    static void PrepareFrame();
+    static uint8_t GetLevel();
+
+};
+
+#endif

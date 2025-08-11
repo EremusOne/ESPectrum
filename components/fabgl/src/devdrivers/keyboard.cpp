@@ -81,7 +81,7 @@ void Keyboard::begin(bool generateVirtualKeys, bool createVKQueue, int PS2Port, 
   m_capsLockLED    = false;
   m_scrollLockLED  = false;
 
-  m_uiApp = nullptr;
+  // m_uiApp = nullptr;
 
   reset(doReset);
 
@@ -101,8 +101,8 @@ void Keyboard::enableVirtualKeys(bool generateVirtualKeys, bool createVKQueue)
 {
   PS2DeviceLock lock(this);
 
-  if (createVKQueue)
-    generateVirtualKeys = true;
+  // if (createVKQueue)
+  //   generateVirtualKeys = true;
 
   // create task and queue?
 
@@ -136,23 +136,31 @@ bool Keyboard::reset(bool sendCmdReset)
 
   if (sendCmdReset) {
 
+    // TO DO: Make keyboard poweron delay an option in ESPectrum Config
+
     // 350ms keyboard poweron delay (look at NXP M68HC08 designer reference manual)
-    vTaskDelay(350 / portTICK_PERIOD_MS);
+    // vTaskDelay(350 / portTICK_PERIOD_MS);
 
     // tries up to three times to reset keyboard
     for (int i = 0; i < 3; ++i) {
       m_keyboardAvailable = send_cmdReset();
       if (m_keyboardAvailable)
         break;
+      // printf("PS/2 sendCmdReset. Try #%d\n",i);
       vTaskDelay(350 / portTICK_PERIOD_MS);
     }
     // give the time to the device to be fully initialized
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    // vTaskDelay(200 / portTICK_PERIOD_MS);
 
-  } else 
+    // if (m_keyboardAvailable)
+      // send_cmdSetScancodeSet(2);
+    // else
+      // if (!m_keyboardAvailable)
+      //   printf("PS/2 sendCmdReset. No response.\n");
+  } else
     m_keyboardAvailable = true;
 
-  send_cmdSetScancodeSet(2);
+  // if (m_keyboardAvailable) send_cmdSetScancodeSet(2);
 
   return m_keyboardAvailable;
 }
@@ -436,7 +444,7 @@ bool Keyboard::blockingGetVirtualKey(VirtualKeyItem * item)
   uint8_t * scode = item->scancode;
 
   *scode = getNextScancode();
-  // printf("Scode: %x\n",*scode);      
+  // printf("Scode: %x\n",*scode);
   if (*scode == 0xE0) {
     // two bytes scancode
     // printf("  E0 Scode: %x\n",*scode);
@@ -575,7 +583,8 @@ void Keyboard::injectVirtualKey(VirtualKeyItem const & item, bool insert)
 
   // has VK queue? Insert VK into it.
   if (m_virtualKeyQueue) {
-    auto ticksToWait = (m_uiApp ? 0 : portMAX_DELAY);  // 0, and not portMAX_DELAY to avoid uiApp locks
+    // auto ticksToWait = (m_uiApp ? 0 : portMAX_DELAY);  // 0, and not portMAX_DELAY to avoid uiApp locks
+    auto ticksToWait = portMAX_DELAY;  // 0, and not portMAX_DELAY to avoid uiApp locks
     if (insert)
       xQueueSendToFront(m_virtualKeyQueue, &item, ticksToWait);
     else
@@ -584,17 +593,17 @@ void Keyboard::injectVirtualKey(VirtualKeyItem const & item, bool insert)
 }
 
 
-void Keyboard::injectVirtualKey(VirtualKey virtualKey, bool keyDown, bool insert)
+void Keyboard::injectVirtualKey(VirtualKey virtualKey, bool keyDown, bool insert, bool ctrl, bool lalt, bool ralt, bool shift)
 {
   VirtualKeyItem item;
   item.vk          = virtualKey;
   item.down        = keyDown;
   item.scancode[0] = 0;  // this is a manual insert, not scancode associated
   item.ASCII       = virtualKeyToASCII(virtualKey);
-  item.CTRL        = m_CTRL;
-  item.LALT        = m_LALT;
-  item.RALT        = m_RALT;
-  item.SHIFT       = m_SHIFT;
+  item.CTRL        = ctrl ? ctrl : m_CTRL;
+  item.LALT        = lalt ? lalt : m_LALT;
+  item.RALT        = ralt ? ralt : m_RALT;
+  item.SHIFT       = shift ? shift : m_SHIFT;
   item.GUI         = m_GUI;
   item.CAPSLOCK    = m_CAPSLOCK;
   item.NUMLOCK     = m_NUMLOCK;
@@ -610,17 +619,17 @@ void Keyboard::postVirtualKeyItem(VirtualKeyItem const & item)
   injectVirtualKey(item, false);
 
   // need to send events to uiApp?
-  if (m_uiApp) {
-    uiEvent evt = uiEvent(nullptr, item.down ? UIEVT_KEYDOWN : UIEVT_KEYUP);
-    evt.params.key.VK    = item.vk;
-    evt.params.key.ASCII = item.ASCII;
-    evt.params.key.LALT  = item.LALT;
-    evt.params.key.RALT  = item.RALT;
-    evt.params.key.CTRL  = item.CTRL;
-    evt.params.key.SHIFT = item.SHIFT;
-    evt.params.key.GUI   = item.GUI;
-    m_uiApp->postEvent(&evt);
-  }
+  // if (m_uiApp) {
+  //   uiEvent evt = uiEvent(nullptr, item.down ? UIEVT_KEYDOWN : UIEVT_KEYUP);
+  //   evt.params.key.VK    = item.vk;
+  //   evt.params.key.ASCII = item.ASCII;
+  //   evt.params.key.LALT  = item.LALT;
+  //   evt.params.key.RALT  = item.RALT;
+  //   evt.params.key.CTRL  = item.CTRL;
+  //   evt.params.key.SHIFT = item.SHIFT;
+  //   evt.params.key.GUI   = item.GUI;
+  //   m_uiApp->postEvent(&evt);
+  // }
 }
 
 
@@ -735,7 +744,7 @@ bool Keyboard::isVKDown(VirtualKey virtualKey)
 
 bool Keyboard::getNextVirtualKey(VirtualKeyItem * item, int timeOutMS)
 {
-  bool r = (m_SCodeToVKConverterTask && item && xQueueReceive(m_virtualKeyQueue, item, msToTicks(timeOutMS)) == pdTRUE);
+  bool r = (/*m_SCodeToVKConverterTask &&*/ item && xQueueReceive(m_virtualKeyQueue, item, msToTicks(timeOutMS)) == pdTRUE);
   if (r && m_scancodeSet == 1)
     convertScancode2to1(item);
   return r;

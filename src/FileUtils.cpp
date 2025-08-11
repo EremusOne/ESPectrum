@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -14,6 +14,8 @@ https://github.com/rampa069/ZX-ESPectrum
 
 Original project by Pete Todd
 https://github.com/retrogubbins/paseVGA
+
+This file includes some contributions from J. Ponteprino
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,8 +30,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -40,7 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #include <vector>
 #include <algorithm>
 #include "FileUtils.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "cpuESP.h"
 #include "MemESP.h"
 #include "ESPectrum.h"
@@ -66,8 +67,9 @@ sdmmc_card_t *FileUtils::card;
 string FileUtils::SNA_Path = "/"; // Current path on the SD
 string FileUtils::TAP_Path = "/"; // Current path on the SD
 string FileUtils::DSK_Path = "/"; // Current path on the SD
+string FileUtils::ESP_Path = "/"; // Current path on the SD
 string FileUtils::ROM_Path = "/"; // Current path on the SD
-string FileUtils::ESP_Path = "/.p/"; // Current path on the SD
+string FileUtils::LIB_Path = "/lib/"; // Current path on the SD
 
 DISK_FTYPE FileUtils::fileTypes[5] = {
     {"sna,z80,sp,p",".s",2,2,0,""},
@@ -89,19 +91,9 @@ string FileUtils::getLCaseExt(const string& filename) {
     if (dotPos == string::npos) {
         return ""; // dot position don't found
     }
-
     // get the substring after dot
     string extension = filename.substr(dotPos + 1);
-
-    // convert extension to lowercase
-//    for (char& c : extension) {
-//        c = ::tolower(static_cast<unsigned char>(c));
-//    }
-
-//    return extension;
-
     return toLower( extension );
-
 }
 
 size_t FileUtils::fileSize(const char * mFile) {
@@ -114,11 +106,13 @@ size_t FileUtils::fileSize(const char * mFile) {
 
 void FileUtils::initFileSystem() {
 
-    // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
-    if (!SDReady) SDReady = mountSDCard(PIN_NUM_MISO_LILYGO_ESPECTRUM,PIN_NUM_MOSI_LILYGO_ESPECTRUM,PIN_NUM_CLK_LILYGO_ESPECTRUM,PIN_NUM_CS_LILYGO_ESPECTRUM);
+    // // Try to mount SD card on LILYGO TTGO VGA32 Board or ESPectrum Board
+    // if (!SDReady) SDReady = mountSDCard(PIN_NUM_MISO_LILYGO_ESPECTRUM,PIN_NUM_MOSI_LILYGO_ESPECTRUM,PIN_NUM_CLK_LILYGO_ESPECTRUM,PIN_NUM_CS_LILYGO_ESPECTRUM);
 
-    // Try to mount SD card on Olimex ESP32-SBC-FABGL Board
-    if ((!ZXKeyb::Exists) && (!SDReady)) SDReady = mountSDCard(PIN_NUM_MISO_SBCFABGL,PIN_NUM_MOSI_SBCFABGL,PIN_NUM_CLK_SBCFABGL,PIN_NUM_CS_SBCFABGL);
+    // // Try to mount SD card on Olimex ESP32-SBC-FABGL Board
+    // if ((!ZXKeyb::Exists) && (!SDReady)) SDReady = mountSDCard(PIN_NUM_MISO_SBCFABGL,PIN_NUM_MOSI_SBCFABGL,PIN_NUM_CLK_SBCFABGL,PIN_NUM_CS_SBCFABGL);
+
+    if (!SDReady) SDReady = mountSDCard(Config::Board == BOARD_OLIMEX ? PIN_NUM_MISO_SBCFABGL : PIN_NUM_MISO_LILYGO_ESPECTRUM, PIN_NUM_MOSI_LILYGO_ESPECTRUM, PIN_NUM_CLK_LILYGO_ESPECTRUM, PIN_NUM_CS_LILYGO_ESPECTRUM);
 
 }
 
@@ -132,7 +126,7 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
         .max_files = 8,
         .allocation_unit_size = 16 * 1024
     };
-    
+
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 
     spi_bus_config_t bus_cfg = {
@@ -141,17 +135,17 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
         .sclk_io_num = PIN_CLK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = 4000,
+        .max_transfer_sz = 2048 /*4000*/,
     };
-    
+
     ret = spi_bus_initialize(SPI2_HOST, &bus_cfg, SPI_DMA_CH1);
     if (ret != ESP_OK) {
         printf("SD Card init: Failed to initialize bus.\n");
-        vTaskDelay(20 / portTICK_PERIOD_MS);    
+        vTaskDelay(20 / portTICK_PERIOD_MS);
         return false;
     }
 
-    vTaskDelay(20 / portTICK_PERIOD_MS);    
+    vTaskDelay(20 / portTICK_PERIOD_MS);
 
     sdspi_device_config_t slot_config =  {
     .host_id   = SDSPI_DEFAULT_HOST,
@@ -171,7 +165,7 @@ bool FileUtils::mountSDCard(int PIN_MISO, int PIN_MOSI, int PIN_CLK, int PIN_CS)
             printf("Failed to initialize the card.\n");
         }
         spi_bus_free(SPI2_HOST);
-        vTaskDelay(20 / portTICK_PERIOD_MS);    
+        vTaskDelay(20 / portTICK_PERIOD_MS);
         return false;
     }
 
@@ -299,7 +293,7 @@ bool FileUtils::isSDReady() {
 //     }
 
 //     struct dirent* de = readdir(dir);
-    
+
 //     if (!de) {
 
 //         printf("No entries found!\n");
@@ -308,9 +302,9 @@ bool FileUtils::isSDReady() {
 
 //         int cnt = 0;
 //         while (true) {
-            
+
 //             printf("Found file: %s\n", de->d_name);
-            
+
 //             string filename = de->d_name;
 
 //             // printf("readdir filename -> %s\n", filename.c_str());
@@ -326,10 +320,10 @@ bool FileUtils::isSDReady() {
 //                 filelist += filename + "\n";
 //                 cnt++;
 //             }
-            
+
 //             de = readdir(dir);
 //             if ((!de) || (cnt == 20)) break;
-        
+
 //         }
 
 //     }
@@ -364,7 +358,7 @@ int FileUtils::getDirStats(const string& filedir, const vector<string>& filexts,
                             if (high = *hash & 0xF0000000) *hash ^= high >> 24;
                             *hash &= ~high;
                         }
-                        if (de->d_type == DT_REG) 
+                        if (de->d_type == DT_REG)
                             (*elements)++; // Count elements in dir
                         else if (de->d_type == DT_DIR)
                             (*ndirs)++;
@@ -391,6 +385,7 @@ string FileUtils::getResolvedPath(const string& path) {
 }
 
 string FileUtils::createTmpDir() {
+
     string tempDir = MountPoint + "/.tmp";
 
     // Verificar si el directorio ya existía
@@ -415,9 +410,9 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     string fname2 = "";
     string fnameLastSaved = "";
 
-    printf("\nJust after entering dirtofile");
-    ESPectrum::showMemInfo();
-    printf("\n");
+    // printf("\nJust after entering dirtofile");
+    // ESPectrum::showMemInfo();
+    // printf("\n");
 
     // Populate filexts with valid filename extensions
     std::vector<std::string> filexts;
@@ -443,7 +438,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     }
 
     OSD::progressDialog(OSD_FILE_INDEXING[Config::lang],OSD_FILE_INDEXING_1[Config::lang],0,0);
-    
+
     int items_processed = 0;
     struct dirent* de;
 
@@ -461,9 +456,9 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         eof1 = false;
     }
 
-    printf("\nBefore checking tempdir");
-    ESPectrum::showMemInfo();
-    printf("\n");
+    // printf("\nBefore checking tempdir");
+    // ESPectrum::showMemInfo();
+    // printf("\n");
 
     string tempDir = FileUtils::createTmpDir();
     if ( tempDir == "" ) {
@@ -472,29 +467,29 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
         OSD::progressDialog("","",0,2);
         return;
     }
-  
-    printf("\nAfter checking tempdir");
-    ESPectrum::showMemInfo();
-    printf("\n");
+
+    // printf("\nAfter checking tempdir");
+    // ESPectrum::showMemInfo();
+    // printf("\n");
 
 
-    int bufferSize;
-    if (Config::videomode < 2) {
-        bufferSize = item_count > DIR_CACHE_SIZE ? DIR_CACHE_SIZE : item_count;  // Size of buffer to read and sort
-    } else {
-        bufferSize = item_count > DIR_CACHE_SIZE_OVERSCAN ? DIR_CACHE_SIZE_OVERSCAN : item_count;  // Size of buffer to read and sort
-    }
+    int cachesiz;
+    if (Config::videomode < 2)
+        cachesiz = Config::psram_size ? DIR_CACHE_SIZE : DIR_CACHE_SIZE_NOPSRAM;
+    else
+        cachesiz = Config::psram_size ? DIR_CACHE_SIZE_OVERSCAN : DIR_CACHE_SIZE_OVERSCAN_NOPSRAM;
+    int bufferSize = item_count > cachesiz ? cachesiz : item_count;  // Size of buffer to read and sort
     std::vector<std::string> buffer;
 
     int iterations = 0;
 
-    printf("\nBefore while");
-    ESPectrum::showMemInfo();
-    printf("\n");
+    // printf("\nBefore while");
+    // ESPectrum::showMemInfo();
+    // printf("\n");
 
     while ( !eof2 || ( fin && !feof(fin)) ) {
         fnameLastSaved = "";
-    
+
         holdFile2 = false;
 
         iterations++;
@@ -533,12 +528,12 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
                 if (buffer.empty()) { // Fill buffer with directory entries
 
                     // buffer.clear();
-                    
+
                     if ( bufferSize ) {
 
-                        printf("\nBefore buffer fill -> ");
-                        ESPectrum::showMemInfo();
-                        printf("\n");
+                        // printf("\nBefore buffer fill -> ");
+                        // ESPectrum::showMemInfo();
+                        // printf("\n");
 
                         while ( buffer.size() < bufferSize && (de = readdir(dir)) != nullptr ) {
                             if (de->d_name[0] != '.') {
@@ -554,9 +549,9 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
                         }
 
                         // printf("Buffer size: %d\n",buffer.size());
-                        printf("Before buffer sort -> ");
-                        ESPectrum::showMemInfo();
-                        printf("\n");
+                        // printf("Before buffer sort -> ");
+                        // ESPectrum::showMemInfo();
+                        // printf("\n");
 
                         // Sort buffer loaded with processed directory entries
                         sort(buffer.begin(), buffer.end(), [](const string& a, const string& b) {
@@ -598,7 +593,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
                 }
                 fnameToSave = fname2;
                 readFile2 = true;
-            } else 
+            } else
             // eof2 || fname1 < fname2
             // si fname2 > fname1 entonces grabar fname1, ya que fname2 esta ordenado y no puede venir uno menor en este grupo
             if ( eof2 || strcasecmp(fname1.c_str(), fname2.c_str()) < 0 ) {
@@ -642,7 +637,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
             std::vector<std::string>().swap(buffer); // free memory
 
             filexts.clear(); // Clear vector
-            std::vector<std::string>().swap(filexts); // free memory  
+            std::vector<std::string>().swap(filexts); // free memory
 
             closedir( dir );
             // Close progress dialog
@@ -664,7 +659,7 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
     std::vector<std::string>().swap(buffer); // free memory
 
     filexts.clear(); // Clear vector
-    std::vector<std::string>().swap(filexts); // free memory    
+    std::vector<std::string>().swap(filexts); // free memory
 
     if ( fin ) fclose(fin);
     closedir(dir);
@@ -700,21 +695,21 @@ void FileUtils::DirToFile(string fpath, uint8_t ftype, unsigned long hash, unsig
 
 }
 
-bool FileUtils::hasExtension(string filename, string extension) {
-    return ( getLCaseExt(filename) == toLower(extension) );
-}
+// bool FileUtils::hasExtension(string filename, string extension) {
+//     return ( getLCaseExt(filename) == toLower(extension) );
+// }
 
-bool FileUtils::hasSNAextension(string filename) {
-    return ( getLCaseExt(filename) == "sna" );
-}
+// bool FileUtils::hasSNAextension(string filename) {
+//     return ( getLCaseExt(filename) == "sna" );
+// }
 
-bool FileUtils::hasZ80extension(string filename) {
-    return ( getLCaseExt(filename) == "z80" );
-}
+// bool FileUtils::hasZ80extension(string filename) {
+//     return ( getLCaseExt(filename) == "z80" );
+// }
 
-bool FileUtils::hasPextension(string filename) {
-    return ( getLCaseExt(filename) == "p" );
-}
+// bool FileUtils::hasPextension(string filename) {
+//     return ( getLCaseExt(filename) == "p" );
+// }
 
 bool FileUtils::hasTAPextension(string filename) {
     return ( getLCaseExt(filename) == "tap" );
@@ -767,7 +762,7 @@ void FileUtils::deleteFilesWithExtension(const char *folder_path, const char *ex
 // // Get all sna files sorted alphabetically
 // string FileUtils::getSortedFileList(string fileDir)
 // {
-    
+
 //     // get string of unsorted filenames, separated by newlines
 //     string entries = getFileEntriesFromDir(fileDir);
 

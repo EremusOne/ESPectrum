@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -83,8 +82,8 @@ visit https://zxespectrum.speccy.org/contacto
 #define TS_BORDER_352x272_PENTAGON 9003  // START OF BORDER PENTAGON
 
 // Colors for 6 bit mode
-//                  //  BBGGRR 
-#define BLACK       0b00000000 
+//                  //  BBGGRR
+#define BLACK       0b00000000
 #define BLUE        0b00100000
 #define RED         0b00000010
 #define MAGENTA     0b00100010
@@ -116,7 +115,7 @@ public:
 
   // Initialize video
   static void Init();
-    
+
   // Reset video
   static void Reset();
 
@@ -130,15 +129,19 @@ public:
   static void Blank_Snow_Opcode(bool contended);
   // 48 / 128
   static void MainScreen_Blank(unsigned int statestoadd, bool contended);
+  static void MainScreen_Blank_2A3(unsigned int statestoadd, bool contended);
   static void MainScreen_Blank_Opcode(bool contended);
+  static void MainScreen_Blank_Opcode_2A3(bool contended);
   static void MainScreen(unsigned int statestoadd, bool contended);
+  static void MainScreen_2A3(unsigned int statestoadd, bool contended);
   static void MainScreen_OSD(unsigned int statestoadd, bool contended);
-  static void MainScreen_Opcode(bool contended);
+  static void MainScreen_OSD_2A3(unsigned int statestoadd, bool contended);
+    static void MainScreen_Opcode(bool contended);
   static void MainScreen_Blank_Snow(unsigned int statestoadd, bool contended);
   static void MainScreen_Blank_Snow_Opcode(bool contended);
   static void MainScreen_Snow(unsigned int statestoadd, bool contended);
   static void MainScreen_Snow_Opcode(bool contended);
-  
+
   static void TopBorder_Blank();
   static void TopBorder();
   static void MiddleBorder();
@@ -150,13 +153,13 @@ public:
   static void TopBorder_Pentagon();
   static void MiddleBorder_Pentagon();
   static void BottomBorder_Pentagon();
-  static void BottomBorder_OSD_Pentagon();  
-  
+  static void BottomBorder_OSD_Pentagon();
+
   static void (*Draw)(unsigned int, bool);
   static void (*Draw_Opcode)(bool);
   static void (*Draw_OSD169)(unsigned int, bool);
   static void (*Draw_OSD43)();
-  
+
   static void (*DrawBorder)();
 
   static void vgataskinit(void *unused);
@@ -179,10 +182,11 @@ public:
   static uint8_t brdnextline;
   static uint8_t brdlin_osdstart;
   static uint8_t brdlin_osdend;
+  static uint8_t osdstartX;
 
   static uint8_t tStatesPerLine;
   static int tStatesScreen;
-  static int tStatesBorder;  
+  static int tStatesBorder;
 
   static uint8_t flashing;
   static uint8_t flash_ctr;
@@ -191,23 +195,25 @@ public:
   static uint8_t bmp1;
   static uint8_t att2;
   static uint8_t bmp2;
-  
+
   static uint8_t dispUpdCycle;
   static bool snow_att;
   static bool dbl_att;
   static uint8_t lastbmp;
-  static uint8_t lastatt;    
+  static uint8_t lastatt;
   static uint8_t snowpage;
   static uint8_t snowR;
   static bool snow_toggle;
-  
+
   static uint8_t OSD;
 
   static uint32_t* SaveRect;
 
   static TaskHandle_t videoTaskHandle;
 
-  static int VsyncFinetune[2];
+  // static int VsyncFinetune[2];
+
+  static uint32_t VsyncTarget;
 
   static uint32_t framecnt; // Frames elapsed
 

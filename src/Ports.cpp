@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,13 +28,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
 #include "Ports.h"
-#include "Config.h"
+#include "ESPConfig.h"
 #include "ESPectrum.h"
 #include "Z80_JLS/z80.h"
 #include "MemESP.h"
@@ -42,7 +41,9 @@ visit https://zxespectrum.speccy.org/contacto
 #include "AySound.h"
 #include "Tape.h"
 #include "cpuESP.h"
-#include "wd1793.h"
+#include "AudioIn.h"
+
+#include "disk/wd1793.h"
 
 // #pragma GCC optimize("O3")
 
@@ -60,22 +61,11 @@ visit https://zxespectrum.speccy.org/contacto
 uint8_t Ports::speaker_values[8]={ 0, 19, 34, 53, 97, 101, 130, 134 };
 uint8_t Ports::port[128];
 uint8_t Ports::port254 = 0;
+uint8_t Ports::LastOutTo1FFD = 0;
 
 uint8_t (*Ports::getFloatBusData)() = &Ports::getFloatBusData48;
 
 uint8_t Ports::getFloatBusData48() {
-
-    // unsigned int currentTstates = CPU::tstates;
-
-	// unsigned int line = (currentTstates / 224) - 64;
-	// if (line >= 192) return 0xFF;
-
-	// unsigned char halfpix = (CPU::tstates % 224) - 3;
-    // if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
-
-    //int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
-    // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
-    // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
 
 	uint32_t line = CPU::tstates / 224;
     if (line < 64 || line >= 256) return 0xFF;
@@ -100,27 +90,11 @@ uint8_t Ports::getFloatBusDataTK() {
 	unsigned char halfpix = (currentTstates % 228) - 99;
 	if ((halfpix >= 125) || (halfpix & 0x04)) return 0xFF;
 
-    // int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
-    // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
-    // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
-
     return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
 
 }
 
 uint8_t Ports::getFloatBusData128() {
-
-    // unsigned int currentTstates = CPU::tstates - 1;
-
-	// unsigned int line = (currentTstates / 228) - 63;
-	// if (line >= 192) return 0xFF;
-
-	// unsigned char halfpix = currentTstates % 228;
-	// if ((halfpix >= 128) || (halfpix & 0x04)) return 0xFF;
-
-    // int hpoffset = (halfpix >> 2) + ((halfpix >> 1) & 0x01);
-    // if (halfpix & 0x01) return(VIDEO::grmem[VIDEO::offAtt[line] + hpoffset]);
-    // return(VIDEO::grmem[VIDEO::offBmp[line] + hpoffset]);
 
     uint32_t currentTstates = CPU::tstates - 1;
 
@@ -132,6 +106,51 @@ uint8_t Ports::getFloatBusData128() {
 
     line -= 63;
     return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
+
+}
+
+uint8_t Ports::getFloatBusDataPentagon() {
+
+	uint32_t line = CPU::tstates / 224;
+    if (line < 80 || line >= 272) return 0xFF;
+
+	uint8_t halfpix = (CPU::tstates % 224) - 63;
+    if (halfpix & 0x80) return 0xFF;
+    halfpix -= 3;
+    if (halfpix & 0x04) return 0xFF;
+
+    line -= 80;
+    return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]);
+
+}
+
+uint8_t Ports::getFloatBusData2A3() {
+
+    uint32_t currentTstates = CPU::tstates - 4;
+
+	uint32_t line = currentTstates / 228;
+    if (line < 63 || line >= 255) return MemESP::lastContendedMemReadWrite | 1;
+
+	uint8_t halfpix = currentTstates % 228;
+	if (halfpix & 0x84) return MemESP::lastContendedMemReadWrite | 1;
+
+    line -= 63;
+    return (VIDEO::grmem[(halfpix & 0x01 ? VIDEO::offAtt[line] : VIDEO::offBmp[line]) + (halfpix >> 2) + ((halfpix >> 1) & 0x01)]) | 1;
+
+}
+
+static uint32_t p_states;
+
+IRAM_ATTR void Ports::FDDStep(bool force) {
+
+    CPU::tstates_diff += p_states - CPU::prev_tstates;
+
+    if (force || ((ESPectrum::fdd.control & (kRVMWD177XHLD | kRVMWD177XHLT)) != 0))
+        rvmWD1793Step(&ESPectrum::fdd, CPU::tstates_diff / WD177XSTEPSTATES); // FDD
+
+    CPU::tstates_diff = CPU::tstates_diff % WD177XSTEPSTATES;
+
+    CPU::prev_tstates = p_states;
 
 }
 
@@ -174,23 +193,25 @@ uint8_t tkIOcon(uint16_t a) {
 
 }
 
+
 IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
     uint8_t data;
-    uint8_t rambank = address >> 14;    
+    uint8_t rambank = address >> 14;
+    p_states = CPU::tstates;
 
-    VIDEO::Draw(1, MemESP::ramContended[rambank]); // I/O Contention (Early)
-    
-    // ULA PORT    
+    VIDEO::Draw(1, (Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]); // I/O Contention (Early)
+
+    // ULA PORT
     if ((address & 0x0001) == 0) {
 
         if (Config::arch[0] == 'T' && Config::ALUTK > 0) {
             VIDEO::Draw( 3 + tkIOcon(address), false);
         } else {
-            VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
+            VIDEO::Draw(3, Z80Ops::is48 || Z80Ops::is128);   // I/O Contention (Late)
         }
 
-        data = Config::port254default; // For TK90X spanish and rest of machines default port value is 0xBF. For TK90X portuguese is 0x3f.
+        data = Config::port254default;
 
         uint8_t portHigh = ~(address >> 8) & 0xff;
         for (int row = 0, mask = 0x01; row < 8; row++, mask <<= 1) {
@@ -198,113 +219,201 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
                 data &= port[row];
         }
 
-        // ** ESPectrum **
-        if (Tape::tapeStatus==TAPE_LOADING) {
-            Tape::Read();
-            bitWrite(data,6,Tape::tapeEarBit);
-        } else {
-    		if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
-				if (port254 & 0x18) data |= 0x40;
-			else
-				if (port254 & 0x10) data |= 0x40;
-		}
+        if ( AudioIn::Status == AUDIOIN_PLAY && Tape::tapeFileType == TAPE_FTYPE_EMPTY) {
 
-        // ** RVM **
-        // if (Tape::tapeStatus==TAPE_LOADING) Tape::Read();
-        // if ((Z80Ops::is48) && (Config::Issue2)) // Issue 2 behaviour only on Spectrum 48K
-        //     if (port254 & 0x18) data |= 0x40;
-        // else
-        //     if (port254 & 0x10) data |= 0x40;
-        // if (Tape::tapeEarBit) data ^= 0x40;
+            Tape::tapeEarBit = AudioIn::GetLevel();
+
+        } else if (Tape::tapeStatus==TAPE_LOADING) {
+
+            Tape::Read();
+
+            if (Config::EarBoost) {
+                int Audiobit = Tape::tapeEarBit ? 255 : 0;
+                if (Audiobit != ESPectrum::lastaudioBit) {
+                    ESPectrum::BeeperGetSample();
+                    ESPectrum::lastaudioBit = Audiobit;
+                }
+            }
+
+        }
+
+        if ((Z80Ops::is48) && (Config::Issue2)) {
+            data = port254 & 0x18 ? data | 0x40: data & 0xbf;
+        } else if (!Z80Ops::is2a3) {
+            data = port254 & 0x10 ? data | 0x40 : data & 0xbf;
+        }
+
+        if (Tape::tapeEarBit) data ^= 0x40;
 
     } else {
 
         if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
         else
-            ioContentionLate(MemESP::ramContended[rambank]);
+            // ioContentionLate((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]);
+            if ((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]) {
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+            } else
+                VIDEO::Draw(3, false);
+            // End ioContentionLate
 
         // The default port value is 0xFF.
         data = 0xff;
 
         // Check if TRDOS Rom is mapped.
         if (ESPectrum::trdos) {
-            
-            // int lowByte = address & 0xFF;
 
-            // // Process Beta Disk instruction.
-            // if (lowByte & 0x80) {
-            //         data = ESPectrum::Betadisk.ReadSystemReg();
-            //         // printf("WD1793 Read Control Register: %d\n",(int)data);
-            //         return data;
-            // }
+            uint8_t dat;
 
-            switch (address & 0xFF) {
-                case 0xFF:
-                    data = ESPectrum::Betadisk.ReadSystemReg();
-                    // printf("WD1793 Read Control Register: %d\n",(int)data);
-                    return data;
-                case 0x1F:
-                    data = ESPectrum::Betadisk.ReadStatusReg();
-                    // printf("WD1793 Read Status Register: %d\n",(int)data);
-                    return data;
-                case 0x3F:
-                    data = ESPectrum::Betadisk.ReadTrackReg();
-                    // printf("WD1793 Read Track Register: %d\n",(int)data);
-                    return data;
-                case 0x5F:
-                    data = ESPectrum::Betadisk.ReadSectorReg();
-                    // printf("WD1793 Read Sector Register: %d\n",(int)data);
-                    return data;
-                case 0x7F:
-                    data = ESPectrum::Betadisk.ReadDataReg();                    
-                    // printf("WD1793 Read Data Register: %d\n",(int)data);                    
-                    return data;                    
+            switch( address & 0xe3) {
+                case 0x03:
+                case 0x23:
+                case 0x43:
+                case 0x63:
+
+                    FDDStep(false);
+
+                    return rvmWD1793Read(&ESPectrum::fdd,((address >> 5) & 0x3));
+
+                case 0xe3: {
+
+                    FDDStep(true);
+
+                    uint8_t v=0;
+                    if(ESPectrum::fdd.control & kRVMWD177XDRQ) v|=0x40;
+                    if(ESPectrum::fdd.control & (kRVMWD177XINTRQ | kRVMWD177XFINTRQ)) v|=0x80;
+                    return v;
+                }
             }
 
         }
 
+        if (ESPectrum::ps2mouse && Config::mouse == 1) {
+
+            if((address & 0x05ff) == 0x01df) {
+
+                MouseDelta delta;
+
+                while (ESPectrum::PS2Controller.mouse()->deltaAvailable()) {
+
+                    if (ESPectrum::PS2Controller.mouse()->getNextDelta(&delta)) {
+
+                        ESPectrum::mouseX = (ESPectrum::mouseX + delta.deltaX) & 0xff;
+                        ESPectrum::mouseY = (ESPectrum::mouseY + delta.deltaY) & 0xff;
+                        ESPectrum::mouseButtonL = delta.buttons.left;
+                        ESPectrum::mouseButtonR = delta.buttons.right;
+
+                    } else break;
+
+                }
+
+                return (uint8_t) ESPectrum::mouseX;
+            }
+
+            if((address & 0x05ff) == 0x05df) {
+
+                MouseDelta delta;
+
+                while (ESPectrum::PS2Controller.mouse()->deltaAvailable()) {
+
+                    if (ESPectrum::PS2Controller.mouse()->getNextDelta(&delta)) {
+
+                        ESPectrum::mouseX = (ESPectrum::mouseX + delta.deltaX) & 0xff;
+                        ESPectrum::mouseY = (ESPectrum::mouseY + delta.deltaY) & 0xff;
+                        ESPectrum::mouseButtonL = delta.buttons.left;
+                        ESPectrum::mouseButtonR = delta.buttons.right;
+
+                    } else break;
+
+                }
+
+                return (uint8_t) ESPectrum::mouseY;
+            }
+
+            if((address & 0x05ff) == 0x00df) {
+
+                MouseDelta delta;
+
+                while (ESPectrum::PS2Controller.mouse()->deltaAvailable()) {
+
+                    if (ESPectrum::PS2Controller.mouse()->getNextDelta(&delta)) {
+
+                        ESPectrum::mouseX = (ESPectrum::mouseX + delta.deltaX) & 0xff;
+                        ESPectrum::mouseY = (ESPectrum::mouseY + delta.deltaY) & 0xff;
+                        ESPectrum::mouseButtonL = delta.buttons.left;
+                        ESPectrum::mouseButtonR = delta.buttons.right;
+
+                    } else break;
+
+                }
+
+                return 0xff & (ESPectrum::mouseButtonL ? 0xfd : 0xff) & (ESPectrum::mouseButtonR ? 0xfe : 0xff);
+            }
+        }
+
         // Kempston Joystick
-        if ((Config::joystick1 == JOY_KEMPSTON || Config::joystick2 == JOY_KEMPSTON || Config::joyPS2 == JOYPS2_KEMPSTON) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
+        if ((ESPectrum::joystick1 == JOY_KEMPSTON || ESPectrum::joystick2 == JOY_KEMPSTON || Config::joyPS2 == JOYPS2_KEMPSTON) && ((address & 0x00E0) == 0 || (address & 0xFF) == 0xDF)) return port[0x1f];
 
         // Fuller Joystick
-        if ((Config::joystick1 == JOY_FULLER || Config::joystick2 == JOY_FULLER || Config::joyPS2 == JOYPS2_FULLER) && (address & 0xFF) == 0x7F) return port[0x7f];
+        if ((ESPectrum::joystick1 == JOY_FULLER || ESPectrum::joystick2 == JOY_FULLER || Config::joyPS2 == JOYPS2_FULLER) && (address & 0xFF) == 0x7F) return port[0x7f];
 
         // Sound (AY-3-8912)
         if (ESPectrum::AY_emu) {
+
+            /* On the 128K/+2, reading from BFFDh will return the floating bus
+             * value as normal for unattached ports, but on the +2A/+3, it will
+             * return the same as reading from FFFDh */
+
             if ((address & 0xC002) == 0xC000)
                 return AySound::getRegisterData();
+
+            if (Z80Ops::is2a3 && (address & 0xC002) == 0x8000) {
+                return AySound::getRegisterData();
+            }
+
         }
 
-        if (!Z80Ops::isPentagon) {
+        if (Z80Ops::is2a3) {
+
+            // If we are on a +2A/+3 with memory paging disabled, or the port address
+            // is not following the pattern 0000 xxxx xxxx xx0xb, return 0xFF.
+            if (MemESP::pagingLock || (address & 4093) != address) {
+                data = 0xff;
+            } else {
+                data = getFloatBusData();
+            }
+
+        } else {
 
             data = getFloatBusData();
-            
-            if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
 
-                // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
-                // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
-                // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
-                if (!MemESP::pagingLock) {
+        }
 
-                    MemESP::pagingLock = bitRead(data, 5);
+        if ((Z80Ops::is128) && ((address & 0x8002) == 0) && ESPectrum::trdos == false) {
 
-                    if (MemESP::bankLatch != (data & 0x7)) {
-                        MemESP::bankLatch = data & 0x7;
-                        MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
-                        MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
-                    }
+            // //  Solo en el modelo 128K, pero no en los +2/+2A/+3, si se lee el puerto
+            // //  0x7ffd, el valor leído es reescrito en el puerto 0x7ffd.
+            // //  http://www.speccy.org/foro/viewtopic.php?f=8&t=2374
+            if (!MemESP::pagingLock) {
 
-                    if (MemESP::videoLatch != bitRead(data, 3)) {
-                        MemESP::videoLatch = bitRead(data, 3);
-                        VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
-                    }
-                    
-                    MemESP::romLatch = bitRead(data, 4);
-                    bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
-                    MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];            
+                MemESP::pagingLock = bitRead(data, 5);
+
+                if (MemESP::bankLatch != (data & 0x7)) {
+                    MemESP::bankLatch = data & 0x7;
+                    MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+                    MemESP::ramContended[3] = MemESP::bankLatch & 0x01 ? true: false;
                 }
 
+                if (MemESP::videoLatch != bitRead(data, 3)) {
+                    MemESP::videoLatch = bitRead(data, 3);
+                    VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+                }
+
+                MemESP::romLatch = bitRead(data, 4);
+                MemESP::romInUse = MemESP::romLatch;
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
             }
 
         }
@@ -315,28 +424,29 @@ IRAM_ATTR uint8_t Ports::input(uint16_t address) {
 
 }
 
-IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {    
-    
-    int Audiobit;
-    uint8_t rambank = address >> 14;
+IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
 
-    VIDEO::Draw(1, MemESP::ramContended[rambank]); // I/O Contention (Early)
+    int Audiobit = 0;
+    uint8_t rambank = address >> 14;
+    p_states = CPU::tstates;
+
+    VIDEO::Draw(1, (Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]); // I/O Contention (Early)
 
     // ULA =======================================================================
-    if ((address & 0x0001) == 0) {
+    if( !(address & 0x1)) {
 
         port254 = data;
 
         // Border color
         if (VIDEO::borderColor != data & 0x07) {
-            
+
             VIDEO::brdChange = true;
-            
-            if (!Z80Ops::isPentagon) 
+
+            if (!Z80Ops::isPentagon && !Z80Ops::is2a3)
                 if (Config::arch[0] == 'T' && Config::ALUTK > 0)
                     VIDEO::Draw(tkIOcon(address),false);
-                else            
-                    VIDEO::Draw(0,true); // Seems not needed in Pentagon
+                else
+                    VIDEO::Draw(0,true); // Seems not needed in Pentagon and +2A/+3
 
             VIDEO::DrawBorder();
 
@@ -344,14 +454,15 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             VIDEO::brd = VIDEO::border32[VIDEO::borderColor];
 
         }
-    
-        if (ESPectrum::ESP_delay) { // Disable beeper on turbo mode
 
-            if (Config::tape_player)
-                Audiobit = Tape::tapeEarBit ? 255 : 0; // For tape player mode
-            else
-                // Beeper Audio
-                Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+        if (ESPectrum::ESP_delay && !Config::EarBoost) {
+
+            // Beeper Audio
+            Audiobit = speaker_values[((data >> 2) & 0x04 ) | (Tape::tapeEarBit << 1) | ((data >> 3) & 0x01)];
+
+            if (Config::MicBoost) {
+                Audiobit = (data >> 3) & 0x01 ? 255 : Audiobit;
+            }
 
             if (Audiobit != ESPectrum::lastaudioBit) {
                 ESPectrum::BeeperGetSample();
@@ -364,7 +475,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
 
             if ((address & 0x4000) != 0)
-                AySound::selectRegister(data);
+                AySound::selectedRegister = data & 0x0f;
             else {
                 ESPectrum::AYGetSample();
                 AySound::setRegisterData(data);
@@ -373,8 +484,8 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             if (Config::arch[0] == 'T' && Config::ALUTK > 0)
                 VIDEO::Draw( 3 + tkIOcon(address), false);
             else
-                VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
-            
+                VIDEO::Draw(3, Z80Ops::is48 || Z80Ops::is128);   // I/O Contention (Late)
+
             return;
 
         }
@@ -382,7 +493,7 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
         else
-            VIDEO::Draw(3, !Z80Ops::isPentagon);   // I/O Contention (Late)
+            VIDEO::Draw(3, Z80Ops::is48 || Z80Ops::is128);   // I/O Contention (Late)
 
     } else {
 
@@ -390,60 +501,130 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
         if ((ESPectrum::AY_emu) && ((address & 0x8002) == 0x8000)) {
 
             if ((address & 0x4000) != 0)
-                AySound::selectRegister(data);
+                AySound::selectedRegister = data & 0x0f;
             else {
                 ESPectrum::AYGetSample();
                 AySound::setRegisterData(data);
             }
 
-            if (Config::arch[0] == 'T' && Config::ALUTK > 0)
-                VIDEO::Draw( 3 + tkIOcon(address), false);
-            else
-                ioContentionLate(MemESP::ramContended[rambank]);
-
-            return;
+            goto lateIOContention;
 
         }
 
         // Check if TRDOS Rom is mapped.
         if (ESPectrum::trdos) {
 
-            // int lowByte = address & 0xFF;
+            switch (address & 0xe3) {
 
-            switch (address & 0xFF) {
-                case 0xFF:
-                    // printf("WD1793 Write Control Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteSystemReg(data);
+                case 0x03:
+                case 0x23:
+                case 0x43:
+                case 0x63:
+                    FDDStep(false);
+                    rvmWD1793Write(&ESPectrum::fdd,((address >> 5) & 0x3),data);
                     break;
-                case 0x1F:
-                    // printf("WD1793 Write Command Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteCommandReg(data);
+                case 0xe3:
+
+                    FDDStep(true);
+
+                    // Change active disk unit
+                    if (ESPectrum::fdd.diskS != (data & 0x3)) {
+                        ESPectrum::fdd.diskS = data & 0x3;
+                        if (ESPectrum::fdd.disk[ESPectrum::fdd.diskS] != NULL && ESPectrum::fdd.side && ESPectrum::fdd.disk[ESPectrum::fdd.diskS]->sides == 1) ESPectrum::fdd.side = 0;
+                        ESPectrum::fdd.sclConverted = false;
+                    }
+
+                    if(!(data & 0x4)) {
+                        rvmWD1793Reset(&ESPectrum::fdd);
+                    }
+
+                    if(data & 0x8) ESPectrum::fdd.control|=kRVMWD177XTest;
+                    else ESPectrum::fdd.control&=~kRVMWD177XTest;
+
+                    if(data & 0x10) ESPectrum::fdd.side=0;
+                    else {
+                        if (ESPectrum::fdd.disk[ESPectrum::fdd.diskS] != NULL)
+                            ESPectrum::fdd.side = ESPectrum::fdd.disk[ESPectrum::fdd.diskS]->sides == 1 ? 0 : 1;
+                        else
+                            ESPectrum::fdd.side = 1;
+                    }
+
+                    if(data & 0x40) ESPectrum::fdd.control|=kRVMWD177XDDEN;
+                    else ESPectrum::fdd.control&=~kRVMWD177XDDEN;
+
                     break;
-                case 0x3F:
-                    // printf("WD1793 Write Track Register: %d\n",data);                    
-                    ESPectrum::Betadisk.WriteTrackReg(data);
-                    break;
-                case 0x5F:
-                    // printf("WD1793 Write Sector Register: %d\n",data);                    
-                    ESPectrum::Betadisk.WriteSectorReg(data);
-                    break;
-                case 0x7F:
-                    // printf("WD1793 Write Data Register: %d\n",data);
-                    ESPectrum::Betadisk.WriteDataReg(data);
-                    break;
+
             }
 
         }
 
+        switch (Config::Covox) {
+            case CovoxNONE:
+                break;
+            case CovoxMONO:
+                if ((address & 0x00FF) == 0x00FB) {
+                    ESPectrum::covoxData[0] = ESPectrum::covoxData[1] = ESPectrum::covoxData[2] = ESPectrum::covoxData[3] = data;
+                    ESPectrum::COVOXGetSample();
+                    goto lateIOContention;
+                }
+                break;
+            case CovoxSTEREO:
+                if ((address & 0x00FF) == 0x0F) {
+                    ESPectrum::covoxData[0] = ESPectrum::covoxData[1] = data;
+                    ESPectrum::COVOXGetSample();
+                    goto lateIOContention;
+                }
+                if ((address & 0x00FF) == 0x4F) {
+                    ESPectrum::covoxData[2] = ESPectrum::covoxData[3] = data;
+                    ESPectrum::COVOXGetSample();
+                    goto lateIOContention;
+                }
+                break;
+            case CovoxSOUNDDRIVE1:
+                if ((address & 0x00AF) == 0x000F) {
+                    switch (address & 0x0050) {
+                        case 0x00: ESPectrum::covoxData[0] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        case 0x10: ESPectrum::covoxData[1] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        case 0x40: ESPectrum::covoxData[2] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        case 0x50: ESPectrum::covoxData[3] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        default: break;
+                    }
+                }
+                break;
+            case CovoxSOUNDDRIVE2:
+                if ((address & 0x00F1) == 0x00F1) {
+                    switch (address & 0x000A) {
+                        case 0x0: ESPectrum::covoxData[0] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        case 0x2: ESPectrum::covoxData[1] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        case 0x8: ESPectrum::covoxData[2] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        case 0xA: ESPectrum::covoxData[3] = data; ESPectrum::COVOXGetSample(); goto lateIOContention; break;
+                        default: break;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+
+        lateIOContention:
+
         if (Config::arch[0] == 'T' && Config::ALUTK > 0)
             VIDEO::Draw( 3 + tkIOcon(address), false);
         else
-            ioContentionLate(MemESP::ramContended[rambank]);
+            // ioContentionLate((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]);
+            if ((Z80Ops::is48 || Z80Ops::is128) && MemESP::ramContended[rambank]) {
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+                VIDEO::Draw(1, true);
+            } else
+                VIDEO::Draw(3, false);
+            // End ioContentionLate
 
     }
 
-    // 128 / PENTAGON ==================================================================
-    if ((!Z80Ops::is48) && ((address & 0x8002) == 0)) {
+    // Spectrum 128/+2/Pentagon 128: Check port 0x7FFD for memory paging.
+    // The port is partially decoded: Bits 1, and 15 must be reset.
+    if ((Z80Ops::is128 || Z80Ops::isPentagon) && ((address & 0x8002) == 0)) {
 
         if (!MemESP::pagingLock) {
 
@@ -452,38 +633,157 @@ IRAM_ATTR void Ports::output(uint16_t address, uint8_t data) {
             if (MemESP::bankLatch != (data & 0x7)) {
                 MemESP::bankLatch = data & 0x7;
                 #ifdef ESPECTRUM_PSRAM
+                #ifdef TIME_MACHINE
                 MemESP::tm_bank_chg[MemESP::bankLatch] = true; // Bank selected. Mark for time machine
+                #endif
                 #endif
                 MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
                 MemESP::ramContended[3] = Z80Ops::isPentagon ? false : (MemESP::bankLatch & 0x01 ? true: false);
             }
 
             MemESP::romLatch = bitRead(data, 4);
-            bitWrite(MemESP::romInUse, 0, MemESP::romLatch);
+            MemESP::romInUse = MemESP::romLatch;
             MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
 
             if (MemESP::videoLatch != bitRead(data, 3)) {
                 MemESP::videoLatch = bitRead(data, 3);
                 #ifdef ESPECTRUM_PSRAM
+                #ifdef TIME_MACHINE
                 MemESP::tm_bank_chg[MemESP::videoLatch ? 7 : 5] = true; // Bank selected. Mark for time machine
+                #endif
                 #endif
                 VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
             }
 
         }
 
-    }
+    // Spectrum +2A/+3: Check port 0x7FFD for memory paging.
+    // The port is partially decoded: Bits 1, and 15 must be reset and bit 14 set.
+    } else if ((Z80Ops::is2a3) && ((address & 0xC002) == 0x4000) && (!MemESP::pagingLock)) {
 
-}
+        // printf("+2A/+3 0x7FFD OUT\n");
 
-IRAM_ATTR void Ports::ioContentionLate(bool contend) {
+        MemESP::romLatch = (MemESP::romInUse & 0x02) + bitRead(data, 4);
+        MemESP::romInUse = MemESP::romLatch & 0x3;
 
-    if (contend) {
-        VIDEO::Draw(1, true);
-        VIDEO::Draw(1, true);
-        VIDEO::Draw(1, true);        
-    } else {
-        VIDEO::Draw(3, false);
+        if (MemESP::pagingmode2A3 == 0) {
+
+            if (MemESP::bankLatch != (data & 0x7)) {
+                MemESP::bankLatch = data & 0x7;
+                #ifdef ESPECTRUM_PSRAM
+                #ifdef TIME_MACHINE
+                MemESP::tm_bank_chg[MemESP::bankLatch] = true; // Bank selected. Mark for time machine
+                #endif
+                #endif
+                MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+                MemESP::ramContended[3] = MemESP::bankLatch > 3;
+            }
+
+            MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+
+            MemESP::pagingLock = bitRead(data, 5);
+
+        } else {
+
+            if (MemESP::bankLatch != (data & 0x7)) MemESP::bankLatch = data & 0x7;
+
+        }
+
+        if (MemESP::videoLatch != bitRead(data, 3)) {
+            MemESP::videoLatch = bitRead(data, 3);
+            #ifdef ESPECTRUM_PSRAM
+            #ifdef TIME_MACHINE
+            MemESP::tm_bank_chg[MemESP::videoLatch ? 7 : 5] = true; // Bank selected. Mark for time machine
+            #endif
+            #endif
+            VIDEO::grmem = MemESP::videoLatch ? MemESP::ram[7] : MemESP::ram[5];
+        }
+
+    // Spectrum +2A/+3: Check port 0x1FFD for extra memory paging commands and disk motor switch (motor switch is not implemented).
+    // The port is partially decoded: Bits 1, 13, 14 and 15 must be reset and bit 12 set.
+    } else if ((Z80Ops::is2a3) && ((address & 0xF002) == 0x1000)/* && (!MemESP::pagingLock)*/) {
+
+        // printf("+2A/+3 0x1FFD OUT\n");
+
+        if (!MemESP::pagingLock) {
+
+            if (bitRead(data, 0) == 0) {
+
+                MemESP::pagingmode2A3 = 0;
+
+                // Bit 2 is the high bit of the ROM bank selection
+                MemESP::romLatch = (bitRead(data, 2) << 1) + (MemESP::romInUse & 0x01) ;
+                MemESP::romInUse = MemESP::romLatch & 0x3;
+
+                MemESP::ramCurrent[0] = MemESP::rom[MemESP::romInUse];
+                MemESP::ramCurrent[1] = MemESP::ram[5];
+                MemESP::ramCurrent[2] = MemESP::ram[2];
+                MemESP::ramCurrent[3] = MemESP::ram[MemESP::bankLatch];
+
+                MemESP::ramContended[0] = MemESP::ramContended[2] = false;
+                MemESP::ramContended[1] = true;
+                MemESP::ramContended[3] = MemESP::bankLatch > 3;
+
+            } else {
+
+                MemESP::pagingmode2A3 = 0xff;
+
+                switch ((data & 6) >> 1) {
+                    case 0:
+                        MemESP::ramCurrent[0] = MemESP::ram[0];
+                        MemESP::ramCurrent[1] = MemESP::ram[1];
+                        MemESP::ramCurrent[2] = MemESP::ram[2];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = false;
+                        MemESP::ramContended[1] = false;
+                        MemESP::ramContended[2] = false;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                    case 1:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[7];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = true;
+
+                        break;
+                    case 2:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[5];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                    case 3:
+                        MemESP::ramCurrent[0] = MemESP::ram[4];
+                        MemESP::ramCurrent[1] = MemESP::ram[7];
+                        MemESP::ramCurrent[2] = MemESP::ram[6];
+                        MemESP::ramCurrent[3] = MemESP::ram[3];
+
+                        MemESP::ramContended[0] = true;
+                        MemESP::ramContended[1] = true;
+                        MemESP::ramContended[2] = true;
+                        MemESP::ramContended[3] = false;
+
+                        break;
+                }
+            }
+
+            LastOutTo1FFD = data;
+
+        }
+
     }
 
 }

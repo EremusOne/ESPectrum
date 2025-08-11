@@ -1208,9 +1208,8 @@ void PS2Controller::begin(PS2Preset preset, KbdMode keyboardMode)
   bool createVKQueue       = (keyboardMode == KbdMode::CreateVirtualKeysQueue);
   switch (preset) {
     case PS2Preset::zxKeyb:
-      begin(GPIO_NUM_33, GPIO_NUM_32, GPIO_UNUSED, GPIO_UNUSED);
       setKeyboard(new Keyboard);
-      keyboard()->begin(generateVirtualKeys, createVKQueue, 0, false);
+      keyboard()->begin(false, createVKQueue, 0, false);
       s_keyboardAllocated = true;
       break;
     case PS2Preset::KeyboardPort0_KeybJoystickPort1:
@@ -1252,11 +1251,20 @@ void PS2Controller::begin(PS2Preset preset, KbdMode keyboardMode)
       (new Keyboard)->begin(GPIO_NUM_26, GPIO_NUM_27, generateVirtualKeys, createVKQueue);
       s_keyboardAllocated = true;
       break;
+    case PS2Preset::KeybJoystickPort1:
+      // only keyboard configured on port 1
+      // this will call setKeyboard and begin()
+      (new KeybJoystick)->begin(GPIO_NUM_26, GPIO_NUM_27, generateVirtualKeys, createVKQueue);
+      s_keybjoystickAllocated = true;
+      break;
     case PS2Preset::MousePort0:
       // only mouse configured on port 0
       // this will call setMouse and begin()
       (new Mouse)->begin(GPIO_NUM_33, GPIO_NUM_32);
       s_mouseAllocated = true;
+      setKeyboard(new Keyboard);
+      keyboard()->begin(false, createVKQueue, 0, false);
+      s_keyboardAllocated = true;
       break;
     case PS2Preset::MousePort1:
       // only mouse configured on port 1

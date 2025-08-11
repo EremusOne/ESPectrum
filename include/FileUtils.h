@@ -2,11 +2,11 @@
 
 ESPectrum, a Sinclair ZX Spectrum emulator for Espressif ESP32 SoC
 
-Copyright (c) 2023, 2024 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
-https://github.com/EremusOne/ZX-ESPectrum-IDF
+Copyright (c) 2023-2025 Víctor Iborra [Eremus] and 2023 David Crespo [dcrespo3d]
+https://github.com/EremusOne/ESPectrum
 
 Based on ZX-ESPectrum-Wiimote
-Copyright (c) 2020, 2022 David Crespo [dcrespo3d]
+Copyright (c) 2020-2022 David Crespo [dcrespo3d]
 https://github.com/dcrespo3d/ZX-ESPectrum-Wiimote
 
 Based on previous work by Ramón Martinez and Jorge Fuertes
@@ -28,8 +28,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-To Contact the dev team you can write to zxespectrum@gmail.com or 
-visit https://zxespectrum.speccy.org/contacto
+To Contact the dev team you can write to zxespectrum@gmail.com
 
 */
 
@@ -61,11 +60,9 @@ struct DISK_FTYPE {
     int begin_row;
     int focus;
     uint8_t fdMode;
-    string fileSearch;    
+    string fileSearch;
 };
-
-class FileUtils
-{
+class FileUtils {
 public:
     static string getLCaseExt(const string& filename);
 
@@ -88,12 +85,12 @@ public:
 //    static void Mergefiles(string fpath, uint8_t ftype, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
     // static string getSortedFileList(string fileDir);
-    static bool hasExtension(string filename, string extension);
-    static bool hasSNAextension(string filename);
-    static bool hasZ80extension(string filename);
-    static bool hasPextension(string filename);
+    // static bool hasExtension(string filename, string extension);
+    // static bool hasSNAextension(string filename);
+    // static bool hasZ80extension(string filename);
+    // static bool hasPextension(string filename);
     static bool hasTAPextension(string filename);
-    static bool hasTZXextension(string filename);    
+    static bool hasTZXextension(string filename);
 
     static void deleteFilesWithExtension(const char *folder_path, const char *extension);
 
@@ -106,20 +103,24 @@ public:
     static string SNA_Path; // Current SNA path on the SD
     static string TAP_Path; // Current TAP path on the SD
     static string DSK_Path; // Current DSK path on the SD
+    static string ESP_Path; // Current DSK path on the SD
     static string ROM_Path; // Current ROM path on the SD
-    static string ESP_Path; // Current ROM path on the SD
+    static string LIB_Path; // Current ROM path on the SD
 
     static DISK_FTYPE fileTypes[5];
 
 private:
-    friend class Config;
-    static sdmmc_card_t *card;    
+
+    // friend class Config;
+
+    static sdmmc_card_t *card;
+
 };
 
 #define MOUNT_POINT_SD "/sd"
 #define DISK_SCR_DIR "/.c"
-#define DISK_PSNA_DIR "/.p"
-#define DISK_PSNA_FILE "persist"
+// #define DISK_PSNA_DIR "/.p"
+// #define DISK_PSNA_FILE " #"
 
 #define NO_RAM_FILE "none"
 
@@ -127,22 +128,17 @@ private:
 #define SNA_48K_WITH_ROM_SIZE 65563
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
+#define SNA_2A3_SIZE1 131121
 
-#ifdef ESPECTRUM_PSRAM
-
-// Experimental values for PSRAM
+// Values for PSRAM
 #define DIR_CACHE_SIZE 256
 #define DIR_CACHE_SIZE_OVERSCAN 256
-#define FILENAMELEN 128
-
-#else
 
 // Values for no PSRAM
-#define DIR_CACHE_SIZE 64
-#define DIR_CACHE_SIZE_OVERSCAN 32
-#define FILENAMELEN 128
+#define DIR_CACHE_SIZE_NOPSRAM /*64*/ 128
+#define DIR_CACHE_SIZE_OVERSCAN_NOPSRAM /*32*/ 64
 
-#endif
+#define FILENAMELEN 128
 
 #define SDCARD_HOST_MAXFREQ 19000
 
