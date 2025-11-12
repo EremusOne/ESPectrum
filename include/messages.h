@@ -35,7 +35,7 @@ To Contact the dev team you can write to zxespectrum@gmail.com
 #ifndef ESPECTRUM_MESSAGES_h
 #define ESPECTRUM_MESSAGES_h
 
-#define EMU_VERSION "    v1.4.11 "
+#define EMU_VERSION "    v1.4.12 "
 
 #include "fabgl.h"
 

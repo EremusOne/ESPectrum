@@ -813,7 +813,7 @@ bool FileESP::save(string esp_file, bool blockMode) {
 
     // Write romset
     char romsetbuf[12] = { 0 };
-    for (int i=0; i < Config::romSet.length(); i++) romsetbuf[i] = Config::arch[i];
+    for (int i=0; i < Config::romSet.length(); i++) romsetbuf[i] = Config::romSet[i];
     fwrite(romsetbuf, 1, sizeof(romsetbuf), file);
 
     // Write TK ALU
