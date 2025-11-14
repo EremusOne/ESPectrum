@@ -494,7 +494,7 @@ void ESPectrum::bootKeyboard(int timeout) {
 
 void ESPectrum::setup() {
 
-    // ts_start = esp_timer_get_time();
+    ts_start = esp_timer_get_time();
 
     // esp_reset_reason_t reason = esp_reset_reason();
     // if (reason != ESP_RST_WDT) {
@@ -887,29 +887,65 @@ void ESPectrum::setup() {
 
         FileUtils::initFileSystem();
 
+        printf("------------------------------------\n");
+        printf("LOAD SNAPSHOT BECAUSE ARCH CHANGED OR RAM FILE SET\n");
+        printf("RAM file: %s\n", Config::ram_file.c_str());
+
+        int dirlev;
+
         FileUtils::SNA_Path = Config::SNA_Path;
-        FileUtils::fileTypes[DISK_SNAFILE].begin_row = Config::SNA_begin_row;
-        FileUtils::fileTypes[DISK_SNAFILE].focus = Config::SNA_focus;
+        printf("SNA Path: %s\n", FileUtils::SNA_Path.c_str());
+        dirlev = FileUtils::SNA_Path != "/" ? count(FileUtils::SNA_Path.begin(), FileUtils::SNA_Path.end(), '/') - 1 : 0;
+
+        printf("Dirlev SNA: %d\n", dirlev);
+        FileUtils::fileTypes[DISK_SNAFILE].dirLevel = dirlev;
+        for (int i=0; i < dirlev; i++) {
+            FileUtils::fileTypes[DISK_SNAFILE].begin_row[i] = 2;
+            FileUtils::fileTypes[DISK_SNAFILE].focus[i] = 2;
+            printf("Init SNA level %d\n", i);
+        }
+        FileUtils::fileTypes[DISK_SNAFILE].begin_row[dirlev] = Config::SNA_begin_row;
+        FileUtils::fileTypes[DISK_SNAFILE].focus[dirlev] = Config::SNA_focus;
         FileUtils::fileTypes[DISK_SNAFILE].fdMode = Config::SNA_fdMode;
         FileUtils::fileTypes[DISK_SNAFILE].fileSearch = Config::SNA_fileSearch;
 
         FileUtils::TAP_Path = Config::TAP_Path;
-        FileUtils::fileTypes[DISK_TAPFILE].begin_row = Config::TAP_begin_row;
-        FileUtils::fileTypes[DISK_TAPFILE].focus = Config::TAP_focus;
+        dirlev = FileUtils::TAP_Path != "/" ? count(FileUtils::TAP_Path.begin(), FileUtils::TAP_Path.end(), '/') - 1 : 0;
+        FileUtils::fileTypes[DISK_TAPFILE].dirLevel = dirlev;
+        for (int i=0; i < dirlev; i++) {
+            FileUtils::fileTypes[DISK_TAPFILE].begin_row[i] = 2;
+            FileUtils::fileTypes[DISK_TAPFILE].focus[i] = 2;
+        }
+        FileUtils::fileTypes[DISK_TAPFILE].begin_row[dirlev] = Config::TAP_begin_row;
+        FileUtils::fileTypes[DISK_TAPFILE].focus[dirlev] = Config::TAP_focus;
         FileUtils::fileTypes[DISK_TAPFILE].fdMode = Config::TAP_fdMode;
         FileUtils::fileTypes[DISK_TAPFILE].fileSearch = Config::TAP_fileSearch;
 
         FileUtils::DSK_Path = Config::DSK_Path;
-        FileUtils::fileTypes[DISK_DSKFILE].begin_row = Config::DSK_begin_row;
-        FileUtils::fileTypes[DISK_DSKFILE].focus = Config::DSK_focus;
+        dirlev = FileUtils::DSK_Path != "/" ? count(FileUtils::DSK_Path.begin(), FileUtils::DSK_Path.end(), '/') - 1 : 0;
+        FileUtils::fileTypes[DISK_DSKFILE].dirLevel = dirlev;
+        for (int i=0; i < dirlev; i++) {
+            FileUtils::fileTypes[DISK_DSKFILE].begin_row[i] = 2;
+            FileUtils::fileTypes[DISK_DSKFILE].focus[i] = 2;
+        }
+        FileUtils::fileTypes[DISK_DSKFILE].begin_row[dirlev] = Config::DSK_begin_row;
+        FileUtils::fileTypes[DISK_DSKFILE].focus[dirlev] = Config::DSK_focus;
         FileUtils::fileTypes[DISK_DSKFILE].fdMode = Config::DSK_fdMode;
         FileUtils::fileTypes[DISK_DSKFILE].fileSearch = Config::DSK_fileSearch;
 
         FileUtils::ESP_Path = Config::ESP_Path;
-        FileUtils::fileTypes[DISK_ESPFILE].begin_row = Config::ESP_begin_row;
-        FileUtils::fileTypes[DISK_ESPFILE].focus = Config::ESP_focus;
+        dirlev = FileUtils::ESP_Path != "/" ? count(FileUtils::ESP_Path.begin(), FileUtils::ESP_Path.end(), '/') - 1 : 0;
+        for (int i=0; i < dirlev; i++) {
+            FileUtils::fileTypes[DISK_ESPFILE].begin_row[i] = 2;
+            FileUtils::fileTypes[DISK_ESPFILE].focus[i] = 2;
+        }
+        FileUtils::fileTypes[DISK_ESPFILE].dirLevel = dirlev;
+        FileUtils::fileTypes[DISK_ESPFILE].begin_row[dirlev] = Config::ESP_begin_row;
+        FileUtils::fileTypes[DISK_ESPFILE].focus[dirlev] = Config::ESP_focus;
         FileUtils::fileTypes[DISK_ESPFILE].fdMode = Config::ESP_fdMode;
         FileUtils::fileTypes[DISK_ESPFILE].fileSearch = Config::ESP_fileSearch;
+
+        printf("------------------------------------\n");
 
         LoadSnapshot(Config::ram_file,"","",0xff);
 
@@ -932,8 +968,8 @@ void ESPectrum::setup() {
     AudioIn::Start();
     if (Config::AudioInMode) AudioIn::Play();
 
-    // double boottime = esp_timer_get_time() - ts_start;
-    // printf("Boot time: %6.2f\n", boottime / 1000000);
+    double boottime = esp_timer_get_time() - ts_start;
+    printf("Boot time: %6.2f\n", boottime / 1000000);
 
     // Load mouse test
     // LoadSnapshot("/sd/Tests/mouse.z80","","",0xff);

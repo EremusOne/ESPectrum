@@ -61,27 +61,35 @@ using namespace std;
 
 void ResetToLoadSnapshot(string fname) {
 
+    int dirLev = FileUtils::fileTypes[DISK_SNAFILE].dirLevel;
+    if (dirLev >= MAX_DIR_LEVELS) dirLev = MAX_DIR_LEVELS - 1;
     Config::SNA_Path = FileUtils::SNA_Path;
-    Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row;
-    Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus;
+    Config::SNA_begin_row = FileUtils::fileTypes[DISK_SNAFILE].begin_row[dirLev];
+    Config::SNA_focus = FileUtils::fileTypes[DISK_SNAFILE].focus[dirLev];
     Config::SNA_fdMode = FileUtils::fileTypes[DISK_SNAFILE].fdMode;
     Config::SNA_fileSearch = FileUtils::fileTypes[DISK_SNAFILE].fileSearch;
 
+    dirLev = FileUtils::fileTypes[DISK_TAPFILE].dirLevel;
+    if (dirLev >= MAX_DIR_LEVELS) dirLev = MAX_DIR_LEVELS - 1;
     Config::TAP_Path = FileUtils::TAP_Path;
-    Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row;
-    Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus;
+    Config::TAP_begin_row = FileUtils::fileTypes[DISK_TAPFILE].begin_row[dirLev];
+    Config::TAP_focus = FileUtils::fileTypes[DISK_TAPFILE].focus[dirLev];
     Config::TAP_fdMode = FileUtils::fileTypes[DISK_TAPFILE].fdMode;
     Config::TAP_fileSearch = FileUtils::fileTypes[DISK_TAPFILE].fileSearch;
 
+    dirLev = FileUtils::fileTypes[DISK_DSKFILE].dirLevel;
+    if (dirLev >= MAX_DIR_LEVELS) dirLev = MAX_DIR_LEVELS - 1;
     Config::DSK_Path = FileUtils::DSK_Path;
-    Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row;
-    Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus;
+    Config::DSK_begin_row = FileUtils::fileTypes[DISK_DSKFILE].begin_row[dirLev];
+    Config::DSK_focus = FileUtils::fileTypes[DISK_DSKFILE].focus[dirLev];
     Config::DSK_fdMode = FileUtils::fileTypes[DISK_DSKFILE].fdMode;
     Config::DSK_fileSearch = FileUtils::fileTypes[DISK_DSKFILE].fileSearch;
 
+    dirLev = FileUtils::fileTypes[DISK_ESPFILE].dirLevel;
+    if (dirLev >= MAX_DIR_LEVELS) dirLev = MAX_DIR_LEVELS - 1;
     Config::ESP_Path = FileUtils::ESP_Path;
-    Config::ESP_begin_row = FileUtils::fileTypes[DISK_ESPFILE].begin_row;
-    Config::ESP_focus = FileUtils::fileTypes[DISK_ESPFILE].focus;
+    Config::ESP_begin_row = FileUtils::fileTypes[DISK_ESPFILE].begin_row[dirLev];
+    Config::ESP_focus = FileUtils::fileTypes[DISK_ESPFILE].focus[dirLev];
     Config::ESP_fdMode = FileUtils::fileTypes[DISK_ESPFILE].fdMode;
     Config::ESP_fileSearch = FileUtils::fileTypes[DISK_ESPFILE].fileSearch;
 

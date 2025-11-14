@@ -912,7 +912,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                     string fprefix = mFile.substr(0,1);
                     if (fprefix == "S") FileZ80::keepArch = true;
                     mFile.erase(0, 1);
-                    string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
+                    string fname = FileUtils::MountPoint + FileUtils::SNA_Path + /*"/" +*/ mFile;
                     LoadSnapshot(fname,"","",0xff);
                     Config::ram_file = fname;
                     Config::last_ram_file = fname;
@@ -1280,7 +1280,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP, bool CTRL, bool SHIFT) {
                                 string mFile = fileDialog(FileUtils::SNA_Path, MENU_SNA_TITLE[Config::lang], DISK_SNAFILE, 28, 16, 0);
                                 if (mFile != "" && FileUtils::isSDReady()) {
                                     mFile.erase(0, 1);
-                                    string fname = FileUtils::MountPoint + FileUtils::SNA_Path + "/" + mFile;
+                                    string fname = FileUtils::MountPoint + FileUtils::SNA_Path + /*"/" +*/ mFile;
                                     LoadSnapshot(fname,"","",0xff);
                                     Config::ram_file = fname;
                                     Config::last_ram_file = fname;

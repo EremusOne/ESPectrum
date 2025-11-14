@@ -39,6 +39,7 @@ To Contact the dev team you can write to zxespectrum@gmail.com
 #include <inttypes.h>
 #include <string>
 #include <vector>
+#include <map>
 #include "sdmmc_cmd.h"
 
 using namespace std;
@@ -55,12 +56,13 @@ using namespace std;
 #define DISK_ESPFILE 4
 
 struct DISK_FTYPE {
-    string fileExts;
-    string indexFilename;
-    int begin_row;
-    int focus;
+    std::string fileExts;
+    std::string indexFilename;
+    std::map<uint16_t, uint16_t> begin_row;
+    std::map<uint16_t, uint16_t> focus;
     uint8_t fdMode;
-    string fileSearch;
+    std::string fileSearch;
+    int dirLevel;
 };
 class FileUtils {
 public:

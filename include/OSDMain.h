@@ -73,6 +73,8 @@ using namespace std;
 #define FILEDIALOG_RENAME 0x02
 #define FILEDIALOG_MKDIR 0x01
 
+#define MAX_DIR_LEVELS 64
+
 #define MAXSEARCHLEN 16
 
 // OSD Interface
@@ -143,6 +145,7 @@ public:
     static int timeScroll;
     static unsigned int elements;
     static unsigned int ndirs;
+    static unsigned int curDirLevel;
 
     static uint8_t msgDialog(string title, string msg, uint8_t type, const char *options = nullptr, uint8_t default_opt = 1);
     static void progressDialog(string title, string msg, int percent, int action);

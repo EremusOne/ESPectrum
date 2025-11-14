@@ -59,6 +59,7 @@ FILE *dirfile;
 unsigned int OSD::elements;
 unsigned int OSD::fdSearchElements;
 unsigned int OSD::ndirs;
+unsigned int OSD::curDirLevel;
 int8_t OSD::fdScrollPos;
 int OSD::timeStartScroll;
 int OSD::timeScroll;
@@ -189,6 +190,12 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
     bool reIndex;
     int hfocus;
 
+    // Set current directory level index
+    curDirLevel = FileUtils::fileTypes[ftype].dirLevel;
+    if (curDirLevel >= MAX_DIR_LEVELS) curDirLevel = MAX_DIR_LEVELS - 1;
+    // printf("Curdirlevel: %d\n",curDirLevel);
+    // printf("dirLevel: %d\n",FileUtils::fileTypes[ftype].dirLevel);
+
     // Columns and Rows
     cols = mfcols;
     mf_rows = mfrows + (Config::aspect_16_9 ? 0 : 1);
@@ -243,13 +250,13 @@ string OSD::fileDialog(string &fdir, string title, uint8_t ftype, uint8_t mfcols
 
     // Adjust begin_row & focus in case of values doesn't fit in current dialog size
     // printf("Focus: %d, Begin_row: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) mf_rows);
-    if (FileUtils::fileTypes[ftype].focus > mf_rows - 1) {
-        FileUtils::fileTypes[ftype].begin_row += FileUtils::fileTypes[ftype].focus - (mf_rows - 1);
-        FileUtils::fileTypes[ftype].focus = mf_rows - 1;
+    if (FileUtils::fileTypes[ftype].focus[curDirLevel] > mf_rows - 1) {
+        FileUtils::fileTypes[ftype].begin_row[curDirLevel] += FileUtils::fileTypes[ftype].focus[curDirLevel] - (mf_rows - 1);
+        FileUtils::fileTypes[ftype].focus[curDirLevel] = mf_rows - 1;
     } else
-    if (FileUtils::fileTypes[ftype].focus + (FileUtils::fileTypes[ftype].begin_row - 2) < mf_rows) {
-        FileUtils::fileTypes[ftype].focus += FileUtils::fileTypes[ftype].begin_row - 2;
-        FileUtils::fileTypes[ftype].begin_row = 2;
+    if (FileUtils::fileTypes[ftype].focus[curDirLevel] + (FileUtils::fileTypes[ftype].begin_row[curDirLevel] - 2) < mf_rows) {
+        FileUtils::fileTypes[ftype].focus[curDirLevel] += FileUtils::fileTypes[ftype].begin_row[curDirLevel] - 2;
+        FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
     }
 
     // menu = title + "\n" + fdir + "\n";
@@ -446,7 +453,7 @@ reset:
             dirfilesize = ftell(dirfile);
 
             // Reset position
-            FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
+            FileUtils::fileTypes[ftype].begin_row[curDirLevel] = FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
 
             // ESPectrum::showMemInfo("file dialog: after reindex");
 
@@ -513,9 +520,9 @@ reset:
         }
 
         // printf("Focus: %d, Begin_row: %d, real_rows: %d, mf_rows: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row,(int) real_rows, (int) mf_rows);
-        if ((real_rows > mf_rows) && ((FileUtils::fileTypes[ftype].begin_row + mf_rows - 2) > real_rows)) {
-            FileUtils::fileTypes[ftype].focus += (FileUtils::fileTypes[ftype].begin_row + mf_rows - 2) - real_rows;
-            FileUtils::fileTypes[ftype].begin_row = real_rows - (mf_rows - 2);
+        if ((real_rows > mf_rows) && ((FileUtils::fileTypes[ftype].begin_row[curDirLevel] + mf_rows - 2) > real_rows)) {
+            FileUtils::fileTypes[ftype].focus[curDirLevel] += (FileUtils::fileTypes[ftype].begin_row[curDirLevel] + mf_rows - 2) - real_rows;
+            FileUtils::fileTypes[ftype].begin_row[curDirLevel] = real_rows - (mf_rows - 2);
             // printf("Focus: %d, BeginRow: %d\n",FileUtils::fileTypes[ftype].focus,FileUtils::fileTypes[ftype].begin_row);
         }
 
@@ -551,7 +558,7 @@ reset:
                     // menuAt(mf_rows, cols - (real_rows > virtual_rows ? 13 : 12));
                     menuAt(mf_rows, cols - 12);
                     char elements_txt[13];
-                    int nitem = (FileUtils::fileTypes[ftype].begin_row + FileUtils::fileTypes[ftype].focus ) - (4 + ndirs) + (fdir.length() == 1);
+                    int nitem = (FileUtils::fileTypes[ftype].begin_row[curDirLevel] + FileUtils::fileTypes[ftype].focus[curDirLevel] ) - (4 + ndirs) + (fdir.length() == 1);
                     snprintf(elements_txt, sizeof(elements_txt), "%d/%d ", nitem > 0 ? nitem : 0 , elem);
                     VIDEO::vga.print(std::string(12 - strlen(elements_txt), ' ').c_str());
                     VIDEO::vga.print(elements_txt);
@@ -587,7 +594,7 @@ reset:
 
                         } else {
 
-                            string rowSearch = rowGet(menu,FileUtils::fileTypes[ftype].focus);
+                            string rowSearch = rowGet(menu,FileUtils::fileTypes[ftype].focus[curDirLevel]);
                             uint8_t letra = rowSearch[0];
                             uint8_t atDir = 0;
                             if (letra == ASCII_SPC) {
@@ -621,20 +628,20 @@ reset:
                             }
                             // printf("Cnt: %d Letra: %d\n",cnt,int(letra));
                             if (!feof(dirfile)) {
-                                last_begin_row = FileUtils::fileTypes[ftype].begin_row;
-                                last_focus = FileUtils::fileTypes[ftype].focus;
+                                last_begin_row = FileUtils::fileTypes[ftype].begin_row[curDirLevel];
+                                last_focus = FileUtils::fileTypes[ftype].focus[curDirLevel];
                                 if (real_rows > virtual_rows) {
                                     int m = cnt + virtual_rows - real_rows;
                                     if (m > 0) {
-                                        FileUtils::fileTypes[ftype].focus = m + 2;
-                                        FileUtils::fileTypes[ftype].begin_row = cnt - m + 2;
+                                        FileUtils::fileTypes[ftype].focus[curDirLevel] = m + 2;
+                                        FileUtils::fileTypes[ftype].begin_row[curDirLevel] = cnt - m + 2;
                                     } else {
-                                        FileUtils::fileTypes[ftype].focus = 2;
-                                        FileUtils::fileTypes[ftype].begin_row = cnt + 2;
+                                        FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                                        FileUtils::fileTypes[ftype].begin_row[curDirLevel] = cnt + 2;
                                     }
                                 } else {
-                                    FileUtils::fileTypes[ftype].focus = cnt + 2;
-                                    FileUtils::fileTypes[ftype].begin_row = 2;
+                                    FileUtils::fileTypes[ftype].focus[curDirLevel] = cnt + 2;
+                                    FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
                                 }
                                 // printf("Real rows: %d; Virtual rows: %d\n",real_rows,virtual_rows);
                                 // printf("Focus: %d, Begin_row: %d\n",(int) FileUtils::fileTypes[ftype].focus,(int) FileUtils::fileTypes[ftype].begin_row);
@@ -818,8 +825,8 @@ reset:
                                 real_rows = (dirfilesize / FILENAMELEN) + 2; // Add 2 for title and status bar
                                 virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
                                 last_begin_row = last_focus = 0;
-                                FileUtils::fileTypes[ftype].focus = 2;
-                                FileUtils::fileTypes[ftype].begin_row = 2;
+                                FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                                FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
                                 fd_Redraw(title, fdir, ftype);
                             }
 
@@ -833,11 +840,11 @@ reset:
                         // Rename
                         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                        string fname = rowGet(menu,FileUtils::fileTypes[ftype].focus);
+                        string fname = rowGet(menu,FileUtils::fileTypes[ftype].focus[curDirLevel]);
 
                         if (fname[0] != ASCII_SPC) {
 
-                            fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_NORMAL);
+                            fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel], IS_NORMAL);
 
                             rtrim(fname);
                             string filext = fname.substr(fname.length()-4);
@@ -845,7 +852,7 @@ reset:
 
                             while (1) {
 
-                                newname = OSD::input( 1, FileUtils::fileTypes[ftype].focus, "", newname, cols - (real_rows > virtual_rows ? 4 : 3), 123, zxColor(0,0), zxColor(7,0), true );
+                                newname = OSD::input( 1, FileUtils::fileTypes[ftype].focus[curDirLevel], "", newname, cols - (real_rows > virtual_rows ? 4 : 3), 123, zxColor(0,0), zxColor(7,0), true );
 
                                 trim(newname);
 
@@ -876,7 +883,7 @@ reset:
 
                             }
 
-                            fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_FOCUSED); // Redraw row
+                            fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel], IS_FOCUSED); // Redraw row
 
                         } else { // Rename dir
 
@@ -886,11 +893,11 @@ reset:
 
                             if (fname.compare(" ..") != 0) {
 
-                                fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_NORMAL);
+                                fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel], IS_NORMAL);
 
                                 while (1) {
 
-                                    newname = OSD::input( 1, FileUtils::fileTypes[ftype].focus, "", newname, cols - (real_rows > virtual_rows ? 10 : 9), 123, zxColor(0,0), zxColor(7,0), true );
+                                    newname = OSD::input( 1, FileUtils::fileTypes[ftype].focus[curDirLevel], "", newname, cols - (real_rows > virtual_rows ? 10 : 9), 123, zxColor(0,0), zxColor(7,0), true );
 
                                     trim(newname);
 
@@ -921,7 +928,7 @@ reset:
 
                                 }
 
-                                fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_FOCUSED); // Redraw row
+                                fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel], IS_FOCUSED); // Redraw row
 
                             }
 
@@ -933,7 +940,7 @@ reset:
                         // Delete
                         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                        filedir = rowGet(menu,FileUtils::fileTypes[ftype].focus);
+                        filedir = rowGet(menu,FileUtils::fileTypes[ftype].focus[curDirLevel]);
                         // printf("%s\n",filedir.c_str());
                         if (filedir[0] != ASCII_SPC) {
                             click();
@@ -1034,54 +1041,54 @@ reset:
 
                         }
                     } else if (Menukey.vk == fabgl::VK_UP || Menukey.vk == fabgl::VK_JOY1UP || Menukey.vk == fabgl::VK_JOY2UP) {
-                        if (FileUtils::fileTypes[ftype].focus == 2 && FileUtils::fileTypes[ftype].begin_row > 2) {
-                            last_begin_row = FileUtils::fileTypes[ftype].begin_row;
-                            FileUtils::fileTypes[ftype].begin_row--;
+                        if (FileUtils::fileTypes[ftype].focus[curDirLevel] == 2 && FileUtils::fileTypes[ftype].begin_row[curDirLevel] > 2) {
+                            last_begin_row = FileUtils::fileTypes[ftype].begin_row[curDirLevel];
+                            FileUtils::fileTypes[ftype].begin_row[curDirLevel]--;
                             fd_Redraw(title, fdir, ftype);
-                        } else if (FileUtils::fileTypes[ftype].focus > 2) {
-                            last_focus = FileUtils::fileTypes[ftype].focus;
+                        } else if (FileUtils::fileTypes[ftype].focus[curDirLevel] > 2) {
+                            last_focus = FileUtils::fileTypes[ftype].focus[curDirLevel];
                             if (hfocus > 0) {
-                                FileUtils::fileTypes[ftype].focus--;
+                                FileUtils::fileTypes[ftype].focus[curDirLevel]--;
                                 fd_Redraw(title, fdir, ftype);
                                 hfocus = 0;
                             } else {
-                                fd_PrintRow(FileUtils::fileTypes[ftype].focus--, IS_NORMAL);
-                                fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_FOCUSED);
+                                fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel]--, IS_NORMAL);
+                                fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel], IS_FOCUSED);
                             }
                             // printf("Focus: %d, Lastfocus: %d\n",FileUtils::fileTypes[ftype].focus,(int) last_focus);
                         }
                         click();
                     } else if (Menukey.vk == fabgl::VK_DOWN || Menukey.vk == fabgl::VK_JOY1DOWN || Menukey.vk == fabgl::VK_JOY2DOWN) {
-                        if (FileUtils::fileTypes[ftype].focus == virtual_rows - 1 && FileUtils::fileTypes[ftype].begin_row + virtual_rows - 2 < real_rows) {
-                            last_begin_row = FileUtils::fileTypes[ftype].begin_row;
-                            FileUtils::fileTypes[ftype].begin_row++;
+                        if (FileUtils::fileTypes[ftype].focus[curDirLevel] == virtual_rows - 1 && FileUtils::fileTypes[ftype].begin_row[curDirLevel] + virtual_rows - 2 < real_rows) {
+                            last_begin_row = FileUtils::fileTypes[ftype].begin_row[curDirLevel];
+                            FileUtils::fileTypes[ftype].begin_row[curDirLevel]++;
                             fd_Redraw(title, fdir, ftype);
-                        } else if (FileUtils::fileTypes[ftype].focus < virtual_rows - 1) {
-                            last_focus = FileUtils::fileTypes[ftype].focus;
+                        } else if (FileUtils::fileTypes[ftype].focus[curDirLevel] < virtual_rows - 1) {
+                            last_focus = FileUtils::fileTypes[ftype].focus[curDirLevel];
                             if (hfocus > 0) {
-                                FileUtils::fileTypes[ftype].focus++;
+                                FileUtils::fileTypes[ftype].focus[curDirLevel]++;
                                 fd_Redraw(title, fdir, ftype);
                                 hfocus = 0;
                             } else {
-                                fd_PrintRow(FileUtils::fileTypes[ftype].focus++, IS_NORMAL);
-                                fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_FOCUSED);
+                                fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel]++, IS_NORMAL);
+                                fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel], IS_FOCUSED);
                             }
                             // printf("Focus: %d, Lastfocus: %d\n",FileUtils::fileTypes[ftype].focus,(int) last_focus);
                         }
                         click();
                     } else if (Menukey.vk == fabgl::VK_PAGEUP || Menukey.vk == fabgl::VK_LEFT || Menukey.vk == fabgl::VK_JOY1LEFT || Menukey.vk == fabgl::VK_JOY2LEFT) {
-                        if (FileUtils::fileTypes[ftype].begin_row > virtual_rows) {
-                            FileUtils::fileTypes[ftype].focus = 2;
-                            FileUtils::fileTypes[ftype].begin_row -= virtual_rows - 2;
+                        if (FileUtils::fileTypes[ftype].begin_row[curDirLevel] > virtual_rows) {
+                            FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                            FileUtils::fileTypes[ftype].begin_row[curDirLevel] -= virtual_rows - 2;
                         } else {
-                            if (FileUtils::fileTypes[ftype].begin_row == 2 && FileUtils::fileTypes[ftype].focus == 2) {
+                            if (FileUtils::fileTypes[ftype].begin_row[curDirLevel] == 2 && FileUtils::fileTypes[ftype].focus[curDirLevel] == 2) {
                                 if (fdir != "/") {
                                     fclose(dirfile);
                                     dirfile = NULL;
                                     fdir.pop_back();
                                     string prevdir = fdir.substr(fdir.find_last_of("/") + 1, fdir.length());
                                     fdir = fdir.substr(0,fdir.find_last_of("/") + 1);
-                                    FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
+                                    FileUtils::fileTypes[ftype].begin_row[curDirLevel] = FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
                                     click();
                                     break;
                                 } else {
@@ -1095,34 +1102,34 @@ reset:
                                     }
                                 }
                             } else {
-                                FileUtils::fileTypes[ftype].focus = 2;
-                                FileUtils::fileTypes[ftype].begin_row = 2;
+                                FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                                FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
                             }
                         }
                         fd_Redraw(title, fdir, ftype);
                         click();
                     } else if (Menukey.vk == fabgl::VK_PAGEDOWN || Menukey.vk == fabgl::VK_RIGHT || Menukey.vk == fabgl::VK_JOY1RIGHT || Menukey.vk == fabgl::VK_JOY2RIGHT) {
-                        if (real_rows - FileUtils::fileTypes[ftype].begin_row  - virtual_rows > virtual_rows) {
-                            FileUtils::fileTypes[ftype].focus = 2;
-                            FileUtils::fileTypes[ftype].begin_row += virtual_rows - 2;
+                        if (real_rows - FileUtils::fileTypes[ftype].begin_row[curDirLevel]  - virtual_rows > virtual_rows) {
+                            FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                            FileUtils::fileTypes[ftype].begin_row[curDirLevel] += virtual_rows - 2;
                         } else {
-                            FileUtils::fileTypes[ftype].focus = virtual_rows - 1;
-                            FileUtils::fileTypes[ftype].begin_row = real_rows - virtual_rows + 2;
+                            FileUtils::fileTypes[ftype].focus[curDirLevel] = virtual_rows - 1;
+                            FileUtils::fileTypes[ftype].begin_row[curDirLevel] = real_rows - virtual_rows + 2;
                         }
                         fd_Redraw(title, fdir, ftype);
                         click();
                     } else if (Menukey.vk == fabgl::VK_HOME) {
-                        last_focus = FileUtils::fileTypes[ftype].focus;
-                        last_begin_row = FileUtils::fileTypes[ftype].begin_row;
-                        FileUtils::fileTypes[ftype].focus = 2;
-                        FileUtils::fileTypes[ftype].begin_row = 2;
+                        last_focus = FileUtils::fileTypes[ftype].focus[curDirLevel];
+                        last_begin_row = FileUtils::fileTypes[ftype].begin_row[curDirLevel];
+                        FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                        FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
                         fd_Redraw(title, fdir, ftype);
                         click();
                     } else if (Menukey.vk == fabgl::VK_END) {
-                        last_focus = FileUtils::fileTypes[ftype].focus;
-                        last_begin_row = FileUtils::fileTypes[ftype].begin_row;
-                        FileUtils::fileTypes[ftype].focus = virtual_rows - 1;
-                        FileUtils::fileTypes[ftype].begin_row = real_rows - virtual_rows + 2;
+                        last_focus = FileUtils::fileTypes[ftype].focus[curDirLevel];
+                        last_begin_row = FileUtils::fileTypes[ftype].begin_row[curDirLevel];
+                        FileUtils::fileTypes[ftype].focus[curDirLevel] = virtual_rows - 1;
+                        FileUtils::fileTypes[ftype].begin_row[curDirLevel] = real_rows - virtual_rows + 2;
                         // printf("Focus: %d, Lastfocus: %d\n",FileUtils::fileTypes[ftype].focus,(int) last_focus);
                         fd_Redraw(title, fdir, ftype);
                         click();
@@ -1140,14 +1147,26 @@ reset:
                                 dirfile = NULL;
 
                                 fdir.pop_back();
-                                string prevdir = fdir.substr(fdir.find_last_of("/") + 1, fdir.length());
-                                printf("Prevdir: %s\n",prevdir.c_str());
+                                // string prevdir = fdir.substr(fdir.find_last_of("/") + 1, fdir.length());
+                                // printf("Prevdir: %s\n",prevdir.c_str());
                                 fdir = fdir.substr(0,fdir.find_last_of("/") + 1);
 
+                                FileUtils::fileTypes[ftype].dirLevel--;
+                                if (FileUtils::fileTypes[ftype].dirLevel < MAX_DIR_LEVELS - 1) curDirLevel--;
 
+                                // Adjust begin_row & focus in case of values doesn't fit in current dialog size
+                                if (FileUtils::fileTypes[ftype].focus[curDirLevel] > mf_rows - 1) {
+                                    FileUtils::fileTypes[ftype].begin_row[curDirLevel] += FileUtils::fileTypes[ftype].focus[curDirLevel] - (mf_rows - 1);
+                                    FileUtils::fileTypes[ftype].focus[curDirLevel] = mf_rows - 1;
+                                } else
+                                if (FileUtils::fileTypes[ftype].focus[curDirLevel] + (FileUtils::fileTypes[ftype].begin_row[curDirLevel] - 2) < mf_rows) {
+                                    FileUtils::fileTypes[ftype].focus[curDirLevel] += FileUtils::fileTypes[ftype].begin_row[curDirLevel] - 2;
+                                    FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
+                                }
 
+                                // printf("Curdirlevel: %d\n",curDirLevel);
+                                // printf("dirLevel: %d\n",FileUtils::fileTypes[ftype].dirLevel);
 
-                                FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
                                 // printf("Fdir: %s\n",fdir.c_str());
 
                                 click();
@@ -1161,18 +1180,38 @@ reset:
                         fclose(dirfile);
                         dirfile = NULL;
 
-                        filedir = rowGet(menu,FileUtils::fileTypes[ftype].focus);
+                        filedir = rowGet(menu,FileUtils::fileTypes[ftype].focus[curDirLevel]);
                         // printf("%s\n",filedir.c_str());
                         if (filedir[0] == ASCII_SPC) {
                             if (filedir[1] == ASCII_SPC) {
                                 fdir.pop_back();
                                 fdir = fdir.substr(0,fdir.find_last_of("/") + 1);
+                                FileUtils::fileTypes[ftype].dirLevel--;
+                                if (FileUtils::fileTypes[ftype].dirLevel < (MAX_DIR_LEVELS - 1)) curDirLevel--;
+
+                                // Adjust begin_row & focus in case of values doesn't fit in current dialog size
+                                if (FileUtils::fileTypes[ftype].focus[curDirLevel] > mf_rows - 1) {
+                                    FileUtils::fileTypes[ftype].begin_row[curDirLevel] += FileUtils::fileTypes[ftype].focus[curDirLevel] - (mf_rows - 1);
+                                    FileUtils::fileTypes[ftype].focus[curDirLevel] = mf_rows - 1;
+                                } else
+                                if (FileUtils::fileTypes[ftype].focus[curDirLevel] + (FileUtils::fileTypes[ftype].begin_row[curDirLevel] - 2) < mf_rows) {
+                                    FileUtils::fileTypes[ftype].focus[curDirLevel] += FileUtils::fileTypes[ftype].begin_row[curDirLevel] - 2;
+                                    FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
+                                }
+
+                                // printf("Curdirlevel: %d\n",curDirLevel);
+                                // printf("dirLevel: %d\n",FileUtils::fileTypes[ftype].dirLevel);
+
                             } else {
                                 filedir.erase(0,1);
                                 trim(filedir);
                                 fdir = fdir + filedir + "/";
+                                FileUtils::fileTypes[ftype].dirLevel++;
+                                if (FileUtils::fileTypes[ftype].dirLevel < MAX_DIR_LEVELS) curDirLevel++;
+                                FileUtils::fileTypes[ftype].begin_row[curDirLevel] = FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                                // printf("Curdirlevel: %d\n",curDirLevel);
+                                // printf("dirLevel: %d\n",FileUtils::fileTypes[ftype].dirLevel);
                             }
-                            FileUtils::fileTypes[ftype].begin_row = FileUtils::fileTypes[ftype].focus = 2;
                             // printf("Fdir: %s\n",fdir.c_str());
                             break;
                         } else {
@@ -1207,7 +1246,7 @@ reset:
                     if (timeStartScroll == timeStartScrollMax) {
                         // Draw filename helper if wide > 43 so filename fits in max. three lines
                         if (hwide >= 46) {
-                            hfocus = FileUtils::fileTypes[ftype].focus;
+                            hfocus = FileUtils::fileTypes[ftype].focus[curDirLevel];
                             string fname = rowGet(menu,hfocus);
                             if(fname[0] != ASCII_SPC) {
                                 trim(fname);
@@ -1282,7 +1321,7 @@ reset:
                 timeScroll++;
                 if (timeScroll == 50) {
                     fdScrollPos++;
-                    fd_PrintRow(FileUtils::fileTypes[ftype].focus, IS_FOCUSED);
+                    fd_PrintRow(FileUtils::fileTypes[ftype].focus[curDirLevel], IS_FOCUSED);
                     timeScroll = 0;
                 }
             }
@@ -1355,8 +1394,8 @@ reset:
                         real_rows = foundcount + 2; // Add 2 for title and status bar
                         virtual_rows = (real_rows > mf_rows ? mf_rows : real_rows);
                         last_begin_row = last_focus = 0;
-                        FileUtils::fileTypes[ftype].focus = 2;
-                        FileUtils::fileTypes[ftype].begin_row = 2;
+                        FileUtils::fileTypes[ftype].focus[curDirLevel] = 2;
+                        FileUtils::fileTypes[ftype].begin_row[curDirLevel] = 2;
                         fd_Redraw(title, fdir, ftype);
                     } else {
                         fseek(dirfile,prevpos,SEEK_SET);
@@ -1391,7 +1430,7 @@ reset:
 // Redraw inside rows
 void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
 
-    if ((FileUtils::fileTypes[ftype].focus != last_focus) || (FileUtils::fileTypes[ftype].begin_row != last_begin_row)) {
+    if ((FileUtils::fileTypes[ftype].focus[curDirLevel] != last_focus) || (FileUtils::fileTypes[ftype].begin_row[curDirLevel] != last_begin_row)) {
 
         // printf("fd_Redraw\n");
 
@@ -1399,7 +1438,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
         menu = title + "\n" + ( fdir.length() == 1 ? fdir : fdir.substr(0,fdir.length()-1)) + "\n";
         char buf[FILENAMELEN+1];
         if (FileUtils::fileTypes[ftype].fdMode == 0 || FileUtils::fileTypes[ftype].fileSearch == "") {
-            fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row - 2) * FILENAMELEN, SEEK_SET);
+            fseek(dirfile, (FileUtils::fileTypes[ftype].begin_row[curDirLevel] - 2) * FILENAMELEN, SEEK_SET);
             for (int i = 2; i < virtual_rows; i++) {
                 fgets(buf, sizeof(buf), dirfile);
                 if (feof(dirfile)) break;
@@ -1416,7 +1455,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
                 fgets(buf, sizeof(buf), dirfile);
                 if (feof(dirfile)) break;
                 if (buf[0] == ASCII_SPC) {
-                    if (i >= FileUtils::fileTypes[ftype].begin_row) {
+                    if (i >= FileUtils::fileTypes[ftype].begin_row[curDirLevel]) {
                         menu += buf;
                         if (++count == virtual_rows) break;
                     }
@@ -1425,7 +1464,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
                     for(int i=0; buf[i]; i++) upperbuf[i] = toupper(buf[i]);
                     char *pch = strstr(upperbuf, search.c_str());
                     if (pch != NULL) {
-                        if (i >= FileUtils::fileTypes[ftype].begin_row) {
+                        if (i >= FileUtils::fileTypes[ftype].begin_row[curDirLevel]) {
                             menu += buf;
                             if (++count == virtual_rows) break;
                         }
@@ -1439,7 +1478,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
 
         uint8_t row = 2;
         for (; row < virtual_rows; row++) {
-            if (row == FileUtils::fileTypes[ftype].focus) {
+            if (row == FileUtils::fileTypes[ftype].focus[curDirLevel]) {
                 fd_PrintRow(row, IS_FOCUSED);
             } else {
                 fd_PrintRow(row, IS_NORMAL);
@@ -1447,7 +1486,7 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
         }
 
         if (real_rows > virtual_rows) {
-            menuScrollBar(FileUtils::fileTypes[ftype].begin_row);
+            menuScrollBar(FileUtils::fileTypes[ftype].begin_row[curDirLevel]);
         } else {
             for (; row < mf_rows; row++) {
                 VIDEO::vga.setTextColor(zxColor(0, 1), zxColor(7, 1));
@@ -1456,8 +1495,8 @@ void OSD::fd_Redraw(string title, string fdir, uint8_t ftype) {
             }
         }
 
-        last_focus = FileUtils::fileTypes[ftype].focus;
-        last_begin_row = FileUtils::fileTypes[ftype].begin_row;
+        last_focus = FileUtils::fileTypes[ftype].focus[curDirLevel];
+        last_begin_row = FileUtils::fileTypes[ftype].begin_row[curDirLevel];
     }
 
 }

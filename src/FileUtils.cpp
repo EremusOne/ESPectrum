@@ -72,11 +72,11 @@ string FileUtils::ROM_Path = "/"; // Current path on the SD
 string FileUtils::LIB_Path = "/lib/"; // Current path on the SD
 
 DISK_FTYPE FileUtils::fileTypes[5] = {
-    {"sna,z80,sp,p",".s",2,2,0,""},
-    {"tap,tzx,",".t",2,2,0,""},
-    {"trd,scl",".d",2,2,0,""},
-    {"rom",".r",2,2,0,""},
-    {"esp",".e",2,2,0,""}
+    {"sna,z80,sp,p",".s",{{0,2}},{{0,2}},0,"",0},
+    {"tap,tzx,",".t",{{0,2}},{{0,2}},0,"",0},
+    {"trd,scl",".d",{{0,2}},{{0,2}},0,"",0},
+    {"rom",".r",{{0,2}},{{0,2}},0,"",0},
+    {"esp",".e",{{0,2}},{{0,2}},0,"",0}
 };
 
 string toLower(const std::string& str) {
